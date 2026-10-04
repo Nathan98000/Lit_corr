@@ -1,0 +1,46 @@
+# name: relationship_disclosure
+# label: Emotional disclosure
+# description: First-person statements that reveal feelings or confess something ("I feel", "I love you", "I'm scared", "to be honest").
+# notes: Mostly phrases, so this measure depends on dialogue and first-person narration.
+i feel
+i felt
+i'm feeling
+i am feeling
+i was feeling
+i love you
+i need you
+i miss you
+i missed you
+i'm scared
+i am scared
+i was scared
+i'm afraid
+i am afraid
+i was afraid
+i'm nervous
+i am nervous
+i was nervous
+i'm sorry
+i am sorry
+to be honest
+to tell you the truth
+the truth is
+honestly
+i have to tell you
+i need to tell you
+i want to tell you
+i've never told
+i never told
+i confess
+confessed
+confession
+admitted
+admitting
+my feelings
+your feelings
+i've always wanted
+i always wanted
+i care about you
+i trust you
+opened up
+open up

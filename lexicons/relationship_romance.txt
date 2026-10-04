@@ -1,0 +1,38 @@
+# name: relationship_romance
+# label: Romance
+# description: Courtship and romance vocabulary (romantic, falling in love, dates, weddings, candlelight).
+# notes: "date" on its own is excluded (calendar dates); only dating phrases are counted.
+romance
+romantic
+romantically
+fell in love
+falling in love
+fall in love
+falls in love
+in love
+first date
+on a date
+dinner date
+dating
+valentine
+valentines
+anniversary
+anniversaries
+wedding
+weddings
+honeymoon
+marry me
+engagement ring
+candlelight
+candlelit
+candles
+moonlight
+moonlit
+flowers
+roses
+soulmate
+soulmates
+soul mate
+courtship
+courting
+serenade*

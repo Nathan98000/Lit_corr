@@ -1,0 +1,37 @@
+# name: certainty
+# label: Certainty and assertion
+# description: Words and phrases of certainty, emphasis and absolute statements ("definitely", "of course", "always", "never").
+# notes: "sure" counts only in phrases ("I'm sure", "for sure") because "not sure" and "make sure" are common. "know" and "must" are not counted here (they are mental and modal verbs).
+certain
+certainly
+definitely
+definite
+absolutely
+absolute
+surely
+clearly
+obviously
+obvious
+undoubtedly
+doubtless
+of course
+without a doubt
+no doubt
+always
+never
+totally
+completely
+entirely
+exactly
+precisely
+indeed
+truly
+undeniabl*
+guarantee*
+confident
+confidently
+i'm sure
+i am sure
+i was sure
+for sure
+sure enough

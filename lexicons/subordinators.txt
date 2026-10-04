@@ -1,0 +1,26 @@
+# name: subordinators
+# label: Subordinating words
+# description: Words that usually introduce a dependent clause (because, although, while, which, who). Used as a rough sentence-complexity indicator.
+# notes: "that" and "as" are excluded because they have too many other uses.
+because
+although
+though
+while
+whilst
+since
+unless
+whereas
+whether
+if
+when
+whenever
+where
+wherever
+after
+before
+until
+once
+which
+who
+whom
+whose

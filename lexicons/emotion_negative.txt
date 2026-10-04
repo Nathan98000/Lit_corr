@@ -1,0 +1,45 @@
+# name: emotion_negative
+# label: Negative emotion (general)
+# description: General words of displeasure, distress, dislike or suffering.
+# notes: The "negative emotion" measure combines this list with the anxiety, anger, sadness, shame and jealousy lists. Physical pain words are in sensory_body.txt instead.
+terrible
+terribly
+awful
+awfully
+horrible
+horribly
+dreadful
+dreadfully
+hate
+hated
+hates
+hating
+hatred
+upset
+upsetting
+hurt
+hurts
+hurting
+hurtful
+miserable
+misery
+unhappy
+unhappiness
+disgust*
+disappoint*
+regret*
+bitter
+bitterly
+bitterness
+unpleasant
+suffer
+suffered
+suffering
+suffers
+cruel
+cruelly
+cruelty
+distress*
+anguish*
+torment*
+wretched

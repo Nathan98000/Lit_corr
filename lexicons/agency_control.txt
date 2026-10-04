@@ -1,0 +1,54 @@
+# name: agency_control
+# label: Control and restraint
+# description: Words about having, taking or losing control, restraint, permission and force (in control, tied, cuffs, permission, forced).
+# notes: "force" also appears figuratively ("forced a smile"). This is a description of the language used, not of any real person.
+control
+controlled
+controlling
+controls
+in control
+in charge
+take control
+took control
+taking control
+lost control
+losing control
+restrain
+restrained
+restraint
+restraints
+restrict
+restricted
+tied
+tied up
+rope
+ropes
+cuff
+cuffed
+cuffs
+handcuff
+handcuffed
+handcuffs
+shackle
+shackles
+shackled
+leash
+leashed
+blindfold
+blindfolded
+gagged
+pinned
+held down
+pinned down
+powerless
+permission
+allowed to
+not allowed
+forbid
+forbade
+forbidden
+force
+forced
+forcing
+forceful
+forcefully

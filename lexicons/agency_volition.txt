@@ -1,0 +1,49 @@
+# name: agency_volition
+# label: Agency (deciding and trying)
+# description: Words for choosing, planning, trying and achieving: characters acting on their own intentions.
+# notes: "want" is excluded: it is extremely frequent in this corpus and expresses desire rather than action.
+decide
+decided
+decides
+deciding
+decision
+decisions
+choose
+chose
+chosen
+chooses
+choosing
+choice
+choices
+plan
+planned
+plans
+planning
+intend
+intended
+intends
+intention
+intentions
+determined
+resolve
+resolved
+try
+tried
+tries
+trying
+attempt
+attempted
+attempts
+managed to
+manage to
+achieve
+achieved
+succeed
+succeeded
+insist
+insisted
+insisting
+initiate
+initiated
+pursue
+pursued

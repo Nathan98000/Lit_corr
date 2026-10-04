@@ -1,0 +1,52 @@
+# name: emotion_anxiety
+# label: Anxiety and fear
+# description: Words of fear, worry, nervousness and panic.
+# notes: "tension" is excluded because "sexual tension" is common in this corpus; physical trembling is in sensory_body.txt.
+afraid
+fear
+feared
+fearful
+fearfully
+fears
+fearing
+scared
+scary
+scare
+scares
+frighten*
+fright
+terrified
+terrify*
+terror
+anxious
+anxiously
+anxiety
+nervous
+nervously
+nervousness
+nerves
+worry
+worried
+worries
+worrying
+panic
+panicked
+panicking
+panicky
+dread
+dreaded
+dreading
+uneasy
+unease
+tense
+tensed
+apprehensi*
+alarmed
+jittery
+jitters
+paranoi*
+insecure
+insecurity
+insecurities
+timid
+timidly

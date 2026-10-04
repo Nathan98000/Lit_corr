@@ -1,0 +1,36 @@
+# name: profanity
+# label: Profanity
+# description: Common swear words and expletives (fuck, shit, damn, hell, bitch).
+# notes: "fuck" is also a sexual-action word, so the two measures overlap. Religious exclamations ("Jesus", "Christ") are not counted. No slurs are included.
+fuck
+fucks
+fucked
+fucking
+fuckin
+fucker
+fuckers
+motherfuck*
+shit
+shits
+shitty
+shitting
+bullshit
+damn
+damned
+dammit
+goddamn
+goddamned
+goddammit
+hell
+crap
+crappy
+bitch
+bitches
+bitching
+bastard
+bastards
+asshole
+assholes
+piss
+pissed
+pissing

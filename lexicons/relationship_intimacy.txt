@@ -1,0 +1,44 @@
+# name: relationship_intimacy
+# label: Intimacy (physical closeness and tenderness)
+# description: Words for affectionate physical closeness: kissing, hugging, cuddling, embracing, gentleness, holding someone in one's arms.
+# notes: Sexual acts are counted separately; "tender" is counted as affection.
+intimate
+intimately
+intimacy
+closeness
+embrace
+embraced
+embraces
+embracing
+cuddle
+cuddled
+cuddles
+cuddling
+snuggle
+snuggled
+snuggling
+hug
+hugged
+hugs
+hugging
+kiss
+kissed
+kisses
+kissing
+gentle
+gently
+gentleness
+nuzzle
+nuzzled
+nuzzling
+in his arms
+in her arms
+in my arms
+in your arms
+in their arms
+held me close
+held her close
+held him close
+holding me close
+holding her close
+holding him close

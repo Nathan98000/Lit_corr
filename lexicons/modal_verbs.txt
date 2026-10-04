@@ -1,0 +1,23 @@
+# name: modal_verbs
+# label: Modal verbs
+# description: Modal verbs of possibility, permission and obligation (can, could, may, might, must, should, will, would).
+# notes: Contractions such as "I'll" are counted as "will" by the analysis code. "may" and "will" can occasionally be a month or a name.
+can
+could
+may
+might
+must
+shall
+should
+will
+would
+ought
+can't
+cannot
+couldn't
+won't
+wouldn't
+shouldn't
+mustn't
+mightn't
+shan't

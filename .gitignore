@@ -1,0 +1,16 @@
+# Collected data never goes into git: it contains full story text and
+# per-story records. Only the aggregated Stage 2 site data will be committed.
+data/
+STOP
+
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+*.egg-info/
+.DS_Store
+data_demo/
+
+# Your own settings (contains your contact address). The tracked template is
+# config.example.toml: copy it to config.toml and fill in the contact.
+config.toml

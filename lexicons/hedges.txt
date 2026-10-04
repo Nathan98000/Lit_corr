@@ -1,0 +1,43 @@
+# name: hedges
+# label: Hedging words
+# description: Words and phrases that soften, qualify or make a statement less definite ("maybe", "seemed", "sort of").
+# notes: "could" is excluded (it mostly expresses ability in past-tense narration: "she could feel"); "kind of"/"sort of" are excluded (mostly "the kind of man"), the informal "kinda"/"sorta" are kept. "might" is also counted as a modal verb (a separate measure). "a little" alone is excluded because it is mostly about size or amount.
+maybe
+perhaps
+possibly
+probably
+apparently
+presumably
+supposedly
+seemingly
+seem
+seems
+seemed
+seeming
+might
+almost
+nearly
+somewhat
+slightly
+fairly
+a bit
+a little bit
+i guess
+i suppose
+i think
+likely
+unlikely
+roughly
+more or less
+in a way
+to some extent
+tend to
+tends to
+tended to
+mostly
+partly
+somehow
+appeared to
+appears to
+kinda
+sorta

@@ -1,0 +1,59 @@
+# name: sexual_anatomy
+# label: Anatomical sexual terms
+# description: Explicit or clinical words for sexual body parts.
+# notes: Ambiguous everyday body words are excluded on purpose (head, hole, lips, mouth, tongue, shaft, member, chest, bottom, package, prick, bush). "asshole" is counted only as profanity. "ass" is kept because in this corpus it is overwhelmingly anatomical, but it also occurs in insults.
+penis
+penises
+cock
+cocks
+cockhead
+dick
+dicks
+erection
+erections
+boner
+boners
+balls
+testicle*
+scrotum
+foreskin
+glans
+vagina*
+pussy
+pussies
+cunt
+cunts
+clit
+clits
+clitoris
+clitoral
+labia
+vulva*
+cervix
+g spot
+breast
+breasts
+tit
+tits
+titty
+titties
+boob
+boobs
+nipple*
+areola*
+ass
+asses
+arse
+butt
+butts
+buttock*
+butthole*
+anus
+rectum
+crotch
+groin
+genital*
+semen
+sperm
+pubic
+pubes

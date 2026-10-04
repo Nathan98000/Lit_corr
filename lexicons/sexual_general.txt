@@ -1,0 +1,34 @@
+# name: sexual_general
+# label: Other sexual vocabulary
+# description: General sexual words that are neither body parts nor acts (sex, naked, erotic, toys, lingerie).
+# notes: Arousal words (horny, aroused, lust) are measured separately as an emotion (emotion_arousal.txt). Clothing in general is not counted; only lingerie words are.
+sex
+sexual
+sexually
+sexuality
+sexy
+naked
+nude
+nudity
+erotic
+erotica
+erotically
+kinky
+foreplay
+porn
+porno
+pornographic
+pornography
+orgy
+orgies
+threesome*
+foursome*
+condom
+condoms
+lube
+lubricant
+vibrator
+vibrators
+dildo*
+lingerie
+panties

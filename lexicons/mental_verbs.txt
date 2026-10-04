@@ -1,0 +1,82 @@
+# name: mental_verbs
+# label: Mental-state verbs
+# description: Verbs of thinking, knowing, remembering, deciding and imagining.
+# notes: Together with perception verbs these form the "filter words" that writing guides say put distance between the reader and the experience ("she realized", "he noticed"). "supposed" is excluded ("supposed to").
+think
+thinks
+thinking
+thought
+thoughts
+know
+knows
+knew
+known
+knowing
+believe
+believed
+believes
+believing
+realize
+realized
+realizes
+realizing
+realise
+realised
+realises
+realising
+wonder
+wondered
+wonders
+wondering
+remember
+remembered
+remembers
+remembering
+recall
+recalled
+recalls
+recalling
+imagine
+imagined
+imagines
+imagining
+decide
+decided
+decides
+deciding
+understand
+understood
+understands
+understanding
+guess
+guessed
+guesses
+guessing
+suppose
+supposes
+supposing
+assume
+assumed
+assumes
+assuming
+consider
+considered
+considers
+considering
+forget
+forgot
+forgotten
+forgets
+forgetting
+recognize
+recognized
+recognizes
+recognise
+recognised
+expect
+expected
+expects
+expecting
+figure out
+figured out
+figuring out

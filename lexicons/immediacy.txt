@@ -1,0 +1,18 @@
+# name: immediacy
+# label: Immediacy words
+# description: Words that place the reader in the present moment or mark sudden events ("now", "here", "suddenly").
+# notes: Demonstratives ("this", "these") are excluded because they would dominate the count. Present-tense narration is measured separately.
+now
+right now
+here
+suddenly
+immediately
+instantly
+at once
+at this moment
+this moment
+today
+tonight
+just then
+in that instant
+in an instant

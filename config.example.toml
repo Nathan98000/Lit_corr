@@ -1,0 +1,95 @@
+# =============================================================================
+#  Literotica Correlations — collector configuration
+# =============================================================================
+#  Everything you are likely to change is in this file. The defaults are
+#  deliberately slow: one request at a time, roughly every 8–12 seconds, with
+#  hard hourly and daily caps. Please do not make them more aggressive.
+#
+#  Units: seconds unless stated otherwise.
+# =============================================================================
+
+[politeness]
+# --- Request pacing ----------------------------------------------------------
+base_delay_seconds      = 8.0    # minimum gap between any two requests (floor: 3.0)
+jitter_seconds          = 4.0    # plus a random 0..jitter extra wait on top of the gap
+
+# --- Hard caps (counted from the request log, so they survive restarts) -----
+max_requests_per_minute  = 6     # rolling 60-second window (ceiling: 15)
+max_requests_per_hour    = 300   # rolling 60-minute window
+max_requests_per_day     = 3000  # rolling 24-hour window
+max_requests_per_session = 1500  # one run of `collect`; run again later to continue
+
+# --- Timeouts and retries ------------------------------------------------------
+timeout_connect_seconds = 10
+timeout_read_seconds    = 30
+max_retries             = 3      # retries ONLY for timeouts / dropped connections / 500, 502, 503, 504
+backoff_base_seconds    = 60     # 1st retry waits ~60 s, then ~120 s, ~240 s ... (+ jitter)
+backoff_max_seconds     = 1800
+
+# --- What to do when the site pushes back --------------------------------------
+# (These can be made stricter but not switched off: limits are enforced in litcorr/settings.py.
+#  A robots.txt Crawl-delay, if ever set, is always respected.)
+pause_after_429_seconds   = 1800 # pause after a 429 without Retry-After (min 300); recorded so restarts wait too
+stop_after_429_count      = 2    # end the session after this many 429s within 24 hours (max 3)
+stop_after_403_count      = 1    # end the session at the first 403 (likely a block) (max 3)
+stop_after_error_streak   = 5    # end the session after N consecutive failed requests (max 20)
+cooldown_after_429_hours  = 6    # refuse to start a new session for this long after a 429 stop (min 1)
+cooldown_after_block_hours = 24  # ... and after a 403 / challenge page / redirect to login / refused connection (min 6)
+max_attempts_per_url      = 3    # across sessions; after this a URL is marked failed and left alone (max 5)
+
+[identity]
+# Identify honestly. This string is sent with every request. Replace the
+# contact placeholder with an email address or project URL so the site's
+# operators can reach you. The collector never pretends to be a web browser.
+user_agent = "LitCorrResearch/0.1 (non-commercial data-visualization project; one request at a time; contact: REPLACE_WITH_EMAIL_OR_URL)"
+# The token matched against robots.txt "User-agent:" groups.
+robots_token = "LitCorrResearch"
+
+[scope]
+base_url = "https://www.literotica.com"
+
+# Which Literotica story categories to collect. [] = every discovered story
+# category except those in exclude_categories. Use the site's URL slugs, e.g.
+# ["adult-romance", "loving-wives"]. `python -m litcorr categories` lists them.
+categories = []
+exclude_categories = [
+  "audio-sex-stories",          # audio recordings, little or no text
+  "illustrated-erotic-fiction", # mostly images
+  "non-english-stories",        # the text measures assume English
+]
+
+# How to choose which listing pages to read in each category. The listing is the
+# category's browse-by-title index (/c/<category>/A ... /Z): never the "hot"/"new" showcase.
+#   "spread" — read page 1 of every letter to learn how many pages exist, then a sample of
+#              at least 20 pages spread evenly across all letters (about 50 requests per category)
+#   "all"    — read every listing page (complete index; many more requests)
+listing_strategy = "spread"
+max_listing_pages_per_category = 0   # 0 = no extra cap
+
+# Full-text sample size. Stories are drawn at random (fixed seed) from the
+# listing pages that were read, and collected round-robin across categories,
+# so stopping early still leaves a balanced sample.
+max_stories_per_category = 300
+listing_oversample = 1.4             # read enough listing pages for 1.4x the target
+
+# Text collection: "full" fetches every page of a story; "first_page" fetches
+# only page 1 (much cheaper, but length and pacing measures become unavailable).
+text_mode = "full"
+max_pages_per_story = 20             # longer stories are flagged as truncated
+
+# Optional date filter, applied when the listing shows a date (0 = no limit).
+min_year = 0
+max_year = 0
+
+random_seed = 20261001
+
+[storage]
+data_dir = "data"                    # raw/, processed/, logs/, cache/ live here
+
+[analysis]
+min_words_for_text_measures = 100    # shorter texts get missing text measures + a QC flag
+min_views_for_rates         = 100    # ratios like favorites per 1,000 views need this many views
+window_tokens               = 500    # window size for moving-average vocabulary measures
+pacing_segments             = 5      # story split into this many equal parts for pacing
+min_words_for_pacing        = 1000
+workers                     = 0      # CPU processes for text analysis; 0 = automatic

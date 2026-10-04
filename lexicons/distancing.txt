@@ -1,0 +1,21 @@
+# name: distancing
+# label: Distancing phrases
+# description: Phrases that describe experience indirectly or through impressions ("it seemed", "as if", "it felt like").
+# notes: Partly overlaps with hedges ("seemed"); hedges qualify claims, these phrases put a layer between the reader and what happens.
+it seemed
+it seems
+seemed to
+seems to
+seemed like
+seems like
+as if
+as though
+it felt like
+felt like
+feels like
+it was like
+in a way
+somehow
+it appeared
+so to speak
+one might

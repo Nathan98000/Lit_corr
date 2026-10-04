@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "litcorr"
+version = "0.1.0"
+description = "Conservative Literotica metadata/text collector and descriptive text-measure pipeline"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "requests>=2.31",
+  "beautifulsoup4>=4.12",
+  "lxml>=5.0",
+  "protego>=0.3",
+  "pandas>=2.1",
+  "pyarrow>=14",
+  "numpy>=1.26",
+  "wordfreq>=3.0",
+  "tomli>=2.0; python_version < '3.11'",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=8"]
+
+[tool.setuptools.packages.find]
+include = ["litcorr*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

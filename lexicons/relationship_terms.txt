@@ -1,0 +1,39 @@
+# name: relationship_terms
+# label: Relationship language
+# description: Words naming committed or romantic relationships and their troubles (husband, wife, partner, marriage, divorce, affair, cheating).
+# notes: Family/kinship terms are not counted. "partner" can also mean a business partner. "ex" is not counted on its own, so "ex-wife" counts once (as "wife").
+husband
+husbands
+wife
+wives
+boyfriend
+boyfriends
+girlfriend
+girlfriends
+partner
+partners
+spouse
+spouses
+fiance
+fiancee
+fiancé
+fiancée
+lover
+lovers
+marriage
+marriages
+married
+marry
+marrying
+relationship
+relationships
+divorce
+divorced
+divorcing
+affair
+affairs
+cheat
+cheated
+cheating
+cheater
+monogam*

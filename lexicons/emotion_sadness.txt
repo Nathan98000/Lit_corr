@@ -1,0 +1,35 @@
+# name: emotion_sadness
+# label: Sadness
+# description: Words of sadness, crying, grief, loneliness and despair.
+# notes: "tear" is excluded (also means rip); "cry/cried/crying" are excluded because in this corpus they mostly mean "cried out" or tag dialogue ("she cried"); "alone", "miss" and "lost" are excluded as too ambiguous.
+sad
+sadly
+sadness
+saddened
+tears
+tearful
+tearfully
+sob
+sobbed
+sobbing
+sobs
+weep
+wept
+weeping
+grief
+grieve
+grieving
+grieved
+mourn*
+depress*
+heartbreak*
+heartbroken
+lonely
+loneliness
+sorrow*
+gloomy
+gloom
+despair*
+hopeless*
+melanchol*
+devastat*

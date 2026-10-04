@@ -1,0 +1,37 @@
+# name: uncertainty
+# label: Uncertainty
+# description: Words and phrases expressing not knowing, doubt, confusion or hesitation.
+# notes: "doubt" alone is excluded because of "no doubt" / "without a doubt" (certainty); "doubted", "doubts", "I doubt" are kept.
+uncertain
+uncertainty
+uncertainly
+unsure
+doubted
+doubtful
+doubts
+doubting
+confused
+confusing
+confusion
+unclear
+hesitate
+hesitated
+hesitant
+hesitantly
+hesitation
+hesitating
+not sure
+don't know
+didn't know
+do not know
+did not know
+no idea
+who knows
+puzzled
+puzzling
+perplexed
+bewildered
+undecided
+dunno
+ambiguous
+i doubt

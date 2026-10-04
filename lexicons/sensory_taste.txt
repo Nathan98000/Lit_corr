@@ -1,0 +1,36 @@
+# name: sensory_taste
+# label: Taste
+# description: Words about taste, flavour, eating and drinking sensations (taste, flavour, salty, savour, swallow).
+# notes: "sweet" is excluded (mostly used for people and affection); "bitter" is counted as an emotion; "lick" is counted as a sexual-action word.
+taste
+tasted
+tastes
+tasting
+tasty
+flavor
+flavors
+flavored
+flavour
+flavours
+flavoured
+salty
+salt
+sour
+savor
+savored
+savoring
+savour
+savoured
+savouring
+delicious
+tangy
+spicy
+sip
+sipped
+sipping
+swallow
+swallowed
+swallowing
+chew
+chewed
+chewing

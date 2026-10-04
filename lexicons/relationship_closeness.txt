@@ -1,0 +1,18 @@
+# name: relationship_closeness
+# label: Interpersonal closeness
+# description: Words for togetherness and connection between people (together, each other, side by side, bond, share).
+# notes: The pronouns we/us/our are not counted here (they are part of the narrative-perspective measures). Spatial words (near, beside, next to, close to, closer) are excluded because they mostly describe furniture and rooms, and "close" alone is usually the verb.
+together
+each other
+one another
+side by side
+bond
+bonded
+bonding
+connection
+connected
+share
+shared
+sharing
+both of us
+the two of us

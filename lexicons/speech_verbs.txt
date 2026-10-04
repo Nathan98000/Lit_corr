@@ -1,0 +1,48 @@
+# name: speech_verbs
+# label: Speech verbs (dialogue tags)
+# description: Verbs used to attribute dialogue (said, asked, whispered, moaned, exclaimed).
+# notes: Used for the "said share": how often plain "said/says" is used compared with all speech verbs.
+said
+says
+asked
+asks
+replied
+replies
+answered
+whispered
+murmured
+muttered
+moaned
+groaned
+gasped
+sighed
+shouted
+yelled
+screamed
+cried
+exclaimed
+growled
+purred
+giggled
+laughed
+chuckled
+snapped
+hissed
+breathed
+panted
+stammered
+stuttered
+begged
+pleaded
+demanded
+ordered
+commanded
+insisted
+explained
+added
+continued
+told
+called
+responded
+remarked
+teased

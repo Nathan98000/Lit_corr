@@ -1,0 +1,57 @@
+# name: sexual_action
+# label: Sexual-action terms
+# description: Words and phrases for sexual acts and sexual climax.
+# notes: Ambiguous verbs are excluded (came, come, ride, grind, stroke, screw, pound, mount, bang, blow); "thrust" is listed without "thruster(s)". "fuck" is counted here even when used as an intensifier, so profanity-heavy stories score higher; see also profanity.txt. "suck"/"lick" can be non-sexual (lick an ice cream) and are kept because they are mostly sexual in this corpus.
+fuck
+fucks
+fucked
+fucking
+fuckin
+suck
+sucked
+sucking
+lick
+licks
+licked
+licking
+cum
+cums
+cumming
+cummed
+ejaculat*
+orgasm*
+climax*
+masturbat*
+jerk off
+jerked off
+jerking off
+jerks off
+jack off
+jacked off
+jacking off
+fingering
+fingered
+penetrat*
+thrust
+thrusts
+thrusting
+hump
+humped
+humping
+blowjob*
+blow job
+blow jobs
+handjob*
+hand job
+hand jobs
+rimming
+deepthroat*
+cunnilingus
+fellatio
+intercourse
+make love
+made love
+making love
+makes love
+spank*
+anal

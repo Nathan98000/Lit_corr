@@ -1,0 +1,39 @@
+# name: sensory_smell
+# label: Smell
+# description: Words about smells and scents (scent, perfume, musk, sniff, aroma).
+smell
+smelled
+smelt
+smells
+smelling
+scent
+scented
+scents
+aroma
+aromas
+aromatic
+odor
+odors
+odour
+odours
+fragrance
+fragrant
+perfume
+perfumed
+musk
+musky
+sniff
+sniffed
+sniffing
+stink
+stank
+stinking
+stench
+whiff
+reek
+reeked
+reeking
+cologne
+inhale
+inhaled
+inhaling

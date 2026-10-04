@@ -1,0 +1,36 @@
+# name: emotion_anger
+# label: Anger
+# description: Words of anger, irritation, frustration and rage.
+# notes: "mad" is excluded (also "crazy" or "mad about you"); "growl" is excluded (often playful or sexual in this corpus).
+angry
+angrily
+anger
+angered
+furious
+furiously
+fury
+rage
+raged
+raging
+irritat*
+annoy*
+frustrat*
+hostile
+hostility
+resent*
+outrage
+outraged
+outrages
+livid
+seethe
+seething
+seethed
+pissed
+infuriat*
+enrag*
+temper
+glare
+glared
+glaring
+snarl*
+scowl*

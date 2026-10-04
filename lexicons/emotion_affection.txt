@@ -1,0 +1,33 @@
+# name: emotion_affection
+# label: Affection and love
+# description: Words of love, fondness, devotion and affectionate address (darling, sweetheart).
+# notes: "lovely" (a description) and "dear" (also "oh dear", letters) are excluded. Physical affection (kiss, hug) is measured as intimacy in relationship_intimacy.txt.
+love
+loved
+loves
+loving
+lovingly
+adore
+adored
+adores
+adoring
+adoration
+cherish*
+affection
+affections
+affectionate
+affectionately
+fond
+fondly
+fondness
+caring
+tender
+tenderly
+tenderness
+darling
+sweetheart
+sweetie
+babe
+devoted
+devotion
+beloved

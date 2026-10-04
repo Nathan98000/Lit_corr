@@ -1,0 +1,18 @@
+# name: emotion_jealousy
+# label: Jealousy and envy
+# description: Words of jealousy, envy, possessiveness and rivalry.
+# notes: A small list, so this measure is zero for most stories; scenario words (for example "cuckold") are not counted.
+jealous
+jealously
+jealousy
+envy
+envied
+envious
+enviously
+possessive
+possessively
+possessiveness
+covet*
+rival
+rivals
+rivalry

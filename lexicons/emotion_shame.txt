@@ -1,0 +1,38 @@
+# name: emotion_shame
+# label: Shame and embarrassment
+# description: Words of shame, embarrassment, guilt, humiliation and shyness (including blushing).
+# notes: "shameless" is excluded because it signals the absence of shame.
+shame
+ashamed
+shameful
+shamefully
+embarrass*
+humiliat*
+mortified
+mortifying
+blush
+blushed
+blushes
+blushing
+awkward
+awkwardly
+awkwardness
+sheepish*
+guilt
+guilty
+guiltily
+self conscious
+bashful*
+shy
+shyly
+shyness
+cringe
+cringed
+cringes
+cringing
+cringey
+disgrace*
+degrade
+degraded
+degrading
+degradation

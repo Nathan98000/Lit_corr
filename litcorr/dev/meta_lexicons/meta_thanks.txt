@@ -1,0 +1,10 @@
+# name: meta_thanks
+# label: Thanks and hopes (dev overlay only)
+# description: Used by the masked view to show thanks and wishes addressed to readers.
+thanks
+thank
+grateful
+appreciate*
+apologi*
+hope
+continued

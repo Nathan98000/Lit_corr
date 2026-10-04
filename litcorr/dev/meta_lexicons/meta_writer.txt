@@ -1,0 +1,24 @@
+# name: meta_writer
+# label: Words about writing and publishing (dev overlay only)
+# description: Used by the masked view to show author's-note paratext.
+author*
+writer*
+writing
+written
+wrote
+write
+editor*
+edited
+editing
+proofread*
+publish*
+posted
+posting
+submission*
+submitted
+contest
+entry
+literotica
+site
+category
+tags

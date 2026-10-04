@@ -167,8 +167,26 @@ hand. No machine-learning model is used.
 
 * **Words.** Runs of letters or digits; contractions ("don't") and possessives
   count as one word. Story length = number of such words.
-* **Paragraphs.** As laid out on the page. Lines made only of symbols (`* * *`)
-  are scene breaks, not paragraphs.
+* **Paragraphs.** As laid out on the page: every paragraph, list item, heading or
+  other block of text in the story body, in order. Lines with no letters or digits
+  (`* * *`, `-----`, `......`, `o0o`) are scene breaks, not paragraphs.
+* **Paratext.** Authors often open or close a story with notes to the reader
+  (an author's or editor's note, a disclaimer such as "all characters are
+  fictional", a dedication, thanks to an editor, "please vote", "thanks for
+  reading"), and put chapter headings or "To be continued" in the text. These
+  are recognised with plain rules (labels such as "Author's note:", typical
+  phrases, header lines such as "Tags:", the story's title repeated at the top,
+  a byline, and the scene-break line that usually closes an opening note) and
+  set aside: the text measures see only the story. They still count for "Has an
+  author's note" and "Asks readers to vote or comment", and for comparing our
+  word count with Literotica's. The rules only look at a run of paragraphs at
+  the start and end of the story (at most 15 paragraphs and 40% / 30% of the
+  words); inside the text, only headings, short end markers and paragraphs
+  labelled as an author's note are set aside. In hand checks of the opening and
+  closing paragraphs of stories not used to write the rules, 93% of story
+  openings and endings were handled correctly (95% CI 84–97%); every error was a
+  note that was missed, and no story text was set aside. Notes written without
+  any recognisable wording are the usual miss.
 * **Sentences.** A sentence ends at `.`, `!`, `?` or `…` followed by a space
   when the next word starts with a capital letter, a digit or an opening quote,
   so that `"Stop!" she said.` stays one sentence. That sentence still counts as

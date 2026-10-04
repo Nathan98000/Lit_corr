@@ -30,7 +30,8 @@ from .popularity import add_popularity
 from .schema import NEEDS_FULL_TEXT, ORDER, REG, write_dictionary_json
 from .settings import Analysis, Settings
 from .text.features import Measurer
-from .text.lexicons import load_all
+from .text import TEXT_PIPELINE_VERSION
+from .text.lexicons import lexicon_hash, load_all
 
 log = get_logger("analyze")
 
@@ -147,6 +148,7 @@ def build_processed(raw: pd.DataFrame, categories: pd.DataFrame | None, settings
     df.loc[truncated, full_text_cols] = np.nan
     df = attach_quality_flags(df, raw, settings)
     df = add_sampling_weights(df, categories)
+    df = df.drop(columns=[c for c in df.columns if c.startswith("_")])  # internal values used by the QC flags
     extra = [c for c in df.columns if c not in ORDER and c != "stats_observed_at"]
     if extra:
         log.warning("Columns not in the data dictionary (kept at the end): %s", extra)
@@ -227,6 +229,8 @@ def run_analyze(settings: Settings, workers: int = 0, write_csv: bool = True) ->
     started = [r["started_at"] for r in runs if r.get("started_at")]
     manifest = {
         "pipeline_version": __version__,
+        "text_pipeline_version": TEXT_PIPELINE_VERSION,
+        "lexicon_hash": lexicon_hash(),
         "processed_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "collection_first_session": datetime.fromtimestamp(min(started), timezone.utc).isoformat() if started else None,
         "collection_last_session": datetime.fromtimestamp(max(started), timezone.utc).isoformat() if started else None,

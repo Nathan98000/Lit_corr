@@ -1,10 +1,11 @@
 """`inspect_text`: the masked view of one story, with the pipeline's decisions overlaid.
 
-  python -m litcorr.dev.inspect_text STORY_KEY [--paras 0:40] [--no-overlay] [--lex LEX1,LEX2|all]
+  python -m litcorr.dev.inspect_text STORY_KEY [--paras 0:40] [--no-overlay] [--lex LEX1,LEX2|all] [--meta]
                                                [--names] [--flat] [--reveal-sentence N]
 
 Default output: one line per sentence, `[s<number> <terminal>]`, quoted spans between ⟪ ⟫, paragraph headers
-with word count, a dialogue flag and the pipeline's paragraph tags (scene break, author note, ...).
+with word count, a dialogue flag and the pipeline's paragraph tags (scene break, paratext label, author-note and
+feedback regex hits). Sentence numbers count story sentences only, as the measures do; paratext shows "s-".
 
 --reveal-sentence N prints exactly ONE sentence unmasked (capped at 50 words), and only to confirm a specific
 suspected bug. It refuses sentences that contain the story's title or author name. Never copy its output into a
@@ -20,38 +21,36 @@ import sys
 import pandas as pd
 
 from ..text.doc import TOKEN_RE, TextDoc
-from ..text.features import _AUTHOR_NOTE, _FEEDBACK, _SCENE_BREAK, Measurer
+from ..text.features import _AUTHOR_NOTE, _FEEDBACK, Measurer
 from ..text.lexicons import load_all
+from ..text.paratext import is_separator
+from ..text.prepare import Prepared, prepare
 from .common import load_texts, paragraphs_of, paths, settings
-from .mask import format_views, render, sentence_spans
+from .mask import format_views, meta_lexicons, render, sentence_spans
 
 REVEAL_MAX_WORDS = 50
 
 
-def pipeline_para_tags(paragraphs: list[str]) -> dict[int, list[str]]:
-    """The paragraph-level decisions the pipeline makes (as tags for the overlay)."""
+def pipeline_para_tags(prep: Prepared) -> dict[int, list[str]]:
+    """The paragraph-level decisions the pipeline makes, as tags for the overlay (original paragraph indices)."""
     tags: dict[int, list[str]] = {}
-    n = len(paragraphs)
-    head_tail = set(range(min(3, n))) | set(range(max(0, n - 3), n))
-    try:  # paratext detection added in Stage 1B (Phase 2); absent in the baseline pipeline
-        from ..text.paratext import classify_paragraphs
-    except ImportError:  # pragma: no cover
-        classify_paragraphs = None
-    for i, p in enumerate(paragraphs):
+    pt = prep.paratext
+    story = prep.story_index
+    head_tail = set(story[:3] + story[-3:])
+    for i, p in enumerate(prep.paragraphs):
         t = []
-        if _SCENE_BREAK.match(p.strip()):
+        if i in pt.labels:
+            where = "open" if i <= pt.lead_end else "close" if i >= pt.tail_start else "inside"
+            t.append(f"PARATEXT:{pt.labels[i]}/{where}")
+        elif is_separator(p):
             t.append("SCENE-BREAK")
         q = p.replace("’", "'")
-        window = "" if i in head_tail else " (outside head/tail: not counted)"
-        if _AUTHOR_NOTE.search(q):
-            t.append("author-note-regex" + window)
-        if _FEEDBACK.search(q):
-            t.append("feedback-regex" + window)
+        if _AUTHOR_NOTE.search(q) and (i in pt.labels or i in head_tail):
+            t.append("author-note-regex")
+        if _FEEDBACK.search(q) and (i in pt.labels or i in head_tail):
+            t.append("feedback-regex")
         if t:
             tags[i] = t
-    if classify_paragraphs is not None:
-        for i, label in classify_paragraphs(paragraphs).items():
-            tags.setdefault(i, []).append(f"PARATEXT:{label}")
     return tags
 
 
@@ -59,11 +58,12 @@ def _norm(s: str) -> str:
     return re.sub(r"[^a-z0-9]+", " ", s.lower()).strip()
 
 
-def reveal(paragraphs: list[str], n: int, forbidden: list[str]) -> str:
-    for pi, row in enumerate(sentence_spans(paragraphs)):
+def reveal(paragraphs: list[str], n: int, forbidden: list[str], prep: Prepared | None = None) -> str:
+    prep = prep or prepare(paragraphs)
+    for pi, row in sentence_spans(prep).items():
         for s, e, term, g in row:
             if g == n:
-                text = paragraphs[pi][s:e].strip()
+                text = prep.paragraphs[pi][s:e].strip()
                 low = _norm(text)
                 for f in forbidden:
                     if f and len(f) >= 3 and f in low:
@@ -83,46 +83,51 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--no-overlay", action="store_true")
     ap.add_argument("--flat", action="store_true", help="one line per paragraph instead of one per sentence")
     ap.add_argument("--lex", default=None, help="comma-separated lexicon names to show as [name], or 'all'")
+    ap.add_argument("--meta", action="store_true", help="show words about stories, readers and writing as [meta_*]")
     ap.add_argument("--names", action="store_true", help="mark the tokens counted as recurring names")
     ap.add_argument("--reveal-sentence", type=int, default=None)
     args = ap.parse_args(argv)
     s = settings()
-    cols = ("story_key", "text", "category_slug", "title", "author_name")
+    cols = ("story_key", "text", "category_slug", "title", "author_name", "description")
     raw = load_texts(s, [args.story_key], columns=cols)
     if raw.empty:
         print("no text for that story_key", file=sys.stderr)
         return 1
     row = raw.iloc[0]
-    paragraphs = paragraphs_of(row["text"])
+    title = row["title"] if isinstance(row["title"], str) else None
+    desc = row["description"] if isinstance(row["description"], str) else None
+    prep = prepare(paragraphs_of(row["text"]), title, desc)
     if args.reveal_sentence is not None:
         print("WARNING: unmasked story text below (one sentence). Use only to confirm a specific suspected bug; "
               "do not copy it into any file, test or document.", file=sys.stderr)
-        forbidden = [_norm(x) for x in (row.get("title"), row.get("author_name")) if isinstance(x, str)]
-        print(reveal(paragraphs, args.reveal_sentence, forbidden))
+        forbidden = [_norm(x) for x in (title, row.get("author_name")) if isinstance(x, str)]
+        print(reveal(prep.paragraphs, args.reveal_sentence, forbidden, prep))
         return 0
     lex = load_all()
-    lex_names = None
+    lex_names: list[str] = []
+    if args.meta:
+        meta = meta_lexicons()
+        lex = {**lex, **meta}
+        lex_names += sorted(meta)
     if args.lex:
         from ..text.features import LEXICON_MEASURES, SUPPORT_LEXICONS
 
-        lex_names = sorted(LEXICON_MEASURES | (SUPPORT_LEXICONS - {"stopwords"})) if args.lex == "all" \
-            else args.lex.split(",")
-    names = None
-    if args.names:
-        names = set(Measurer(lex).recurring_names(TextDoc(paragraphs))[0])
+        lex_names += (sorted(LEXICON_MEASURES | (SUPPORT_LEXICONS - {"stopwords"})) if args.lex == "all"
+                      else args.lex.split(","))
+    names = set(Measurer(lex).recurring_names(TextDoc(prep.story))[0]) if args.names else None
     rng = None
     if args.paras:
         a, b = args.paras.split(":")
-        rng = (int(a or 0), int(b) if b else len(paragraphs))
+        rng = (int(a or 0), int(b) if b else len(prep.paragraphs))
     feats = pd.read_parquet(paths(s).features, columns=["story_key", "pov_class", "narr_tense_class",
                                                         "qc_quote_style", "story_words"])
     f = feats[feats["story_key"] == args.story_key]
     info = f.iloc[0].to_dict() if len(f) else {}
-    print(f"story {args.story_key} | category {row['category_slug']} | {len(paragraphs)} paragraphs | "
-          f"words {info.get('story_words')} | quotes {info.get('qc_quote_style')} | POV {info.get('pov_class')} | "
-          f"tense {info.get('narr_tense_class')}")
-    views = render(paragraphs, lexicons=lex, overlay=not args.no_overlay, lex_names=lex_names, name_tokens=names,
-                   para_tags=pipeline_para_tags(paragraphs), paras=rng)
+    print(f"story {args.story_key} | category {row['category_slug']} | {len(prep.paragraphs)} paragraphs "
+          f"({len(prep.paratext.labels)} paratext) | words {info.get('story_words')} | quotes "
+          f"{info.get('qc_quote_style')} | POV {info.get('pov_class')} | tense {info.get('narr_tense_class')}")
+    views = render(prep.paragraphs, lexicons=lex, overlay=not args.no_overlay, lex_names=lex_names or None,
+                   name_tokens=names, para_tags=pipeline_para_tags(prep), paras=rng, prep=prep)
     print(format_views(views, per_sentence=not args.flat and not args.no_overlay))
     return 0
 

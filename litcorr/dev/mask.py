@@ -10,24 +10,36 @@ Masking (what stays visible):
 Overlays (the pipeline's decisions, never the words): paragraph numbers, sentence boundaries and terminal type,
 quoted spans (⟪ ⟫), scene breaks, paratext detection (author notes, feedback requests, headings, "to be
 continued"), and the tokens counted as recurring names ([name]).
+
+Everything is computed on the same view the measures use (``litcorr.text.prepare``): normalised paragraphs, with
+sentences numbered over the story paragraphs only. Paratext paragraphs are shown with sentence number "s-".
 """
 
 from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
+from pathlib import Path
 
 import numpy as np
 
-from ..text.doc import TOKEN_RE, quote_mode, quote_spans, split_sentences
+from ..text.doc import TOKEN_RE, TextDoc, quote_mode, quote_spans, split_sentences
 from ..text.features import FEM, FP_PLUR, FP_SING, MASC, NEUTRAL, SECOND
-from ..text.lexicons import Lexicon, load_all, norm_token
+from ..text.lexicons import Lexicon, load_all, match, norm_token
+from ..text.prepare import Prepared, prepare
 
+META_DIR = Path(__file__).resolve().parent / "meta_lexicons"
 AUXILIARIES = frozenset(
     "am is are was were be been being have has had having do does did isn't aren't wasn't weren't hasn't haven't "
     "hadn't doesn't don't didn't ain't get gets got gotten getting".split())
 _ENDINGS = ("ing", "ed", "s")
 _CONTRACTION = re.compile(r"(['’](?:s|re|ve|d|ll|m|t)|n['’]t)$", re.I)
+
+
+def meta_lexicons() -> dict[str, Lexicon]:
+    """Dev-only word lists about stories, readers and writing, shown as [meta_*] in the masked view so that
+    author's notes can be recognised without reading them."""
+    return load_all(META_DIR)
 
 
 def visible_words(lex: dict[str, Lexicon] | None = None) -> frozenset[str]:
@@ -79,56 +91,57 @@ class ParaView:
     has_dialogue: bool = False
 
 
-def sentence_spans(paragraphs: list[str]) -> list[list[tuple[int, int, str, int | None]]]:
-    """Per paragraph: (start, end, terminal, global sentence number or None if the span has no words), numbered
-    exactly as TextDoc numbers its sentences (spans without any word are dropped there)."""
-    out, g = [], 0
-    for p in paragraphs:
+def sentence_spans(prep: Prepared) -> dict[int, list[tuple[int, int, str, int | None]]]:
+    """For every paragraph index: (start, end, terminal, sentence number or None). Sentences are numbered over
+    the story paragraphs exactly as TextDoc numbers them (spans without any word are dropped there); paratext
+    paragraphs get None."""
+    out, g = {}, 0
+    story = set(prep.story_index)
+    for i, p in enumerate(prep.paragraphs):
         row = []
         for s, e, term in split_sentences(p):
-            if TOKEN_RE.search(p, s, e) is not None:
+            if i in story and TOKEN_RE.search(p, s, e) is not None:
                 row.append((s, e, term, g))
                 g += 1
             else:
                 row.append((s, e, term, None))
-        out.append(row)
+        out[i] = row
     return out
 
 
-def lexicon_labels(paragraphs: list[str], lexicons: dict[str, Lexicon], names: list[str]) -> list[dict[int, str]]:
-    """For each paragraph, token start offset -> '[lexicon]' for every token matched by one of ``names``.
-    Single words and the first word of a phrase are labelled (as the pipeline counts them)."""
-    from ..text.doc import TextDoc
-    from ..text.lexicons import match
-
-    doc = TextDoc(paragraphs)
+def lexicon_labels(prep: Prepared, lexicons: dict[str, Lexicon], names: list[str]) -> dict[int, dict[int, str]]:
+    """Paragraph index -> {token start offset -> '[lexicon]'} for every token matched in the story paragraphs
+    (single words, and the first word of a phrase, as the measures count them)."""
+    doc = TextDoc(prep.story)
     hits = {n: match(lexicons[n], doc.vocab, doc.type_ids, doc.para_idx, doc.positions_by_type()) for n in names}
-    starts: list[tuple[int, int]] = []  # (paragraph, char offset) for each token, in token order
-    for pi, p in enumerate(paragraphs):
-        starts.extend((pi, m.start()) for m in TOKEN_RE.finditer(p))
-    out: list[dict[int, str]] = [{} for _ in paragraphs]
-    for i in range(doc.n):
-        hit = [n for n in names if hits[n][i]]
+    starts: list[tuple[int, int]] = []
+    for i in prep.story_index:
+        starts.extend((i, m.start()) for m in TOKEN_RE.finditer(prep.paragraphs[i]))
+    out: dict[int, dict[int, str]] = {}
+    for t in range(doc.n):
+        hit = [n for n in names if hits[n][t]]
         if hit:
-            pi, off = starts[i]
-            out[pi][off] = "[" + "|".join(hit) + "]"
+            pi, off = starts[t]
+            out.setdefault(pi, {})[off] = "[" + "|".join(hit) + "]"
     return out
 
 
 def render(paragraphs: list[str], *, lexicons: dict[str, Lexicon] | None = None, overlay: bool = True,
            lex_names: list[str] | None = None, name_tokens: set[str] | None = None,
            para_tags: dict[int, list[str]] | None = None, paras: tuple[int, int] | None = None,
-           endings: bool = True) -> list[ParaView]:
+           endings: bool = True, title: str | None = None, description: str | None = None,
+           prep: Prepared | None = None) -> list[ParaView]:
     lexicons = lexicons if lexicons is not None else load_all()
     visible = visible_words(lexicons)
-    mode = quote_mode(paragraphs)
-    sents = sentence_spans(paragraphs)
-    labels = lexicon_labels(paragraphs, lexicons, lex_names) if lex_names else [{} for _ in paragraphs]
-    lo, hi = paras if paras else (0, len(paragraphs))
+    prep = prep or prepare(paragraphs, title, description)
+    mode = quote_mode(prep.story)
+    sents = sentence_spans(prep)
+    labels = lexicon_labels(prep, lexicons, lex_names) if lex_names else {}
+    lo, hi = paras if paras else (0, len(prep.paragraphs))
     views = []
-    for pi in range(max(0, lo), min(hi, len(paragraphs))):
-        p = paragraphs[pi]
-        rep = dict(labels[pi])
+    for pi in range(max(0, lo), min(hi, len(prep.paragraphs))):
+        p = prep.paragraphs[pi]
+        rep = dict(labels.get(pi, {}))
         if name_tokens:
             for m in TOKEN_RE.finditer(p):
                 base = m.group(0)[:-2] if m.group(0).endswith(("'s", "’s")) else m.group(0)
@@ -142,17 +155,12 @@ def render(paragraphs: list[str], *, lexicons: dict[str, Lexicon] | None = None,
             v.text = mask_text(p, visible, endings, rep)
             views.append(v)
             continue
-        # Insert quote markers into the raw paragraph by offset, then mask each sentence piece separately.
         marks: dict[int, str] = {}
-        for s, e in spans:
+        for s, e in spans:  # quote markers are inserted by offset, then each sentence piece is masked
             marks[s] = marks.get(s, "") + "⟪"
             marks[e] = "⟫" + marks.get(e, "")
         for s, e, term, g in sents[pi]:
-            piece = _with_marks(p, s, e, marks, visible, endings, rep)
-            if g is None:
-                v.sentences.append((-1, term, piece))
-            else:
-                v.sentences.append((g, term, piece))
+            v.sentences.append((-1 if g is None else g, term, _with_marks(p, s, e, marks, visible, endings, rep)))
         v.text = " ".join(x[2] for x in v.sentences)
         views.append(v)
     return views

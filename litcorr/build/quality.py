@@ -49,7 +49,8 @@ FLAG_DESCRIPTIONS = {
     "date_out_of_range": "Publication date before 1998 or after the statistics were recorded.",
     "category_differs_from_listing": "The story page names a different category than the listing it was found on.",
     "title_differs_from_listing": "The story page title differs from the listing title.",
-    "site_word_count_mismatch": "Our word count differs from Literotica's by more than 25% (text may be incomplete).",
+    "site_word_count_mismatch": "Our word count of the collected text (author's notes included) differs from "
+                                "Literotica's by more than 25% (text may be incomplete).",
     "possibly_not_english": "Few common English function words; the text may not be English.",
     "dialogue_quotes_unbalanced": "Quotation marks are mostly unbalanced; dialogue measures less reliable.",
     "duplicate_text": "Identical text to another story in the dataset.",
@@ -73,11 +74,16 @@ def attach_quality_flags(df: pd.DataFrame, raw: pd.DataFrame, settings: Settings
 
     status = col(r, "collection_status").fillna("unknown").astype(str)
     has_text = df["has_text"].fillna(False).astype(bool)
-    words = pd.to_numeric(df.get("story_words"), errors="coerce")
+    # Words in the collected text (paratext included). story_words cannot be used here: it is blank for
+    # incomplete texts, and it leaves out author's notes, which the site's own word count includes.
+    words = pd.to_numeric(col(df, "_words_incl_paratext"), errors="coerce").fillna(
+        pd.to_numeric(df.get("story_words"), errors="coerce"))
     flags["no_text"] = ~has_text
-    flags["text_truncated"] = df["text_truncated"].fillna(False).astype(bool) | (
-        pd.to_numeric(col(r, "n_pages_fetched"), errors="coerce") < pd.to_numeric(col(r, "n_pages_expected"), errors="coerce"))
-    flags["text_too_short"] = has_text & (words.fillna(0) < settings.analysis.min_words_for_text_measures)
+    flags["text_truncated"] = has_text & (df["text_truncated"].fillna(False).astype(bool) | (
+        pd.to_numeric(col(r, "n_pages_fetched"), errors="coerce") < pd.to_numeric(col(r, "n_pages_expected"), errors="coerce")))
+    # The measures decide "too short" themselves (story words, before incomplete texts are blanked).
+    too_short = col(df, "qc_text_too_short").map(lambda x: x if isinstance(x, (bool, np.bool_)) else None)
+    flags["text_too_short"] = has_text & too_short.fillna(True).astype(bool)
     flags["very_long_text"] = words > VERY_LONG_WORDS
     flags["missing_title"] = col(r, "title").isna() & has_text
     flags["missing_category"] = df["category_slug"].isna()

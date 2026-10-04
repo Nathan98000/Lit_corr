@@ -34,11 +34,13 @@ import numpy as np
 import pandas as pd
 
 from ..text.doc import TOKEN_RE, TextDoc, quote_mode, quote_spans
-from ..text.features import _SCENE_BREAK, FP_SING, SECOND, MASC, FEM, NEUTRAL, PAST_FORMS, PRESENT_FORMS, Measurer
+from ..text.features import FEM, FP_SING, MASC, NEUTRAL, PAST_FORMS, PRESENT_FORMS, SECOND, Measurer
+from ..text.paratext import is_separator
+from ..text.prepare import prepare
 from ..text.lexicons import load_all
 from .common import dev_dir, load_features, load_texts, paragraphs_of, settings
 from .inspect_text import pipeline_para_tags
-from .mask import format_views, render
+from .mask import format_views, meta_lexicons, render
 from .review_sample import load_sample
 
 CLASSIFIERS = ("quote_mode", "dialogue_spans", "sentences", "scene_breaks", "paratext", "pov", "tense", "commands")
@@ -84,38 +86,48 @@ def make_items(classifier: str, stories: pd.DataFrame, feats: pd.DataFrame, n: i
         return items
     per_story = max(1, math.ceil(n / max(1, len(rows))))
     for r in rows:
-        paras = paragraphs_of(r.text)
+        prep = prepare(paragraphs_of(r.text), getattr(r, "title", None), getattr(r, "description", None))
+        paras = prep.paragraphs
+        story = prep.story_index
         cands: list[tuple[str, str]] = []
         if classifier == "dialogue_spans":
-            mode = quote_mode(paras)
-            for i, p in enumerate(paras):
+            mode = quote_mode(prep.story)
+            for i in story:
+                p = paras[i]
                 if any(c in p for c in "\"“”‘’'") and (mode != "none" or '"' in p or "“" in p):
                     spans, bal = quote_spans(p, mode)
                     cands.append((f"p{i}", f"{len(spans)} span(s), mode {mode}{'' if bal else ', unbalanced'}"))
         elif classifier == "sentences":
-            for i, p in enumerate(paras):
-                if _CANDIDATE_END.search(p):
+            for i in story:
+                if _CANDIDATE_END.search(paras[i]):
                     cands.append((f"p{i}", "split as shown"))
         elif classifier == "scene_breaks":
-            for i, p in enumerate(paras):
-                q = p.strip()
-                detected = bool(_SCENE_BREAK.match(q))
+            for i in story:
+                q = paras[i].strip()
+                detected = is_separator(q)
                 ntok = len(TOKEN_RE.findall(q))
                 if detected:
                     cands.append((f"p{i}", "scene break"))
                 elif ntok == 0 or (ntok <= 3 and not re.search(r"[.!?\"”]$", q)):
                     cands.append((f"p{i}", "not a scene break"))
         elif classifier == "paratext":
-            tags = pipeline_para_tags(paras)
-            for i in sorted(set(range(min(2, len(paras)))) | set(range(max(0, len(paras) - 2), len(paras)))):
-                lab = [t.split(":", 1)[1] for t in tags.get(i, []) if t.startswith("PARATEXT:")]
-                cands.append((f"p{i}", lab[0] if lab else "story text"))
+            pt = prep.paratext
+            lead = [pt.labels[i] for i in range(pt.lead_end + 1)]
+            tail = [pt.labels[i] for i in range(pt.tail_start, len(paras))]
+            items.append({"story_key": r.story_key, "locator": "open",
+                          "decision": f"p0-p{pt.lead_end} " + ",".join(lead) if lead else "none"})
+            items.append({"story_key": r.story_key, "locator": "close",
+                          "decision": f"p{pt.tail_start}-p{len(paras) - 1} " + ",".join(tail) if tail else "none"})
+            if len(items) >= n:
+                break
+            continue
         elif classifier == "commands":
-            doc = TextDoc(paras)
+            doc = TextDoc(prep.story)
             m = Measurer()
             flagged = set(_command_segments(m, doc))
             for k, (first, count, has_q) in enumerate(doc.segment_info):
-                cands.append((f"seg{k}@p{int(doc.para_idx[first])}", "command" if k in flagged else "not a command"))
+                orig = story[int(doc.para_idx[first])]
+                cands.append((f"seg{k}@p{orig}", "command" if k in flagged else "not a command"))
         rng.shuffle(cands)
         for loc, dec in cands[:per_story]:
             items.append({"story_key": r.story_key, "locator": loc, "decision": dec})
@@ -146,13 +158,15 @@ def _command_segments(m: Measurer, doc: TextDoc) -> list[int]:
 
 
 # ------------------------------------------------------------------------------------------- show
-def show_item(row: pd.Series, text: str, feats_row: pd.Series, lex) -> str:
-    paras = paragraphs_of(text)
+def show_item(row: pd.Series, text: str, feats_row: pd.Series, lex, title: str | None = None,
+              description: str | None = None) -> str:
+    prep = prepare(paragraphs_of(text), title, description)
+    paras = prep.paragraphs
     c = row["classifier"]
     head = f"#{row['item']} [{c}] story {row['story_key']} {row['locator']} -> pipeline: {row['decision']}"
-    tags = pipeline_para_tags(paras)
+    tags = pipeline_para_tags(prep)
     if c in ("pov", "tense"):
-        doc = TextDoc(paras)
+        doc = TextDoc(prep.story)
         narr = ~doc.in_quote
         toks = np.array(doc.tokens, dtype=object)
         nt = toks[narr]
@@ -163,25 +177,36 @@ def show_item(row: pd.Series, text: str, feats_row: pd.Series, lex) -> str:
                 f"; pov_first_person_share {feats_row.get('pov_first_person_share'):.2f}"
                 f"; present share {feats_row.get('narr_present_tense_share')}")
         # three narration-heavy paragraphs spread through the story
-        words = np.array([len(TOKEN_RE.findall(p)) for p in paras])
-        order = [i for i in np.argsort(-words) if words[i] >= 25][:12]
+        words = np.array([len(TOKEN_RE.findall(paras[i])) for i in prep.story_index])
+        order = [prep.story_index[i] for i in np.argsort(-words) if words[i] >= 25][:12]
         pick = sorted(order[:: max(1, len(order) // 3)][:3])
-        body = "\n".join(format_views(render(paras, lexicons=lex, overlay=False, paras=(i, i + 1)), False)
+        body = "\n".join(format_views(render(paras, lexicons=lex, overlay=False, paras=(i, i + 1), prep=prep), False)
                          for i in pick)
         return f"{head}\n{info}\n{body}"
     if c == "quote_mode":
-        text_all = "\n".join(paras)
+        text_all = "\n".join(prep.story)
         info = "   counts: " + ", ".join(f"{q!r} {text_all.count(q)}" for q in ['"', "“", "”", "'", "‘", "’"])
-        quoted = [i for i, p in enumerate(paras) if any(ch in p for ch in "\"“”‘’")]
+        quoted = [i for i in prep.story_index if any(ch in paras[i] for ch in "\"“”‘’")]
         pick = quoted[:: max(1, len(quoted) // 2)][:2] if quoted else list(range(min(2, len(paras))))
-        body = "\n".join(format_views(render(paras, lexicons=lex, paras=(i, i + 1), para_tags=tags), False)
-                         for i in pick)
+        body = "\n".join(format_views(render(paras, lexicons=lex, paras=(i, i + 1), para_tags=tags, prep=prep),
+                                       False) for i in pick)
         return f"{head}\n{info}\n{body}"
+    if c == "paratext":
+        meta = meta_lexicons()
+        lx = {**lex, **meta}
+        pt = prep.paratext
+        n = len(paras)
+        if row["locator"] == "open":
+            lo, hi = 0, min(n, max(pt.lead_end + 3, 6))
+        else:
+            lo, hi = max(0, min(pt.tail_start - 2, n - 5)), n
+        views = render(paras, lexicons=lx, paras=(lo, hi), para_tags=tags, lex_names=sorted(meta), prep=prep)
+        return f"{head}  ({n} paragraphs)\n{format_views(views, per_sentence=False)}"
     m = re.search(r"p(\d+)", row["locator"])
     i = int(m.group(1)) if m else 0
     lo, hi = (i - 1, i + 2) if c in ("scene_breaks", "paratext") else (i, i + 1)
     lex_names = ["imperative_verbs"] if c == "commands" else None
-    views = render(paras, lexicons=lex, paras=(max(0, lo), hi), para_tags=tags, lex_names=lex_names)
+    views = render(paras, lexicons=lex, paras=(max(0, lo), hi), para_tags=tags, lex_names=lex_names, prep=prep)
     return f"{head}\n{format_views(views, per_sentence=(c != 'scene_breaks'))}"
 
 
@@ -233,7 +258,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.cmd == "make":
         smp = load_sample(args.sample)
         feats = load_features(s)
-        texts = load_texts(s, list(smp["story_key"]))
+        texts = load_texts(s, list(smp["story_key"]), columns=("story_key", "text", "title", "description"))
         stories = smp.merge(texts, on="story_key")
         if args.strata_col:  # interleave strata so every class is represented
             vals = feats.set_index("story_key")[args.strata_col].astype(str)
@@ -258,7 +283,8 @@ def main(argv: list[str] | None = None) -> int:
         print(f"{len(df)} items -> {sheet_path(args.sheet)}")
     elif args.cmd == "show":
         d = _load(args.sheet)
-        texts = load_texts(s, list(d["story_key"].unique())).set_index("story_key")["text"]
+        tx = load_texts(s, list(d["story_key"].unique()),
+                        columns=("story_key", "text", "title", "description")).set_index("story_key")
         feats = load_features(s).set_index("story_key")
         lex = load_all()
         for i in _parse_items(args.items, len(d)):
@@ -266,7 +292,8 @@ def main(argv: list[str] | None = None) -> int:
             if row.empty:
                 continue
             row = row.iloc[0]
-            print(show_item(row, texts[row["story_key"]], feats.loc[row["story_key"]], lex))
+            t = tx.loc[row["story_key"]]
+            print(show_item(row, t["text"], feats.loc[row["story_key"]], lex, t["title"], t["description"]))
             print()
     elif args.cmd == "judge":
         d = _load(args.sheet)

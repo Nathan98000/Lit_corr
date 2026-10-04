@@ -191,8 +191,26 @@ hand. No machine-learning model is used.
 
 * **Words.** Runs of letters or digits; contractions ("don't") and possessives
   count as one word. Story length = number of such words.
-* **Paragraphs.** As laid out on the page. Lines made only of symbols (`* * *`)
-  are scene breaks, not paragraphs.
+* **Paragraphs.** As laid out on the page: every paragraph, list item, heading or
+  other block of text in the story body, in order. Lines with no letters or digits
+  (`* * *`, `-----`, `......`, `o0o`) are scene breaks, not paragraphs.
+* **Paratext.** Authors often open or close a story with notes to the reader
+  (an author's or editor's note, a disclaimer such as "all characters are
+  fictional", a dedication, thanks to an editor, "please vote", "thanks for
+  reading"), and put chapter headings or "To be continued" in the text. These
+  are recognised with plain rules (labels such as "Author's note:", typical
+  phrases, header lines such as "Tags:", the story's title repeated at the top,
+  a byline, and the scene-break line that usually closes an opening note) and
+  set aside: the text measures see only the story. They still count for "Has an
+  author's note" and "Asks readers to vote or comment", and for comparing our
+  word count with Literotica's. The rules only look at a run of paragraphs at
+  the start and end of the story (at most 15 paragraphs and 40% / 30% of the
+  words); inside the text, only headings, short end markers and paragraphs
+  labelled as an author's note are set aside. In hand checks of the opening and
+  closing paragraphs of stories not used to write the rules, 93% of story
+  openings and endings were handled correctly (95% CI 84–97%); every error was a
+  note that was missed, and no story text was set aside. Notes written without
+  any recognisable wording are the usual miss.
 * **Sentences.** A sentence ends at `.`, `!`, `?` or `…` followed by a space
   when the next word starts with a capital letter, a digit or an opening quote,
   so that `"Stop!" she said.` stays one sentence. That sentence still counts as
@@ -224,20 +242,20 @@ hand. No machine-learning model is used.
 
 | Variable | What it measures | Caveat |
 |---|---|---|
-| **Word count** (`story_words`) | Number of words in the collected text (letters/digits, contractions count as one word). | Counted on the collected pages; long stories beyond the page cap are flagged as truncated. Blank when the collected text is incomplete (text_truncated). Use site_words_count for length then. |
-| **Character count** (`story_chars`) | Number of characters in the text. | Blank when the collected text is incomplete (text_truncated). |
+| **Word count** (`story_words`) | Number of words in the story text (letters/digits, contractions count as one word). Author's notes, headings and other paratext are not counted (see Methodology). | Counted on the collected pages; long stories beyond the page cap are flagged as truncated. Blank when the collected text is incomplete (text_truncated). Use site_words_count for length then. |
+| **Character count** (`story_chars`) | Number of characters in the story text (paratext excluded). | Blank when the collected text is incomplete (text_truncated). |
 | **Sentence count** (`story_sentences`) | Number of sentences (see Methodology). | Blank when the collected text is incomplete (text_truncated). |
-| **Paragraph count** (`story_paragraphs`) | Number of non-empty paragraphs. | Blank when the collected text is incomplete (text_truncated). |
+| **Paragraph count** (`story_paragraphs`) | Number of non-empty story paragraphs (paratext excluded). | Blank when the collected text is incomplete (text_truncated). |
 | **Average sentence length** (`story_mean_sentence_words`) | Average number of words per sentence. |  |
 | **Median sentence length** (`story_median_sentence_words`) | Median number of words per sentence. |  |
 | **Average paragraph length** (`story_mean_paragraph_words`) | Average number of words per paragraph. |  |
 | **Median paragraph length** (`story_median_paragraph_words`) | Median number of words per paragraph. |  |
 | **One-sentence paragraphs** (`story_one_sentence_paragraph_share`) | Share of paragraphs that consist of a single sentence. |  |
 | **Very long paragraphs ('walls of text')** (`story_long_paragraph_share`) | Share of paragraphs longer than 150 words. |  |
-| **Scene breaks** (`story_scene_breaks`) | Number of scene-break lines (paragraphs made only of symbols such as '* * *'). | Blank when the collected text is incomplete (text_truncated). |
+| **Scene breaks** (`story_scene_breaks`) | Number of scene-break lines inside the story: paragraphs with no letters or digits ('* * *', '-----', '......', 'o0o'). Lines that open or close the story are not counted. | Blank when the collected text is incomplete (text_truncated). |
 | **Scene breaks per 1,000 words** (`story_scene_breaks_per_1k`) | Scene-break lines per 1,000 words. |  |
-| **Has an author's note** (`story_has_author_note`) | Whether the first or last three paragraphs contain an author's/editor's note or disclaimer. | Blank when the collected text is incomplete (text_truncated). |
-| **Asks readers to vote or comment** (`story_requests_feedback`) | Whether the first or last three paragraphs ask readers to vote, rate, comment or give feedback. | Blank when the collected text is incomplete (text_truncated). |
+| **Has an author's note** (`story_has_author_note`) | Whether the story opens or closes with an author's or editor's note, disclaimer, dedication, copyright line or words to readers, or has a paragraph labelled as an author's note (see Methodology, 'Paratext'). | Rule-based; misses notes that use no recognisable wording (about 1 in 3 in a hand check). Blank when the collected text is incomplete (text_truncated). |
+| **Asks readers to vote or comment** (`story_requests_feedback`) | Whether the author's notes, or the first or last three story paragraphs, ask readers to vote, rate, comment or give feedback. | Blank when the collected text is incomplete (text_truncated). |
 
 | Variable | What it measures | Caveat |
 |---|---|---|
@@ -383,8 +401,8 @@ characters' identities or readers.
 |---|---|---|
 | **Exclamation marks** (`punct_exclamation_per_1k`) | Exclamation marks per 1,000 words. |  |
 | **Question marks** (`punct_question_per_1k`) | Question marks per 1,000 words. |  |
-| **Ellipses** (`punct_ellipsis_per_1k`) | Ellipses ('…' or '...') per 1,000 words. |  |
-| **Dashes** (`punct_dash_per_1k`) | Em dashes ('—' or '--') per 1,000 words. |  |
+| **Ellipses** (`punct_ellipsis_per_1k`) | Ellipses ('…' or '...') per 1,000 words. Lines made only of dots are scene breaks, not ellipses. |  |
+| **Dashes** (`punct_dash_per_1k`) | Dashes per 1,000 words: em dashes ('—'), runs of hyphens ('--'), and a hyphen or en dash with a space on each side used as a dash ('she paused - then left'). Hyphens inside words are not dashes. |  |
 | **Semicolons** (`punct_semicolon_per_1k`) | Semicolons per 1,000 words. |  |
 | **Colons** (`punct_colon_per_1k`) | Colons per 1,000 words. |  |
 | **Commas** (`punct_comma_per_1k`) | Commas per 1,000 words. |  |
@@ -473,7 +491,7 @@ before it.
 | **Plain 'said' in dialogue tags** (`style_said_share`) | 'said'/'says' as a share of all speech verbs (said, asked, whispered, moaned…). | Blank when fewer than 5 speech verbs occur. |
 | **Physical action verbs** (`style_action_verbs_per_1k`) | Verbs of physical movement (grab, pull, turn, reach…) per 1,000 words. |  |
 | **Descriptive words** (`style_descriptive_words_per_1k`) | Descriptive adjectives and material words (beautiful, tall, slender, satin…) per 1,000 words. |  |
-| **Italics** (`style_italics_per_1k`) | Italicised passages per 1,000 words. |  |
+| **Italics** (`style_italics_per_1k`) | Italicised passages per 1,000 words. | Italics are counted over the whole page body, author's notes included. |
 
 ---
 

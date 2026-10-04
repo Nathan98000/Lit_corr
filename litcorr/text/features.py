@@ -21,6 +21,8 @@ from numpy.lib.stride_tricks import sliding_window_view
 from ..settings import Analysis
 from .doc import TOKEN_RE, TextDoc
 from .lexicons import Lexicon, load_all, match
+from .paratext import is_separator
+from .prepare import Prepared, prepare
 
 NAN = float("nan")
 
@@ -157,7 +159,9 @@ _FEEDBACK = re.compile(
     r"(?:votes?|comments?|feedback|ratings?) (?:are|is|would be) (?:\w+ )?(?:appreciated|welcome|welcomed|encouraged)|"
     r"leave (?:a |me a )?(?:comment|vote|feedback|rating)|don'?t forget to (?:vote|rate|comment)|"
     r"let me know what you think|hit (?:the|those) stars?|five stars|5 stars)", re.I)
-_SCENE_BREAK = re.compile(r"^(?=.*[*#~\-_=•·+§◊♦]|(?:[oOxX]\s*){3,}$)[\s*#~\-_=•·+oOxX§◊♦]{1,30}$")
+# A dash: em dash or horizontal bar, a run of two or more hyphens, or a hyphen / en dash with a space on each side
+# between words ("she paused - then left"). Hyphens inside words and list bullets are not dashes.
+_DASH = re.compile(r"[—―]+|-{2,}|(?<=\S)\s[-–]\s(?=\S)")
 _ALLCAPS_OK = frozenset("I OK TV US USA UK FBI CIA CEO DNA ID AM PM DVD CD ATM SUV GPS BBQ LOL OMG BDSM MILF DM PS NYC LA II "
                         "III IV VI XL XXL HR IT PR ER ICU NFL NBA MBA BMW".split())
 _LY_NOT_ADVERB = frozenset(
@@ -194,13 +198,18 @@ class Measurer:
 
     # ------------------------------------------------------------------ public
     def measure(self, paragraphs: list[str], meta: dict[str, Any] | None = None) -> dict[str, Any]:
+        """Every text measure for one story. ``paragraphs`` is the raw text; paratext (author's notes, headings,
+        "to be continued" ...) is set aside first and only the story paragraphs are measured."""
         meta = meta or {}
-        doc = TextDoc(paragraphs)
+        prep = prepare(paragraphs, _text(meta.get("title")) or None, _text(meta.get("description")) or None)
+        doc = TextDoc(prep.story)
         out: dict[str, Any] = {}
         self._title_series_meta(meta, out)
+        if prep.paragraphs:
+            out["_words_incl_paratext"] = prep.words_all  # for the site word-count check; dropped by analyze
         if doc.n == 0:
             return out  # no text: every text measure stays missing (not zero)
-        self._story_basics(doc, meta, out)
+        self._story_basics(doc, prep, out)
         if doc.n < self.cfg.min_words_for_text_measures:
             out["qc_text_too_short"] = True
             return out
@@ -234,7 +243,7 @@ class Measurer:
         return out
 
     # --------------------------------------------------------------- families
-    def _story_basics(self, doc: TextDoc, meta: dict[str, Any], out: dict[str, Any]) -> None:
+    def _story_basics(self, doc: TextDoc, prep: Prepared, out: dict[str, Any]) -> None:
         n = doc.n
         out["story_words"] = n
         out["story_chars"] = sum(len(p) for p in doc.paragraphs)
@@ -249,12 +258,15 @@ class Measurer:
         ps = [s for s, t in zip(doc.para_sentences, doc.para_tokens) if t > 0]
         out["story_one_sentence_paragraph_share"] = share(sum(1 for s in ps if s == 1), len(ps))
         out["story_long_paragraph_share"] = share(float((pl > 150).sum()), pl.size)
-        breaks = sum(1 for p in doc.paragraphs if _SCENE_BREAK.match(p.strip()))
+        breaks = len(prep.separators())
         out["story_scene_breaks"] = breaks
         out["story_scene_breaks_per_1k"] = per_1k(breaks, n)
+        # Notes and requests to readers: in the paratext, or (as before) in the first or last three story
+        # paragraphs, where an author sometimes writes them without any label.
         head_tail = [p.replace("’", "'") for p in doc.paragraphs[:3] + doc.paragraphs[-3:]]
-        out["story_has_author_note"] = any(_AUTHOR_NOTE.search(p) for p in head_tail)
-        out["story_requests_feedback"] = any(_FEEDBACK.search(p) for p in head_tail)
+        para = [p.replace("’", "'") for p in prep.paratext_paragraphs]
+        out["story_has_author_note"] = prep.has_note() or any(_AUTHOR_NOTE.search(p) for p in head_tail)
+        out["story_requests_feedback"] = any(_FEEDBACK.search(p) for p in para + head_tail)
 
     def _title_series_meta(self, meta: dict[str, Any], out: dict[str, Any]) -> None:
         title = _text(meta.get("title"))
@@ -356,12 +368,13 @@ class Measurer:
         out["dlg_has_dialogue"] = len(segs) > 0
 
     def _punctuation(self, doc: TextDoc, out: dict[str, Any]) -> None:
-        text = "\n".join(doc.paragraphs)
+        # Scene-break lines ("-----", "......") are not punctuation in a sentence.
+        text = "\n".join(p for p in doc.paragraphs if not is_separator(p))
         n = doc.n
         out["punct_exclamation_per_1k"] = per_1k(text.count("!"), n)
         out["punct_question_per_1k"] = per_1k(text.count("?"), n)
         out["punct_ellipsis_per_1k"] = per_1k(len(re.findall(r"…|\.(?:\s?\.){2,}", text)), n)
-        out["punct_dash_per_1k"] = per_1k(len(re.findall(r"—|--|\s–\s", text)), n)
+        out["punct_dash_per_1k"] = per_1k(len(_DASH.findall(text)), n)
         out["punct_semicolon_per_1k"] = per_1k(text.count(";"), n)
         out["punct_colon_per_1k"] = per_1k(len(re.findall(r":(?!//)", text)), n)
         out["punct_comma_per_1k"] = per_1k(text.count(","), n)

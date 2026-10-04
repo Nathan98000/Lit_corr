@@ -1,0 +1,14 @@
+# name: meta_fiction
+# label: Disclaimer words (dev overlay only)
+# description: Used by the masked view to show disclaimers.
+fiction
+fictional
+fictitious
+characters
+resemblance
+coincidental
+disclaimer
+warning
+copyright
+rights
+reserved

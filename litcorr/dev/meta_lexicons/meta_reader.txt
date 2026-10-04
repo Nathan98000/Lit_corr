@@ -1,0 +1,19 @@
+# name: meta_reader
+# label: Words about readers and reader feedback (dev overlay only)
+# description: Used by the masked view to show reader-address paratext.
+reader*
+read
+reading
+enjoy*
+vote*
+voting
+comment*
+feedback
+rate
+rated
+rating*
+stars
+email*
+criticism
+fans
+followers

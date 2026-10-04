@@ -1,0 +1,24 @@
+# name: meta_work
+# label: Words naming the work (dev overlay only)
+# description: Used by the masked view to show where a paragraph talks about the story as a work.
+story
+stories
+chapter*
+part
+parts
+series
+installment*
+instalment*
+sequel*
+prequel*
+episode*
+tale
+tales
+novel
+novella
+plot
+ch
+pt
+prologue
+epilogue
+continuation

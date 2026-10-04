@@ -96,6 +96,16 @@ def load_all(directory: Path = LEXICON_DIR) -> dict[str, Lexicon]:
     return {p.stem: load_lexicon(p) for p in sorted(directory.glob("*.txt"))}
 
 
+def lexicon_hash(directory: Path = LEXICON_DIR) -> str:
+    """A short fingerprint of every word list (file names and contents): any edit changes it."""
+    import hashlib
+
+    h = hashlib.sha256()
+    for p in sorted(directory.glob("*.txt")):
+        h.update(p.name.encode("utf-8") + b"\0" + p.read_bytes() + b"\0")
+    return h.hexdigest()[:16]
+
+
 def match(lex: Lexicon, vocab: list[str], type_ids: np.ndarray, para_idx: np.ndarray,
           positions_by_type: dict[int, np.ndarray] | None = None) -> np.ndarray:
     """Return an int8 array with 1 at the first word of every match of ``lex``."""

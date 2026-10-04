@@ -152,11 +152,14 @@ v("author_followers_count", G, "Story", "count", "followers", "Author's follower
 # ------------------------------------------------------------------ story basics
 G = "Story basics"
 v("story_words", G, "Story", "count", "words", "Word count",
-  "Number of words in the collected text (letters/digits, contractions count as one word).",
+  "Number of words in the story text (letters/digits, contractions count as one word). Author's notes, headings "
+  "and other paratext are not counted (see Methodology).",
   "Counted on the collected pages; long stories beyond the page cap are flagged as truncated.")
-v("story_chars", G, "Story", "count", "characters", "Character count", "Number of characters in the text.")
+v("story_chars", G, "Story", "count", "characters", "Character count",
+  "Number of characters in the story text (paratext excluded).")
 v("story_sentences", G, "Story", "count", "sentences", "Sentence count", "Number of sentences (see Methodology).")
-v("story_paragraphs", G, "Story", "count", "paragraphs", "Paragraph count", "Number of non-empty paragraphs.")
+v("story_paragraphs", G, "Story", "count", "paragraphs", "Paragraph count",
+  "Number of non-empty story paragraphs (paratext excluded).")
 v("story_mean_sentence_words", G, "Style", "continuous", "words", "Average sentence length",
   "Average number of words per sentence.")
 v("story_median_sentence_words", G, "Style", "continuous", "words", "Median sentence length",
@@ -170,13 +173,17 @@ v("story_one_sentence_paragraph_share", G, "Style", "share", SHARE, "One-sentenc
 v("story_long_paragraph_share", G, "Style", "share", SHARE, "Very long paragraphs ('walls of text')",
   "Share of paragraphs longer than 150 words.")
 v("story_scene_breaks", G, "Story", "count", "breaks", "Scene breaks",
-  "Number of scene-break lines (paragraphs made only of symbols such as '* * *').", explorer=False)
+  "Number of scene-break lines inside the story: paragraphs with no letters or digits ('* * *', '-----', "
+  "'......', 'o0o'). Lines that open or close the story are not counted.", explorer=False)
 v("story_scene_breaks_per_1k", G, "Story", "continuous", P1K, "Scene breaks per 1,000 words",
   "Scene-break lines per 1,000 words.")
 v("story_has_author_note", G, "Story", "binary", "yes/no", "Has an author's note",
-  "Whether the first or last three paragraphs contain an author's/editor's note or disclaimer.")
+  "Whether the story opens or closes with an author's or editor's note, disclaimer, dedication, copyright line "
+  "or words to readers, or has a paragraph labelled as an author's note (see Methodology, 'Paratext').",
+  "Rule-based; misses notes that use no recognisable wording (about 1 in 3 in a hand check).")
 v("story_requests_feedback", G, "Story", "binary", "yes/no", "Asks readers to vote or comment",
-  "Whether the first or last three paragraphs ask readers to vote, rate, comment or give feedback.")
+  "Whether the author's notes, or the first or last three story paragraphs, ask readers to vote, rate, comment "
+  "or give feedback.")
 G = "Title & description"
 v("title_chars", G, "Story", "count", "characters", "Title length", "Number of characters in the title.")
 v("title_words", G, "Story", "count", "words", "Title word count", "Number of words in the title.")
@@ -273,8 +280,11 @@ v("gender_composition", G, "Narration", "categorical",
 G = "Punctuation"
 v("punct_exclamation_per_1k", G, "Style", "continuous", P1K, "Exclamation marks", "Exclamation marks per 1,000 words.")
 v("punct_question_per_1k", G, "Style", "continuous", P1K, "Question marks", "Question marks per 1,000 words.")
-v("punct_ellipsis_per_1k", G, "Style", "continuous", P1K, "Ellipses", "Ellipses ('…' or '...') per 1,000 words.")
-v("punct_dash_per_1k", G, "Style", "continuous", P1K, "Dashes", "Em dashes ('—' or '--') per 1,000 words.")
+v("punct_ellipsis_per_1k", G, "Style", "continuous", P1K, "Ellipses",
+  "Ellipses ('…' or '...') per 1,000 words. Lines made only of dots are scene breaks, not ellipses.")
+v("punct_dash_per_1k", G, "Style", "continuous", P1K, "Dashes",
+  "Dashes per 1,000 words: em dashes ('—'), runs of hyphens ('--'), and a hyphen or en dash with a space on each "
+  "side used as a dash ('she paused - then left'). Hyphens inside words are not dashes.")
 v("punct_semicolon_per_1k", G, "Style", "continuous", P1K, "Semicolons", "Semicolons per 1,000 words.")
 v("punct_colon_per_1k", G, "Style", "continuous", P1K, "Colons", "Colons per 1,000 words.")
 v("punct_comma_per_1k", G, "Style", "continuous", P1K, "Commas", "Commas per 1,000 words.")
@@ -375,7 +385,8 @@ v("style_action_verbs_per_1k", G, "Style", "continuous", P1K, "Physical action v
   "Verbs of physical movement (grab, pull, turn, reach…) per 1,000 words.")
 v("style_descriptive_words_per_1k", G, "Style", "continuous", P1K, "Descriptive words",
   "Descriptive adjectives and material words (beautiful, tall, slender, satin…) per 1,000 words.")
-v("style_italics_per_1k", G, "Style", "continuous", P1K, "Italics", "Italicised passages per 1,000 words.")
+v("style_italics_per_1k", G, "Style", "continuous", P1K, "Italics", "Italicised passages per 1,000 words.",
+  "Italics are counted over the whole page body, author's notes included.")
 
 # ------------------------------------------------------------------ sexual content
 G = "Sexual content"

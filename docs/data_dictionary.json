@@ -403,7 +403,7 @@
       "kind": "count",
       "unit": "words",
       "label": "Word count",
-      "description": "Number of words in the collected text (letters/digits, contractions count as one word).",
+      "description": "Number of words in the story text (letters/digits, contractions count as one word). Author's notes, headings and other paratext are not counted (see Methodology).",
       "caveat": "Counted on the collected pages; long stories beyond the page cap are flagged as truncated. Blank when the collected text is incomplete (text_truncated). Use site_words_count for length then.",
       "explorer": true
     },
@@ -414,7 +414,7 @@
       "kind": "count",
       "unit": "characters",
       "label": "Character count",
-      "description": "Number of characters in the text.",
+      "description": "Number of characters in the story text (paratext excluded).",
       "caveat": "Blank when the collected text is incomplete (text_truncated).",
       "explorer": true
     },
@@ -436,7 +436,7 @@
       "kind": "count",
       "unit": "paragraphs",
       "label": "Paragraph count",
-      "description": "Number of non-empty paragraphs.",
+      "description": "Number of non-empty story paragraphs (paratext excluded).",
       "caveat": "Blank when the collected text is incomplete (text_truncated).",
       "explorer": true
     },
@@ -513,7 +513,7 @@
       "kind": "count",
       "unit": "breaks",
       "label": "Scene breaks",
-      "description": "Number of scene-break lines (paragraphs made only of symbols such as '* * *').",
+      "description": "Number of scene-break lines inside the story: paragraphs with no letters or digits ('* * *', '-----', '......', 'o0o'). Lines that open or close the story are not counted.",
       "caveat": "Blank when the collected text is incomplete (text_truncated).",
       "explorer": false
     },
@@ -535,8 +535,8 @@
       "kind": "binary",
       "unit": "yes/no",
       "label": "Has an author's note",
-      "description": "Whether the first or last three paragraphs contain an author's/editor's note or disclaimer.",
-      "caveat": "Blank when the collected text is incomplete (text_truncated).",
+      "description": "Whether the story opens or closes with an author's or editor's note, disclaimer, dedication, copyright line or words to readers, or has a paragraph labelled as an author's note (see Methodology, 'Paratext').",
+      "caveat": "Rule-based; misses notes that use no recognisable wording (about 1 in 3 in a hand check). Blank when the collected text is incomplete (text_truncated).",
       "explorer": true
     },
     {
@@ -546,7 +546,7 @@
       "kind": "binary",
       "unit": "yes/no",
       "label": "Asks readers to vote or comment",
-      "description": "Whether the first or last three paragraphs ask readers to vote, rate, comment or give feedback.",
+      "description": "Whether the author's notes, or the first or last three story paragraphs, ask readers to vote, rate, comment or give feedback.",
       "caveat": "Blank when the collected text is incomplete (text_truncated).",
       "explorer": true
     },
@@ -997,7 +997,7 @@
       "kind": "continuous",
       "unit": "per 1,000 words",
       "label": "Ellipses",
-      "description": "Ellipses ('…' or '...') per 1,000 words.",
+      "description": "Ellipses ('…' or '...') per 1,000 words. Lines made only of dots are scene breaks, not ellipses.",
       "caveat": "",
       "explorer": true
     },
@@ -1008,7 +1008,7 @@
       "kind": "continuous",
       "unit": "per 1,000 words",
       "label": "Dashes",
-      "description": "Em dashes ('—' or '--') per 1,000 words.",
+      "description": "Dashes per 1,000 words: em dashes ('—'), runs of hyphens ('--'), and a hyphen or en dash with a space on each side used as a dash ('she paused - then left'). Hyphens inside words are not dashes.",
       "caveat": "",
       "explorer": true
     },
@@ -1526,7 +1526,7 @@
       "unit": "per 1,000 words",
       "label": "Italics",
       "description": "Italicised passages per 1,000 words.",
-      "caveat": "",
+      "caveat": "Italics are counted over the whole page body, author's notes included.",
       "explorer": true
     },
     {

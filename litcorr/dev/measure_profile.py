@@ -198,6 +198,18 @@ def diff_features(old_path: Path, new_path: Path, which: str = "included") -> pd
     return pd.DataFrame(rows)
 
 
+def changelog_table(t: pd.DataFrame) -> str:
+    """Markdown rows: measure, share of stories changed, median / mean / % missing before → after."""
+    lines = ["| Measure | Stories changed | Median | Mean | % missing |", "|---|---|---|---|---|"]
+    for r in t.itertuples(index=False):
+        if pd.isna(getattr(r, "median_old", np.nan)) and pd.isna(getattr(r, "median_new", np.nan)):
+            lines.append(f"| `{r.measure}` | {r.pct_changed:.1f}% | (categorical) | | |")
+            continue
+        lines.append(f"| `{r.measure}` | {r.pct_changed:.1f}% | {fmt(r.median_old)} → {fmt(r.median_new)} | "
+                     f"{fmt(r.mean_old)} → {fmt(r.mean_new)} | {r.missing_old_pct:.1f} → {r.missing_new_pct:.1f} |")
+    return "\n".join(lines)
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(prog="python -m litcorr.dev.measure_profile", description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -213,6 +225,7 @@ def main(argv: list[str] | None = None) -> int:
     dfe.add_argument("old")
     dfe.add_argument("new")
     dfe.add_argument("--out", default=None, help="also write the table as TSV here")
+    dfe.add_argument("--markdown", action="store_true", help="print a Markdown table (for CHANGELOG entries)")
     args = ap.parse_args(argv)
     s = settings()
     root = dev_dir(s) / "profiles"
@@ -225,6 +238,9 @@ def main(argv: list[str] | None = None) -> int:
         t = diff_features(Path(args.old), Path(args.new))
         if args.out:
             t.to_csv(args.out, sep="\t", index=False, float_format="%.6g")
+        if args.markdown:
+            print(changelog_table(t))
+            return 0
         with pd.option_context("display.max_rows", 500, "display.width", 200):
             print(t.to_string(index=False, float_format=lambda x: f"{x:.4g}") if len(t) else "no changes")
     return 0

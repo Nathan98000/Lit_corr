@@ -77,20 +77,20 @@ Generated from `litcorr/schema.py` by `python -m litcorr dictionary`. One row pe
 
 | Column | Label | Unit | Meaning | Caveat | Explorer |
 |---|---|---|---|---|---|
-| `story_words` | Word count | words | Number of words in the collected text (letters/digits, contractions count as one word). | Counted on the collected pages; long stories beyond the page cap are flagged as truncated. Blank when the collected text is incomplete (text_truncated). Use site_words_count for length then. | ✓ |
-| `story_chars` | Character count | characters | Number of characters in the text. | Blank when the collected text is incomplete (text_truncated). | ✓ |
+| `story_words` | Word count | words | Number of words in the story text (letters/digits, contractions count as one word). Author's notes, headings and other paratext are not counted (see Methodology). | Counted on the collected pages; long stories beyond the page cap are flagged as truncated. Blank when the collected text is incomplete (text_truncated). Use site_words_count for length then. | ✓ |
+| `story_chars` | Character count | characters | Number of characters in the story text (paratext excluded). | Blank when the collected text is incomplete (text_truncated). | ✓ |
 | `story_sentences` | Sentence count | sentences | Number of sentences (see Methodology). | Blank when the collected text is incomplete (text_truncated). | ✓ |
-| `story_paragraphs` | Paragraph count | paragraphs | Number of non-empty paragraphs. | Blank when the collected text is incomplete (text_truncated). | ✓ |
+| `story_paragraphs` | Paragraph count | paragraphs | Number of non-empty story paragraphs (paratext excluded). | Blank when the collected text is incomplete (text_truncated). | ✓ |
 | `story_mean_sentence_words` | Average sentence length | words | Average number of words per sentence. |  | ✓ |
 | `story_median_sentence_words` | Median sentence length | words | Median number of words per sentence. |  | ✓ |
 | `story_mean_paragraph_words` | Average paragraph length | words | Average number of words per paragraph. |  | ✓ |
 | `story_median_paragraph_words` | Median paragraph length | words | Median number of words per paragraph. |  | ✓ |
 | `story_one_sentence_paragraph_share` | One-sentence paragraphs | share (0–1) | Share of paragraphs that consist of a single sentence. |  | ✓ |
 | `story_long_paragraph_share` | Very long paragraphs ('walls of text') | share (0–1) | Share of paragraphs longer than 150 words. |  | ✓ |
-| `story_scene_breaks` | Scene breaks | breaks | Number of scene-break lines (paragraphs made only of symbols such as '* * *'). | Blank when the collected text is incomplete (text_truncated). |  |
+| `story_scene_breaks` | Scene breaks | breaks | Number of scene-break lines inside the story: paragraphs with no letters or digits ('* * *', '-----', '......', 'o0o'). Lines that open or close the story are not counted. | Blank when the collected text is incomplete (text_truncated). |  |
 | `story_scene_breaks_per_1k` | Scene breaks per 1,000 words | per 1,000 words | Scene-break lines per 1,000 words. |  | ✓ |
-| `story_has_author_note` | Has an author's note | yes/no | Whether the first or last three paragraphs contain an author's/editor's note or disclaimer. | Blank when the collected text is incomplete (text_truncated). | ✓ |
-| `story_requests_feedback` | Asks readers to vote or comment | yes/no | Whether the first or last three paragraphs ask readers to vote, rate, comment or give feedback. | Blank when the collected text is incomplete (text_truncated). | ✓ |
+| `story_has_author_note` | Has an author's note | yes/no | Whether the story opens or closes with an author's or editor's note, disclaimer, dedication, copyright line or words to readers, or has a paragraph labelled as an author's note (see Methodology, 'Paratext'). | Rule-based; misses notes that use no recognisable wording (about 1 in 3 in a hand check). Blank when the collected text is incomplete (text_truncated). | ✓ |
+| `story_requests_feedback` | Asks readers to vote or comment | yes/no | Whether the author's notes, or the first or last three story paragraphs, ask readers to vote, rate, comment or give feedback. | Blank when the collected text is incomplete (text_truncated). | ✓ |
 
 ## Title & description
 
@@ -166,8 +166,8 @@ Generated from `litcorr/schema.py` by `python -m litcorr dictionary`. One row pe
 |---|---|---|---|---|---|
 | `punct_exclamation_per_1k` | Exclamation marks | per 1,000 words | Exclamation marks per 1,000 words. |  | ✓ |
 | `punct_question_per_1k` | Question marks | per 1,000 words | Question marks per 1,000 words. |  | ✓ |
-| `punct_ellipsis_per_1k` | Ellipses | per 1,000 words | Ellipses ('…' or '...') per 1,000 words. |  | ✓ |
-| `punct_dash_per_1k` | Dashes | per 1,000 words | Em dashes ('—' or '--') per 1,000 words. |  | ✓ |
+| `punct_ellipsis_per_1k` | Ellipses | per 1,000 words | Ellipses ('…' or '...') per 1,000 words. Lines made only of dots are scene breaks, not ellipses. |  | ✓ |
+| `punct_dash_per_1k` | Dashes | per 1,000 words | Dashes per 1,000 words: em dashes ('—'), runs of hyphens ('--'), and a hyphen or en dash with a space on each side used as a dash ('she paused - then left'). Hyphens inside words are not dashes. |  | ✓ |
 | `punct_semicolon_per_1k` | Semicolons | per 1,000 words | Semicolons per 1,000 words. |  | ✓ |
 | `punct_colon_per_1k` | Colons | per 1,000 words | Colons per 1,000 words. |  | ✓ |
 | `punct_comma_per_1k` | Commas | per 1,000 words | Commas per 1,000 words. |  | ✓ |
@@ -239,7 +239,7 @@ Generated from `litcorr/schema.py` by `python -m litcorr dictionary`. One row pe
 | `style_said_share` | Plain 'said' in dialogue tags | share (0–1) | 'said'/'says' as a share of all speech verbs (said, asked, whispered, moaned…). | Blank when fewer than 5 speech verbs occur. | ✓ |
 | `style_action_verbs_per_1k` | Physical action verbs | per 1,000 words | Verbs of physical movement (grab, pull, turn, reach…) per 1,000 words. |  | ✓ |
 | `style_descriptive_words_per_1k` | Descriptive words | per 1,000 words | Descriptive adjectives and material words (beautiful, tall, slender, satin…) per 1,000 words. |  | ✓ |
-| `style_italics_per_1k` | Italics | per 1,000 words | Italicised passages per 1,000 words. |  | ✓ |
+| `style_italics_per_1k` | Italics | per 1,000 words | Italicised passages per 1,000 words. | Italics are counted over the whole page body, author's notes included. | ✓ |
 
 ## Sexual content
 

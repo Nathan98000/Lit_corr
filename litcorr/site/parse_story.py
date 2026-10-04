@@ -22,7 +22,7 @@ from dataclasses import dataclass, field
 from typing import Any
 from urllib.parse import parse_qsl, urlsplit
 
-from bs4 import BeautifulSoup, NavigableString, Tag
+from bs4 import BeautifulSoup, CData, NavigableString, Tag
 
 from .jsdata import JSData
 from .parse_common import (
@@ -417,12 +417,48 @@ def _from_meta(sp: StoryPage, soup: BeautifulSoup) -> None:
 
 
 # ----------------------------------------------------------------------- text
-def _paragraph_texts(el: Tag) -> list[str]:
-    """Text of one <p>. A blank line made with <br><br> inside it starts a new paragraph."""
-    for br in el.find_all("br"):
-        br.replace_with(NavigableString("\n"))
-    blocks = re.split(r"\n[ \t ]*\n", el.get_text(""))
+# Elements that start a new block of text. Everything else (em, strong, span, a, font, u, sup ...) is inline.
+_BLOCK_TAGS = frozenset(
+    "p div li ul ol dl dt dd h1 h2 h3 h4 h5 h6 blockquote pre table thead tbody tfoot tr td th caption section "
+    "article main center hr address details summary figcaption".split())
+
+
+def _split_block(text: str) -> list[str]:
+    """One block of text. A blank line made with <br><br> inside it starts a new paragraph."""
+    blocks = re.split(r"\n[ \t\u00a0]*\n", text)
     return [t for t in (clean_text(b.replace("\n", " ")) for b in blocks) if t]
+
+
+def _block_texts(container: Tag) -> list[str]:
+    """Paragraphs of a story body in document order: the text of every block element (<p>, list items,
+    headings, block quotes, <div>s holding text directly ...) and of loose text between blocks. (Taking only the
+    text inside <p> elements lost every list, heading or loose text run of bodies that mix them with <p>s.)"""
+    for br in container.find_all("br"):
+        br.replace_with(NavigableString("\n"))
+    out: list[str] = []
+    buf: list[str] = []
+
+    def flush() -> None:
+        if buf:
+            out.extend(_split_block("".join(buf)))
+            buf.clear()
+
+    def walk(el: Tag) -> None:
+        for ch in el.children:
+            if isinstance(ch, NavigableString):
+                if type(ch) is NavigableString or isinstance(ch, CData):  # not comments, doctypes ...
+                    buf.append(str(ch))
+            elif isinstance(ch, Tag):
+                if ch.name in _BLOCK_TAGS:
+                    flush()
+                    walk(ch)
+                    flush()
+                else:
+                    walk(ch)
+
+    walk(container)
+    flush()
+    return out
 
 
 def extract_paragraphs(root: Tag | BeautifulSoup) -> tuple[list[str], int, int]:
@@ -443,10 +479,8 @@ def extract_paragraphs(root: Tag | BeautifulSoup) -> tuple[list[str], int, int]:
                 bad.decompose()
         em += len(c.find_all(["em", "i"]))
         strong += len(c.find_all(["strong", "b"]))
-        ps = [p for p in c.find_all("p") if p.find("p") is None]
-        if ps:
-            for p in ps:
-                paragraphs.extend(_paragraph_texts(p))
+        if c.find("p") is not None:
+            paragraphs.extend(_block_texts(c))
         else:
             for br in c.find_all("br"):
                 br.replace_with(NavigableString("\n"))

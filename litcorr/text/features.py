@@ -691,7 +691,8 @@ class Measurer:
             out[f"pace_{name}_shift"] = float(d[-1] - d[0])
             out[f"pace_{name}_peak_position"] = float((np.argmax(d) + 0.5) / k) if d.max() > 0 else NAN
 
-    def _characters(self, doc: TextDoc, out: dict[str, Any]) -> None:
+    def recurring_names(self, doc: TextDoc) -> tuple[list[str], Counter[str]]:
+        """The capitalised words counted as recurring names, and how often each occurs anywhere."""
         mid: Counter[str] = Counter()
         anywhere: Counter[str] = Counter()
         lower_counts = Counter(t for t, o in zip(doc.tokens, doc.orig) if o[:1].islower())
@@ -713,6 +714,10 @@ class Measurer:
             if lc > 0.2 * (anywhere[name] + lc):
                 continue  # mostly an ordinary word that is sometimes capitalised
             names.append(name)
+        return names, anywhere
+
+    def _characters(self, doc: TextDoc, out: dict[str, Any]) -> None:
+        names, anywhere = self.recurring_names(doc)
         mentions = [anywhere[nm] for nm in names]
         out["char_recurring_names"] = len(names)
         out["char_name_mentions_per_1k"] = per_1k(sum(mentions), doc.n)

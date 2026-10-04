@@ -64,3 +64,38 @@ data (no DOM fallback, no abbreviated counts). Rating missing for 94 stories (no
 
 Baseline copies kept for later diffs: `data/dev/baseline_processed/` (processed table, report, manifest) and the
 profile in `data/dev/profiles/baseline/`.
+
+---
+
+## Phase 1: Inspection tooling (2026-10-04)
+
+All tools are in `litcorr/dev/` (not imported by the pipeline), offline, and write only to `data/dev/`:
+
+| Tool | Purpose |
+|---|---|
+| `inspect_text STORY_KEY` | Masked view: letters → x/X, digits → 9; punctuation, quotes, spacing kept exactly; function words (stopwords, pronouns, auxiliaries, modals) and inflectional endings readable. Overlays: paragraph numbers and word counts, one line per sentence with its number and terminal, quoted spans ⟪ ⟫, scene breaks, author-note / feedback regex hits (and whether they fall in the head/tail window the pipeline uses), `--lex` lexicon matches as `[lexicon]`, `--names` tokens counted as recurring names. `--reveal-sentence N` prints one sentence, capped at 50 words, refuses sentences containing the title or author name. |
+| `char_inventory` | Corpus counts (occurrences and stories) of non-ASCII characters, quote/apostrophe/dash/ellipsis variants and patterns, HTML tags/entities, mojibake, special spaces, structural oddities. |
+| `measure_profile save / diff / diff-features` | Diffable profile per measure (N, % missing, % zero, min/p1/median/mean/sd/p99/max) overall and per category, categorical shares, 5 lowest/highest story keys; `diff-features` compares two processed tables on the same stories (the CHANGELOG numbers). |
+| `review_sample` | Stratified sample; order = hash(seed, story_key), so samples are stable as the corpus grows; `--exclude-sample` and `--only-new-since` give hold-out samples of later stories. |
+| `handcheck make / show / judge / score` | Hand-check sheets per classifier drawn from a review sample, shown through the masked view, scored with Wilson 95% intervals. |
+
+The recurring-name logic was moved into `Measurer.recurring_names()` (no value change) so the overlay shows
+exactly the tokens the measure counts.
+
+### Character inventory (4,251 stories)
+
+* **Clean overall.** No HTML entities, tag-like strings in 2 stories (14 in all; written by the
+  authors as text, not leftover page markup), mojibake in 3 stories (6 sequences), no zero-width or no-break spaces left (the
+  cleaner already removes/collapses them), no line breaks inside paragraphs, no empty paragraphs.
+* **Quotes.** Straight `"` in 3,850 stories (698k marks); curly double quotes in ~110 stories; curly apostrophe
+  `’` in 144 stories; backtick `` ` `` (426, 20 stories) and acute `´` (25, 9 stories) used as apostrophes split
+  words ("don`t" → "don" + "t").
+* **Dashes.** Spaced hyphen ` - ` used as a dash: 11,784 times in 991 stories (23%) — not counted by
+  `punct_dash_per_1k`. `--` 10,214 (772 stories), em dash 3,250 (288), en dash 2,252 (193; counted only when
+  spaced), `---` 1,176 (299).
+* **Ellipses.** `...` 54k (2,776 stories); 4+ dots 3,637 (741); two dots `..` 3,477 (581) — not counted as an
+  ellipsis, and `.. Next` ends a sentence like a full stop; `. . .` 1,339 (118).
+* **Line separator U+2028** inside paragraphs: 114 in 6 stories (an unconverted line break).
+* Missing space after sentence punctuation (`end.Next`): 178 in 112 stories (no sentence split there); missing
+  space after a comma: 301 in 126 stories.
+* Emoji/symbols: rare, mostly in a handful of stories (█ ×76, ⸎ ×55 in one story each, bullets in 13 stories).

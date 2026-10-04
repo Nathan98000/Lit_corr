@@ -557,7 +557,40 @@ def run_pipeline(settings, *, fetcher_factory: Callable | None = None, verbose: 
     return {"raw": raw, "processed": processed, "report": report, "handoff": handoff}
 
 
+DEMO_MARKER = ".litcorr_demo"
+
+
+def _reset_demo_dir(out_dir: Path) -> None:
+    """Start every demo from an empty folder. The mock site listens on a new random port each run, so the
+    cached pages and story queue of an earlier demo never match the new addresses: a rerun into the same folder
+    used to finish 'successfully' with no story text at all. Only a folder that is clearly a demo folder (our
+    marker file, or a state database whose pages all come from the local mock site) is ever removed."""
+    import shutil
+    import sqlite3
+
+    if not out_dir.exists() or not any(out_dir.iterdir()):
+        return
+    is_demo = (out_dir / DEMO_MARKER).exists()
+    state = out_dir / "state.sqlite3"
+    if not is_demo and state.exists():
+        con = sqlite3.connect(f"file:{state}?mode=ro", uri=True)
+        try:
+            urls = [r[0] for r in con.execute("SELECT url FROM pages LIMIT 5000")]
+        except sqlite3.DatabaseError:
+            urls = []
+        finally:
+            con.close()
+        is_demo = bool(urls) and all(urlsplit(u).hostname in ("127.0.0.1", "localhost") for u in urls)
+    if not is_demo:
+        raise SystemExit(f"{out_dir} is not empty and is not a demo folder; choose another --out folder.")
+    shutil.rmtree(out_dir)
+
+
 def run_demo(out_dir: Path, n_per_category: int = 25, verbose: bool = False) -> dict:
+    _reset_demo_dir(out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    (out_dir / DEMO_MARKER).write_text("Output of `python -m litcorr demo`; removed and rebuilt by every demo run.\n",
+                                       encoding="utf-8")
     site = make_site(n_per_category=n_per_category)
     httpd, base = start_server(site)
     try:

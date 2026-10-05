@@ -724,7 +724,7 @@ length. A story with no text at all gets no text measures (blank, never zero).
 | **Category (slug)** (`category_slug`) | Literotica's own category for the story, as given on the story page (URL form, e.g. adult-romance). | Falls back to the category of the listing page the story was found on if the story page does not name one. |
 | **Category** (`category_name`) | Literotica's own name for the story's category (e.g. Romance), taken from the site's category list for category_slug, so every story in a category has the same name. |  |
 | **Category source** (`category_source`) | Where the category came from: 'page' (the story page) or 'listing' (the category listing it was found on). |  |
-| **Sampling weight** (`sampling_weight`) | Estimated number of stories in the category divided by the number of analysed stories from that category. Use it to weight 'All categories' summaries so large categories count in proportion to their size. | Blank when the category's size could not be estimated from its listing pages. |
+| **Sampling weight** (`sampling_weight`) | Estimated number of stories in the category divided by the number of analysed stories from that category. Use it to weight 'All categories' summaries so large categories count in proportion to their size. | Blank when the category's size could not be estimated from its listing pages. Provisional while the collection is in progress (collection_manifest.json: sampling_weights_provisional): it changes as more of the category's sampled stories are collected. |
 
 ---
 

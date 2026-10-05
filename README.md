@@ -164,8 +164,10 @@ any 24 hours); when the limit is used up, `collect` says when it can continue.
   `categories`, `random_seed` and `text_mode` in `config.toml` as they are.
   Raising `max_stories_per_category` is fine (it only adds stories), and the
   delays and caps can be changed between runs, within their limits.
-* `status` is safe to run at any time, even while `collect` runs. So is
-  `process`, which simply uses whatever has been collected so far.
+* `status` is safe to run at any time, even while `collect` runs. So are
+  `refresh` and `process`, which simply use whatever has been collected so
+  far. The offline commands only ever read `state.sqlite3` (from an in-memory
+  copy), so they cannot disturb the collector.
 * If a run says a **cooldown** is active, wait until the time it gives.
 
 ## 5. Process (offline)
@@ -186,6 +188,37 @@ This runs, in order (each step can also be run on its own):
 
 None of these touch the network. If you edit a lexicon or I fix a parser,
 just run `process` again.
+
+### Refreshing while the collection continues
+
+```bash
+python -m litcorr refresh
+```
+
+`refresh` brings the processed data up to date with everything collected so
+far: `build-raw`, `analyze` and `report`, then a comparison with the previous
+refresh. It does **not** build the handoff zip. It is quick because both steps
+are incremental:
+
+* `build-raw` re-parses only stories whose saved pages changed (new pages, a
+  re-fetch) and reuses the rest from `data/raw/parse_cache.parquet`;
+* `analyze` re-measures only stories whose text or metadata changed, and takes
+  the others from `data/derived/text_measures.parquet`.
+
+Any change that could alter a value invalidates the reuse automatically: an
+edit to the parser or the measure code, a word list, the text pipeline version
+or a measure setting in `[analysis]`. `--full` (on `refresh`, `build-raw` and
+`analyze`) redoes everything anyway; it gives exactly the same result. On the
+first batch (4,251 stories with text) a full refresh took about 3.5 minutes,
+and a refresh with nothing new about 13 seconds.
+
+While stories are still queued, the data are **partial**:
+`collection_manifest.json` has `collection_progress` (per category: sampled,
+collected, still queued, not collectable) and `sampling_weights_provisional`,
+and the quality report starts with a "Collection progress: PARTIAL" table.
+Each refresh also saves a statistical profile of every measure in
+`data/derived/profiles/` and writes what changed since the previous refresh to
+`data/derived/profiles/latest_diff.md` (aggregate numbers only).
 
 ## 6. What to send back for Stage 2
 
@@ -220,6 +253,10 @@ data/
     listing_items.parquet the sampling frame: every story seen on a listing page
     categories.parquet   categories and how their listing pages were read
     pages.parquet        every URL requested: status, HTTP code, fetch time
+    parse_cache.parquet  parsed pages reused by the next build-raw (contains text)
+  derived/
+    text_measures.parquet per-story measures reused by the next analyze (no text)
+    profiles/            one statistical profile per refresh + latest_diff.md
   processed/
     stories_features.parquet  analysis-ready table: category, dates, popularity,
                               ~195 story measures, quality flags, sampling weight (no text)
@@ -227,7 +264,7 @@ data/
     category_frame.parquet    per-category size estimates and sample counts
     quality_report.md/.json   data-quality summary
     data_dictionary.json      machine-readable schema
-    collection_manifest.json  dates, settings, versions, lexicon sizes
+    collection_manifest.json  dates, settings, versions, lexicon sizes, collection progress
   logs/
     collector.log        human-readable log
     requests.jsonl       one line per network request (time, URL, status, bytes, duration)
@@ -289,7 +326,9 @@ litcorr/
   build/               raw corpus from cache, quality flags and report
   text/                tokens/sentences/dialogue, lexicon matching, all text measures
   popularity.py        raw / per-view / per-month popularity
-  analyze.py           processed dataset
+  analyze.py           processed dataset (with the per-story measure cache)
+  refresh.py           incremental build-raw + analyze + report + profile comparison
+  dev/                 developer tools for checking the text measures (masked views, hand-checks, audits)
   schema.py            the variable registry (source of the data dictionary)
   export.py            Stage 2 handoff
   demo.py              local synthetic site used by `demo` and the tests

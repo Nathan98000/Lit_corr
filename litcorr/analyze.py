@@ -1,7 +1,9 @@
 """`analyze`: raw corpus -> processed, analysis-ready dataset (no network, no story text out).
 
 Steps
-  1. compute every text measure for every story with text (parallel processes)
+  1. compute every text measure for every story with text (parallel processes); measures of stories whose text,
+     metadata, measure code, word lists and measure settings are unchanged since the last run are taken from
+     data/derived/text_measures.parquet instead (``--full`` recomputes everything)
   2. carry over the site metadata and add popularity measures
   3. attach quality flags and decide `analysis_include` (problem records are
      flagged and kept, never dropped)
@@ -12,6 +14,8 @@ Steps
 
 from __future__ import annotations
 
+import hashlib
+import io
 import json
 import os
 import time
@@ -29,8 +33,8 @@ from .paths import DataPaths
 from .popularity import add_popularity
 from .schema import NEEDS_FULL_TEXT, ORDER, REG, write_dictionary_json
 from .settings import Analysis, Settings
-from .text.features import Measurer
-from .text import TEXT_PIPELINE_VERSION
+from .text.features import MEASURE_SETTINGS, Measurer
+from .text import TEXT_PIPELINE_VERSION, code_fingerprint
 from .text.lexicons import lexicon_hash, load_all
 
 log = get_logger("analyze")
@@ -76,9 +80,41 @@ def _bool01(s: pd.Series) -> pd.Series:
     return s.map(lambda x: 1.0 if x is True or x == 1 else 0.0 if x is False or x == 0 else np.nan).astype(float)
 
 
-def compute_text_measures(raw: pd.DataFrame, analysis: Analysis, workers: int = 0) -> pd.DataFrame:
+def measure_context(analysis: Analysis) -> str:
+    """Everything besides a story's own text and metadata that its measures depend on: the text pipeline version,
+    the measure code, the word lists and the [analysis] settings the measures read."""
+    ctx = {"text_pipeline_version": TEXT_PIPELINE_VERSION, "code": code_fingerprint(), "lexicons": lexicon_hash(),
+           "settings": {k: getattr(analysis, k) for k in MEASURE_SETTINGS}}
+    return hashlib.sha256(json.dumps(ctx, sort_keys=True).encode("utf-8")).hexdigest()[:16]
+
+
+def _input_hash(text: Any, meta: dict[str, Any]) -> str:
+    h = hashlib.sha256((text if isinstance(text, str) else "").encode("utf-8"))
+    h.update(b"\0" + json.dumps(meta, sort_keys=True, default=str).encode("utf-8"))
+    return h.hexdigest()[:24]
+
+
+def compute_text_measures(raw: pd.DataFrame, analysis: Analysis, workers: int = 0, cache: Any = None,
+                          full: bool = False) -> tuple[pd.DataFrame, dict[str, int]]:
+    """Text measures for every story in ``raw``, one row per story in the same order. With a ``cache`` path, a
+    story is measured again only if its text or metadata changed or the measure context did (see
+    measure_context); the result always goes through the same Parquet round trip, so an incremental run gives
+    exactly what a full run gives."""
     rows = raw.to_dict("records")
-    tasks = [(r["story_key"], r.get("text"), _clean_meta(r)) for r in rows]
+    keys = [r["story_key"] for r in rows]
+    metas = [_clean_meta(r) for r in rows]
+    hashes = [_input_hash(r.get("text"), m) for r, m in zip(rows, metas)]
+    context = measure_context(analysis)
+    cached = pd.DataFrame()
+    if cache is not None and not full and cache.exists():
+        c = pd.read_parquet(cache)
+        if {"story_key", "_input_hash", "_context"} <= set(c.columns):
+            want = dict(zip(keys, hashes))
+            cached = c[(c["_context"] == context) & (c["story_key"].map(want) == c["_input_hash"])]
+            cached = cached.drop_duplicates("story_key")
+    have = set(cached["story_key"]) if len(cached) else set()
+    todo = [i for i, k in enumerate(keys) if k not in have]
+    tasks = [(keys[i], rows[i].get("text"), metas[i]) for i in todo]
     n_workers = workers or max(1, min(8, (os.cpu_count() or 2) - 1))
     cfg = analysis.__dict__.copy()
     t0 = time.time()
@@ -88,14 +124,35 @@ def compute_text_measures(raw: pd.DataFrame, analysis: Analysis, workers: int = 
     else:
         _init_worker(cfg)
         results = [_measure(t) for t in tasks]
-    log.info("Text measures for %d stories in %.1f s (%d worker(s)).", len(tasks), time.time() - t0, n_workers)
-    return pd.DataFrame(results)
+    log.info("Text measures for %d stories in %.1f s (%d worker(s)); %d unchanged stories taken from the cache.",
+             len(tasks), time.time() - t0, n_workers, len(keys) - len(tasks))
+    new = pd.DataFrame(results)
+    if len(new):
+        new["_input_hash"] = [hashes[i] for i in todo]
+        new["_context"] = context
+    parts = [x for x in (cached, new) if len(x)]
+    table = pd.concat(parts, ignore_index=True) if len(parts) > 1 else (parts[0] if parts else
+                                                                        pd.DataFrame({"story_key": keys}))
+    table = table.set_index("story_key").loc[keys].reset_index()
+    buf = io.BytesIO()
+    table.to_parquet(buf, index=False, compression="zstd")
+    if cache is not None:
+        cache.parent.mkdir(parents=True, exist_ok=True)
+        tmp = cache.with_name(cache.name + ".tmp")
+        tmp.write_bytes(buf.getvalue())
+        os.replace(tmp, cache)
+    buf.seek(0)
+    feats = pd.read_parquet(buf).drop(columns=["_input_hash", "_context"], errors="ignore")
+    return feats, {"measured": len(tasks), "from_cache": len(keys) - len(tasks)}
 
 
 def build_processed(raw: pd.DataFrame, categories: pd.DataFrame | None, settings: Settings,
-                    workers: int = 0) -> pd.DataFrame:
+                    workers: int = 0, cache: Any = None, full: bool = False,
+                    stats: dict[str, int] | None = None) -> pd.DataFrame:
     a = settings.analysis
-    feats = compute_text_measures(raw, a, workers)
+    feats, st = compute_text_measures(raw, a, workers, cache=cache, full=full)
+    if stats is not None:
+        stats.update(st)
     df = pd.DataFrame({
         "story_key": raw["story_key"],
         "queue_category_slug": _col(raw, "queue_category_slug"),
@@ -173,6 +230,39 @@ def add_sampling_weights(df: pd.DataFrame, categories: pd.DataFrame | None) -> p
     return df
 
 
+OPEN_STATUSES = ("queued", "partial")
+
+
+def collection_progress(df: pd.DataFrame, story_counts: list[dict[str, Any]],
+                        state_cats: list[dict[str, Any]]) -> dict[str, Any]:
+    """How far the collection has got, per sampled category: the stories sampled (queued), collected, still
+    waiting, and those that cannot be collected (gone, failed, disallowed ...). While stories are still waiting
+    or listings unread, every result describes the stories collected so far and the weights are provisional."""
+    counts: dict[str, dict[str, int]] = {}
+    for r in story_counts:
+        counts.setdefault(r["category_slug"] or "(none)", {})[r["status"]] = int(r["n"])
+    selected = {c["slug"]: c for c in state_cats if c.get("selected")}
+    stratum = df["queue_category_slug"].fillna(df["category_slug"]).fillna("(none)")
+    with_text = df["has_text"].groupby(stratum).sum()
+    included = df["analysis_include"].groupby(stratum).sum()
+    by_cat = {}
+    for slug in sorted(set(counts) | set(selected)):
+        c = counts.get(slug, {})
+        n, done = sum(c.values()), c.get("done", 0)
+        waiting = sum(c.get(s, 0) for s in OPEN_STATUSES)
+        by_cat[slug] = {"sampled": n, "collected": done, "still_queued": waiting,
+                        "not_collectable": n - done - waiting, "with_text": int(with_text.get(slug, 0)),
+                        "included": int(included.get(slug, 0)),
+                        "listing_finished": (selected[slug].get("listing_status") == "done") if slug in selected
+                        else None}
+    total = {k: sum(v[k] for v in by_cat.values()) for k in ("sampled", "collected", "still_queued",
+                                                               "not_collectable", "with_text", "included")}
+    complete = total["still_queued"] == 0 and all(c.get("listing_status") == "done" for c in selected.values())
+    return {"complete": bool(complete), **total,
+            "share_collected": round(total["collected"] / total["sampled"], 4) if total["sampled"] else None,
+            "by_category": by_cat}
+
+
 def category_frame(df: pd.DataFrame, categories: pd.DataFrame | None, state_frame: dict[str, Any]) -> pd.DataFrame:
     rows = []
     cats = categories if categories is not None else pd.DataFrame(columns=["slug", "name"])
@@ -194,13 +284,15 @@ def category_frame(df: pd.DataFrame, categories: pd.DataFrame | None, state_fram
     return pd.DataFrame(rows)
 
 
-def run_analyze(settings: Settings, workers: int = 0, write_csv: bool = True) -> dict[str, Any]:
+def run_analyze(settings: Settings, workers: int = 0, write_csv: bool = True, full: bool = False) -> dict[str, Any]:
     paths = DataPaths(settings.data_dir).ensure()
     if not paths.raw_stories.exists():
         raise FileNotFoundError(f"{paths.raw_stories} not found; run `python -m litcorr build-raw` first.")
     raw = pd.read_parquet(paths.raw_stories)
     cats = pd.read_parquet(paths.raw_categories) if paths.raw_categories.exists() else None
-    df = build_processed(raw, cats, settings, workers)
+    stats: dict[str, int] = {}
+    df = build_processed(raw, cats, settings, workers or settings.analysis.workers, cache=paths.measure_cache,
+                         full=full, stats=stats)
     df.to_parquet(paths.features, index=False, compression="zstd")
     if write_csv:
         csv = df.copy()
@@ -210,19 +302,25 @@ def run_analyze(settings: Settings, workers: int = 0, write_csv: bool = True) ->
     state_frame = {}
     from .state import State
 
+    story_counts: list[dict[str, Any]] = []
+    state_cats: list[dict[str, Any]] = []
     if paths.state_db.exists():
-        st = State(paths.state_db)
+        st = State.snapshot(paths.state_db)
         try:
-            for c in st.categories():
+            state_cats = st.categories()
+            for c in state_cats:
                 raw_frame = st.get_meta(f"frame:{c['slug']}")
                 if raw_frame:
                     state_frame[c["slug"]] = json.loads(raw_frame)
             runs = st.runs()
             layout = st.get_meta("listing_layout")
+            story_counts = [dict(r) for r in st.conn.execute(
+                "SELECT category_slug, status, COUNT(*) AS n FROM stories GROUP BY category_slug, status")]
         finally:
             st.close()
     else:
         runs, layout = [], None
+    progress = collection_progress(df, story_counts, state_cats)
     category_frame(df, cats, state_frame).to_parquet(paths.category_frame, index=False)
     write_dictionary_json(paths.dictionary_json)
     lex = load_all()
@@ -238,6 +336,8 @@ def run_analyze(settings: Settings, workers: int = 0, write_csv: bool = True) ->
                                  str(raw["stats_observed_at"].max()) if "stats_observed_at" in raw else None],
         "n_stories": int(len(df)), "n_with_text": int(df["has_text"].sum()),
         "n_analysis_included": int(df["analysis_include"].sum()),
+        "collection_progress": progress,
+        "sampling_weights_provisional": not progress["complete"],
         "listing_layout": json.loads(layout) if layout else None,
         "settings": {"scope": settings.scope.__dict__, "analysis": settings.analysis.__dict__,
                      "politeness": settings.politeness.__dict__},
@@ -245,6 +345,7 @@ def run_analyze(settings: Settings, workers: int = 0, write_csv: bool = True) ->
     }
     paths.manifest.write_text(json.dumps(manifest, indent=2, default=str), encoding="utf-8")
     summary = {"stories": len(df), "with_text": int(df["has_text"].sum()),
-               "included": int(df["analysis_include"].sum()), "columns": df.shape[1]}
+               "included": int(df["analysis_include"].sum()), "columns": df.shape[1], **stats,
+               "collection_complete": progress["complete"]}
     log.info("Processed dataset written to %s: %s", paths.features, summary)
     return summary

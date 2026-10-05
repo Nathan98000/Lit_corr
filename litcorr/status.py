@@ -14,7 +14,7 @@ def status_text(settings: Settings) -> str:
     paths = DataPaths(settings.data_dir)
     if not paths.state_db.exists():
         return "No collection state yet. Start with `python -m litcorr probe`."
-    st = State(paths.state_db)
+    st = State.snapshot(paths.state_db)
     try:
         now = time.time()
         lines = ["Collection status", "=" * 17]

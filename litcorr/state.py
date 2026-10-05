@@ -121,6 +121,13 @@ FAILED, GONE, DISALLOWED, UNAVAILABLE, SKIPPED = "failed", "gone", "robots_disal
 OPEN_STATUSES = (QUEUED, PARTIAL)
 
 
+def _is_wal_file(path: Path) -> bool:
+    """True if the database file's header says WAL mode (file format version bytes 18-19 are 2)."""
+    with open(path, "rb") as fh:
+        head = fh.read(20)
+    return len(head) == 20 and head[18] == 2 and head[19] == 2
+
+
 class State:
     def __init__(self, path: Path):
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -132,6 +139,40 @@ class State:
         self.conn.executescript(_SCHEMA)
         if self.get_meta("schema_version") is None:
             self.set_meta("schema_version", str(SCHEMA_VERSION))
+
+    @classmethod
+    def snapshot(cls, path: Path) -> "State":
+        """A read-only, in-memory copy of the database, for the offline commands (build-raw, analyze, report,
+        status, categories). They never write the database, and the collector can keep running meanwhile.
+
+        A read-only SQLite connection to a database in WAL mode creates the -wal and -shm files when they do not
+        exist, and cannot remove them again. So when no collector has the database open (no -wal file), the main
+        file is read as immutable, which creates no files at all; if a collector opened the database during
+        the copy, the copy is taken again the normal way. While a collector runs (-wal present), the copy is
+        taken through SQLite's ordinary read-only path: it sees everything the collector has committed, never
+        writes the database or its WAL, and like every reader only shares the -shm index. The copy takes well
+        under a second, so it never holds up the collector's checkpoints.
+        """
+        if not path.exists():
+            raise FileNotFoundError(f"{path} not found")
+        wal = path.with_name(path.name + "-wal")
+        mem = sqlite3.connect(":memory:", isolation_level=None)
+        for _ in range(3):
+            immutable = _is_wal_file(path) and not wal.exists()
+            src = sqlite3.connect(f"{path.resolve().as_uri()}?{'immutable=1' if immutable else 'mode=ro'}",
+                                  uri=True, timeout=30, isolation_level=None)
+            try:
+                src.backup(mem)
+            finally:
+                src.close()
+            if not (immutable and wal.exists()):
+                break
+        obj = cls.__new__(cls)
+        obj.path = path
+        obj.conn = mem
+        mem.row_factory = sqlite3.Row
+        mem.execute("PRAGMA query_only=1")
+        return obj
 
     def close(self) -> None:
         self.conn.close()

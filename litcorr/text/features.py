@@ -241,6 +241,10 @@ def passage_sentences(doc: TextDoc, first: int, end: int) -> list[tuple[int, int
     return out
 
 
+# The [analysis] settings the measures read (the per-story measure cache is keyed on their values).
+MEASURE_SETTINGS = ("min_words_for_text_measures", "window_tokens", "pacing_segments", "min_words_for_pacing")
+
+
 class Measurer:
     def __init__(self, lexicons: dict[str, Lexicon] | None = None, analysis: Analysis | None = None):
         self.lex = lexicons if lexicons is not None else load_all()

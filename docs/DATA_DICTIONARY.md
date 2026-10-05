@@ -11,7 +11,7 @@ Generated from `litcorr/schema.py` by `python -m litcorr dictionary`. One row pe
 | `category_slug` | Category (slug) |  | Literotica's own category for the story, as given on the story page (URL form, e.g. adult-romance). | Falls back to the category of the listing page the story was found on if the story page does not name one. |  |
 | `category_name` | Category |  | Literotica's own name for the story's category (e.g. Romance), taken from the site's category list for category_slug, so every story in a category has the same name. |  |  |
 | `category_source` | Category source |  | Where the category came from: 'page' (the story page) or 'listing' (the category listing it was found on). |  |  |
-| `sampling_weight` | Sampling weight | weight | Estimated number of stories in the category divided by the number of analysed stories from that category. Use it to weight 'All categories' summaries so large categories count in proportion to their size. | Blank when the category's size could not be estimated from its listing pages. |  |
+| `sampling_weight` | Sampling weight | weight | Estimated number of stories in the category divided by the number of analysed stories from that category. Use it to weight 'All categories' summaries so large categories count in proportion to their size. | Blank when the category's size could not be estimated from its listing pages. Provisional while the collection is in progress (collection_manifest.json: sampling_weights_provisional): it changes as more of the category's sampled stories are collected. |  |
 
 ## Publication
 

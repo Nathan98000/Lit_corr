@@ -8,6 +8,8 @@ Outputs (in data/raw/):
   listing_items.parquet the sampling frame: every story seen on a listing page
   categories.parquet    categories and how their listing pages were read
   pages.parquet         every URL requested, with status and fetch time
+  parse_cache.parquet   the parsed pages of every story, reused by the next build-raw for stories whose saved
+                        pages and parser code are unchanged (``--full`` parses everything again)
 """
 
 from __future__ import annotations
@@ -17,9 +19,11 @@ import hashlib
 import hmac
 import json
 import os
+import pickle
 import secrets
 import zlib
 from concurrent.futures import ProcessPoolExecutor
+from pathlib import Path
 from typing import Any
 
 import pandas as pd
@@ -139,9 +143,67 @@ def _ts(x: Any) -> pd.Timestamp | None:
     return pd.to_datetime(x, unit="s", utc=True) if x else None
 
 
-def build_raw(settings: Settings, workers: int = 0) -> dict[str, Any]:
+def parser_fingerprint() -> str:
+    """A short hash of the code that turns saved pages into a parsed story (the site parsers and this module):
+    any edit to it makes the next build-raw parse every story again."""
+    here = Path(__file__).resolve()
+    h = hashlib.sha256()
+    for f in sorted((here.parent.parent / "site").glob("*.py")) + [here]:
+        h.update(f.name.encode("utf-8") + b"\0" + f.read_bytes() + b"\0")
+    return h.hexdigest()[:16]
+
+
+def _task_key(task: dict[str, Any]) -> str:
+    """Identifies a story's saved pages: their URLs, content hashes, fetch times and cache files."""
+    return hashlib.sha256(json.dumps(task, sort_keys=True, default=str).encode("utf-8")).hexdigest()[:24]
+
+
+def _load_parse_cache(path: Path, fingerprint: str) -> dict[str, tuple[str, bytes]]:
+    if not path.exists():
+        return {}
+    c = pd.read_parquet(path)
+    if not {"slug", "task_key", "fingerprint", "result"} <= set(c.columns):
+        return {}
+    c = c[c["fingerprint"] == fingerprint]
+    return {s: (k, r) for s, k, r in zip(c["slug"], c["task_key"], c["result"])}
+
+
+def _parse_all(tasks: list[dict[str, Any]], workers: int, cache_path: Path, full: bool) -> tuple[dict, dict]:
+    fingerprint = parser_fingerprint()
+    cached = {} if full else _load_parse_cache(cache_path, fingerprint)
+    keys = {t["slug"]: _task_key(t) for t in tasks}
+    blobs: dict[str, bytes] = {}
+    parsed: dict[str, dict[str, Any]] = {}
+    todo = []
+    for t in tasks:
+        hit = cached.get(t["slug"])
+        if hit and hit[0] == keys[t["slug"]]:
+            blobs[t["slug"]] = hit[1]
+            parsed[t["slug"]] = pickle.loads(hit[1])
+        else:
+            todo.append(t)
+    if todo:
+        log.info("Parsing %d stories from the cache with %d worker(s) (%d unchanged stories reused)...",
+                 len(todo), workers, len(tasks) - len(todo))
+        if workers > 1 and len(todo) > 20:
+            with ProcessPoolExecutor(max_workers=workers) as ex:
+                results = list(ex.map(_parse_story_task, todo, chunksize=8))
+        else:
+            results = [_parse_story_task(t) for t in todo]
+        for res in results:
+            parsed[res["slug"]] = res
+            blobs[res["slug"]] = pickle.dumps(res, protocol=5)
+    table = pd.DataFrame({"slug": [t["slug"] for t in tasks], "task_key": [keys[t["slug"]] for t in tasks],
+                          "fingerprint": fingerprint, "result": [blobs[t["slug"]] for t in tasks]})
+    tmp = cache_path.with_name(cache_path.name + ".tmp")
+    table.to_parquet(tmp, index=False, compression="zstd")
+    os.replace(tmp, cache_path)
+    return parsed, {"parsed": len(todo), "reused": len(tasks) - len(todo)}
+
+
+def build_raw(settings: Settings, workers: int = 0, full: bool = False) -> dict[str, Any]:
     paths = DataPaths(settings.data_dir).ensure()
-    state = State(paths.state_db)
+    state = State.snapshot(paths.state_db)
     cache = PageCache(paths.cache)
     secret = load_key_secret(paths)
     base = settings.scope.base_url.rstrip("/")
@@ -167,21 +229,12 @@ def build_raw(settings: Settings, workers: int = 0) -> dict[str, Any]:
                 task_pages.append({"page_no": n, "url": url,
                                    "path": str(cache.path_for(page["cache_key"])) if ok else None,
                                    "fetched_at": page["fetched_at"] if ok else None,
-                                   "headers_json": page["headers_json"] if ok else None})
+                                   "headers_json": page["headers_json"] if ok else None,
+                                   "content_sha1": page["content_sha1"] if ok else None})
             tasks.append({"slug": st["story_slug"], "pages": task_pages})
 
         n_workers = workers or max(1, min(8, (os.cpu_count() or 2) - 1))
-        parsed: dict[str, dict[str, Any]] = {}
-        if tasks:
-            log.info("Parsing %d stories from the cache with %d worker(s)...", len(tasks), n_workers)
-            if n_workers > 1 and len(tasks) > 20:
-                with ProcessPoolExecutor(max_workers=n_workers) as ex:
-                    for res in ex.map(_parse_story_task, tasks, chunksize=8):
-                        parsed[res["slug"]] = res
-            else:
-                for t in tasks:
-                    res = _parse_story_task(t)
-                    parsed[res["slug"]] = res
+        parsed, parse_stats = _parse_all(tasks, n_workers, paths.parse_cache, full)
 
         rows, page_rows = [], []
         for st in stories:
@@ -247,7 +300,7 @@ def build_raw(settings: Settings, workers: int = 0) -> dict[str, Any]:
             pages_df["fetched_at"] = pd.to_datetime(pages_df["fetched_at"], unit="s", utc=True)
         pages_df.to_parquet(paths.raw_pages, index=False)
         summary = {"stories": len(df), "with_text": int(df["text"].notna().sum()) if "text" in df else 0,
-                   "story_pages": len(pdf), "listing_items": len(listing), "categories": len(cats)}
+                   "story_pages": len(pdf), "listing_items": len(listing), "categories": len(cats), **parse_stats}
         log.info("Raw corpus written to %s: %s", paths.raw, summary)
         return summary
     finally:

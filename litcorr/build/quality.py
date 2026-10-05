@@ -156,13 +156,16 @@ def quality_report(settings: Settings) -> dict[str, Any]:
     pages = pd.read_parquet(paths.raw_pages) if paths.raw_pages.exists() else pd.DataFrame()
     st_info: dict[str, Any] = {}
     if paths.state_db.exists():
-        st = State(paths.state_db)
+        st = State.snapshot(paths.state_db)
         try:
             st_info = {"request_outcomes": st.request_outcome_counts(), "story_status": st.story_status_counts(),
                        "sessions": len(st.runs()),
                        "stop_reasons": pd.Series([r["stop_reason"] for r in st.runs()]).value_counts().to_dict()}
         finally:
             st.close()
+    progress = None
+    if paths.manifest.exists():
+        progress = json.loads(paths.manifest.read_text(encoding="utf-8")).get("collection_progress")
     n = len(df)
     text = df[df["has_text"]]
     flags = pd.Series([f for fl in df["qc_flags"] for f in fl]).value_counts().to_dict() if n else {}
@@ -184,6 +187,7 @@ def quality_report(settings: Settings) -> dict[str, Any]:
             sources[key] = vals.value_counts().to_dict()
     summary = {
         "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "collection_progress": progress,
         "stories_in_dataset": n,
         "stories_with_text": int(df["has_text"].sum()),
         "stories_included_in_analysis": int(df["analysis_include"].sum()),
@@ -217,10 +221,35 @@ def quality_report(settings: Settings) -> dict[str, Any]:
     return summary
 
 
+def _progress_lines(p: dict[str, Any] | None) -> list[str]:
+    if not p:
+        return []
+    if p["complete"]:
+        return ["## Collection progress", "", f"Collection complete: {p['collected']:,} of {p['sampled']:,} sampled "
+                f"stories collected; {p['not_collectable']:,} could not be collected.", ""]
+    lines = ["## Collection progress: PARTIAL", "",
+             f"**This dataset comes from a collection still in progress: {p['collected']:,} of {p['sampled']:,} "
+             f"sampled stories collected ({p['share_collected']:.0%}), {p['still_queued']:,} still queued.** "
+             "Every number in this report and in the processed data describes the stories collected so far. "
+             "The queue is shuffled within each category and alternates between categories, so the stories "
+             "collected so far are a random part of each category's sample and the categories stay roughly "
+             "balanced. The sampling weights are provisional: they change as the remaining stories arrive "
+             "(`collection_manifest.json` has `sampling_weights_provisional`).", "",
+             "| Category (sampled from) | Sampled | Collected | Still queued | Not collectable | Included | "
+             "Listing read |", "|---|---|---|---|---|---|---|"]
+    for slug, c in p["by_category"].items():
+        fin = {True: "yes", False: "no", None: "n/a"}[c["listing_finished"]]
+        lines.append(f"| {slug} | {c['sampled']:,} | {c['collected']:,} ({c['collected'] / c['sampled']:.0%}) | "
+                     f"{c['still_queued']:,} | {c['not_collectable']:,} | {c['included']:,} | {fin} |"
+                     if c["sampled"] else f"| {slug} | 0 | 0 | 0 | 0 | {c['included']:,} | {fin} |")
+    return lines + [""]
+
+
 def _markdown(s: dict[str, Any]) -> str:
     n = s["stories_in_dataset"]
     lines = [
         "# Data-quality report", "", f"Generated {s['generated_at']}.", "",
+        *_progress_lines(s.get("collection_progress")),
         "## Summary", "",
         "| | |", "|---|---|",
         f"| Stories in dataset (queued for full text) | {n:,} |",

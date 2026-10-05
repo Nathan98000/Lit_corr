@@ -477,3 +477,60 @@ with `python -m litcorr.dev.handcheck score`.
 * POV: first-person-plural narration ("we") still lands in "mixed" (a decision for the user: a "first plural"
   class, or counting "we" as first person).
 * Sentence splitting after "etc." (1 error in 50).
+
+---
+
+## Phase 6: Incremental re-runs and safe concurrency (2026-10-04)
+
+### Read-only state database
+
+`build-raw`, `analyze`, `report`, `status` and `categories` now read `state.sqlite3` through `State.snapshot()`,
+an in-memory copy; the collector's own `State()` (and its write path) is unchanged. Tested on this machine
+(SQLite 3.53): a plain `mode=ro` connection to a WAL database that has no `-wal`/`-shm` files *creates* both and
+cannot remove them, and a read-only connection cannot run the old `PRAGMA journal_mode=WAL` / `CREATE TABLE IF NOT
+EXISTS` set-up at all. So:
+
+* no `-wal` file (no collector has the database open): the main file is read with `immutable=1`, which creates
+  no files; if a `-wal` appears during the copy (a collector started), the copy is taken again the normal way;
+* `-wal` present (collector running): `mode=ro`, which sees everything the collector committed, including
+  changes still in the WAL, and never writes the database or the WAL (it shares the `-shm` index like any
+  reader);
+* the copy is a single SQLite backup (well under a second for the 77 MB database), so no read transaction is
+  held open against the collector's checkpoints; `PRAGMA query_only` guards the copy against writes.
+
+Tests (`tests/test_stage1b_incremental.py`): with the collector closed, build-raw + analyze + report + status
+leave the database byte-identical and create no `-wal`/`-shm` files; with a writer holding uncheckpointed changes,
+the snapshot sees them and the main file and WAL stay byte-identical. On the real data, `state.sqlite3` was
+unchanged after every run and no side files were left.
+
+### Incremental build-raw and analyze
+
+* `build-raw`: a parse cache (`data/raw/parse_cache.parquet`, kept in `raw/` because it holds story text) keyed
+  on each story's saved pages (URLs, content hashes, fetch times, cache files) and a fingerprint of the parser
+  code; only new or changed stories are parsed.
+* `analyze`: a per-story measure cache (`data/derived/text_measures.parquet`, no text) keyed on `story_key`, a
+  hash of the text and the story metadata the measures use, and a context hash of `TEXT_PIPELINE_VERSION`, the
+  text-code fingerprint, the lexicon hash and the four `[analysis]` settings the measures read. The code
+  fingerprint means an edit that forgets to bump the version still invalidates the cache. Every run, full or
+  incremental, passes the measures through the same Parquet round trip, so the outputs are identical.
+* `--full` on `build-raw`, `analyze` and `refresh` ignores the caches. Test: a partial collection, then the rest,
+  incremental build-raw + analyze, then `--full`: raw and processed tables are equal (`assert_frame_equal`); a
+  re-run with nothing new parses and measures nothing; changing a measure setting re-measures everything.
+* `[analysis] workers` from `config.toml` is now used by `analyze` when `--workers` is not given (it was ignored).
+
+Real data (9,000 sampled stories, 4,251 with text): first `refresh` 218 s (both caches filled); second `refresh`
+with nothing new 12.6 s (0 parsed, 0 measured); the processed values are identical to the Phase 4 run.
+
+### Partial-collection labels
+
+The collection is partial: 4,251 of 9,000 sampled stories collected (47%), 4,749 still queued, every category at
+142 of 300. `collection_manifest.json` now has `collection_progress` (overall and per sampled category: sampled,
+collected, still queued, not collectable, with text, included, listing read) and `sampling_weights_provisional`;
+the quality report opens with a "Collection progress: PARTIAL" table; the `sampling_weight` caveat says the
+weights are provisional while collection runs.
+
+### `refresh`
+
+`python -m litcorr refresh` = incremental build-raw + analyze + report, then a profile of every measure saved to
+`data/derived/profiles/<processed_at>/` (aggregate statistics only, no story keys; tested) and compared with
+the previous refresh (`latest_diff.md`). No export. Documented in README §5.

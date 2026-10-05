@@ -68,7 +68,9 @@ v("category_source", G, "Identifiers", "categorical", "", "Category source",
 v("sampling_weight", G, "Identifiers", "continuous", "weight", "Sampling weight",
   "Estimated number of stories in the category divided by the number of analysed stories from that category. "
   "Use it to weight 'All categories' summaries so large categories count in proportion to their size.",
-  "Blank when the category's size could not be estimated from its listing pages.", explorer=False)
+  "Blank when the category's size could not be estimated from its listing pages. Provisional while the "
+  "collection is in progress (collection_manifest.json: sampling_weights_provisional): it changes as more of the "
+  "category's sampled stories are collected.", explorer=False)
 
 # ----------------------------------------------------------------- publication
 G = "Publication"

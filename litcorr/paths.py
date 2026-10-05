@@ -47,8 +47,13 @@ class DataPaths:
     def lock_file(self) -> Path:
         return self.root / ".collector.lock"
 
+    @property
+    def derived(self) -> Path:
+        """Re-creatable intermediate results without story text (the per-story measure cache, refresh profiles)."""
+        return self.root / "derived"
+
     def ensure(self) -> "DataPaths":
-        for p in (self.root, self.cache, self.raw, self.processed, self.logs, self.handoff):
+        for p in (self.root, self.cache, self.raw, self.processed, self.logs, self.handoff, self.derived):
             p.mkdir(parents=True, exist_ok=True)
         return self
 
@@ -72,6 +77,20 @@ class DataPaths:
     @property
     def raw_pages(self) -> Path:
         return self.raw / "pages.parquet"
+
+    @property
+    def parse_cache(self) -> Path:
+        """Parsed story pages from earlier build-raw runs (contains story text, so it stays in raw/)."""
+        return self.raw / "parse_cache.parquet"
+
+    @property
+    def measure_cache(self) -> Path:
+        """Text measures from earlier analyze runs, one row per story (no text)."""
+        return self.derived / "text_measures.parquet"
+
+    @property
+    def refresh_profiles(self) -> Path:
+        return self.derived / "profiles"
 
     # Processed outputs
     @property

@@ -1,7 +1,7 @@
 """Command-line interface: ``python -m litcorr <command>``.
 
 Network commands (talk to Literotica, slowly):  probe, collect
-Offline commands (never touch the network):     status, categories, build-raw, analyze, report,
+Offline commands (never touch the network):     status, categories, build-raw, analyze, report, refresh,
                                                 docs, export-handoff, process, demo
 """
 
@@ -74,7 +74,7 @@ def cmd_categories(args):
     s = load_settings(args.config)
     p = DataPaths(s.data_dir)
     if p.state_db.exists():
-        st = State(p.state_db)
+        st = State.snapshot(p.state_db)
         cats = st.categories()
         st.close()
         if cats:
@@ -92,7 +92,7 @@ def cmd_build_raw(args):
 
     s = load_settings(args.config)
     setup_logging(None, args.verbose)
-    print(build_raw(s, workers=args.workers))
+    print(build_raw(s, workers=args.workers, full=getattr(args, "full", False)))
 
 
 def cmd_analyze(args):
@@ -100,7 +100,7 @@ def cmd_analyze(args):
 
     s = load_settings(args.config)
     setup_logging(None, args.verbose)
-    print(run_analyze(s, workers=args.workers, write_csv=not args.no_csv))
+    print(run_analyze(s, workers=args.workers, write_csv=not args.no_csv, full=getattr(args, "full", False)))
 
 
 def cmd_report(args):
@@ -110,6 +110,15 @@ def cmd_report(args):
     s = load_settings(args.config)
     quality_report(s)
     print(DataPaths(s.data_dir).quality_md.read_text(encoding="utf-8"))
+
+
+def cmd_refresh(args):
+    """build-raw + analyze (both incremental) + report + a profile comparison with the previous refresh."""
+    from .refresh import run_refresh
+
+    s = load_settings(args.config)
+    setup_logging(None, args.verbose)
+    print(run_refresh(s, workers=args.workers, full=args.full))
 
 
 def cmd_docs(args):
@@ -161,10 +170,15 @@ def main(argv: list[str] | None = None) -> int:
     sub.add_parser("categories", help="list categories and which are selected")
     b = sub.add_parser("build-raw", help="parse the page cache into data/raw/*.parquet (offline)")
     b.add_argument("--workers", type=int, default=0)
+    b.add_argument("--full", action="store_true", help="parse every story again instead of reusing unchanged ones")
     a = sub.add_parser("analyze", help="compute text measures + popularity -> data/processed (offline)")
     a.add_argument("--workers", type=int, default=0)
     a.add_argument("--no-csv", action="store_true", help="skip the CSV export")
+    a.add_argument("--full", action="store_true", help="measure every story again instead of using the cache")
     sub.add_parser("report", help="write and print the data-quality report (offline)")
+    r = sub.add_parser("refresh", help="build-raw + analyze (incremental) + report + profile comparison; no export")
+    r.add_argument("--workers", type=int, default=0)
+    r.add_argument("--full", action="store_true", help="redo every story (no caches)")
     sub.add_parser("docs", help="regenerate docs/DATA_DICTIONARY.md and docs/METHODOLOGY.md tables")
     sub.add_parser("export-handoff", help="zip the processed data for Stage 2 (no text, no identifiers)")
     p = sub.add_parser("process", help="build-raw + analyze + report + docs + export-handoff (offline)")
@@ -174,7 +188,8 @@ def main(argv: list[str] | None = None) -> int:
     d.add_argument("--stories", type=int, default=40, help="synthetic stories per category")
     args = ap.parse_args(argv)
     handlers = {"probe": cmd_probe, "collect": cmd_collect, "status": cmd_status, "categories": cmd_categories,
-                "build-raw": cmd_build_raw, "analyze": cmd_analyze, "report": cmd_report, "docs": cmd_docs,
+                "build-raw": cmd_build_raw, "analyze": cmd_analyze, "report": cmd_report, "refresh": cmd_refresh,
+                "docs": cmd_docs,
                 "export-handoff": cmd_export, "process": cmd_process, "demo": cmd_demo}
     from .collect.session import AlreadyRunning
     from .net.fetcher import StopCollection

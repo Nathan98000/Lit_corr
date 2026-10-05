@@ -91,3 +91,18 @@ def test_char_inventory_counts_variants_markup_and_mojibake():
     assert t["mojibake"]["occurrences"].sum() == 1
     na = t["non_ascii"].set_index("char")
     assert na.loc["’", "stories"] == 1 and "“" in na.index
+
+
+def test_fragment_check_shows_at_most_five_words_around_each_match():
+    from litcorr.dev.fragment_check import fragment
+    from litcorr.text.doc import TextDoc
+    from litcorr.text.features import Measurer, passive_matches
+
+    doc = TextDoc(['The vase was quickly broken by the cat. "Come here and sit down with me now," she said.',
+                   'Anna smiled at Anna\'s friend Tom, and Tom smiled at Anna. Later Tom and Anna left.'])
+    (i, j), = passive_matches(doc)
+    assert fragment(doc, f"t{i}-{j}") == "was quickly broken by"
+    assert fragment(doc, "seg0") == '"Come here and sit ..."'
+    assert Measurer().command_segments(doc) == [0]
+    names = Measurer().recurring_names(doc)[0]
+    assert [fragment(doc, f"n{k}") for k in range(len(names))] == names

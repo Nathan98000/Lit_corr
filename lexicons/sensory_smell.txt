@@ -1,6 +1,7 @@
 # name: sensory_smell
 # label: Smell
 # description: Words about smells and scents (scent, perfume, musk, sniff, aroma).
+# notes: Stage 1B: "pungent" and "nostril(s)" added.
 smell
 smelled
 smelt
@@ -37,3 +38,5 @@ cologne
 inhale
 inhaled
 inhaling
+pungent
+nostril*

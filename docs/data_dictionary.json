@@ -899,7 +899,7 @@
       "unit": "per 1,000 words",
       "label": "Name mentions per 1,000 words",
       "description": "Mentions of those recurring names per 1,000 words.",
-      "caveat": "",
+      "caveat": "Lower in short stories, where fewer names reach the three mentions needed to count.",
       "explorer": true
     },
     {
@@ -1449,7 +1449,7 @@
       "unit": "per 1,000 words",
       "label": "Repeated five-word phrases",
       "description": "Extra occurrences of any five-word sequence that appears more than once, per 1,000 words.",
-      "caveat": "",
+      "caveat": "Rises with story length (a longer text has more chances to repeat a phrase); compare stories of similar length.",
       "explorer": true
     },
     {
@@ -1603,7 +1603,7 @@
       "unit": "position (0 = start, 1 = end)",
       "label": "How far in before explicit language",
       "description": "Position of the first sexual term as a fraction of the story.",
-      "caveat": "Blank if the story has none. Blank when the collected text is incomplete (text_truncated).",
+      "caveat": "Blank if the story has none. Blank when the collected text is incomplete (text_truncated). Earlier in longer stories (a longer text has more chances of an early passing mention); compare stories of similar length.",
       "explorer": true
     },
     {
@@ -1691,7 +1691,7 @@
       "unit": "per 1,000 words",
       "label": "Anxiety & fear",
       "description": "Words of fear, worry and nervousness per 1,000 words.",
-      "caveat": "Keyword counts: negation ('not happy') and sarcasm are not understood.",
+      "caveat": "Keyword counts: negation ('not happy') and sarcasm are not understood. Low split-half reliability (0.58): a single story's value is noisy (few hits per story), so compare groups of stories rather than single stories.",
       "explorer": true
     },
     {
@@ -1702,7 +1702,7 @@
       "unit": "per 1,000 words",
       "label": "Anger",
       "description": "Words of anger and irritation per 1,000 words.",
-      "caveat": "Keyword counts: negation ('not happy') and sarcasm are not understood.",
+      "caveat": "Keyword counts: negation ('not happy') and sarcasm are not understood. Low split-half reliability (0.55): a single story's value is noisy (few hits per story), so compare groups of stories rather than single stories.",
       "explorer": true
     },
     {
@@ -1746,7 +1746,7 @@
       "unit": "per 1,000 words",
       "label": "Jealousy & envy",
       "description": "Words of jealousy and envy per 1,000 words.",
-      "caveat": "Keyword counts: negation ('not happy') and sarcasm are not understood.",
+      "caveat": "Keyword counts: negation ('not happy') and sarcasm are not understood. Low split-half reliability (0.40): a single story's value is noisy (few hits per story), so compare groups of stories rather than single stories.",
       "explorer": true
     },
     {
@@ -1801,7 +1801,7 @@
       "unit": "per 1,000 words",
       "label": "Distancing phrases",
       "description": "Phrases like 'it seemed', 'as if', 'felt like' per 1,000 words.",
-      "caveat": "",
+      "caveat": "Low split-half reliability (0.58): a single story's value is noisy (few hits per story), so compare groups of stories rather than single stories.",
       "explorer": true
     },
     {
@@ -1856,7 +1856,7 @@
       "unit": "per 1,000 words",
       "label": "Uncertainty",
       "description": "Words of doubt and not knowing (unsure, confused, 'no idea'…) per 1,000 words.",
-      "caveat": "",
+      "caveat": "Low split-half reliability (0.40): a single story's value is noisy (few hits per story), so compare groups of stories rather than single stories.",
       "explorer": true
     },
     {
@@ -1878,7 +1878,7 @@
       "unit": "−1 (all hedging) to +1 (all certainty)",
       "label": "Hedging ↔ certainty",
       "description": "(certainty − hedges) ÷ (certainty + hedges).",
-      "caveat": "",
+      "caveat": "Low split-half reliability (0.43): a single story's value is noisy (few hits per story), so compare groups of stories rather than single stories.",
       "explorer": true
     },
     {
@@ -2131,7 +2131,7 @@
       "unit": "per 1,000 words",
       "label": "Agency (deciding & trying)",
       "description": "Words for deciding, choosing, planning and trying per 1,000 words.",
-      "caveat": "Describes the language of the text, not the psychology of its author.",
+      "caveat": "Describes the language of the text, not the psychology of its author. Low split-half reliability (0.56): a single story's value is noisy (few hits per story), so compare groups of stories rather than single stories.",
       "explorer": true
     },
     {
@@ -2186,7 +2186,7 @@
       "unit": "share (0–1)",
       "label": "Commands among speech",
       "description": "Share of quoted passages that start with a command verb.",
-      "caveat": "",
+      "caveat": "Low split-half reliability (0.44): a single story's value is noisy (few hits per story), so compare groups of stories rather than single stories.",
       "explorer": true
     },
     {

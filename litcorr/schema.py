@@ -548,12 +548,31 @@ NEEDS_FULL_TEXT = ("story_words", "story_chars", "story_sentences", "story_parag
                    "sense_taste_count", "sense_body_count", "lex_unique_words", "lex_ttr", "char_recurring_names")
 _FULL_NOTE = "Blank when the collected text is incomplete (text_truncated)."
 _HANDOFF_ROUNDED = ("pop_views", "pop_favorites", "pop_comments", "pop_reading_lists", "pop_rating_count")
+# Stage 1B split-half reliability below 0.6 (odd vs even paragraphs of stories with 1,000+ words, correlated across
+# stories, Spearman-Brown corrected; docs/stage1b/VALIDATION_REPORT.md).
+LOW_RELIABILITY = {"emo_jealousy_per_1k": 0.40, "hedge_uncertainty_per_1k": 0.40, "hedge_certainty_balance": 0.43,
+                   "agency_command_share_of_speech": 0.44, "emo_anger_per_1k": 0.55, "agency_volition_per_1k": 0.56,
+                   "psy_distancing_per_1k": 0.58, "emo_anxiety_per_1k": 0.58}
+# Stage 1B length check: measures that depend on story length for a mechanical reason.
+LENGTH_NOTES = {
+    "rep_repeated_5gram_per_1k": "Rises with story length (a longer text has more chances to repeat a phrase); "
+                                 "compare stories of similar length.",
+    "sex_first_mention_position": "Earlier in longer stories (a longer text has more chances of an early passing "
+                                  "mention); compare stories of similar length.",
+    "char_name_mentions_per_1k": "Lower in short stories, where fewer names reach the three mentions needed to "
+                                 "count.",
+}
 for _i, _x in enumerate(REG):
     _extra = []
     if _x.name in NEEDS_FULL_TEXT or _x.name.startswith("pace_"):
         _extra.append(_FULL_NOTE + (" Use site_words_count for length then." if _x.name == "story_words" else ""))
     if _x.name in _HANDOFF_ROUNDED:
         _extra.append("Rounded to 3 significant figures in the Stage 2 handoff.")
+    if _x.name in LOW_RELIABILITY:
+        _extra.append(f"Low split-half reliability ({LOW_RELIABILITY[_x.name]:.2f}): a single story's value is "
+                      "noisy (few hits per story), so compare groups of stories rather than single stories.")
+    if _x.name in LENGTH_NOTES:
+        _extra.append(LENGTH_NOTES[_x.name])
     if _extra:
         REG[_i] = replace(_x, caveat=" ".join(([_x.caveat] if _x.caveat else []) + _extra))
 

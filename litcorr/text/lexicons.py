@@ -5,7 +5,9 @@ See ``lexicons/README.md`` for the file format. Matching rules:
   * ``word*`` matches any word starting with ``word``;
   * multi-word entries match consecutive words within one paragraph;
   * within one lexicon, a word is counted at most once: phrases are matched
-    first (longest first) and the words they cover are not counted again.
+    first (longest first) and the words they cover are not counted again;
+  * an entry starting with ``!`` is an exclusion phrase ("!birth control"): wherever it occurs, its words are
+    not counted by that lexicon (a way to leave out one sense of a word without dropping the word).
 """
 
 from __future__ import annotations
@@ -33,6 +35,7 @@ class Lexicon:
     words: frozenset[str] = frozenset()
     prefixes: tuple[str, ...] = ()
     phrases: dict[str, list[tuple[str, ...]]] = field(default_factory=dict)
+    exclusions: dict[str, list[tuple[str, ...]]] = field(default_factory=dict)
     n_entries: int = 0
 
     def __post_init__(self) -> None:
@@ -56,6 +59,7 @@ def load_lexicon(path: Path) -> Lexicon:
     words: set[str] = set()
     prefixes: set[str] = set()
     phrases: dict[str, list[tuple[str, ...]]] = {}
+    exclusions: dict[str, list[tuple[str, ...]]] = {}
     n = 0
     for raw in path.read_text(encoding="utf-8").splitlines():
         line = raw.strip()
@@ -71,6 +75,12 @@ def load_lexicon(path: Path) -> Lexicon:
         if "  #" in line:
             line = line.split("  #", 1)[0].strip()
         entry = norm_token(line)
+        if entry.startswith("!"):
+            parts = entry[1:].split()
+            if len(parts) < 2 or any("*" in p for p in parts):
+                raise ValueError(f"{path.name}: an exclusion must be a phrase of two or more plain words ({line!r})")
+            exclusions.setdefault(parts[0], []).append(tuple(parts))
+            continue
         parts = entry.split()
         n += 1
         if len(parts) == 1:
@@ -82,14 +92,15 @@ def load_lexicon(path: Path) -> Lexicon:
             if any("*" in p for p in parts):
                 raise ValueError(f"{path.name}: wildcards are not supported inside phrases ({line!r})")
             phrases.setdefault(parts[0], []).append(tuple(parts))
-    for k in phrases:
-        phrases[k] = sorted(set(phrases[k]), key=len, reverse=True)
+    for d in (phrases, exclusions):
+        for k in d:
+            d[k] = sorted(set(d[k]), key=len, reverse=True)
     name = meta.get("name") or path.stem
     if name != path.stem:
         raise ValueError(f"{path.name}: '# name: {name}' must match the file name")
     return Lexicon(name=name, label=meta.get("label", name), description=meta.get("description", ""),
                    notes=meta.get("notes", ""), words=frozenset(words), prefixes=tuple(sorted(prefixes)),
-                   phrases=phrases, n_entries=n)
+                   phrases=phrases, exclusions=exclusions, n_entries=n)
 
 
 def load_all(directory: Path = LEXICON_DIR) -> dict[str, Lexicon]:
@@ -114,8 +125,22 @@ def match(lex: Lexicon, vocab: list[str], type_ids: np.ndarray, para_idx: np.nda
     if n == 0:
         return hits
     consumed = np.zeros(n, dtype=bool)
-    if lex.phrases:
+    if lex.exclusions or lex.phrases:
         index = {w: i for i, w in enumerate(vocab)}
+    if lex.exclusions:  # excluded senses: their words are consumed without a hit
+        for first, phs in lex.exclusions.items():
+            tid = index.get(first)
+            if tid is None:
+                continue
+            starts = positions_by_type[tid] if positions_by_type is not None else np.nonzero(type_ids == tid)[0]
+            for p in starts:
+                for ph in phs:
+                    L = len(ph)
+                    if p + L <= n and para_idx[p + L - 1] == para_idx[p] and all(
+                            vocab[type_ids[p + j]] == ph[j] for j in range(1, L)):
+                        consumed[p:p + L] = True
+                        break
+    if lex.phrases:
         starts_list = []
         for first in lex.phrases:
             tid = index.get(first)

@@ -1,7 +1,7 @@
 # name: emotion_arousal
 # label: Excitement and arousal
 # description: Words of excitement, eagerness, desire and sexual arousal (aroused, horny, moan, gasp).
-# notes: Overlaps in spirit with the sexual-language lists but is measured separately; "hot" and "wild" are excluded as too ambiguous.
+# notes: Overlaps in spirit with the sexual-language lists but is measured separately; "hot" and "wild" are excluded as too ambiguous. Stage 1B: grunt(ing) and writhe/writhing added (they sit with moans and gasps).
 excite
 excited
 excitedly
@@ -56,3 +56,5 @@ ecstatic
 passion
 passionate
 passionately
+grunt*
+writh*

@@ -1,7 +1,7 @@
 # name: sexual_general
 # label: Other sexual vocabulary
 # description: General sexual words that are neither body parts nor acts (sex, naked, erotic, toys, lingerie).
-# notes: Arousal words (horny, aroused, lust) are measured separately as an emotion (emotion_arousal.txt). Clothing in general is not counted; only lingerie words are.
+# notes: Arousal words (horny, aroused, lust) are measured separately as an emotion (emotion_arousal.txt). Clothing in general is not counted; only lingerie words are. Stage 1B: "intercourse" and "sex toy(s)" added.
 sex
 sexual
 sexually
@@ -32,3 +32,6 @@ vibrators
 dildo*
 lingerie
 panties
+intercourse
+sex toy
+sex toys

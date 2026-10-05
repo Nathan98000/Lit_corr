@@ -1,11 +1,11 @@
 # name: relationship_familiarity
 # label: Familiarity
 # description: Language suggesting characters already know each other well: friends, shared history, routines ("as usual", "for years").
+# notes: Stage 1B: "childhood", "childhood friend" and "grew up together" removed (they refer to youth). "used to" removed (15% of hits; mostly a narrator's past habit or "get used to", not shared history).
 best friend
 best friends
 old friend
 old friends
-childhood friend
 friend
 friends
 friendship
@@ -14,7 +14,6 @@ familiarity
 as always
 as usual
 like always
-used to
 all these years
 for years
 known each other
@@ -27,6 +26,4 @@ neighbour
 neighbours
 roommate
 roommates
-childhood
-grew up together
 remember when

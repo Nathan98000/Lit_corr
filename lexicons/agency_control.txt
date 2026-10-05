@@ -1,7 +1,7 @@
 # name: agency_control
 # label: Control and restraint
 # description: Words about having, taking or losing control, restraint, permission and force (in control, tied, cuffs, permission, forced).
-# notes: "force" also appears figuratively ("forced a smile"). This is a description of the language used, not of any real person.
+# notes: "force" also appears figuratively ("forced a smile"). This is a description of the language used, not of any real person. Stage 1B: "birth control", "remote control" and "... force" (air force, police force) are excluded senses.
 control
 controlled
 controlling
@@ -52,3 +52,10 @@ forced
 forcing
 forceful
 forcefully
+!birth control
+!remote control
+!air force
+!police force
+!task force
+!labor force
+!labour force

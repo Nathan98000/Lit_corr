@@ -1,7 +1,7 @@
 # name: sexual_anatomy
 # label: Anatomical sexual terms
 # description: Explicit or clinical words for sexual body parts.
-# notes: Ambiguous everyday body words are excluded on purpose (head, hole, lips, mouth, tongue, shaft, member, chest, bottom, package, prick, bush). "asshole" is counted only as profanity. "ass" is kept because in this corpus it is overwhelmingly anatomical, but it also occurs in insults.
+# notes: Ambiguous everyday body words are excluded on purpose (head, hole, lips, mouth, tongue, shaft, member, chest, bottom, package, prick, bush). "asshole" is counted only as profanity. "ass" is kept because in this corpus it is overwhelmingly anatomical, but it also occurs in insults. Stage 1B: "precum" added.
 penis
 penises
 cock
@@ -57,3 +57,4 @@ semen
 sperm
 pubic
 pubes
+precum

@@ -1,7 +1,7 @@
 # name: emotion_affection
 # label: Affection and love
 # description: Words of love, fondness, devotion and affectionate address (darling, sweetheart).
-# notes: "lovely" (a description) and "dear" (also "oh dear", letters) are excluded. Physical affection (kiss, hug) is measured as intimacy in relationship_intimacy.txt.
+# notes: "lovely" (a description) and "dear" (also "oh dear", letters) are excluded. Physical affection (kiss, hug) is measured as intimacy in relationship_intimacy.txt. Stage 1B: "make/made/making love" is a sexual act (counted there), not affection, so it is an excluded sense here.
 love
 loved
 loves
@@ -31,3 +31,8 @@ babe
 devoted
 devotion
 beloved
+!make love
+!made love
+!making love
+!makes love
+!love making

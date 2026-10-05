@@ -1,12 +1,10 @@
 # name: relationship_disclosure
 # label: Emotional disclosure
 # description: First-person statements that reveal feelings or confess something ("I feel", "I love you", "I'm scared", "to be honest").
-# notes: Mostly phrases, so this measure depends on dialogue and first-person narration.
+# notes: Mostly phrases, so this measure depends on dialogue and first-person narration. Stage 1B: "I felt" and "I was feeling" removed (38% of all hits; in first-person narration they mostly report touch or sensation, not a disclosure).
 i feel
-i felt
 i'm feeling
 i am feeling
-i was feeling
 i love you
 i need you
 i miss you

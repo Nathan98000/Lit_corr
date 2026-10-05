@@ -1,7 +1,7 @@
 # name: agency_submission
 # label: Submission language
 # description: Words associated with submitting, obeying, kneeling, begging and helplessness (submissive, obey, kneel, beg, surrender).
-# notes: "submit/submitted" can occasionally refer to submitting a story. Linguistic indicator only.
+# notes: "submit/submitted" can occasionally refer to submitting a story. Linguistic indicator only. Stage 1B: "mercy" added ("begged for mercy").
 submit
 submitted
 submits
@@ -46,3 +46,4 @@ yes sir
 yes master
 yes mistress
 yes ma'am
+mercy

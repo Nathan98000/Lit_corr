@@ -1,7 +1,7 @@
 # name: action_verbs
 # label: Physical action verbs
 # description: Verbs of physical movement and action (grab, pull, run, turn, reach, lift, sat, stood).
-# notes: Used for "action language" and for the action-density pacing measures. Sexual acts are counted separately.
+# notes: Used for "action language" and for the action-density pacing measures. Sexual acts are counted separately. Stage 1B: "open" removed (in this corpus mostly the adjective: "the door was open").
 grab
 grabbed
 grabbing
@@ -44,7 +44,6 @@ throwing
 slam
 slammed
 slamming
-open
 opened
 opening
 climb

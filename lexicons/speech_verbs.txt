@@ -1,7 +1,7 @@
 # name: speech_verbs
 # label: Speech verbs (dialogue tags)
 # description: Verbs used to attribute dialogue (said, asked, whispered, moaned, exclaimed).
-# notes: Used for the "said share": how often plain "said/says" is used compared with all speech verbs.
+# notes: Used for the "said share": how often plain "said/says" is used compared with all speech verbs. Stage 1B: "continued" removed (mostly "continued to ...", not a dialogue tag).
 said
 says
 asked
@@ -40,7 +40,6 @@ commanded
 insisted
 explained
 added
-continued
 told
 called
 responded

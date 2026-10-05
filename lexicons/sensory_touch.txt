@@ -1,7 +1,7 @@
 # name: sensory_touch
 # label: Touch
 # description: Words about touching and texture (caress, rub, squeeze, soft, smooth, skin).
-# notes: "roughly" (= approximately) and "brush" (hair brush, brush past) are excluded; "firm" and "tight" are excluded as too ambiguous.
+# notes: "roughly" (= approximately) and "brush" (hair brush, brush past) are excluded; "firm" and "tight" are excluded as too ambiguous. Stage 1B: "softly" removed (mostly describes speech: "she said softly"); "supple" added.
 touch
 touched
 touches
@@ -51,7 +51,6 @@ gripping
 smooth
 rough
 soft
-softly
 softer
 softest
 softness
@@ -66,3 +65,4 @@ fingertips
 sticky
 slick
 slippery
+supple

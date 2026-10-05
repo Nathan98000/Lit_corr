@@ -375,7 +375,7 @@ indicator of cast size.
 | Variable | What it measures | Caveat |
 |---|---|---|
 | **Recurring names** (`char_recurring_names`) | Number of distinct capitalised names that appear at least 3 times mid-sentence (mostly characters, sometimes places). | Heuristic: first names and surnames count separately; place and brand names can be included; names that only ever start a sentence are missed. Blank when the collected text is incomplete (text_truncated). |
-| **Name mentions per 1,000 words** (`char_name_mentions_per_1k`) | Mentions of those recurring names per 1,000 words. |  |
+| **Name mentions per 1,000 words** (`char_name_mentions_per_1k`) | Mentions of those recurring names per 1,000 words. | Lower in short stories, where fewer names reach the three mentions needed to count. |
 | **Focus on main name** (`char_top_name_share`) | Share of all name mentions taken by the most-mentioned name. |  |
 
 ### Gendered language
@@ -481,7 +481,7 @@ before it.
 | **Overlap between neighbouring sentences** (`rep_adjacent_sentence_overlap`) | Average share of content words that consecutive sentences have in common (Jaccard overlap). |  |
 | **Sentences starting the same way** (`rep_same_start_share`) | Share of sentences that start with the same word as the sentence before ('She… She… She…'). |  |
 | **Doubled words** (`rep_immediate_word_repeats_per_1k`) | Words immediately repeated ('yes, yes', 'oh oh') per 1,000 words. |  |
-| **Repeated five-word phrases** (`rep_repeated_5gram_per_1k`) | Extra occurrences of any five-word sequence that appears more than once, per 1,000 words. |  |
+| **Repeated five-word phrases** (`rep_repeated_5gram_per_1k`) | Extra occurrences of any five-word sequence that appears more than once, per 1,000 words. | Rises with story length (a longer text has more chances to repeat a phrase); compare stories of similar length. |
 
 | Variable | What it measures | Caveat |
 |---|---|---|
@@ -514,7 +514,7 @@ simple "slow burn" indicator.
 | **Sexual-action terms** (`sex_action_per_1k`) | Words and phrases for sexual acts per 1,000 words. | A keyword count from editable word lists; it does not measure how explicit a story feels to a reader. |
 | **Other sexual vocabulary** (`sex_other_per_1k`) | General sexual words (sex, naked, erotic, toys, lingerie) per 1,000 words. | A keyword count from editable word lists; it does not measure how explicit a story feels to a reader. |
 | **Sentences with sexual language** (`sex_sentence_share`) | Share of sentences containing at least one sexual term. | A keyword count from editable word lists; it does not measure how explicit a story feels to a reader. |
-| **How far in before explicit language** (`sex_first_mention_position`) | Position of the first sexual term as a fraction of the story. | Blank if the story has none. Blank when the collected text is incomplete (text_truncated). |
+| **How far in before explicit language** (`sex_first_mention_position`) | Position of the first sexual term as a fraction of the story. | Blank if the story has none. Blank when the collected text is incomplete (text_truncated). Earlier in longer stories (a longer text has more chances of an early passing mention); compare stories of similar length. |
 | **Words before first explicit term** (`sex_words_before_first`) | Number of words before the first sexual term ('slow burn'). | Blank if the story has none. Blank when the collected text is incomplete (text_truncated). |
 | **Variety of sexual vocabulary** (`sex_distinct_terms`) | Number of different sexual-language words used. | Blank when the collected text is incomplete (text_truncated). |
 | **Uses explicit terms** (`sex_has_explicit_terms`) | Whether the story contains any term from the sexual word lists. |  |
@@ -538,12 +538,12 @@ negative).
 | **Positive emotion** (`emo_positive_per_1k`) | Positive-emotion and affection words per 1,000 words. | Keyword counts: negation ('not happy') and sarcasm are not understood. |
 | **Negative emotion** (`emo_negative_per_1k`) | Negative-emotion, anxiety, anger, sadness, shame and jealousy words per 1,000 words. | Keyword counts: negation ('not happy') and sarcasm are not understood. |
 | **Affection & love** (`emo_affection_per_1k`) | Words of love and fondness per 1,000 words. | Keyword counts: negation ('not happy') and sarcasm are not understood. |
-| **Anxiety & fear** (`emo_anxiety_per_1k`) | Words of fear, worry and nervousness per 1,000 words. | Keyword counts: negation ('not happy') and sarcasm are not understood. |
-| **Anger** (`emo_anger_per_1k`) | Words of anger and irritation per 1,000 words. | Keyword counts: negation ('not happy') and sarcasm are not understood. |
+| **Anxiety & fear** (`emo_anxiety_per_1k`) | Words of fear, worry and nervousness per 1,000 words. | Keyword counts: negation ('not happy') and sarcasm are not understood. Low split-half reliability (0.58): a single story's value is noisy (few hits per story), so compare groups of stories rather than single stories. |
+| **Anger** (`emo_anger_per_1k`) | Words of anger and irritation per 1,000 words. | Keyword counts: negation ('not happy') and sarcasm are not understood. Low split-half reliability (0.55): a single story's value is noisy (few hits per story), so compare groups of stories rather than single stories. |
 | **Sadness** (`emo_sadness_per_1k`) | Words of sadness, crying and loneliness per 1,000 words. | Keyword counts: negation ('not happy') and sarcasm are not understood. |
 | **Excitement & arousal** (`emo_arousal_per_1k`) | Words of excitement, desire and arousal per 1,000 words. | Keyword counts: negation ('not happy') and sarcasm are not understood. |
 | **Shame & embarrassment** (`emo_shame_per_1k`) | Words of shame, embarrassment, guilt and shyness per 1,000 words. | Keyword counts: negation ('not happy') and sarcasm are not understood. |
-| **Jealousy & envy** (`emo_jealousy_per_1k`) | Words of jealousy and envy per 1,000 words. | Keyword counts: negation ('not happy') and sarcasm are not understood. |
+| **Jealousy & envy** (`emo_jealousy_per_1k`) | Words of jealousy and envy per 1,000 words. | Keyword counts: negation ('not happy') and sarcasm are not understood. Low split-half reliability (0.40): a single story's value is noisy (few hits per story), so compare groups of stories rather than single stories. |
 | **Emotional tone** (`emo_balance`) | (positive − negative) ÷ (positive + negative) emotion words. | Keyword counts: negation ('not happy') and sarcasm are not understood. |
 
 ### Psychological distancing and immediacy
@@ -559,7 +559,7 @@ present-tense narration (above) do the opposite.
 | **Thinking verbs** (`psy_mental_verbs_per_1k`) | Mental-state verbs (think, know, realise, wonder…) per 1,000 words. |  |
 | **Perception verbs** (`psy_perception_verbs_per_1k`) | Perception verbs (see, hear, feel, notice…) per 1,000 words. |  |
 | **'Filter' words** (`psy_filter_words_per_1k`) | Thinking plus perception verbs per 1,000 words: the 'she noticed / he felt' words writing guides call filters. |  |
-| **Distancing phrases** (`psy_distancing_per_1k`) | Phrases like 'it seemed', 'as if', 'felt like' per 1,000 words. |  |
+| **Distancing phrases** (`psy_distancing_per_1k`) | Phrases like 'it seemed', 'as if', 'felt like' per 1,000 words. | Low split-half reliability (0.58): a single story's value is noisy (few hits per story), so compare groups of stories rather than single stories. |
 | **Immediacy words** (`psy_immediacy_per_1k`) | Here-and-now words (now, here, suddenly, immediately) per 1,000 words. |  |
 
 ### Hedging and certainty
@@ -573,9 +573,9 @@ measure places each story on a single hedging ↔ certainty scale.
 | **Hedges (count)** (`hedge_count`) | Number of hedging words and phrases. | Blank when the collected text is incomplete (text_truncated). |
 | **Hedging** (`hedge_per_1k`) | Hedges (maybe, perhaps, seemed, probably, kinda…) per 1,000 words. |  |
 | **Modal verbs** (`hedge_modal_per_1k`) | Modal verbs (can, could, may, might, must, should, will, would…) per 1,000 words. |  |
-| **Uncertainty** (`hedge_uncertainty_per_1k`) | Words of doubt and not knowing (unsure, confused, 'no idea'…) per 1,000 words. |  |
+| **Uncertainty** (`hedge_uncertainty_per_1k`) | Words of doubt and not knowing (unsure, confused, 'no idea'…) per 1,000 words. | Low split-half reliability (0.40): a single story's value is noisy (few hits per story), so compare groups of stories rather than single stories. |
 | **Certainty** (`hedge_certainty_per_1k`) | Words of certainty and assertion (definitely, of course, always, never…) per 1,000 words. |  |
-| **Hedging ↔ certainty** (`hedge_certainty_balance`) | (certainty − hedges) ÷ (certainty + hedges). |  |
+| **Hedging ↔ certainty** (`hedge_certainty_balance`) | (certainty − hedges) ÷ (certainty + hedges). | Low split-half reliability (0.43): a single story's value is noisy (few hits per story), so compare groups of stories rather than single stories. |
 
 | Variable | What it measures | Caveat |
 |---|---|---|
@@ -616,12 +616,12 @@ A spoken command is a quoted passage that begins with a verb such as "come",
 | **Passive constructions** (`agency_passive_per_1k`) | 'be/get + past participle' constructions ('was taken', 'got tied') per 1,000 words. | Heuristic; some adjectival uses ('was finished') are counted. |
 | **Passive sentences** (`agency_passive_sentence_share`) | Share of sentences containing a passive construction. |  |
 | **Active-voice sentences** (`agency_active_sentence_share`) | Share of sentences without a passive construction (1 − passive share). |  |
-| **Agency (deciding & trying)** (`agency_volition_per_1k`) | Words for deciding, choosing, planning and trying per 1,000 words. | Describes the language of the text, not the psychology of its author. |
+| **Agency (deciding & trying)** (`agency_volition_per_1k`) | Words for deciding, choosing, planning and trying per 1,000 words. | Describes the language of the text, not the psychology of its author. Low split-half reliability (0.56): a single story's value is noisy (few hits per story), so compare groups of stories rather than single stories. |
 | **Control & restraint** (`agency_control_per_1k`) | Words about control, restraint, permission and force per 1,000 words. | Describes the language of the text, not the psychology of its author. |
 | **Dominance language** (`agency_dominance_per_1k`) | Words associated with commanding and domination per 1,000 words. | Describes the language of the text, not the psychology of its author. |
 | **Submission language** (`agency_submission_per_1k`) | Words associated with obeying, kneeling and begging per 1,000 words. | Describes the language of the text, not the psychology of its author. |
 | **Spoken commands** (`agency_commands_per_1k`) | Quoted speech that starts with a command verb ('Come here.', 'Kneel.', 'Don't stop.') per 1,000 words. | Heuristic: questions and 'Do you…' are excluded; 'Look, …' as a filler is still counted. |
-| **Commands among speech** (`agency_command_share_of_speech`) | Share of quoted passages that start with a command verb. |  |
+| **Commands among speech** (`agency_command_share_of_speech`) | Share of quoted passages that start with a command verb. | Low split-half reliability (0.44): a single story's value is noisy (few hits per story), so compare groups of stories rather than single stories. |
 
 ---
 

@@ -1,7 +1,7 @@
 # name: agency_dominance
 # label: Dominance language
 # description: Words associated with dominating, commanding, punishing and authority (dominant, command, master, punish, good girl).
-# notes: "order" is excluded (in order to). "master" can also be "master bedroom". Linguistic indicator only.
+# notes: "order" is excluded (in order to). "master" can also be "master bedroom". Linguistic indicator only. Stage 1B: "ordered" alone removed (mostly ordering food or drinks); only "ordered him/her/me/them/us/you/to" count. "master bedroom/suite" and "master's degree" are excluded senses.
 dominate
 dominated
 dominating
@@ -12,7 +12,6 @@ command
 commanded
 commanding
 commands
-ordered
 master
 masters
 mistress
@@ -35,3 +34,14 @@ superior
 alpha
 good girl
 good boy
+ordered him
+ordered her
+ordered me
+ordered them
+ordered us
+ordered you
+ordered to
+!master bedroom
+!master suite
+!master's degree
+!masters degree

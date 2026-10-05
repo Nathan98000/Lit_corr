@@ -1,10 +1,9 @@
 # name: descriptive_words
 # label: Descriptive words (appearance, size, shape, setting, materials)
 # description: Adjectives and material words used to describe how people, places and things look and feel (beautiful, tall, slender, cozy, satin, lace).
-# notes: Combined with the sensory lists for the "descriptive language" measures. "long", "full" and "deep" are excluded ("as long as", "full of", "deep breath"). Words about age or youth are deliberately not included; racial descriptors are not included.
+# notes: Combined with the sensory lists for the "descriptive language" measures. "long", "full" and "deep" are excluded ("as long as", "full of", "deep breath"). Words about age or youth are deliberately not included; racial descriptors are not included. Stage 1B: "pretty" removed (mostly the adverb: "pretty sure", "pretty good"); wavy, curly, busty and lithe added (frequent next to other descriptive words).
 beautiful
 beautifully
-pretty
 gorgeous
 lovely
 handsome
@@ -92,3 +91,7 @@ leather
 denim
 cotton
 wool
+wavy
+curly
+busty
+lithe

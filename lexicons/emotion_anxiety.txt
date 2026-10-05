@@ -1,7 +1,7 @@
 # name: emotion_anxiety
 # label: Anxiety and fear
 # description: Words of fear, worry, nervousness and panic.
-# notes: "tension" is excluded because "sexual tension" is common in this corpus; physical trembling is in sensory_body.txt.
+# notes: "tension" is excluded because "sexual tension" is common in this corpus; physical trembling is in sensory_body.txt. Stage 1B: "tense"/"tensed" removed as well (mostly muscles tensing, often during sex).
 afraid
 fear
 feared
@@ -38,8 +38,6 @@ dreaded
 dreading
 uneasy
 unease
-tense
-tensed
 apprehensi*
 alarmed
 jittery

@@ -147,7 +147,7 @@ Generated from `litcorr/schema.py` by `python -m litcorr dictionary`. One row pe
 | Column | Label | Unit | Meaning | Caveat | Explorer |
 |---|---|---|---|---|---|
 | `char_recurring_names` | Recurring names | names | Number of distinct capitalised names that appear at least 3 times mid-sentence (mostly characters, sometimes places). | Heuristic: first names and surnames count separately; place and brand names can be included; names that only ever start a sentence are missed. Blank when the collected text is incomplete (text_truncated). | ✓ |
-| `char_name_mentions_per_1k` | Name mentions per 1,000 words | per 1,000 words | Mentions of those recurring names per 1,000 words. |  | ✓ |
+| `char_name_mentions_per_1k` | Name mentions per 1,000 words | per 1,000 words | Mentions of those recurring names per 1,000 words. | Lower in short stories, where fewer names reach the three mentions needed to count. | ✓ |
 | `char_top_name_share` | Focus on main name | share (0–1) | Share of all name mentions taken by the most-mentioned name. |  | ✓ |
 
 ## Gendered language
@@ -227,7 +227,7 @@ Generated from `litcorr/schema.py` by `python -m litcorr dictionary`. One row pe
 | `rep_adjacent_sentence_overlap` | Overlap between neighbouring sentences | share (0–1) | Average share of content words that consecutive sentences have in common (Jaccard overlap). |  | ✓ |
 | `rep_same_start_share` | Sentences starting the same way | share (0–1) | Share of sentences that start with the same word as the sentence before ('She… She… She…'). |  | ✓ |
 | `rep_immediate_word_repeats_per_1k` | Doubled words | per 1,000 words | Words immediately repeated ('yes, yes', 'oh oh') per 1,000 words. |  | ✓ |
-| `rep_repeated_5gram_per_1k` | Repeated five-word phrases | per 1,000 words | Extra occurrences of any five-word sequence that appears more than once, per 1,000 words. |  | ✓ |
+| `rep_repeated_5gram_per_1k` | Repeated five-word phrases | per 1,000 words | Extra occurrences of any five-word sequence that appears more than once, per 1,000 words. | Rises with story length (a longer text has more chances to repeat a phrase); compare stories of similar length. | ✓ |
 
 ## Style
 
@@ -251,7 +251,7 @@ Generated from `litcorr/schema.py` by `python -m litcorr dictionary`. One row pe
 | `sex_action_per_1k` | Sexual-action terms | per 1,000 words | Words and phrases for sexual acts per 1,000 words. | A keyword count from editable word lists; it does not measure how explicit a story feels to a reader. | ✓ |
 | `sex_other_per_1k` | Other sexual vocabulary | per 1,000 words | General sexual words (sex, naked, erotic, toys, lingerie) per 1,000 words. | A keyword count from editable word lists; it does not measure how explicit a story feels to a reader. | ✓ |
 | `sex_sentence_share` | Sentences with sexual language | share (0–1) | Share of sentences containing at least one sexual term. | A keyword count from editable word lists; it does not measure how explicit a story feels to a reader. | ✓ |
-| `sex_first_mention_position` | How far in before explicit language | position (0 = start, 1 = end) | Position of the first sexual term as a fraction of the story. | Blank if the story has none. Blank when the collected text is incomplete (text_truncated). | ✓ |
+| `sex_first_mention_position` | How far in before explicit language | position (0 = start, 1 = end) | Position of the first sexual term as a fraction of the story. | Blank if the story has none. Blank when the collected text is incomplete (text_truncated). Earlier in longer stories (a longer text has more chances of an early passing mention); compare stories of similar length. | ✓ |
 | `sex_words_before_first` | Words before first explicit term | words | Number of words before the first sexual term ('slow burn'). | Blank if the story has none. Blank when the collected text is incomplete (text_truncated). | ✓ |
 | `sex_distinct_terms` | Variety of sexual vocabulary | terms | Number of different sexual-language words used. | Blank when the collected text is incomplete (text_truncated). | ✓ |
 | `sex_has_explicit_terms` | Uses explicit terms | yes/no | Whether the story contains any term from the sexual word lists. |  | ✓ |
@@ -264,12 +264,12 @@ Generated from `litcorr/schema.py` by `python -m litcorr dictionary`. One row pe
 | `emo_positive_per_1k` | Positive emotion | per 1,000 words | Positive-emotion and affection words per 1,000 words. | Keyword counts: negation ('not happy') and sarcasm are not understood. | ✓ |
 | `emo_negative_per_1k` | Negative emotion | per 1,000 words | Negative-emotion, anxiety, anger, sadness, shame and jealousy words per 1,000 words. | Keyword counts: negation ('not happy') and sarcasm are not understood. | ✓ |
 | `emo_affection_per_1k` | Affection & love | per 1,000 words | Words of love and fondness per 1,000 words. | Keyword counts: negation ('not happy') and sarcasm are not understood. | ✓ |
-| `emo_anxiety_per_1k` | Anxiety & fear | per 1,000 words | Words of fear, worry and nervousness per 1,000 words. | Keyword counts: negation ('not happy') and sarcasm are not understood. | ✓ |
-| `emo_anger_per_1k` | Anger | per 1,000 words | Words of anger and irritation per 1,000 words. | Keyword counts: negation ('not happy') and sarcasm are not understood. | ✓ |
+| `emo_anxiety_per_1k` | Anxiety & fear | per 1,000 words | Words of fear, worry and nervousness per 1,000 words. | Keyword counts: negation ('not happy') and sarcasm are not understood. Low split-half reliability (0.58): a single story's value is noisy (few hits per story), so compare groups of stories rather than single stories. | ✓ |
+| `emo_anger_per_1k` | Anger | per 1,000 words | Words of anger and irritation per 1,000 words. | Keyword counts: negation ('not happy') and sarcasm are not understood. Low split-half reliability (0.55): a single story's value is noisy (few hits per story), so compare groups of stories rather than single stories. | ✓ |
 | `emo_sadness_per_1k` | Sadness | per 1,000 words | Words of sadness, crying and loneliness per 1,000 words. | Keyword counts: negation ('not happy') and sarcasm are not understood. | ✓ |
 | `emo_arousal_per_1k` | Excitement & arousal | per 1,000 words | Words of excitement, desire and arousal per 1,000 words. | Keyword counts: negation ('not happy') and sarcasm are not understood. | ✓ |
 | `emo_shame_per_1k` | Shame & embarrassment | per 1,000 words | Words of shame, embarrassment, guilt and shyness per 1,000 words. | Keyword counts: negation ('not happy') and sarcasm are not understood. | ✓ |
-| `emo_jealousy_per_1k` | Jealousy & envy | per 1,000 words | Words of jealousy and envy per 1,000 words. | Keyword counts: negation ('not happy') and sarcasm are not understood. | ✓ |
+| `emo_jealousy_per_1k` | Jealousy & envy | per 1,000 words | Words of jealousy and envy per 1,000 words. | Keyword counts: negation ('not happy') and sarcasm are not understood. Low split-half reliability (0.40): a single story's value is noisy (few hits per story), so compare groups of stories rather than single stories. | ✓ |
 | `emo_balance` | Emotional tone | −1 (all negative) to +1 (all positive) | (positive − negative) ÷ (positive + negative) emotion words. | Keyword counts: negation ('not happy') and sarcasm are not understood. | ✓ |
 
 ## Distancing & immediacy
@@ -279,7 +279,7 @@ Generated from `litcorr/schema.py` by `python -m litcorr dictionary`. One row pe
 | `psy_mental_verbs_per_1k` | Thinking verbs | per 1,000 words | Mental-state verbs (think, know, realise, wonder…) per 1,000 words. |  | ✓ |
 | `psy_perception_verbs_per_1k` | Perception verbs | per 1,000 words | Perception verbs (see, hear, feel, notice…) per 1,000 words. |  | ✓ |
 | `psy_filter_words_per_1k` | 'Filter' words | per 1,000 words | Thinking plus perception verbs per 1,000 words: the 'she noticed / he felt' words writing guides call filters. |  | ✓ |
-| `psy_distancing_per_1k` | Distancing phrases | per 1,000 words | Phrases like 'it seemed', 'as if', 'felt like' per 1,000 words. |  | ✓ |
+| `psy_distancing_per_1k` | Distancing phrases | per 1,000 words | Phrases like 'it seemed', 'as if', 'felt like' per 1,000 words. | Low split-half reliability (0.58): a single story's value is noisy (few hits per story), so compare groups of stories rather than single stories. | ✓ |
 | `psy_immediacy_per_1k` | Immediacy words | per 1,000 words | Here-and-now words (now, here, suddenly, immediately) per 1,000 words. |  | ✓ |
 
 ## Hedging & certainty
@@ -289,9 +289,9 @@ Generated from `litcorr/schema.py` by `python -m litcorr dictionary`. One row pe
 | `hedge_count` | Hedges (count) | words | Number of hedging words and phrases. | Blank when the collected text is incomplete (text_truncated). |  |
 | `hedge_per_1k` | Hedging | per 1,000 words | Hedges (maybe, perhaps, seemed, probably, kinda…) per 1,000 words. |  | ✓ |
 | `hedge_modal_per_1k` | Modal verbs | per 1,000 words | Modal verbs (can, could, may, might, must, should, will, would…) per 1,000 words. |  | ✓ |
-| `hedge_uncertainty_per_1k` | Uncertainty | per 1,000 words | Words of doubt and not knowing (unsure, confused, 'no idea'…) per 1,000 words. |  | ✓ |
+| `hedge_uncertainty_per_1k` | Uncertainty | per 1,000 words | Words of doubt and not knowing (unsure, confused, 'no idea'…) per 1,000 words. | Low split-half reliability (0.40): a single story's value is noisy (few hits per story), so compare groups of stories rather than single stories. | ✓ |
 | `hedge_certainty_per_1k` | Certainty | per 1,000 words | Words of certainty and assertion (definitely, of course, always, never…) per 1,000 words. |  | ✓ |
-| `hedge_certainty_balance` | Hedging ↔ certainty | −1 (all hedging) to +1 (all certainty) | (certainty − hedges) ÷ (certainty + hedges). |  | ✓ |
+| `hedge_certainty_balance` | Hedging ↔ certainty | −1 (all hedging) to +1 (all certainty) | (certainty − hedges) ÷ (certainty + hedges). | Low split-half reliability (0.43): a single story's value is noisy (few hits per story), so compare groups of stories rather than single stories. | ✓ |
 
 ## Sensory language
 
@@ -329,12 +329,12 @@ Generated from `litcorr/schema.py` by `python -m litcorr dictionary`. One row pe
 | `agency_passive_per_1k` | Passive constructions | per 1,000 words | 'be/get + past participle' constructions ('was taken', 'got tied') per 1,000 words. | Heuristic; some adjectival uses ('was finished') are counted. | ✓ |
 | `agency_passive_sentence_share` | Passive sentences | share (0–1) | Share of sentences containing a passive construction. |  | ✓ |
 | `agency_active_sentence_share` | Active-voice sentences | share (0–1) | Share of sentences without a passive construction (1 − passive share). |  |  |
-| `agency_volition_per_1k` | Agency (deciding & trying) | per 1,000 words | Words for deciding, choosing, planning and trying per 1,000 words. | Describes the language of the text, not the psychology of its author. | ✓ |
+| `agency_volition_per_1k` | Agency (deciding & trying) | per 1,000 words | Words for deciding, choosing, planning and trying per 1,000 words. | Describes the language of the text, not the psychology of its author. Low split-half reliability (0.56): a single story's value is noisy (few hits per story), so compare groups of stories rather than single stories. | ✓ |
 | `agency_control_per_1k` | Control & restraint | per 1,000 words | Words about control, restraint, permission and force per 1,000 words. | Describes the language of the text, not the psychology of its author. | ✓ |
 | `agency_dominance_per_1k` | Dominance language | per 1,000 words | Words associated with commanding and domination per 1,000 words. | Describes the language of the text, not the psychology of its author. | ✓ |
 | `agency_submission_per_1k` | Submission language | per 1,000 words | Words associated with obeying, kneeling and begging per 1,000 words. | Describes the language of the text, not the psychology of its author. | ✓ |
 | `agency_commands_per_1k` | Spoken commands | per 1,000 words | Quoted speech that starts with a command verb ('Come here.', 'Kneel.', 'Don't stop.') per 1,000 words. | Heuristic: questions and 'Do you…' are excluded; 'Look, …' as a filler is still counted. | ✓ |
-| `agency_command_share_of_speech` | Commands among speech | share (0–1) | Share of quoted passages that start with a command verb. |  | ✓ |
+| `agency_command_share_of_speech` | Commands among speech | share (0–1) | Share of quoted passages that start with a command verb. | Low split-half reliability (0.44): a single story's value is noisy (few hits per story), so compare groups of stories rather than single stories. | ✓ |
 
 ## Pacing
 

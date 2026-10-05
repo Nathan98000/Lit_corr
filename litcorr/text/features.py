@@ -185,6 +185,25 @@ LEXICON_MEASURES = {  # lexicon file -> used as a measured category
 SUPPORT_LEXICONS = {"stopwords", "not_names", "imperative_verbs"}
 
 
+def passive_matches(doc: TextDoc) -> list[tuple[int, int]]:
+    """(auxiliary, participle) word positions of every passive-voice match: a form of "be" or "get", up to two
+    adverbs, then a past participle in the same sentence ("was taken", "got completely soaked")."""
+    n, toks = doc.n, doc.tokens
+    aux_type = np.fromiter((w in _BE_AUX for w in doc.vocab), dtype=bool, count=len(doc.vocab))
+    out = []
+    for i in np.flatnonzero(aux_type[doc.type_ids]):
+        j, skipped = i + 1, 0
+        while j < n and skipped < 2 and (toks[j] in _PASSIVE_SKIP or (toks[j].endswith("ly") and len(toks[j]) > 4)):
+            j += 1
+            skipped += 1
+        if j >= n or doc.sent_idx[j] != doc.sent_idx[i]:
+            continue
+        w = toks[j]
+        if w in _IRREGULAR_PARTICIPLES or (w.endswith("ed") and len(w) > 4 and w not in _ED_NOT_PASSIVE):
+            out.append((int(i), int(j)))
+    return out
+
+
 class Measurer:
     def __init__(self, lexicons: dict[str, Lexicon] | None = None, analysis: Analysis | None = None):
         self.lex = lexicons if lexicons is not None else load_all()
@@ -202,6 +221,11 @@ class Measurer:
         "to be continued" ...) is set aside first and only the story paragraphs are measured."""
         meta = meta or {}
         prep = prepare(paragraphs, _text(meta.get("title")) or None, _text(meta.get("description")) or None)
+        return self.measure_prepared(prep, meta)
+
+    def measure_prepared(self, prep: Prepared, meta: dict[str, Any] | None = None) -> dict[str, Any]:
+        """The measures for text that has already been prepared (used directly by the split-half check)."""
+        meta = meta or {}
         doc = TextDoc(prep.story)
         out: dict[str, Any] = {}
         self._title_series_meta(meta, out)
@@ -463,21 +487,10 @@ class Measurer:
             out[f"rel_{k}_per_1k"] = per_1k(int(hits[f"relationship_{k}"].sum()), doc.n)
 
     def _agency(self, doc: TextDoc, hits: dict[str, np.ndarray], out: dict[str, Any]) -> None:
-        n, toks = doc.n, doc.tokens
-        aux_type = np.fromiter((w in _BE_AUX for w in doc.vocab), dtype=bool, count=len(doc.vocab))
-        passive = 0
-        passive_sents: set[int] = set()
-        for i in np.flatnonzero(aux_type[doc.type_ids]):
-            j, skipped = i + 1, 0
-            while j < n and skipped < 2 and (toks[j] in _PASSIVE_SKIP or (toks[j].endswith("ly") and len(toks[j]) > 4)):
-                j += 1
-                skipped += 1
-            if j >= n or doc.sent_idx[j] != doc.sent_idx[i]:
-                continue
-            w = toks[j]
-            if w in _IRREGULAR_PARTICIPLES or (w.endswith("ed") and len(w) > 4 and w not in _ED_NOT_PASSIVE):
-                passive += 1
-                passive_sents.add(int(doc.sent_idx[i]))
+        n = doc.n
+        matches = passive_matches(doc)
+        passive = len(matches)
+        passive_sents = {int(doc.sent_idx[i]) for i, _ in matches}
         ns = len(doc.sentences)
         out["agency_passive_per_1k"] = per_1k(passive, n)
         out["agency_passive_sentence_share"] = share(len(passive_sents), ns)
@@ -486,8 +499,15 @@ class Measurer:
         out["agency_control_per_1k"] = per_1k(int(hits["agency_control"].sum()), n)
         out["agency_dominance_per_1k"] = per_1k(int(hits["agency_dominance"].sum()), n)
         out["agency_submission_per_1k"] = per_1k(int(hits["agency_submission"].sum()), n)
-        commands = 0
-        for first, count, has_q in doc.segment_info:
+        commands = len(self.command_segments(doc))
+        out["agency_commands_per_1k"] = per_1k(commands, n)
+        out["agency_command_share_of_speech"] = share(commands, len(doc.segment_info))
+
+    def command_segments(self, doc: TextDoc) -> list[int]:
+        """Indices (in ``doc.segment_info``) of the quoted passages counted as commands: the first word, after
+        fillers and a vocative name, is an imperative verb, and the passage has no question mark."""
+        toks, out = doc.tokens, []
+        for k, (first, count, has_q) in enumerate(doc.segment_info):
             if has_q:
                 continue
             j, end = first, first + count
@@ -502,9 +522,8 @@ class Measurer:
             if j < end and toks[j] in self.imperatives:
                 if toks[j] in ("don't", "do") and j + 1 < end and toks[j + 1] in ("you", "i", "we", "they"):
                     continue  # "Do you ...", a question without a question mark
-                commands += 1
-        out["agency_commands_per_1k"] = per_1k(commands, n)
-        out["agency_command_share_of_speech"] = share(commands, len(doc.segment_info))
+                out.append(k)
+        return out
 
     def _gender(self, doc: TextDoc, out: dict[str, Any]) -> None:
         n = doc.n

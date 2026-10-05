@@ -1,17 +1,15 @@
 # name: emotion_anger
 # label: Anger
 # description: Words of anger, irritation, frustration and rage.
-# notes: "mad" is excluded (also "crazy" or "mad about you"); "growl" is excluded (often playful or sexual in this corpus).
+# notes: "mad" is excluded (also "crazy" or "mad about you"); "growl" is excluded (often playful or sexual in this corpus). Stage 1B: "furiously" (blushed/rubbed furiously) and "raging" (raging erection, raging hormones) removed: in this corpus they mostly describe intensity, not anger.
 angry
 angrily
 anger
 angered
 furious
-furiously
 fury
 rage
 raged
-raging
 irritat*
 annoy*
 frustrat*

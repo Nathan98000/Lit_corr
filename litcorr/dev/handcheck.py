@@ -124,7 +124,7 @@ def make_items(classifier: str, stories: pd.DataFrame, feats: pd.DataFrame, n: i
         elif classifier == "commands":
             doc = TextDoc(prep.story)
             m = Measurer()
-            flagged = set(_command_segments(m, doc))
+            flagged = set(m.command_segments(doc))
             for k, (first, count, has_q) in enumerate(doc.segment_info):
                 orig = story[int(doc.para_idx[first])]
                 cands.append((f"seg{k}@p{orig}", "command" if k in flagged else "not a command"))
@@ -134,27 +134,6 @@ def make_items(classifier: str, stories: pd.DataFrame, feats: pd.DataFrame, n: i
         if len(items) >= n:
             break
     return items[:n]
-
-
-def _command_segments(m: Measurer, doc: TextDoc) -> list[int]:
-    """Indices of the quoted passages the pipeline counts as commands (mirrors Measurer._agency)."""
-    from ..text.features import _FILLERS, _NAME_SHAPE
-
-    toks, out = doc.tokens, []
-    for k, (first, count, has_q) in enumerate(doc.segment_info):
-        if has_q:
-            continue
-        j, end, steps = first, first + count, 0
-        while j < end and steps < 3 and (toks[j] in _FILLERS or (
-                _NAME_SHAPE.match(doc.orig[j]) and toks[j] not in m.stop and toks[j] not in m.imperatives
-                and doc.comma_after[j] and j + 1 < end)):
-            j += 1
-            steps += 1
-        if j < end and toks[j] in m.imperatives:
-            if toks[j] in ("don't", "do") and j + 1 < end and toks[j + 1] in ("you", "i", "we", "they"):
-                continue
-            out.append(k)
-    return out
 
 
 # ------------------------------------------------------------------------------------------- show
@@ -177,17 +156,23 @@ def show_item(row: pd.Series, text: str, feats_row: pd.Series, lex, title: str |
                 f"; pov_first_person_share {feats_row.get('pov_first_person_share'):.2f}"
                 f"; present share {feats_row.get('narr_present_tense_share')}")
         # three narration-heavy paragraphs spread through the story
-        words = np.array([len(TOKEN_RE.findall(paras[i])) for i in prep.story_index])
+        # the story paragraphs with the most narration (words outside quotation marks)
+        words = np.bincount(doc.para_idx[narr], minlength=len(prep.story_index)) if doc.n else np.zeros(0)
         order = [prep.story_index[i] for i in np.argsort(-words) if words[i] >= 25][:12]
         pick = sorted(order[:: max(1, len(order) // 3)][:3])
         body = "\n".join(format_views(render(paras, lexicons=lex, overlay=False, paras=(i, i + 1), prep=prep), False)
                          for i in pick)
         return f"{head}\n{info}\n{body}"
     if c == "quote_mode":
+        from ..text.doc import _SQ_CLOSE, _SQ_OPEN
+
         text_all = "\n".join(prep.story)
-        info = "   counts: " + ", ".join(f"{q!r} {text_all.count(q)}" for q in ['"', "“", "”", "'", "‘", "’"])
-        quoted = [i for i in prep.story_index if any(ch in paras[i] for ch in "\"“”‘’")]
-        pick = quoted[:: max(1, len(quoted) // 2)][:2] if quoted else list(range(min(2, len(paras))))
+        opens = sum(len(_SQ_OPEN.findall(paras[i])) for i in prep.story_index)
+        closes = sum(len(_SQ_CLOSE.findall(paras[i])) for i in prep.story_index)
+        info = ("   counts: " + ", ".join(f"{q!r} {text_all.count(q)}" for q in ['"', "“", "”", "'", "‘", "’"]) +
+                f"; single-quote openings {opens}, closings {closes}")
+        cand = [i for i in prep.story_index if re.search(r"[\"“”]", paras[i]) or _SQ_OPEN.search(paras[i])]
+        pick = cand[:: max(1, len(cand) // 3)][:3] if cand else prep.story_index[:2]
         body = "\n".join(format_views(render(paras, lexicons=lex, paras=(i, i + 1), para_tags=tags, prep=prep),
                                        False) for i in pick)
         return f"{head}\n{info}\n{body}"

@@ -14,6 +14,7 @@ this folder. Open them, check them, and improve them. Re-running
 maybe
 possibl*                            <- '*' at the end = any ending (possible, possibly)
 a little bit                        <- several words = a phrase (consecutive words)
+!birth control                      <- '!' + a phrase = an excluded sense: these words never count
 ```
 
 * Matching is case-insensitive. Curly apostrophes are treated as straight ones.
@@ -21,6 +22,13 @@ a little bit                        <- several words = a phrase (consecutive wor
 * A wildcard only extends the end of a word (`kiss*` matches kisses, kissed, kissing).
 * Phrases match consecutive words inside one paragraph.
 * Text after `  #` on an entry line is a comment.
+* A line starting with `!` is an excluded sense. It must be a phrase of two or
+  more plain words (no `*`). Wherever the phrase occurs, none of its words count
+  as hits, even if another entry would match them: with `control` and
+  `!birth control`, "birth control" scores nothing while "in control" still
+  counts `control`. Use this for a fixed expression with an unrelated meaning
+  instead of dropping a useful word altogether. Excluded senses are not counted
+  in the number of entries.
 * A word may appear in more than one lexicon (for example `moan` is both an
   arousal word and something you can hear). Each measure is computed separately,
   so this never double-counts within a single measure.

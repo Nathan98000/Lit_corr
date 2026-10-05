@@ -57,6 +57,13 @@ class Prepared:
         return [k for k, i in enumerate(self.story_index) if is_separator(self.paragraphs[i])]
 
 
+def story_only(paragraphs: list[str]) -> Prepared:
+    """Paragraphs already known to be story text (no paratext detection), e.g. half of a story's paragraphs."""
+    return Prepared(paragraphs=list(paragraphs), paratext=Paratext(kinds=[None] * len(paragraphs),
+                                                                   tail_start=len(paragraphs)),
+                    story_index=list(range(len(paragraphs))))
+
+
 def prepare(paragraphs: list[str], title: str | None = None, description: str | None = None) -> Prepared:
     norm = [normalize_paragraph(p) for p in paragraphs]
     pt = detect(norm, title, description)

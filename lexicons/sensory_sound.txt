@@ -1,7 +1,7 @@
 # name: sensory_sound
 # label: Sound
 # description: Words about hearing, voices and noises (whisper, loud, silence, scream, music).
-# notes: Moans, groans and gasps are counted as arousal words instead; "bang" and "ring" are excluded as ambiguous.
+# notes: Moans, groans and gasps are counted as arousal words instead; "bang" and "ring" are excluded as ambiguous. Stage 1B: voice and noise words added (husky, hoarse, raspy, throaty, hushed, muffled, audible, footsteps, rustling, squelching, slurping); "sounds good/great/..." (approval) and "sound asleep" are excluded senses.
 hear
 heard
 hearing
@@ -85,3 +85,26 @@ sigh
 sighed
 sighing
 sighs
+husky
+hoarse*
+raspy
+throaty
+hushed
+muffled
+audibl*
+footstep*
+rustl*
+squelch*
+slurp*
+!sounds good
+!sounds great
+!sounds fun
+!sounds perfect
+!sounds nice
+!sounds wonderful
+!sounds amazing
+!sounds delicious
+!sounds interesting
+!sounds fair
+!sound asleep
+!safe and sound

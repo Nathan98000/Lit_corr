@@ -1,7 +1,7 @@
 # name: sensory_body
 # label: Physical sensation
 # description: Words for bodily feelings: temperature, tingling, throbbing, aching, trembling, breathing, sweat, wetness.
-# notes: "hot" and "cool" are excluded (they usually mean attractive or fine); "pounding" is excluded as ambiguous.
+# notes: "hot" and "cool" are excluded (they usually mean attractive or fine); "pounding" is excluded as ambiguous. Stage 1B: sopping, drenched, dripping and searing added.
 warm
 warmer
 warmth
@@ -67,3 +67,7 @@ wet
 wetness
 goosebump
 goosebumps
+sopping
+drenched
+dripping
+searing

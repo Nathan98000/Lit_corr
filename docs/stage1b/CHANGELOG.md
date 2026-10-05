@@ -418,7 +418,7 @@ all 4,998 stories analysed on 2026-10-05, which includes 750 collected since bat
    | time jumps | 40 hold-out | 39/40 | 87.1–99.6 | 31/39 |
    | address to the reader | all 25 left in the hold-out | 24/25 | 80.5–99.3 | 36/40 |
    | speaker labels | 40 hold-out | 38/40 | 83.5–98.6 | same check |
-   | sex scenes (masked view) | 30 hold-out scene starts | 15/20 judged | 53.1–88.8 | same rule |
+   | sex scenes (masked view) | 30 hold-out scene starts | 16/21 judged | 54.9–89.4 | same rule |
 
 3. **"We" narration** (`pov_class` = `first_plural`): we/us/our forms at least 15 per 1,000 narration words and at
    least as frequent as I/me/my and as you/your. 22 batch-1 stories (0.5%) move to it, from first 11, third 7,

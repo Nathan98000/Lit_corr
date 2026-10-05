@@ -52,9 +52,10 @@ every number are in:
   * for passive voice, commands, names and the new detectors, random fragments of a few words drawn from the
     whole corpus and shown without story keys (the matched phrase with one word each side);
   * the one-sentence unmasked reveal was never used.
-* **Possible minor:** one masked view, of a detected sex scene, could not rule out a minor. Reading stopped there,
-  the item was not judged, and its story key was given to you for review (it is not recorded in these public
-  files). No other excerpt suggested sexual content involving a minor.
+* **Possible minor:** one masked view, of a detected sex scene, could not rule out a minor. Reading stopped there
+  and its story key was given to you for review (it is not recorded in these public files). You reviewed it on
+  2026-10-05 and confirmed that the character is an adult, so the item was judged and nothing in the data
+  changed. No other excerpt suggested sexual content involving a minor.
 * **Popularity was never used** to choose, tune or prune a text measure.
 * **Tuning:**
   * Everything tuned is listed in the WORKLOG ("Tuned on ..." in Phases 2, 4 and 7).
@@ -199,7 +200,7 @@ designed.
 | time jumps | 39/40 | 87.1–99.6 | 31/39: durations ("for the next week") and plans in dialogue |
 | address to the reader | 24/25 | 80.5–99.3 | 36/40: "trust me" as an ordinary verb |
 | speaker labels (chat / script) | 38/40 | 83.5–98.6 | same check |
-| sex scenes (masked view) | 15/20 judged | 53.1–88.8 | same rule; the others are dense talk about sex (an essay, an author's note, world-building) |
+| sex scenes (masked view) | 16/21 judged | 54.9–89.4 | same rule; the others are dense talk about sex (an essay, an author's note, world-building) |
 
 * **Known groups:** 41 of the 53 pre-registered expectations for the new measures hold (ranked by category mean).
   Most failures are near misses at ranks 7–12. The clearest wrong expectation: essays are not more polished
@@ -249,10 +250,9 @@ Taken on 2026-10-05:
 * every suggested retirement and merge applied;
 * "we" narration given its own class;
 * the narration validation re-run (download approved);
-* the word-list judgement calls kept ("good girl"/"good boy", "small"/"tiny"/"petite", "baby" in `not_names`).
+* the word-list judgement calls kept ("good girl"/"good boy", "small"/"tiny"/"petite", "baby" in `not_names`);
+* the story flagged for review: you confirmed that the character is an adult, so nothing changed.
 
 Open:
-* **One story flagged for your review:** its masked text could not rule out a minor. The story key was given in
-  chat.
 * **Stage 2 column list:** the next export carries the 1.3 columns, with 7 retired and 28 added. The data
   dictionary in the handoff lists them.

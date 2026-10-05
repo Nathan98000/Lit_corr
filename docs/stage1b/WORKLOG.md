@@ -654,11 +654,13 @@ two detectors fixed most, on 40 matches from batch 1, on which none of these fix
 | address to the reader | hold-out | 36/40 | "trust me" as a verb 2, a named addressee, a deliberation |
 | | after fix | **24/25** | "trust me to" (now excluded) |
 | speaker labels | hold-out | **38/40** | recurring headings ("PS:", a contest heading), now excluded |
-| sex scenes (masked view) | hold-out scene starts | **15/20 judged** (10 unclear) | sex discussed or reflected on, an essay, an author's note, world-building, anticipation |
+| sex scenes (masked view) | hold-out scene starts | **16/21 judged** (9 unclear) | sex discussed or reflected on, an essay, an author's note, world-building, anticipation |
 
-One scene item was not judged: its masked text showed a character who does not know what a sexual act is,
-addressed with an honorific, and a minor could not be ruled out from the masked view. Reading stopped there and
-the story key was given to the user for review (not recorded in this public log).
+One scene item was at first not judged: its masked text showed a character who does not know what a sexual act
+is, addressed with an honorific, and a minor could not be ruled out from the masked view. Reading stopped there
+and the story key was given to the user for review (not recorded in this public log). The user reviewed it on
+2026-10-05: the character is an adult. The item was then judged from the masked view already seen (sexual
+activity: 16/21); nothing in the data changed.
 
 ### Tuned on these samples (re-check on later stories)
 

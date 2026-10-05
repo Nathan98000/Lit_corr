@@ -222,6 +222,15 @@ hand. No machine-learning model is used.
 
 {{table:Series}}
 
+### Openings and endings
+
+Whether the story opens and ends on speech (its first or last word inside
+quotation marks, author's notes and headings set aside), and whether it ends by
+announcing more to come ("to be continued", "next chapter", "part 3 coming
+soon").
+
+{{table:Openings & endings}}
+
 {{table:Site metadata}}
 
 {{table:Publication}}
@@ -235,9 +244,13 @@ hand. No machine-learning model is used.
 Narrative perspective is estimated from pronouns **in the narration only**
 (dialogue is removed first, because characters say "I" and "you" whatever the
 narration does). For every 1,000 narration words the collector counts
-first-person singular pronouns (I, me, my, mine, myself, I'm…) and
-second-person pronouns (you, your…):
+first-person singular pronouns (I, me, my, mine, myself, I'm…), first-person
+plural pronouns (we, us, our…) and second-person pronouns (you, your…):
 
+* **first person plural** ("we" narration: a couple or a group telling the
+  story, or an essay's authorial "we") if there are at least 15 we/us/our
+  forms per 1,000 narration words and they are at least as frequent as the
+  I/me/my forms and the you/your forms;
 * **first person** if there are at least 15 first-person pronouns per 1,000
   narration words;
 * **second person** if there are at least 15 second-person pronouns and more
@@ -261,16 +274,21 @@ stories-within-stories. *Moby-Dick*, whose narrator drifts between first
 person, essay and stage drama, is a good example of genuinely mixed narration:
 only a quarter of its passages count as clearly first person. The script is
 in `scripts/validate_narration.py`. This is a word-counting heuristic, not an
-understanding of the story. (The novel check above was run before the 8% rule for
-third person was added in Stage 1B.)
+understanding of the story. With the Stage 1B rules (the 8% rule for third person
+and the first-person-plural class above) the same check gives **94.0% correct
+and 3.2% confidently wrong**: one Sherlock Holmes passage, in which a client tells
+a long story in the third person, moved from "mixed" to "third"; three passages
+of first-person novels in which the narrator mostly says "we" (Huck and Jim on
+the raft) are labelled first person plural, which counts as first person.
 
 **On this corpus** (Stage 1B), 48 stories drawn about evenly from the classes (12
 first, 11 second, 11 third, 12 mixed, 2 unknown) were checked by hand: 39 were
 labelled correctly by the original rule, almost all errors being third-person
 stories labelled mixed. The 8% rule was designed on that sample (46 of 48 correct
-with it; the two left: a story narrated as "we", labelled mixed, and a chat
-transcript labelled second person). On 15 further stories that it moved from
-"mixed" to "third", all 15 were indeed third person. Because the classes are very
+with it; the two left: a story narrated as "we", labelled mixed, which the
+first-person-plural class now covers, and a chat transcript labelled second
+person). On 15 further stories that it moved from "mixed" to "third", all 15 were
+indeed third person. Because the classes are very
 unequal in size (first 53%, third 40%, second 5%, mixed 1.5%), accuracy over the
 whole corpus is higher than on the balanced sample: about 97% already before the
 change.
@@ -286,6 +304,14 @@ could not be judged).
 
 {{table:Narration}}
 
+Besides how much dialogue there is, four measures describe how it is written:
+the share of speech paragraphs with no tag at all (no narration, no "she
+said"), the share of speech tags with an -ly adverb ("she said softly"),
+whether dialogue and narration paragraphs alternate or come in blocks (switches
+compared with a random order of the same paragraphs), and a flag for chat logs
+and scripts ("Anna: ..."), whose dialogue is not in quotation marks and is
+therefore invisible to the other dialogue measures.
+
 {{table:Dialogue}}
 
 ### Characters
@@ -293,10 +319,13 @@ could not be judged).
 The number of recurring names is estimated from capitalised words that are
 not at the start of a sentence, appear at least three times, and are not
 usually ordinary words (a word like "Rose" is ignored if "rose" also appears
-in lower case), not titles (Mr, Sir), not terms of address (Mom, Master), not
-days, months or nationalities. This mostly counts characters but can also
-count place or brand names; a first name and a surname count as two names;
-and it misses names that only ever start a sentence. On a 5,000-word passage
+in lower case), not titles or terms of address (Mr, Sir, Queen, Mom, Master),
+not days, months, nationalities, common place words, major places,
+organisations or brands (`lexicons/not_names.txt`), and not words that mostly
+follow "the" or "in" ("the Hilton", "in Denver"). In a hand-check of names
+detected in this corpus, about 9 in 10 were characters; the rest are rarer
+places, roles and capitalised words. A first name and a surname count as two
+names, and names that only ever start a sentence are missed. On a 5,000-word passage
 of *Emma* it found Harriet, Emma, Martin, Knightley, Elton, Woodhouse,
 Goddard, Robert, Smith and Nash, plus four place names (Hartfield, Highbury,
 Abbey, Mill). Treat it as "how many proper names keep coming up", a rough
@@ -356,6 +385,18 @@ before it.
 
 {{table:Style}}
 
+### Writing mechanics
+
+Five simple checks count slips that a spell-checker or a proofreader would
+catch: "i" written in lower case, sentences and paragraphs that start in lower
+case, missing spaces after punctuation ("word,word"), common confusions ("its
+a", "your welcome", "should of", "alot") and doubled small words ("the the").
+They are habits of the writer rather than of the story, which makes them very
+consistent within a story (see the validation report). Dialogue written in
+dialect can count too.
+
+{{table:Writing mechanics}}
+
 ---
 
 ## 7. Sexual content (explicitness)
@@ -368,6 +409,15 @@ undercounts euphemistic writing and slightly overcounts stories that use
 "fuck" as an intensifier. **A keyword score is not a measure of how explicit a
 story feels to a reader.** The position of the first sexual term gives a
 simple "slow burn" indicator.
+
+A **sex scene** is a stretch where sexual vocabulary is dense: a 200-word window
+with at least 6 sexual terms (30 per 1,000 words, about 1.75 times the median
+story's rate), slid along the text in 50-word steps, with overlapping windows
+counted as one scene. The number of scenes, their rate per 10,000 words and the
+position where the first one starts follow from this. Unlike the first sexual
+term, the first scene is not triggered by a passing early mention, and it does
+not shift with story length. The window size and threshold were fixed in
+advance, not tuned.
 
 {{table:Sexual content}}
 
@@ -408,14 +458,30 @@ measure places each story on a single hedging ↔ certainty scale.
 
 {{table:Intimacy & relationships}}
 
+### Settings
+
+Three word lists count mentions of places: the rooms of a home, public and
+commercial places, and the outdoors. Ambiguous words are left out ("bar" alone
+can be a metal bar, "park" a verb, "outside" just "outside the door"), and
+places of education are left out on purpose. A mention is not the same as the
+setting, so these are rough indicators of where stories take place.
+
+{{table:Settings}}
+
 ### Agency and control
 
 These describe the language on the page. They are not psychological
 assessments of anyone. Passive constructions are found with a simple pattern
-("be/get" + past participle, e.g. "was taken", "got tied"). Very common
-adjective-like cases ("was tired", "was excited") are excluded, but some remain.
-A spoken command is a quoted passage that begins with a verb such as "come",
-"kneel", "look" or "don't …" and is not a question.
+("be/get" + past participle, e.g. "was taken", "got tied"). Common participles
+that describe a state or a feeling ("was tired", "was dressed in", "was
+accustomed to", "was fascinated by") are excluded, but rarer ones remain. A
+spoken command is a quoted passage with a sentence that starts with a command
+verb such as "come", "kneel" or "don't …" (possibly after "please", "now" or a
+name) and is not a question; "Look, …" and "Listen, …" used as fillers and
+"fuck" used as an expletive are not commands. Consent and check-in language
+("is this okay?", "do you want me to stop?", "safe word", "consent") is counted
+with a word list: it measures what is said on the page, not whether consent is
+depicted, and refusals ("stop", "no") are not counted.
 
 {{table:Agency & control}}
 
@@ -429,6 +495,8 @@ computed in each part: sexual language, emotional language, dialogue, physical
 action verbs, and descriptive/sensory language. For each one the dataset
 keeps the value in the first fifth, the value in the last fifth, the
 difference (positive = builds towards the end) and the position of the peak.
+Time jumps ("the next morning", "hours later", "weeks later") count how often
+the narrative skips ahead.
 
 {{table:Pacing}}
 

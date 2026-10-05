@@ -1,7 +1,7 @@
 # name: setting_outdoors
-# label: Outdoor settings (prototype)
+# label: Outdoor settings
 # description: Nature and the outdoors (beach, forest, lake, field, trail, tent).
-# notes: Phase 5 prototype only. "outside" (outside the door), "park" (to park) and "field" (field of study) alone are left out.
+# notes: Added in Stage 1B. "outside" (outside the door), "park" (to park) and "field" (field of study) alone are left out.
 beach
 forest
 woods

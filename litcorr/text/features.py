@@ -19,7 +19,7 @@ import numpy as np
 from numpy.lib.stride_tricks import sliding_window_view
 
 from ..settings import Analysis
-from .doc import TOKEN_RE, TextDoc
+from .doc import _ABBREV, TOKEN_RE, TextDoc
 from .lexicons import Lexicon, load_all, match
 from .paratext import is_separator
 from .prepare import Prepared, prepare
@@ -193,6 +193,42 @@ _DISCOURSE_MARKERS = frozenset("look listen say see".split())
 # "fuck yes", "fuck you", "fuck it").
 _FUCK_OBJECTS = frozenset("me him her them us my his off".split())
 
+# --- Stage 1B measures: scenes, openings and endings, writing mechanics, format ------------------------------
+SCENE_WINDOW, SCENE_STEP, SCENE_MIN_TERMS = 200, 50, 6  # a sex-dense stretch: >= 6 sexual terms in 200 words
+REPEAT_WINDOW = 1000  # repeated five-word phrases are counted within 1,000-word stretches
+_CONTINUED = re.compile(r"\b(?:to be continued|tbc|continued in|continues in|more to come|stay tuned|"
+                        r"next (?:chapter|part|episode|installment|instalment)|part \w+ (?:coming|soon)|"
+                        r"(?:chapter|part) \w+ (?:is )?coming soon|until next time)\b", re.I)
+_LOWER_I = frozenset({"i", "i'm", "i've", "i'd", "i'll"})
+_LOWER_AFTER_STOP = re.compile(r"(\w+)([.!?])\s+(?=[a-z])")  # not after a closing quote: '"Why?" she asked'
+_TAG_PRONOUNS = frozenset("i you he she it we they".split())
+_THOUGHT_VERBS = frozenset("thought wondered questioned chided teased mused murmured giggled moaned groaned sighed "
+                           "gasped breathed decided agreed".split())
+_MECH_ABBREV = _ABBREV | frozenset("lbs lb oz kg km cm mm mph hrs hr min mins sec secs pp pg pgs no nos sq yr yrs "
+                                    "doc phd".split())
+_MISSING_SPACE = re.compile(r"[a-z]{2,}[.,!?;:][A-Za-z]{2,}")
+_URLISH = re.compile(r"https?:|www\.|@|\.(?:com|net|org|edu|gov|co|uk|io|txt|html?|jpg|png|pdf)\b", re.I)
+_DOUBLED = re.compile(r"\b(the|a|an|to|of|and|in|on|at|is|was|for|it|with|as|his|her|my|your|their|our)[ \t]+\1\b",
+                      re.I)
+_CONFUSIONS = re.compile(
+    r"\bits (?:a|an|not|been|so|the|like|ok|okay|just|too|going|gonna|all|over|getting|really|never|"
+    r"always|only|very|almost)\b"  # it's (not before adjectives or "time": "its good side", "ahead of its time")
+    r"|\byour (?:welcome|going|gonna|so(?![- ]called)|not|the|a|an|doing|making|getting|really|too|always|never|"
+    r"just|such|kidding)\b"  # you're (not "your being", "your very own", "your so-called": possessives)
+    r"|\b(?:should|could|would|must) of\b(?! course)|\balot\b|\btheir (?:is|are|was|were)\b"  # not "might of"
+    r"|\b(?:better|more|less|rather|bigger|smaller|harder|longer|faster|larger|greater|higher|lower) then\b"
+    r"(?![.,!?;:\"”’)])",  # "than"; not a time "then" ending a clause ("I knew better then.")
+    re.I)
+_ELONGATED = re.compile(r"([a-z])\1\1", re.I)  # "ohhh", "yesss", "mmmm"
+_ELONGATED_SKIP = frozenset({"www", "xxx", "zzz"})
+_ROMAN_NUMERAL = re.compile(r"^[ivxlcdm]+$", re.I)
+# Not speaker labels, even when they recur: "PS:", "Note:", "Update:" ... and contest or challenge headings.
+_NOT_SPEAKERS = frozenset("ps p.s p.s. pps note notes nb edit update warning disclaimer summary tags a/n".split())
+# A time phrase after these is a duration or a reference ("for the next week", "in the next day or two").
+_TIME_REFERENCE_BEFORE = frozenset("for in or until by within over during through".split())
+# A speaker label opening a paragraph: "Anna: ...", "MR SMITH (softly): ..." (chat logs, scripts, Q&A).
+_SPEAKER = re.compile(r"^\s*(?:[A-Z][\w'.-]*\s*){1,3}(?:\([^)]{0,30}\)\s*)?:\s+\S")
+
 LEXICON_MEASURES = {  # lexicon file -> used as a measured category
     "sexual_anatomy", "sexual_action", "sexual_general", "emotion_positive", "emotion_negative", "emotion_affection",
     "emotion_anxiety", "emotion_anger", "emotion_sadness", "emotion_arousal", "emotion_shame", "emotion_jealousy",
@@ -201,7 +237,10 @@ LEXICON_MEASURES = {  # lexicon file -> used as a measured category
     "relationship_romance", "relationship_intimacy", "relationship_terms", "relationship_disclosure",
     "relationship_familiarity", "relationship_closeness", "agency_volition", "agency_control", "agency_dominance",
     "agency_submission", "action_verbs", "descriptive_words", "profanity", "speech_verbs", "subordinators",
+    "consent_checkin", "time_jumps", "reader_address", "humor_levity", "setting_home", "setting_public",
+    "setting_outdoors",
 }
+SEX_LEXICONS = ("sexual_anatomy", "sexual_action", "sexual_general")
 SUPPORT_LEXICONS = {"stopwords", "not_names", "imperative_verbs"}
 
 
@@ -243,6 +282,89 @@ def passage_sentences(doc: TextDoc, first: int, end: int) -> list[tuple[int, int
 
 # The [analysis] settings the measures read (the per-story measure cache is keyed on their values).
 MEASURE_SETTINGS = ("min_words_for_text_measures", "window_tokens", "pacing_segments", "min_words_for_pacing")
+
+
+def sex_scenes(sex: np.ndarray, n: int) -> list[tuple[int, int]]:
+    """(start, end) word positions of the sex-dense stretches: 200-word windows, slid in 50-word steps, with at
+    least 6 sexual terms; overlapping windows are merged. Empty for texts under 400 words."""
+    if n < 2 * SCENE_WINDOW:
+        return []
+    c = np.concatenate([[0], np.cumsum(sex)])
+    starts = np.arange(0, n - SCENE_WINDOW + 1, SCENE_STEP)
+    dense = starts[(c[starts + SCENE_WINDOW] - c[starts]) >= SCENE_MIN_TERMS]
+    out: list[tuple[int, int]] = []
+    for s in dense:
+        e = int(s) + SCENE_WINDOW
+        if out and s <= out[-1][1]:
+            out[-1] = (out[-1][0], e)
+        else:
+            out.append((int(s), e))
+    return out
+
+
+def _token_around(text: str, start: int, end: int) -> str:
+    a, b = start, end
+    while a > 0 and not text[a - 1].isspace():
+        a -= 1
+    while b < len(text) and not text[b].isspace():
+        b += 1
+    return text[a:b]
+
+
+def lowercase_starts(paragraphs: list[str], is_speech_verb=None) -> list[tuple[int, int | None]]:
+    """(paragraph, character offset of the word before the full stop) of every sentence inside a paragraph that
+    starts in lower case after ".", "!" or "?" and counts as a slip. Not counted: a word after an abbreviation or an
+    initial, and a dialogue or thought tag after "?" or "!" in a story without quotation marks ('...this? she
+    asked'). Paragraph starts are not counted at all: in this corpus a lower-case paragraph start is mostly
+    formatting (verse-like lines, chat lines, letter sign-offs, list items), not a slip (Stage 1B hand-check)."""
+    out: list[tuple[int, int | None]] = []
+    for k, p in enumerate(paragraphs):
+        for m in _LOWER_AFTER_STOP.finditer(p):
+            w = m.group(1).lower()
+            if len(w) <= 1 or w in _MECH_ABBREV:
+                continue
+            if m.group(2) in "?!" and is_speech_verb is not None:
+                words = [w.strip(".,;:!?\"'”’").lower() for w in p[m.end():].split(maxsplit=3)[:3]]
+                if words and (is_speech_verb(words[0]) or words[0] in _THOUGHT_VERBS):
+                    continue  # '...ready? asked her friend'
+                if len(words) >= 2 and words[0] in _TAG_PRONOUNS:
+                    verb = words[2] if words[1].endswith("ly") and len(words) == 3 else words[1]  # "she quickly said"
+                    if is_speech_verb(verb) or verb in _THOUGHT_VERBS:
+                        continue
+            if re.match(r"x+\b", p[m.end():]):
+                continue  # kisses ("Love you! xxx")
+            out.append((k, m.start(1)))
+    return out
+
+
+def mechanics_counts(paragraphs: list[str], orig: list[str], is_speech_verb=None) -> dict[str, int]:
+    """Counts of the writing-mechanics slips in story paragraphs (``orig`` = the words as written)."""
+    text = "\n".join(paragraphs)
+    low_i = sum(1 for o in orig if o.replace("’", "'") in _LOWER_I)
+    low_start = len(lowercase_starts(paragraphs, is_speech_verb))
+    # Not in web or e-mail addresses, chat handles ("anna.b77:") or a token repeated 3+ times (a name, not a slip).
+    found = [_token_around(text, m.start(), m.end()) for m in _MISSING_SPACE.finditer(text)]
+    repeats = Counter(found)
+    missing = sum(1 for tok in found if not _URLISH.search(tok) and not any(ch.isdigit() for ch in tok)
+                  and not tok.endswith(":") and repeats[tok] < 3)
+    return {"lowercase_i": low_i, "lowercase_start": low_start, "missing_space": missing,
+            "doubled": len(_DOUBLED.findall(text)), "confusions": len(_CONFUSIONS.findall(text))}
+
+
+def speaker_label_share(paragraphs: list[str]) -> float:
+    """Share of paragraphs opening with a speaker label that recurs at least 3 times (a chat log or script)."""
+    if not paragraphs:
+        return NAN
+    labels = Counter(lab for lab in (speaker_label(p) for p in paragraphs) if lab)
+    return sum(c for c in labels.values() if c >= 3) / len(paragraphs)
+
+
+def speaker_label(p: str) -> str | None:
+    """The speaker label opening a paragraph ("anna" for "Anna: hi"), if it has one."""
+    if not _SPEAKER.match(p):
+        return None
+    lab = p.split(":", 1)[0].split("(")[0].strip().lower()
+    return None if lab in _NOT_SPEAKERS or lab.endswith(("contest", "challenge")) else lab
 
 
 class Measurer:
@@ -301,6 +423,13 @@ class Measurer:
         self._pacing(doc, hits, out)
         self._characters(doc, out)
         self._style(doc, hits, alpha_type, meta, out)
+        self._openings_endings(doc, prep, out)
+        self._mechanics(doc, out)
+        self._dialogue_craft(doc, hits, out)
+        self._markers(doc, hits, out)
+        share_ = speaker_label_share(doc.paragraphs)
+        out["fmt_speaker_label_share"] = share_
+        out["qc_speaker_label_format"] = bool(share_ >= 0.2)
         out["qc_english_function_word_share"] = float(stop_type[doc.type_ids].mean())
         out["qc_quote_style"] = doc.mode
         out["qc_dialogue_quotes_unbalanced"] = bool(
@@ -311,7 +440,6 @@ class Measurer:
     def _story_basics(self, doc: TextDoc, prep: Prepared, out: dict[str, Any]) -> None:
         n = doc.n
         out["story_words"] = n
-        out["story_chars"] = sum(len(p) for p in doc.paragraphs)
         out["story_paragraphs"] = sum(1 for t in doc.para_tokens if t > 0)
         out["story_sentences"] = len(doc.sentences)
         sl = np.array([s.end - s.start for s in doc.sentences], dtype=float)
@@ -347,6 +475,20 @@ class Measurer:
             number = int(g) if g.isdigit() else _NUM_WORDS.get(g) or _ROMAN.get(g)
         out["desc_chars"] = len(desc) if desc else NAN
         out["desc_words"] = len(TOKEN_RE.findall(desc)) if desc else NAN
+        out["desc_pov"] = NAN
+        for key, s in (("title", title), ("desc", desc)):
+            if not s:
+                out[f"{key}_sexual"] = NAN
+                continue
+            d = TextDoc([s])
+            out[f"{key}_sexual"] = any(bool(match(self.lex[x], d.vocab, d.type_ids, d.para_idx).any())
+                                       for x in SEX_LEXICONS)
+            if key == "desc":
+                first = sum(w in FP_SING or w in FP_PLUR for w in d.tokens)
+                second = sum(w in SECOND for w in d.tokens)
+                third = sum(w in MASC or w in FEM or w in NEUTRAL for w in d.tokens)
+                out["desc_pov"] = ("first" if first and first >= second else "second" if second else
+                                   "third" if third else "none")
         tags = meta.get("tags")
         out["meta_tag_count"] = len(tags) if parsed and isinstance(tags, (list, tuple, np.ndarray)) else NAN
         parts_count = _num(meta.get("series_parts_count"))
@@ -382,14 +524,17 @@ class Measurer:
         out["pov_first_plural_per_1k"] = per_1k(all_counts[2], n)
         out["pov_second_per_1k"] = per_1k(all_counts[3], n)
         out["pov_third_per_1k"] = per_1k(all_counts[4:7].sum(), n)
-        fp_n, sp_n, tp_n = narr_counts[1], narr_counts[3], narr_counts[4:7].sum()
+        fp_n, fpp_n, sp_n, tp_n = narr_counts[1], narr_counts[2], narr_counts[3], narr_counts[4:7].sum()
         out["pov_first_singular_narr_per_1k"] = per_1k(fp_n, n_narr)
+        out["pov_first_plural_narr_per_1k"] = per_1k(fpp_n, n_narr)
         out["pov_second_narr_per_1k"] = per_1k(sp_n, n_narr)
         out["pov_third_narr_per_1k"] = per_1k(tp_n, n_narr)
-        out["pov_first_person_share"] = share(fp_n + narr_counts[2], fp_n + narr_counts[2] + tp_n)
-        fp_rate, sp_rate = per_1k(fp_n, n_narr), per_1k(sp_n, n_narr)
+        out["pov_first_person_share"] = share(fp_n + fpp_n, fp_n + fpp_n + tp_n)
+        fp_rate, fpp_rate, sp_rate = per_1k(fp_n, n_narr), per_1k(fpp_n, n_narr), per_1k(sp_n, n_narr)
         if n_narr < 200:
             cls = "unknown"
+        elif fpp_rate >= 15 and fpp_n >= fp_n and fpp_n >= sp_n:
+            cls = "first_plural"  # a "we" narrator (a couple, a group, an essay's authorial "we")
         elif sp_rate >= 15 and sp_rate > fp_rate:
             cls = "second"
         elif fp_rate >= 15:
@@ -401,7 +546,7 @@ class Measurer:
         else:
             cls = "mixed"
         out["pov_class"] = cls
-        out["pov_is_first_person"] = 1.0 if cls == "first" else 0.0 if cls == "third" else NAN
+        out["pov_is_first_person"] = 1.0 if cls in ("first", "first_plural") else 0.0 if cls == "third" else NAN
 
         # Tense of the narration: present vs past forms of common verbs.
         pres = past = 0
@@ -438,8 +583,6 @@ class Measurer:
         # Scene-break lines ("-----", "......") are not punctuation in a sentence.
         text = "\n".join(p for p in doc.paragraphs if not is_separator(p))
         n = doc.n
-        out["punct_exclamation_per_1k"] = per_1k(text.count("!"), n)
-        out["punct_question_per_1k"] = per_1k(text.count("?"), n)
         out["punct_ellipsis_per_1k"] = per_1k(len(re.findall(r"…|\.(?:\s?\.){2,}", text)), n)
         out["punct_dash_per_1k"] = per_1k(len(_DASH.findall(text)), n)
         out["punct_semicolon_per_1k"] = per_1k(text.count(";"), n)
@@ -452,12 +595,10 @@ class Measurer:
     def _questions(self, doc: TextDoc, out: dict[str, Any]) -> None:
         terms = [s.terminal for s in doc.sentences]
         q, e = terms.count("?"), terms.count("!")
-        statements = len(terms) - q - e
         out["qe_question_sentence_share"] = share(q, len(terms))
         out["qe_exclamation_sentence_share"] = share(e, len(terms))
         out["qe_question_sentences_per_1k"] = per_1k(q, doc.n)
         out["qe_exclamation_sentences_per_1k"] = per_1k(e, doc.n)
-        out["qe_question_to_statement_ratio"] = share(q, statements)
 
     def _sexual(self, doc: TextDoc, hits: dict[str, np.ndarray], out: dict[str, Any]) -> None:
         n = doc.n
@@ -475,7 +616,13 @@ class Measurer:
         out["sex_first_mention_position"] = float(pos[0] / n) if pos.size else NAN
         out["sex_words_before_first"] = float(pos[0]) if pos.size else NAN
         out["sex_distinct_terms"] = len({doc.tokens[i] for i in pos})
-        out["sex_has_explicit_terms"] = total > 0
+        if n >= 2 * SCENE_WINDOW:
+            scenes = sex_scenes(allsex, n)
+            out["sex_scene_count"] = len(scenes)
+            out["sex_scenes_per_10k"] = 10000.0 * len(scenes) / n
+            out["sex_first_scene_position"] = scenes[0][0] / n if scenes else NAN
+        else:
+            out["sex_scene_count"] = out["sex_scenes_per_10k"] = out["sex_first_scene_position"] = NAN
 
     def _emotion(self, doc: TextDoc, hits: dict[str, np.ndarray], out: dict[str, Any]) -> None:
         n = doc.n
@@ -537,11 +684,11 @@ class Measurer:
         ns = len(doc.sentences)
         out["agency_passive_per_1k"] = per_1k(passive, n)
         out["agency_passive_sentence_share"] = share(len(passive_sents), ns)
-        out["agency_active_sentence_share"] = 1.0 - out["agency_passive_sentence_share"] if ns else NAN
         out["agency_volition_per_1k"] = per_1k(int(hits["agency_volition"].sum()), n)
         out["agency_control_per_1k"] = per_1k(int(hits["agency_control"].sum()), n)
         out["agency_dominance_per_1k"] = per_1k(int(hits["agency_dominance"].sum()), n)
         out["agency_submission_per_1k"] = per_1k(int(hits["agency_submission"].sum()), n)
+        out["rel_consent_per_1k"] = per_1k(int(hits["consent_checkin"].sum()), n)
         commands = len(self.command_segments(doc))
         out["agency_commands_per_1k"] = per_1k(commands, n)
         out["agency_command_share_of_speech"] = share(commands, len(doc.segment_info))
@@ -580,6 +727,72 @@ class Measurer:
         if toks[j] == "fuck" and nxt not in _FUCK_OBJECTS:
             return False
         return True
+
+    def _openings_endings(self, doc: TextDoc, prep: Prepared, out: dict[str, Any]) -> None:
+        out["open_dialogue"] = bool(doc.in_quote[0])
+        out["end_dialogue"] = bool(doc.in_quote[-1])
+        tail = [prep.paragraphs[i] for i in sorted(prep.paratext.labels) if i >= prep.paratext.tail_start]
+        out["end_to_be_continued"] = any(_CONTINUED.search(p) for p in list(doc.paragraphs[-3:]) + tail)
+
+    def _mechanics(self, doc: TextDoc, out: dict[str, Any]) -> None:
+        n = doc.n
+        c = mechanics_counts(doc.paragraphs, doc.orig, self.lex["speech_verbs"].word_matches)
+        out["mech_lowercase_i_per_1k"] = per_1k(c["lowercase_i"], n)
+        out["mech_lowercase_start_per_1k"] = per_1k(c["lowercase_start"], n)
+        out["mech_missing_space_per_1k"] = per_1k(c["missing_space"], n)
+        out["mech_confusions_per_1k"] = per_1k(c["confusions"], n)
+        out["mech_errors_per_1k"] = per_1k(sum(c.values()), n)
+
+    def speech_tags(self, doc: TextDoc, hits: dict[str, np.ndarray]) -> list[int]:
+        """Word positions of speech verbs in narration within four words of a quotation in the same paragraph."""
+        q = doc.in_quote
+        qpos = np.flatnonzero(q)
+        tags: list[int] = []
+        if qpos.size:
+            for j in np.flatnonzero(hits["speech_verbs"].astype(bool) & ~q):
+                k = int(np.searchsorted(qpos, j))
+                for x in (k - 1, k):
+                    if 0 <= x < qpos.size and abs(int(qpos[x]) - int(j)) <= 4 and doc.para_idx[qpos[x]] == \
+                            doc.para_idx[j]:
+                        tags.append(int(j))
+                        break
+        return tags
+
+    def _dialogue_craft(self, doc: TextDoc, hits: dict[str, np.ndarray], out: dict[str, Any]) -> None:
+        n_par = len(doc.paragraphs)
+        words = np.bincount(doc.para_idx, minlength=n_par)
+        quoted = np.bincount(doc.para_idx, weights=doc.in_quote.astype(float), minlength=n_par)
+        kinds = [quoted[i] > 0 for i in range(n_par) if words[i] > 0]  # True = a paragraph with dialogue
+        d, m = sum(kinds), len(kinds)
+        bare = sum(1 for i in range(n_par) if words[i] > 0 and quoted[i] == words[i])
+        out["dlg_bare_line_share"] = bare / d if d >= 5 else NAN
+        switches = sum(1 for a, b in zip(kinds, kinds[1:]) if a != b)
+        p = d / m if m else 0.0
+        expected = 2 * p * (1 - p) * (m - 1)
+        out["dlg_alternation_index"] = switches / expected if d >= 5 and m - d >= 5 and expected > 0 else NAN
+        tags = self.speech_tags(doc, hits)
+
+        def adverb(i: int, j: int) -> bool:
+            if not 0 <= i < doc.n or doc.sent_idx[i] != doc.sent_idx[j]:
+                return False
+            t, o = doc.tokens[i], doc.orig[i]
+            return t.endswith("ly") and len(t) >= 5 and t.isalpha() and t not in _LY_NOT_ADVERB and o[:1].islower()
+
+        out["dlg_adverb_tag_share"] = (sum(1 for j in tags if adverb(j + 1, j) or adverb(j + 2, j) or adverb(j - 1, j))
+                                       / len(tags)) if len(tags) >= 5 else NAN
+
+    def _markers(self, doc: TextDoc, hits: dict[str, np.ndarray], out: dict[str, Any]) -> None:
+        n = doc.n
+        narr = ~doc.in_quote
+        jumps = [i for i in np.flatnonzero(hits["time_jumps"].astype(bool) & narr)
+                 if i == 0 or doc.tokens[i - 1] not in _TIME_REFERENCE_BEFORE]
+        out["time_jump_per_1k"] = per_1k(len(jumps), n)
+        n_narr = int(narr.sum())
+        out["reader_address_per_1k"] = per_1k(int((hits["reader_address"].astype(bool) & narr).sum()), n_narr) \
+            if n_narr >= 200 else NAN
+        out["humor_per_1k"] = per_1k(int(hits["humor_levity"].sum()), n)
+        for k in ("home", "public", "outdoors"):
+            out[f"setting_{k}_per_1k"] = per_1k(int(hits[f"setting_{k}"].sum()), n)
 
     def _gender(self, doc: TextDoc, out: dict[str, Any]) -> None:
         n = doc.n
@@ -627,12 +840,6 @@ class Measurer:
             out["lex_mattr"] = total / (n - w + 1) / w
         else:
             out["lex_mattr"] = NAN
-        seg = 1000
-        if n >= seg:
-            ttrs = [len(np.unique(ids[s:s + seg])) / seg for s in range(0, n - seg + 1, seg)]
-            out["lex_segment_ttr"] = float(np.mean(ttrs))
-        else:
-            out["lex_segment_ttr"] = NAN
         alpha_tok = alpha_type[ids]
         counts = doc.type_counts
         words = [wd for wd, a in zip(doc.vocab, alpha_type) if a]
@@ -736,14 +943,16 @@ class Measurer:
         same = (ids[1:] == ids[:-1]) & (doc.para_idx[1:] == doc.para_idx[:-1]) if n > 1 else np.zeros(0, bool)
         out["rep_immediate_word_repeats_per_1k"] = per_1k(int(same.sum()), n)
         if n >= 5:
-            g5 = sliding_window_view(ids, 5)
-            keep = ~sliding_window_view(sw, 5).all(axis=1)
-            g5 = g5[keep]
-            if len(g5):
-                _, cnt = np.unique(g5, axis=0, return_counts=True)
-                out["rep_repeated_5gram_per_1k"] = per_1k(int((cnt[cnt >= 2] - 1).sum()), n)
-            else:
-                out["rep_repeated_5gram_per_1k"] = 0.0
+            extra = 0  # repeats within the same 1,000-word stretch, so a long text is not penalised for length
+            for s in range(0, n, REPEAT_WINDOW):
+                e = min(n, s + REPEAT_WINDOW)
+                if e - s < 5:
+                    continue
+                g5 = sliding_window_view(ids[s:e], 5)[~sliding_window_view(sw[s:e], 5).all(axis=1)]
+                if len(g5):
+                    _, cnt = np.unique(g5, axis=0, return_counts=True)
+                    extra += int((cnt[cnt >= 2] - 1).sum())
+            out["rep_repeated_5gram_per_1k"] = per_1k(extra, n)
         else:
             out["rep_repeated_5gram_per_1k"] = NAN
 
@@ -833,6 +1042,9 @@ class Measurer:
             if o[:1].islower() or (initial and t in lower_seen):
                 ly += 1
         out["style_ly_adverbs_per_1k"] = per_1k(ly, n)
+        elongated = sum(1 for o in doc.orig if _ELONGATED.search(o) and o.lower() not in _ELONGATED_SKIP
+                        and not _ROMAN_NUMERAL.match(o))
+        out["style_elongated_per_1k"] = per_1k(elongated, n)
         speech = int(hits["speech_verbs"].sum())
         said = sum(int(doc.type_counts[doc.vocab_index[w]]) for w in ("said", "says") if w in doc.vocab_index)
         out["style_said_share"] = share(said, speech) if speech >= 5 else NAN

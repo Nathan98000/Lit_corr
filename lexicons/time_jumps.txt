@@ -1,7 +1,7 @@
 # name: time_jumps
-# label: Time jumps (prototype)
+# label: Time jumps
 # description: Phrases that skip ahead in time ("the next morning", "weeks later").
-# notes: Phase 5 prototype only.
+# notes: Added in Stage 1B. Narrative skips in story time, such as "the next morning", "hours later" and "time passed"; a plan in dialogue ("see you next week") does not match any entry.
 the next morning
 the next day
 the next night

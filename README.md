@@ -1,7 +1,7 @@
 # Literotica Correlations — Stage 1: data pipeline
 
 A slow, polite collector for public Literotica story pages, and an offline
-pipeline that turns the collected stories into about 195 transparent, explainable
+pipeline that turns the collected stories into about 215 transparent, explainable
 story measures plus popularity figures. Its output feeds Stage 2: a static
 website that lets visitors explore which story characteristics are
 *associated with* popularity, overall and within Literotica's categories.
@@ -259,7 +259,7 @@ data/
     profiles/            one statistical profile per refresh + latest_diff.md
   processed/
     stories_features.parquet  analysis-ready table: category, dates, popularity,
-                              ~195 story measures, quality flags, sampling weight (no text)
+                              ~215 story measures, quality flags, sampling weight (no text)
     stories_features.csv      the same as CSV (lists joined with "|")
     category_frame.parquet    per-category size estimates and sample counts
     quality_report.md/.json   data-quality summary

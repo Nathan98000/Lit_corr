@@ -1,11 +1,14 @@
 # New measures: proposal (Stage 1B, Phase 5)
 
-**Status: proposal only. Nothing below is implemented, and no existing column is removed or renamed. Waiting
-for approval.**
+**Status: approved on 2026-10-05 and implemented in text pipeline 1.3**, with the retirements and explorer
+changes applied and the detectors' precision fixed after hold-out hand-checks (see `CHANGELOG.md` 1.3 and
+`WORKLOG.md` Phase 7). The numbers below are the proposal-time prototype numbers; the final ones are in the
+CHANGELOG.
 
 Every candidate was prototyped on the real corpus: batch 1, the 4,248 analysed stories, text pipeline 1.2.
 To reproduce the numbers, run `python -m litcorr.dev.prototype_measures run`, then `report`. The prototype word
-lists are in `litcorr/dev/proposal_lexicons/`. All figures are aggregate.
+lists were in `litcorr/dev/proposal_lexicons/`; the adopted ones now live, in their final form, in `lexicons/`.
+All figures are aggregate.
 
 ## How to read the evidence
 

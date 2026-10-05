@@ -85,10 +85,13 @@ def main() -> None:
     for name, (truth, text) in fetch_texts().items():
         res = collections.Counter(m.measure(c, {})["pov_class"] for c in chunks(paragraphs(text)))
         n = sum(res.values())
+        # "first_plural" (a "we" stretch) is first person: right for a first-person book, wrong for a third-person one.
+        ok = res[truth] + (res["first_plural"] if truth == "first" else 0)
         total["n"] += n
-        total["ok"] += res[truth]
-        total["wrong"] += sum(v for k, v in res.items() if k in ("first", "second", "third") and k != truth)
-        print(f"{truth:5}  {name:32} {res[truth] / n:5.0%} correct  {dict(res)}")
+        total["ok"] += ok
+        total["wrong"] += sum(v for k, v in res.items() if k in ("first", "first_plural", "second", "third")
+                              and k != truth and not (truth == "first" and k == "first_plural"))
+        print(f"{truth:5}  {name:32} {ok / n:5.0%} correct  {dict(res)}")
     print(f"\nOverall: {total['ok']}/{total['n']} passages correct ({total['ok'] / total['n']:.1%}); "
           f"confidently wrong: {total['wrong']} ({total['wrong'] / total['n']:.1%}).")
 

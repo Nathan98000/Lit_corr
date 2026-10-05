@@ -1,0 +1,76 @@
+# name: reader_address
+# label: Address to the reader
+# description: Narration that speaks to the reader ("dear reader", "let me tell you", "as you can imagine").
+# notes: Added in Stage 1B. Counted in narration (outside quotation marks) only; a character saying "trust me" in dialogue is not counted. "trust me" and "believe me" used as ordinary verbs ("she would never trust me", "didn't believe me") are excluded senses (Stage 1B hold-out hand-check).
+dear reader
+dear readers
+gentle reader
+my readers
+you may be wondering
+you might be wondering
+you may wonder
+you might wonder
+you may ask
+you might ask
+let me tell you
+let me explain
+as you can imagine
+as you might imagine
+as you may know
+as you might know
+as you may have guessed
+as you might have guessed
+i must confess
+i have to admit
+i must admit
+believe me
+trust me
+i should explain
+i should mention
+i should point out
+!never trust me
+!not trust me
+!didn't trust me
+!don't trust me
+!doesn't trust me
+!won't trust me
+!wouldn't trust me
+!couldn't trust me
+!can't trust me
+!can trust me
+!could trust me
+!would trust me
+!to trust me
+!you trust me
+!ever trust me
+!even trust me
+!she'd trust me
+!he'd trust me
+!they'd trust me
+!really trust me
+!never believe me
+!not believe me
+!didn't believe me
+!don't believe me
+!doesn't believe me
+!won't believe me
+!wouldn't believe me
+!couldn't believe me
+!can't believe me
+!can believe me
+!could believe me
+!would believe me
+!to believe me
+!you believe me
+!ever believe me
+!even believe me
+!she'd believe me
+!he'd believe me
+!they'd believe me
+!really believe me
+!if i should explain
+!whether i should explain
+!if i should mention
+!whether i should mention
+!trust me to
+!trust me with

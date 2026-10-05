@@ -50,7 +50,7 @@ EXPECTATIONS = [
     (24, "bdsm-stories", "HIGH", "agency_commands_per_1k"), (25, "adult-romance", "HIGH", "emo_affection_per_1k"),
     (26, "adult-romance", "HIGH", "rel_romance_per_1k"), (27, "erotic-horror", "HIGH", "emo_anxiety_per_1k"),
     (28, "loving-wives", "HIGH", "rel_terms_per_1k"), (29, "loving-wives", "HIGH", "emo_jealousy_per_1k"),
-    (30, "adult-humor", "ABOVE", "punct_exclamation_per_1k"),
+    (30, "adult-humor", "ABOVE", "qe_exclamation_sentences_per_1k"),
     (31, "reviews-and-essays", "HIGH", "read_grade_composite"), (32, "reviews-and-essays", "HIGH", "lex_long_word_share"),
     (33, "reviews-and-essays", "HIGH", "story_mean_sentence_words"),
     (34, "reviews-and-essays", "HIGH", "hedge_modal_per_1k"), (35, "reviews-and-essays", "HIGH", "psy_mental_verbs_per_1k"),
@@ -62,6 +62,47 @@ EXPECTATIONS = [
     (45, "lesbian-sex-stories", "HIGH", "gender_feminine_per_1k"), (46, "chain-stories", "ABOVE", "story_has_author_note"),
     (47, "adult-how-to", "HIGH", "agency_commands_per_1k"), (48, "fetish-stories", "ABOVE", "sense_smell_per_1k"),
     (49, "non-erotic-stories", "BELOW", "style_profanity_per_1k"), (50, "erotic-horror", "ABOVE", "emo_negative_per_1k"),
+]
+
+# The Phase 5 expectations for the measures added in text pipeline 1.3 (WORKLOG Phase 5, written before the
+# prototypes were computed). Ranked by category MEAN, as pre-registered (most of these are zero in many stories).
+# "desc_pov=first" = the share of stories whose description is in the first person.
+EXPECTATIONS_PHASE5 = [
+    (51, 'erotic-letters', 'LOW', 'open_dialogue'), (52, 'reviews-and-essays', 'LOW', 'open_dialogue'),
+    (53, 'adult-how-to', 'LOW', 'open_dialogue'), (54, 'erotic-letters', 'LOW', 'end_dialogue'),
+    (55, 'reviews-and-essays', 'LOW', 'end_dialogue'), (56, 'adult-how-to', 'LOW', 'end_dialogue'),
+    (57, 'erotic-novels', 'HIGH', 'end_to_be_continued'), (58, 'erotic-letters', 'LOW', 'end_to_be_continued'),
+    (59, 'adult-how-to', 'LOW', 'end_to_be_continued'), (60, 'group-sex-stories', 'HIGH', 'sex_scene_count'),
+    (61, 'erotic-novels', 'HIGH', 'sex_scene_count'), (62, 'non-erotic-stories', 'LOW', 'sex_scene_count'),
+    (63, 'reviews-and-essays', 'LOW', 'sex_scene_count'), (64, 'adult-romance', 'HIGH', 'sex_first_scene_position'),
+    (65, 'erotic-novels', 'HIGH', 'sex_first_scene_position'),
+    (66, 'masturbation-stories', 'LOW', 'sex_first_scene_position'),
+    (67, 'anal-sex-stories', 'LOW', 'sex_first_scene_position'),
+    (68, 'reviews-and-essays', 'BELOW', 'mech_lowercase_i_per_1k'),
+    (69, 'erotic-novels', 'BELOW', 'mech_lowercase_i_per_1k'),
+    (70, 'reviews-and-essays', 'BELOW', 'mech_lowercase_start_per_1k'),
+    (71, 'reviews-and-essays', 'BELOW', 'mech_missing_space_per_1k'),
+    (72, 'reviews-and-essays', 'BELOW', 'mech_confusions_per_1k'),
+    (73, 'erotic-novels', 'BELOW', 'mech_confusions_per_1k'), (74, 'adult-humor', 'HIGH', 'dlg_bare_line_share'),
+    (75, 'bdsm-stories', 'HIGH', 'rel_consent_per_1k'), (76, 'first-time-sex-stories', 'HIGH', 'rel_consent_per_1k'),
+    (77, 'non-erotic-stories', 'LOW', 'rel_consent_per_1k'), (78, 'erotic-novels', 'HIGH', 'time_jump_per_1k'),
+    (79, 'adult-romance', 'HIGH', 'time_jump_per_1k'), (80, 'loving-wives', 'HIGH', 'time_jump_per_1k'),
+    (81, 'masturbation-stories', 'LOW', 'time_jump_per_1k'), (82, 'adult-how-to', 'LOW', 'time_jump_per_1k'),
+    (83, 'reviews-and-essays', 'HIGH', 'reader_address_per_1k'),
+    (84, 'adult-how-to', 'HIGH', 'reader_address_per_1k'), (85, 'adult-humor', 'HIGH', 'humor_per_1k'),
+    (86, 'erotic-horror', 'LOW', 'humor_per_1k'), (87, 'non-consent-stories', 'LOW', 'humor_per_1k'),
+    (88, 'loving-wives', 'HIGH', 'setting_home_per_1k'),
+    (89, 'exhibitionist-voyeur', 'HIGH', 'setting_public_per_1k'),
+    (90, 'exhibitionist-voyeur', 'HIGH', 'setting_outdoors_per_1k'), (91, 'anal-sex-stories', 'HIGH', 'title_sexual'),
+    (92, 'group-sex-stories', 'HIGH', 'title_sexual'), (93, 'masturbation-stories', 'HIGH', 'title_sexual'),
+    (94, 'adult-romance', 'LOW', 'title_sexual'), (95, 'non-erotic-stories', 'LOW', 'title_sexual'),
+    (96, 'science-fiction-fantasy', 'LOW', 'title_sexual'),
+    (97, 'masturbation-stories', 'HIGH', 'style_elongated_per_1k'),
+    (98, 'group-sex-stories', 'HIGH', 'style_elongated_per_1k'),
+    (99, 'reviews-and-essays', 'LOW', 'style_elongated_per_1k'),
+    (100, 'non-erotic-stories', 'LOW', 'style_elongated_per_1k'),
+    (101, 'adult-how-to', 'LOW', 'style_elongated_per_1k'), (102, 'erotic-letters', 'HIGH', 'desc_pov=first'),
+    (103, 'adult-how-to', 'HIGH', 'desc_pov=second'),
 ]
 
 
@@ -121,9 +162,14 @@ def degeneracy(df: pd.DataFrame) -> pd.DataFrame:
 def known_groups(df: pd.DataFrame) -> pd.DataFrame:
     d = analysed(df)
     rows = []
-    for num, cat, kind, m in EXPECTATIONS:
-        v = pd.to_numeric(d[m], errors="coerce").astype(float)
-        med = v.groupby(d["category_slug"]).median().dropna().sort_values(ascending=False)
+    checks = [(e, "median") for e in EXPECTATIONS] + [(e, "mean") for e in EXPECTATIONS_PHASE5]
+    for (num, cat, kind, m), stat in checks:
+        if "=" in m:  # a category's share of one value of a categorical measure
+            col, val = m.split("=", 1)
+            v = (d[col].astype(str) == val).astype(float).where(d[col].notna())
+        else:
+            v = pd.to_numeric(d[m], errors="coerce").astype(float)
+        med = getattr(v.groupby(d["category_slug"]), stat)().dropna().sort_values(ascending=False)
         if cat not in med.index:
             rows.append({"#": num, "category": cat, "expect": kind, "measure": m, "result": "n/a"})
             continue
@@ -131,7 +177,8 @@ def known_groups(df: pd.DataFrame) -> pd.DataFrame:
         k = len(med)
         mid = float(med.median())
         ok = {"HIGH": rank <= 6, "LOW": rank > k - 6, "ABOVE": med[cat] > mid, "BELOW": med[cat] < mid}[kind]
-        rows.append({"#": num, "category": cat, "expect": kind, "measure": m, "rank_of_30": rank,
+        rows.append({"#": num, "category": cat, "expect": kind, "measure": m, "ranked_by": stat,
+                     "rank_of_30": rank,
                      "category_median": float(med[cat]), "median_of_categories": mid,
                      "top3": ", ".join(med.index[:3]), "bottom3": ", ".join(med.index[-3:]),
                      "result": "pass" if ok else "FAIL"})

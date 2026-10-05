@@ -1,7 +1,7 @@
 # name: setting_home
-# label: Home settings (prototype)
+# label: Home settings
 # description: Rooms and places of a home (bedroom, kitchen, couch, shower, apartment).
-# notes: Phase 5 prototype only.
+# notes: Added in Stage 1B. Rooms and places of a home.
 bedroom
 bedrooms
 kitchen

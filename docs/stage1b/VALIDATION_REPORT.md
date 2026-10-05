@@ -1,46 +1,65 @@
 # Stage 1B validation report
 
-How far the Stage 1 text measures can be trusted on the real corpus, what was fixed, and what is left. This
-report is aggregate-only: no story text, titles, names, slugs, URLs or story keys. The details behind every number
-are in `WORKLOG.md` (phase by phase), `CHANGELOG.md` (every change to a value) and `NEW_MEASURES_PROPOSAL.md`.
+How far the Stage 1 text measures can be trusted on the real corpus, what was fixed, what was added, and what is
+left. This report is aggregate-only: no story text, titles, names, slugs, URLs or story keys. The details behind
+every number are in:
+* `WORKLOG.md`, phase by phase;
+* `CHANGELOG.md`, every change to a value;
+* `NEW_MEASURES_PROPOSAL.md`, the evidence for the measures added in 1.3.
 
 ## At a glance
 
-* **Data:** collection batch 1 is a partial collection: 4,251 of the 9,000 sampled stories collected (47%; 142
-  of 300 in every category). 4,248 stories are analysed. Text pipeline **1.2**.
+* **Data:**
+  * Collection batch 1 (4,251 stories with text, 4,248 analysed) is the basis of the checks in §2–§4.
+  * By 2026-10-05 the running collector had brought the corpus to 5,001 stories with text, out of 9,000 sampled
+    (56%; 4,998 analysed).
+  * 680 of the stories collected after batch 1 served as the hold-out for the new measures (the last 70
+    arrived after the hand-checks).
+  * Text pipeline **1.3**.
 * **Extraction:**
-  * two real bugs fixed: text outside `<p>` was dropped, and page-capped stories were excluded as "too short";
-  * the demo had silently produced an empty dataset on every re-run (fixed);
-  * author paratext (notes, disclaimers, headings, "to be continued") is now set aside before measuring;
-    hold-out accuracy is 93% (95% CI 84–97%), with no story text ever set aside.
-* **Measures behave as expected on known groups:** 47 of 50 pre-registered category expectations hold. The 3
-  failures are explained and none is a bug.
-* **Rule-based classifiers, after the Phase 4 fixes (95% CIs):**
+  * Two real bugs fixed: text outside `<p>` was dropped, and page-capped stories were excluded as "too short".
+  * The demo had silently produced an empty dataset on every re-run (fixed).
+  * Author paratext (notes, disclaimers, headings, "to be continued") is set aside before measuring. Hold-out
+    accuracy is 93% (95% CI 84–97%), and no story text was ever set aside.
+* **Known groups:** of 50 pre-registered category expectations, 47 held on batch 1. The failures are explained,
+  and none is a bug.
+* **Rule-based classifiers (95% CIs):**
   * quote style, dialogue spans, scene breaks and tense are 100% right on 44–50 items each (lower bounds
-    92–93%), and sentence splitting 98%;
-  * the paratext hold-out is 93% and the POV hold-out 15/15;
-  * passive voice is 92% precise (82–96%) and commands 100% (94–100), with about 87% of spoken commands found;
-  * character names are 91% (80–96%).
-* **Reliability:** 83 of 125 continuous measures have split-half reliability ≥ 0.8 and 34 are between 0.6 and
-  0.8. 8 are below 0.6, all rare-word rates, and they now carry a caveat.
+    92–93%), and sentence splitting is 98%;
+  * the paratext hold-out is 93%;
+  * point of view: hold-out 15/15. On 14 public-domain novels it is 94.0% correct, with the new "we" class;
+  * passive voice is 92% precise (82–96%);
+  * commands are 100% precise (94–100), and about 87% of spoken commands are found;
+  * character names are 91% precise (80–96%).
+* **New measures (1.3):**
+  * 27 new measures and a chat/script format flag, as approved.
+  * Each pattern-based detector was hand-checked on stories that played no part in designing it, fixed where it
+    failed, and re-checked. Precision is now 88–100%.
+  * Detected sex scenes are narrated sexual activity in 3 of 4 cases.
+  * 7 redundant columns were retired.
+* **Reliability:** of 140 continuous measures, 86 have split-half reliability ≥ 0.8 and 41 are between 0.6 and
+  0.8. The 13 below 0.6, mostly rates of rare phrases, carry a caveat.
 * **Safe to run alongside the collector:** offline commands read the state database only from an in-memory
-  copy. Re-runs are incremental: a refresh with nothing new takes 13 s instead of 3.5 min, with exactly the
-  same output.
-* **Next:** 22 new measures are proposed, prototyped and checked for redundancy, and wait for approval.
+  copy; the collector ran throughout the last phase. Re-runs are incremental: a refresh with nothing new takes
+  13 s instead of 3.5 min, with exactly the same output.
 
 ## 1. What was checked, and how
 
-* **Population:** the analysed stories (`analysis_include`) of batch 1.
+* **Population:** the analysed stories (`analysis_include`): batch 1 for §2–§4, everything collected so far for
+  the final audit of 1.3.
 * **Exposure policy:**
   * aggregate statistics and the masked view (letters → x, function words readable);
-  * for passive voice, commands and names, random fragments of at most five words drawn from the whole corpus,
-    shown without story keys;
-  * the one-sentence unmasked reveal was never used;
-  * no excerpt suggesting sexual content involving a minor was encountered.
+  * for passive voice, commands, names and the new detectors, random fragments of a few words drawn from the
+    whole corpus and shown without story keys (the matched phrase with one word each side);
+  * the one-sentence unmasked reveal was never used.
+* **Possible minor:** one masked view, of a detected sex scene, could not rule out a minor. Reading stopped there,
+  the item was not judged, and its story key was given to you for review (it is not recorded in these public
+  files). No other excerpt suggested sexual content involving a minor.
 * **Popularity was never used** to choose, tune or prune a text measure.
-* **Tuning:** everything tuned on batch 1 is listed (WORKLOG "Tuned on batch 1", Phases 2 and 4), and every
-  accuracy after a fix comes from a sample not used to design it. The same procedure can be re-run on stories
-  collected later only (§7).
+* **Tuning:**
+  * Everything tuned is listed in the WORKLOG ("Tuned on ..." in Phases 2, 4 and 7).
+  * Every accuracy after a fix comes from items not used to design it.
+  * The same procedure can be re-run on stories collected later (§7).
 
 ## 2. Text extraction and preparation (Phase 2)
 
@@ -59,23 +78,26 @@ are in `WORKLOG.md` (phase by phase), `CHANGELOG.md` (every change to a value) a
 Word counts match the site's own counter closely: 89.5% within ±1% before paratext was set aside. Two stories
 differ for site-side reasons.
 
-## 3. Measure audit (Phase 3)
+## 3. Measure audit (Phase 3, updated for 1.3)
 
 **Degeneracy.**
 * No impossible values.
-* Two near-constant measures: `sex_has_explicit_terms` (97.6% true) and `story_requests_feedback` (95.5% false).
+* `sex_has_explicit_terms` was true for 97.6% of stories and is retired in 1.3.
+* `story_requests_feedback` (95.5% false) is kept, hidden from the explorer.
 * The extreme upper tails are format quirks with correct values: run-on prose, chat transcripts, a text posted
-  twice by its author.
+  twice by its author, a story written entirely in lower case.
 
 **Known groups.**
-* 50 expectations were written before computing. 44 pass on category medians and 3 more on means, where
-  medians tie at 0.
-* Failures:
+* 50 expectations were written before computing.
+* On batch 1, 44 pass on category medians and 3 more on means, where medians tie at 0.
+* On the larger 1.3 corpus, 45 pass on medians. The one new miss is erotic-novels on series membership: 17
+  categories tie at a median of 1, while erotic-novels is first by mean (92% in a series).
+* Real failures:
   * essays discuss sex, so they are not low on sexual vocabulary;
   * group-sex stories often leave participants unnamed;
   * how-to commands are not in quotation marks (failure predicted in advance).
 
-**Classifier hand-checks** (current pipeline):
+**Classifier hand-checks:**
 
 | Classifier | Items | Accuracy (95% CI) | Remaining error types |
 |---|---|---|---|
@@ -84,7 +106,7 @@ differ for site-side reasons.
 | Sentence splitting | 50 paragraphs | 98% (89.5–99.6) | split after "etc." missed |
 | Scene breaks | 50 paragraphs | 100% (92.9–100) | textual transitions are not breaks, by design |
 | Author paratext | 58 hold-out items | 93.1% (83.6–97.3) | notes with no marker |
-| POV class | 48 stories (balanced) + 15 hold-out | 46/48 in-sample; hold-out 15/15 (79.6–100); about 97% weighted by class frequency | "we" narration labelled mixed; a chat transcript labelled second |
+| POV class | 48 stories (balanced) + 15 hold-out; 284 novel passages | 46/48 in-sample (the "we" story now first_plural); hold-out 15/15 (79.6–100); novels 94.0%, 3.2% confidently wrong | a chat transcript labelled second |
 | Tense class | 45 stories | 100% of 44 judged (92.0–100) | — |
 | Passive voice (precision) | 60 random matches | 91.5% (81.6–96.3) | "un-" adjectives, idioms |
 | Commands (precision) | 60 random counted passages | 100% (94.0–100) | — |
@@ -93,25 +115,35 @@ differ for site-side reasons.
 | Chapter / series numbering | 1,614 stories with both sources | title number = site index for 88.4% | authors number chapters independently; the site index is used when present |
 
 **Word lists.**
-* 19 lists edited; the change in hit counts is −40% to +5.5% per list (WORKLOG §3d).
+* Phase 3 edited 19 lists; the change in hit counts is −40% to +5.5% per list (WORKLOG §3d).
 * A new `!phrase` syntax removes one fixed expression ("birth control", "made love", "sounds good").
 * Youth references ("childhood", "grew up together") were removed.
+* 1.3 adds seven lists: consent, time jumps, reader address, humour, and three settings.
 * No list contains words about age or youth; this is tested.
 
-**Split-half reliability** (odd vs even paragraphs, 3,914 stories of 1,000+ words, Spearman–Brown):
-* 83 measures are ≥ 0.8, including all readability, sentence, POV, gender, dialogue, punctuation and sexual
-  measures; most of these are above 0.9.
-* 34 are 0.6–0.8.
-* 8 are below 0.6 and carry a caveat: jealousy, uncertainty, the hedging/certainty balance, commands among
-  speech (0.47), anger, volition, distancing and anxiety.
+**Split-half reliability** (odd vs even paragraphs, 4,619 stories of 1,000+ words, Spearman–Brown):
+* 86 measures are ≥ 0.8, including all readability, sentence, POV, gender, dialogue, punctuation and sexual
+  measures, and the writing-mechanics total (0.94).
+* 41 are 0.6–0.8.
+* 13 are below 0.6 and carry a caveat:
+  * from Phase 3: jealousy, uncertainty, the hedging/certainty balance, commands among speech, anger, volition,
+    distancing and anxiety;
+  * new in 1.3: reader address (0.32), consent language (0.35), time jumps (0.46), missing spaces (0.50) and
+    dialogue alternation (0.53).
 
 **Redundancy.**
-* 52 pairs correlate at |r| ≥ 0.9. Exact complements and duplicate definitions are listed for retirement in the
-  proposal; nothing is removed.
+* 52 pairs correlated at |r| ≥ 0.9.
+* In 1.3 the exact complements and duplicate definitions were retired: active-voice share, question/statement
+  ratio, the two punctuation-mark rates duplicated by sentence rates, character count, explicit-terms flag and
+  segment type-token ratio.
+* 42 pairs remain, mostly count vs rate of the same thing, the standard readability formulas, and all-words vs
+  narration-only pronoun rates.
 
 **Length.**
-* Three measures depend on length for a mechanical reason and carry a caveat: repeated five-word phrases, the
-  position of the first sexual term, and the name-mention rate.
+* Repeated five-word phrases are now counted within 1,000-word stretches, and their correlation with story
+  length fell from 0.35 to 0.08.
+* Two measures keep a mechanical-length caveat: the position of the first sexual term (use the new first-scene
+  position instead) and the name-mention rate.
 * Dialogue genuinely increases in longer stories, within every category.
 
 ## 4. Fixes (Phase 4, text pipeline 1.2)
@@ -124,17 +156,18 @@ differ for site-side reasons.
 | Names | 68.4% precise | 90.6% | titles, places, nationalities, organisations and brands left out; words mostly after "the"/"in" |
 | Word lists | see §3 | | |
 
-Every value change is in `CHANGELOG.md` (59 measures, with median, mean and missing rate before and after).
-Regression tests use synthetic text.
+Every value change is in `CHANGELOG.md` (59 measures in 1.2, with median, mean and missing rate before and
+after). Regression tests use synthetic text.
 
 ## 5. Incremental re-runs and concurrency (Phase 6)
 
-* **The state database is never written by the offline commands.** A read-only SQLite connection creates
-  `-wal`/`-shm` files on a cleanly closed WAL database and cannot remove them. So when no collector is running,
-  the copy reads the main file as immutable (no files created); while one runs, it uses SQLite's normal
-  read-only path.
-* **Tested:** the database stays byte-identical, also while a writer holds uncheckpointed changes. On the real
-  data `state.sqlite3` was unchanged after every run.
+* **The state database is never written by the offline commands.**
+  * A read-only SQLite connection creates `-wal`/`-shm` files on a cleanly closed WAL database and cannot remove
+    them.
+  * So when no collector is running, the copy reads the main file as immutable, which creates no files.
+  * While one runs, the copy uses SQLite's normal read-only path. The collector was running for the whole of the
+    last phase.
+* **Tested:** the database stays byte-identical, also while a writer holds uncheckpointed changes.
 * **Caches:**
   * `build-raw` reuses parsed stories whose saved pages and parser code are unchanged;
   * `analyze` reuses measures keyed on the story's text and metadata, the pipeline version, a fingerprint of
@@ -146,65 +179,80 @@ Regression tests use synthetic text.
 * **Partial-collection labels:** the manifest and quality report show progress per category, and the sampling
   weights are marked provisional while stories are queued.
 
-## 6. New measures (Phase 5, awaiting approval)
+## 6. New measures (text pipeline 1.3)
 
-34 candidate columns were prototyped. 22 candidates are proposed:
-* openings and endings;
-* sex-scene count and position;
-* five writing-mechanics measures, the most reliable in the project (split-half up to 0.98) and nearly
-  independent of everything existing;
-* dialogue craft;
-* consent and check-in language;
-* time jumps;
-* address to the reader;
-* humour;
-* setting types;
-* stretched words;
-* title and blurb measures;
-* a chat/script format flag.
+All 22 proposed candidates were added: 27 columns plus the quality flag `qc_speaker_label_format`. Definitions
+and caveats are in the data dictionary, and the distributions in `CHANGELOG.md` 1.3.
 
-Each comes with its closest existing measure (all below 0.85, most below 0.5), split-half reliability, known
-groups (51 of 67 pre-registered expectations hold) and cost. Redundant candidates were dropped (e.g. the share
-of the story in sex scenes, ρ = 0.97 with the sexual-term rate). See `NEW_MEASURES_PROPOSAL.md`.
+Each pattern-based detector was hand-checked on fragments from the stories collected after batch 1, which played
+no part in designing the measures. Where a detector failed it was fixed, then re-checked on stories not used for
+the fix. For the two detectors fixed most, the final check used batch 1, on which none of those fixes was
+designed.
+
+| Detector (final rule) | Right | 95% CI | First draw |
+|---|---|---|---|
+| lower-case "i" | 40/40 | 91.2–100 | same rule |
+| lower-case sentence starts | 39/40 | 87.1–99.6 | 24/40: lower-case paragraph starts were mostly verse lines, chat lines, sign-offs and lists, so they are no longer counted |
+| missing spaces | 19/19 | 83.2–100 | 14/40: one chat log's username |
+| word confusions | 35/40 | 73.9–94.5 | 34/39 |
+| consent language | 38/39 | 86.8–99.5 | 27/34: taunts and generic requests |
+| time jumps | 39/40 | 87.1–99.6 | 31/39: durations ("for the next week") and plans in dialogue |
+| address to the reader | 24/25 | 80.5–99.3 | 36/40: "trust me" as an ordinary verb |
+| speaker labels (chat / script) | 38/40 | 83.5–98.6 | same check |
+| sex scenes (masked view) | 15/20 judged | 53.1–88.8 | same rule; the others are dense talk about sex (an essay, an author's note, world-building) |
+
+* **Known groups:** 41 of the 53 pre-registered expectations for the new measures hold (ranked by category mean).
+  Most failures are near misses at ranks 7–12. The clearest wrong expectation: essays are not more polished
+  than average.
+* **"We" narration:** `pov_class` = `first_plural`, with the rule fixed in advance (≥ 15 we/us/our per 1,000
+  narration words, at least as frequent as I and you).
+  * 22 batch-1 stories, half of them essays with an authorial "we".
+  * They count as first person in `pov_is_first_person`.
+  * New column `pov_first_plural_narr_per_1k`.
+* **Retired:** 7 columns (§3). Hidden from the explorer: 8 (alternative readability formulas, all-words pronoun
+  rates, `story_requests_feedback`, `sex_first_mention_position`).
 
 ## 7. Re-checking on the stories collected later
 
-Everything tuned on batch 1 is listed in the WORKLOG (Phases 2 and 4). To re-estimate the accuracies on new
-stories only:
+Everything tuned is listed in the WORKLOG (Phases 2, 4 and 7). To re-estimate the accuracies on new stories only:
 
-1. Draw a sample of them with `python -m litcorr.dev.review_sample NAME --only-new-since data/dev/batch1_features.parquet`.
+1. Draw a sample of them with
+   `python -m litcorr.dev.review_sample NAME --only-new-since data/dev/batch1_features.parquet`.
+   The 680 stories already used as the hold-out for 1.3 are in `data/dev/samples/new1.csv`; to exclude them, add
+   `--exclude-sample new1`.
 2. Make, judge and score sheets:
    * `python -m litcorr.dev.handcheck make paratext|pov|tense|quote_mode|dialogue_spans|sentences|scene_breaks SHEET --sample NAME`;
-   * `python -m litcorr.dev.fragment_check make passive|commands|commands_unflagged|names SHEET --sample NAME`;
+   * `python -m litcorr.dev.fragment_check make passive|commands|commands_unflagged|names|low_i|low_start|missing_space|confusions|consent|time_jumps|reader_address|speaker|scenes SHEET --sample NAME`;
    * `python -m litcorr.dev.handcheck score`.
-3. `python -m litcorr.dev.measure_audit all` repeats the degeneracy, known-group, split-half, redundancy and
-   length checks.
+3. `python -m litcorr.dev.measure_audit all` repeats the degeneracy, known-group (both lists), split-half,
+   redundancy and length checks.
 4. `python -m litcorr.dev.lexicon_audit` repeats the word-list audit.
 
 ## 8. Known limitations
 
 * The text measures are word and rule counts: they do not understand negation, irony or context.
-* Low-reliability measures (8, flagged) suit comparisons between groups of stories, not single stories.
-* Dialogue measures need quotation marks; chat and script formats (about 1.6% of stories) are not covered. The
-  proposed `fmt_speaker_label_share` would flag them.
-* POV: first-person-plural ("we") narration lands in "mixed".
-* Passive voice: "un-" adjectives still count. Commands: verbs missing from the list are missed. Names: rarer
-  places and roles still count.
-* The novel-based POV validation (`scripts/validate_narration.py`, 93.7% in Stage 1) was not re-run: it
-  downloads about 9 MB of public-domain texts and needs your approval.
-* All accuracies are from batch 1; the stories collected later are the real hold-out.
+* Low-reliability measures (13, flagged) suit comparisons between groups of stories, not single stories.
+* Dialogue measures need quotation marks. Chat and script formats (about 1.7% of stories) are now flagged
+  (`fmt_speaker_label_share`, `qc_speaker_label_format`), not measured.
+* Passive voice: "un-" adjectives still count.
+* Commands: verbs missing from the list are missed.
+* Names: rarer places and roles still count.
+* Word confusions: "your SO" (significant other) and a time "then" before a verb still count.
+* A sex scene is dense sexual vocabulary: about 1 in 4 is talk about sex rather than activity.
+* Consent language counts what is said, not whether consent is depicted.
+* All accuracies are from the stories collected so far. Later stories are the next hold-out.
 
-## 9. Decisions for you
+## 9. Decisions
 
-1. **New measures:** approve all, some or none of the 22 candidates in `NEW_MEASURES_PROPOSAL.md`. That includes
-   whether to add the consent-language measure (14), with its caveats.
-2. **Retirements and merges:** which of those proposed in `NEW_MEASURES_PROPOSAL.md` to apply. Stage 2 depends on
-   the column list.
-3. **"We" narration:** a separate POV class ("first plural"), or count it as first person.
-4. **Narration validation download:** allow `scripts/validate_narration.py` to fetch the 14 public-domain novels
-   (about 9 MB) to re-check the POV rule after the Phase 4 change.
-5. **Judgement calls in the word lists:**
-   * "good girl"/"good boy" in the dominance list (a fixed praise phrase);
-   * "small", "tiny", "petite" in the descriptive list (size words);
-   * "baby" in `not_names` (an endearment kept out of name detection).
-   They are kept for now; say if you'd like any removed.
+Taken on 2026-10-05:
+* all 22 new measures added;
+* every suggested retirement and merge applied;
+* "we" narration given its own class;
+* the narration validation re-run (download approved);
+* the word-list judgement calls kept ("good girl"/"good boy", "small"/"tiny"/"petite", "baby" in `not_names`).
+
+Open:
+* **One story flagged for your review:** its masked text could not rule out a minor. The story key was given in
+  chat.
+* **Stage 2 column list:** the next export carries the 1.3 columns, with 7 retired and 28 added. The data
+  dictionary in the handoff lists them.

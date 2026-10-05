@@ -1,7 +1,7 @@
 # name: setting_public
-# label: Public and commercial settings (prototype)
+# label: Public and commercial settings
 # description: Bars, clubs, restaurants, hotels, shops, gyms, offices and transport.
-# notes: Phase 5 prototype only. Places of education are left out on purpose. "bar", "train" and "club" alone are left out (metal bar, to train someone, golf club); only their place phrases count.
+# notes: Added in Stage 1B. Places of education are left out on purpose. "bar", "train" and "club" alone are left out (metal bar, to train someone, golf club); only their place phrases count.
 pub
 nightclub
 restaurant

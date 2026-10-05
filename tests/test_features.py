@@ -88,7 +88,7 @@ def test_all_lexicons_load_and_are_clean():
 def test_explicit_language_and_slow_burn_position():
     paras = ["They talked about books for hours."] * 20 + ["She touched his chest and they kissed. Later they had sex."]
     out = M.measure(paras)
-    assert out["sex_terms"] == 1 and out["sex_has_explicit_terms"] is True
+    assert out["sex_terms"] == 1
     assert out["sex_first_mention_position"] > 0.9 and out["sex_words_before_first"] > 100
     assert out["rel_intimacy_per_1k"] > 0
 

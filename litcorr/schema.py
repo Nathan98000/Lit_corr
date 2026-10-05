@@ -157,8 +157,6 @@ v("story_words", G, "Story", "count", "words", "Word count",
   "Number of words in the story text (letters/digits, contractions count as one word). Author's notes, headings "
   "and other paratext are not counted (see Methodology).",
   "Counted on the collected pages; long stories beyond the page cap are flagged as truncated.")
-v("story_chars", G, "Story", "count", "characters", "Character count",
-  "Number of characters in the story text (paratext excluded).")
 v("story_sentences", G, "Story", "count", "sentences", "Sentence count", "Number of sentences (see Methodology).")
 v("story_paragraphs", G, "Story", "count", "paragraphs", "Paragraph count",
   "Number of non-empty story paragraphs (paratext excluded).")
@@ -185,7 +183,7 @@ v("story_has_author_note", G, "Story", "binary", "yes/no", "Has an author's note
   "Rule-based; misses notes that use no recognisable wording (about 1 in 3 in a hand check).")
 v("story_requests_feedback", G, "Story", "binary", "yes/no", "Asks readers to vote or comment",
   "Whether the author's notes, or the first or last three story paragraphs, ask readers to vote, rate, comment "
-  "or give feedback.")
+  "or give feedback.", explorer=False)
 G = "Title & description"
 v("title_chars", G, "Story", "count", "characters", "Title length", "Number of characters in the title.")
 v("title_words", G, "Story", "count", "words", "Title word count", "Number of words in the title.")
@@ -194,6 +192,13 @@ v("title_has_chapter_marker", G, "Story", "binary", "yes/no", "Title marks a cha
 v("desc_chars", G, "Story", "count", "characters", "Description length",
   "Number of characters in the author's short description.")
 v("desc_words", G, "Story", "count", "words", "Description word count", "Number of words in the description.")
+v("title_sexual", G, "Story", "binary", "yes/no", "Explicit title",
+  "Whether the title contains a term from the sexual word lists.", "Blank when there is no title.")
+v("desc_sexual", G, "Story", "binary", "yes/no", "Explicit description",
+  "Whether the description contains a term from the sexual word lists.", "Blank when there is no description.")
+v("desc_pov", G, "Story", "categorical", "first / second / third / none", "Person of the description",
+  "Grammatical person of the description: first (I, my, we), second (you), third (he, she, they), by which "
+  "personal pronouns it uses most, or none.", "About two descriptions in three use no personal pronoun ('none').")
 G = "Series"
 v("series_is_part", G, "Story", "binary", "yes/no", "Part of a series",
   "Whether the story belongs to a series (series link on the page, a series of 2+ parts, or a chapter marker in "
@@ -206,30 +211,45 @@ v("series_is_later_part", G, "Story", "binary", "yes/no", "Later part of a serie
   "Whether the story is part 2 or later of a series.")
 
 # ------------------------------------------------------------------ narration
+G = "Openings & endings"
+_NO_QUOTES = "Stories written without quotation marks (chat logs, scripts) never count."
+v("open_dialogue", G, "Story", "binary", "yes/no", "Opens with speech",
+  "Whether the first word of the story (after any author's note or heading) is inside quotation marks.", _NO_QUOTES)
+v("end_dialogue", G, "Story", "binary", "yes/no", "Ends with speech",
+  "Whether the last word of the story (before any closing note) is inside quotation marks.", _NO_QUOTES)
+v("end_to_be_continued", G, "Story", "binary", "yes/no", "Announces a continuation",
+  "Whether the story ends by announcing more to come ('to be continued', 'next chapter', 'part 3 coming soon') in "
+  "its last three paragraphs or its closing note.",
+  "What the author announced, not whether a sequel exists; chapters of long works often leave it out.")
 G = "Narration"
 POV_NOTE = "A word-counting heuristic, not true narrative analysis; see Methodology for how it was validated."
 v("pov_first_singular_per_1k", G, "Narration", "continuous", P1K, "I / me / my",
-  "First-person singular pronouns (I, me, my, mine, myself, I'm …) per 1,000 words, dialogue included.")
+  "First-person singular pronouns (I, me, my, mine, myself, I'm …) per 1,000 words, dialogue included.", explorer=False)
 v("pov_first_plural_per_1k", G, "Narration", "continuous", P1K, "We / us / our",
   "First-person plural pronouns per 1,000 words.")
 v("pov_second_per_1k", G, "Narration", "continuous", P1K, "You / your", "Second-person pronouns per 1,000 words.")
 v("pov_third_per_1k", G, "Narration", "continuous", P1K, "He / she / they",
-  "Third-person personal pronouns (he, she, they and their forms) per 1,000 words.")
+  "Third-person personal pronouns (he, she, they and their forms) per 1,000 words.", explorer=False)
 v("pov_first_singular_narr_per_1k", G, "Narration", "continuous", "per 1,000 narration words",
   "I / me / my in narration", "First-person singular pronouns per 1,000 words of narration (outside quotation marks).")
+v("pov_first_plural_narr_per_1k", G, "Narration", "continuous", "per 1,000 narration words",
+  "We / us / our in narration", "First-person plural pronouns per 1,000 narration words (outside quotation marks).")
 v("pov_second_narr_per_1k", G, "Narration", "continuous", "per 1,000 narration words", "You / your in narration",
   "Second-person pronouns per 1,000 narration words.")
 v("pov_third_narr_per_1k", G, "Narration", "continuous", "per 1,000 narration words", "He / she / they in narration",
   "Third-person pronouns per 1,000 narration words.")
 v("pov_first_person_share", G, "Narration", "share", SHARE, "First-person share of pronouns",
   "In narration, first-person pronouns as a share of first- plus third-person pronouns.", POV_NOTE)
-v("pov_class", G, "Narration", "categorical", "first / second / third / mixed / unknown", "Narrative perspective",
-  "Estimated narrative perspective from narration pronouns: first if ≥15 I/me/my per 1,000 narration words; "
-  "second if 'you' forms are ≥15 and more frequent; third if under 5, or if I/me/my are under 8% of the I/me/my "
-  "plus he/she/they forms (reported thoughts or a letter inside a third-person story); otherwise mixed; unknown "
-  "if under 200 narration words.", POV_NOTE)
+v("pov_class", G, "Narration", "categorical", "first / first_plural / second / third / mixed / unknown",
+  "Narrative perspective",
+  "Estimated narrative perspective from narration pronouns: first_plural ('we' narration) if we/us/our forms are "
+  "≥15 per 1,000 narration words and at least as frequent as I/me/my and as you/your; second if 'you' forms are "
+  "≥15 and more frequent than I/me/my; first if ≥15 I/me/my per 1,000 narration words; third if under 5, or if "
+  "I/me/my are under 8% of the I/me/my plus he/she/they forms (reported thoughts or a letter inside a "
+  "third-person story); otherwise mixed; unknown if under 200 narration words.", POV_NOTE)
 v("pov_is_first_person", G, "Narration", "binary", "1 = first, 0 = third", "First-person narration",
-  "1 for stories classified as first person, 0 for third person, blank otherwise.", POV_NOTE)
+  "1 for stories classified as first person, singular or plural ('we'), 0 for third person, blank otherwise.",
+  POV_NOTE)
 v("narr_present_tense_share", G, "Narration", "share", SHARE, "Present-tense share",
   "In narration, present-tense forms of ~70 common verbs as a share of present plus past forms.",
   "Blank if fewer than 20 such verbs occur. A heuristic.")
@@ -237,6 +257,9 @@ v("narr_tense_class", G, "Narration", "categorical", "present / past / mixed / u
   "Present if the present-tense share is ≥ 0.6, past if ≤ 0.4, otherwise mixed.")
 v("narr_is_present_tense", G, "Narration", "binary", "1 = present, 0 = past", "Present-tense narration",
   "1 for present-tense narration, 0 for past tense, blank otherwise.")
+v("reader_address_per_1k", G, "Narration", "continuous", "per 1,000 narration words", "Talking to the reader",
+  "Narration that speaks to the reader ('trust me', 'believe me', 'let me tell you', 'dear reader', 'as you can "
+  "imagine') per 1,000 narration words.", "Blank under 200 narration words.")
 G = "Dialogue"
 v("dlg_word_share", G, "Narration", "share", SHARE, "Dialogue share",
   "Share of words inside quotation marks.",
@@ -254,6 +277,20 @@ v("dlg_exclamation_share", G, "Narration", "share", SHARE, "Exclamations in dial
 v("dlg_paragraph_share", G, "Narration", "share", SHARE, "Paragraphs with dialogue",
   "Share of paragraphs that contain at least one quoted passage.")
 v("dlg_has_dialogue", G, "Narration", "binary", "yes/no", "Has dialogue", "Whether the story has any quoted speech.")
+v("dlg_bare_line_share", G, "Narration", "share", SHARE, "Untagged speech lines",
+  "Share of dialogue paragraphs made only of quoted speech, with no narration and no 'she said'.",
+  "Blank with fewer than 5 dialogue paragraphs.")
+v("dlg_adverb_tag_share", G, "Narration", "share", SHARE, "Adverbs in speech tags",
+  "Share of speech tags (a speech verb within four words of a quotation) with an -ly adverb next to the verb "
+  "('she said softly', 'he whispered hoarsely').", "Blank with fewer than 5 speech tags.")
+v("dlg_alternation_index", G, "Narration", "continuous", "ratio (1 = random order)", "Dialogue/narration alternation",
+  "Switches between dialogue and narration paragraphs divided by the number expected if the same paragraphs were in "
+  "random order: below 1 = dialogue comes in blocks (scenes), above 1 = dialogue and narration alternate.",
+  "Blank unless there are at least 5 dialogue and 5 narration paragraphs.")
+v("fmt_speaker_label_share", G, "Narration", "share", SHARE, "Chat or script format",
+  "Share of paragraphs that open with a speaker label used at least three times ('Anna: ...'), as in chat logs, "
+  "scripts and question-and-answer pieces.",
+  "The dialogue measures only see speech in quotation marks, so they miss this format.", explorer=False)
 G = "Characters"
 v("char_recurring_names", G, "Narration", "count", "names", "Recurring names",
   "Number of distinct capitalised names that appear at least 3 times mid-sentence (mostly characters, sometimes "
@@ -283,8 +320,6 @@ v("gender_composition", G, "Narration", "categorical",
 
 # ------------------------------------------------------------------ style
 G = "Punctuation"
-v("punct_exclamation_per_1k", G, "Style", "continuous", P1K, "Exclamation marks", "Exclamation marks per 1,000 words.")
-v("punct_question_per_1k", G, "Style", "continuous", P1K, "Question marks", "Question marks per 1,000 words.")
 v("punct_ellipsis_per_1k", G, "Style", "continuous", P1K, "Ellipses",
   "Ellipses ('…' or '...') per 1,000 words. Lines made only of dots are scene breaks, not ellipses.")
 v("punct_dash_per_1k", G, "Style", "continuous", P1K, "Dashes",
@@ -306,8 +341,6 @@ v("qe_question_sentences_per_1k", G, "Style", "continuous", P1K, "Questions per 
   "Sentences ending in a question mark per 1,000 words.")
 v("qe_exclamation_sentences_per_1k", G, "Style", "continuous", P1K, "Exclamations per 1,000 words",
   "Sentences ending in an exclamation mark per 1,000 words.")
-v("qe_question_to_statement_ratio", G, "Style", "continuous", "ratio", "Questions per statement",
-  "Question sentences divided by statements (sentences not ending in ? or !).")
 G = "Readability & sentence complexity"
 v("read_mean_word_chars", G, "Story", "continuous", "letters", "Average word length",
   "Average number of letters per word.")
@@ -319,13 +352,13 @@ v("read_flesch_reading_ease", G, "Story", "continuous", "score (higher = easier)
   "Flesch Reading Ease: 206.835 − 1.015 × words/sentence − 84.6 × syllables/word. Higher is easier.",
   "Dialogue-heavy text has short sentences and scores as easy.")
 v("read_flesch_kincaid_grade", G, "Story", "continuous", "US school grade", "Grade level (Flesch–Kincaid)",
-  "Flesch–Kincaid grade: 0.39 × words/sentence + 11.8 × syllables/word − 15.59.")
+  "Flesch–Kincaid grade: 0.39 × words/sentence + 11.8 × syllables/word − 15.59.", explorer=False)
 v("read_ari", G, "Story", "continuous", "US school grade", "Grade level (ARI)",
-  "Automated Readability Index: 4.71 × letters/word + 0.5 × words/sentence − 21.43.")
+  "Automated Readability Index: 4.71 × letters/word + 0.5 × words/sentence − 21.43.", explorer=False)
 v("read_coleman_liau", G, "Story", "continuous", "US school grade", "Grade level (Coleman–Liau)",
-  "Coleman–Liau index from letters per 100 words and sentences per 100 words.")
+  "Coleman–Liau index from letters per 100 words and sentences per 100 words.", explorer=False)
 v("read_gunning_fog", G, "Story", "continuous", "US school grade", "Fog index",
-  "Gunning Fog index: 0.4 × (words/sentence + 100 × share of 3+ syllable words).")
+  "Gunning Fog index: 0.4 × (words/sentence + 100 × share of 3+ syllable words).", explorer=False)
 v("read_grade_composite", G, "Story", "continuous", "US school grade", "Reading difficulty (grade)",
   "Average of the Flesch–Kincaid, ARI and Coleman–Liau grade levels: a single 'estimated school grade'.")
 v("syn_commas_per_sentence", G, "Style", "continuous", "commas", "Commas per sentence",
@@ -346,9 +379,6 @@ v("lex_ttr", G, "Story", "share", SHARE, "Type–token ratio", "Unique words div
   "Strongly depends on length (longer texts always score lower); prefer lex_mattr.")
 v("lex_mattr", G, "Story", "share", SHARE, "Vocabulary variety (moving average)",
   "Moving-average type–token ratio: the share of different words in every 500-word window, averaged.", WIN)
-v("lex_segment_ttr", G, "Story", "share", SHARE, "Vocabulary variety (per 1,000 words)",
-  "Average share of different words within consecutive 1,000-word segments.",
-  "Blank for stories under 1,000 words.")
 v("lex_mean_word_zipf", G, "Story", "continuous", "Zipf scale (higher = more common)", "Everyday vocabulary",
   "Average commonness of the words used, on the Zipf scale from the wordfreq English word-frequency list "
   "(about 7 = 'the', 3 = rare).")
@@ -375,7 +405,8 @@ v("rep_same_start_share", G, "Language", "share", SHARE, "Sentences starting the
 v("rep_immediate_word_repeats_per_1k", G, "Language", "continuous", P1K, "Doubled words",
   "Words immediately repeated ('yes, yes', 'oh oh') per 1,000 words.")
 v("rep_repeated_5gram_per_1k", G, "Language", "continuous", P1K, "Repeated five-word phrases",
-  "Extra occurrences of any five-word sequence that appears more than once, per 1,000 words.")
+  "Extra occurrences of any five-word sequence that appears more than once within the same 1,000-word stretch, per "
+  "1,000 words.")
 G = "Style"
 v("style_profanity_per_1k", G, "Style", "continuous", P1K, "Profanity", "Swear words per 1,000 words (lexicon).",
   "Overlaps with the sexual-action list for 'fuck'.")
@@ -394,6 +425,25 @@ v("style_italics_per_1k", G, "Style", "continuous", P1K, "Italics", "Italicised 
   "Italics are counted over the whole page body, author's notes included.")
 
 # ------------------------------------------------------------------ sexual content
+v("style_elongated_per_1k", G, "Style", "continuous", P1K, "Stretched words",
+  "Words with a letter repeated three or more times ('ohhh', 'yesss', 'mmmm') per 1,000 words.")
+G = "Writing mechanics"
+MECH_NOTE = "Counts slips a spell-checker or proofreader would catch; dialogue written in dialect can count too."
+v("mech_errors_per_1k", G, "Style", "continuous", P1K, "Writing slips",
+  "All the writing-mechanics slips below, plus doubled small words ('the the'), per 1,000 words.", MECH_NOTE)
+v("mech_lowercase_i_per_1k", G, "Style", "continuous", P1K, "Lower-case 'i'",
+  "The pronoun I written in lower case ('i', 'i'm', 'i've') per 1,000 words.", MECH_NOTE, explorer=False)
+v("mech_lowercase_start_per_1k", G, "Style", "continuous", P1K, "Lower-case sentence starts",
+  "Sentences inside a paragraph that start in lower case after a full stop, '!' or '?' (not after an abbreviation, "
+  "an initial or a closing quote, and not a dialogue tag such as 'ready? she asked'), per 1,000 words. Paragraph "
+  "starts are not counted (verse, chat lines and sign-offs often start in lower case on purpose).", MECH_NOTE,
+  explorer=False)
+v("mech_missing_space_per_1k", G, "Style", "continuous", P1K, "Missing spaces after punctuation",
+  "Punctuation marks between two words with no space ('word,word', 'word.Next'), not in web or e-mail addresses or "
+  "file names, per 1,000 words.", MECH_NOTE, explorer=False)
+v("mech_confusions_per_1k", G, "Style", "continuous", P1K, "Common word confusions",
+  "Fixed patterns of common confusions per 1,000 words: 'its' for 'it's' ('its a'), 'your' for 'you're' ('your "
+  "welcome'), 'should of', 'alot', 'their is', 'better then'.", MECH_NOTE, explorer=False)
 G = "Sexual content"
 SEX_NOTE = "A keyword count from editable word lists; it does not measure how explicit a story feels to a reader."
 v("sex_terms", G, "Sexual content", "count", "terms", "Sexual terms", "Number of sexual-language terms (all lists).",
@@ -410,15 +460,26 @@ v("sex_sentence_share", G, "Sexual content", "share", SHARE, "Sentences with sex
   "Share of sentences containing at least one sexual term.", SEX_NOTE)
 v("sex_first_mention_position", G, "Sexual content", "share", "position (0 = start, 1 = end)",
   "How far in before explicit language", "Position of the first sexual term as a fraction of the story.",
-  "Blank if the story has none.")
+  "Blank if the story has none.", explorer=False)
 v("sex_words_before_first", G, "Sexual content", "count", "words", "Words before first explicit term",
   "Number of words before the first sexual term ('slow burn').", "Blank if the story has none.")
 v("sex_distinct_terms", G, "Sexual content", "count", "terms", "Variety of sexual vocabulary",
   "Number of different sexual-language words used.")
-v("sex_has_explicit_terms", G, "Sexual content", "binary", "yes/no", "Uses explicit terms",
-  "Whether the story contains any term from the sexual word lists.")
 
 # ------------------------------------------------------------------ language: emotion
+v("sex_scene_count", G, "Sexual content", "count", "scenes", "Sex scenes",
+  "Number of separate sex-dense stretches: 200-word windows with at least 6 sexual terms (30 per 1,000 words, "
+  "about 1.75 times the median story's rate), slid in 50-word steps; overlapping windows count as one scene.",
+  "Blank under 400 words. Depends on story length like every count: compare with sex_scenes_per_10k. A dense "
+  "stretch is usually sexual activity, but can be an essay-like passage or a conversation about sex (about 1 in 4 "
+  "in a Stage 1B hand-check).")
+v("sex_scenes_per_10k", G, "Sexual content", "continuous", "per 10,000 words", "Sex scenes per 10,000 words",
+  "Sex scenes (see sex_scene_count) per 10,000 words: how often the story returns to a sex scene.",
+  "Blank under 400 words.")
+v("sex_first_scene_position", G, "Sexual content", "share", "position (0 = start, 1 = end)",
+  "Where the first sex scene starts",
+  "Start of the first sex-dense stretch as a fraction of the story: the build-up before the first real scene, "
+  "which a passing early mention does not trigger.", "Blank if there is no such stretch or under 400 words.")
 G = "Emotion"
 EMO_NOTE = "Keyword counts: negation ('not happy') and sarcasm are not understood."
 for key, label, desc in (
@@ -437,6 +498,8 @@ for key, label, desc in (
     v(f"emo_{key}_per_1k", G, "Language", "continuous", P1K, label, desc, EMO_NOTE)
 v("emo_balance", G, "Language", "continuous", "−1 (all negative) to +1 (all positive)", "Emotional tone",
   "(positive − negative) ÷ (positive + negative) emotion words.", EMO_NOTE)
+v("humor_per_1k", G, "Language", "continuous", P1K, "Humour and laughter",
+  "Laughing and joking (laugh, giggle, chuckle, joke, funny, 'lol') per 1,000 words.", EMO_NOTE)
 G = "Distancing & immediacy"
 v("psy_mental_verbs_per_1k", G, "Language", "continuous", P1K, "Thinking verbs",
   "Mental-state verbs (think, know, realise, wonder…) per 1,000 words.")
@@ -480,6 +543,15 @@ for key, label, desc in (
     ("closeness", "Interpersonal closeness", "Togetherness words (together, each other, side by side) per 1,000 words."),
 ):
     v(f"rel_{key}_per_1k", G, "Language", "continuous", P1K, label, desc)
+G = "Settings"
+SET_NOTE = "Counts mentions of places, not where the story mainly happens."
+v("setting_home_per_1k", G, "Story", "continuous", P1K, "Home settings",
+  "Rooms and places of a home (bedroom, kitchen, couch, shower, apartment) per 1,000 words.", SET_NOTE)
+v("setting_public_per_1k", G, "Story", "continuous", P1K, "Public settings",
+  "Public and commercial places (office, hotel, store, restaurant, gym, 'at the bar', 'in public') per 1,000 "
+  "words.", SET_NOTE)
+v("setting_outdoors_per_1k", G, "Story", "continuous", P1K, "Outdoor settings",
+  "Nature and the outdoors (beach, forest, lake, trail, tent, 'in the park') per 1,000 words.", SET_NOTE)
 G = "Agency & control"
 AG_NOTE = "Describes the language of the text, not the psychology of its author."
 v("agency_passive_per_1k", G, "Language", "continuous", P1K, "Passive constructions",
@@ -489,8 +561,6 @@ v("agency_passive_per_1k", G, "Language", "continuous", P1K, "Passive constructi
   "ones ('was unrequited') still count.")
 v("agency_passive_sentence_share", G, "Language", "share", SHARE, "Passive sentences",
   "Share of sentences containing a passive construction.")
-v("agency_active_sentence_share", G, "Language", "share", SHARE, "Active-voice sentences",
-  "Share of sentences without a passive construction (1 − passive share).", explorer=False)
 v("agency_volition_per_1k", G, "Language", "continuous", P1K, "Agency (deciding & trying)",
   "Words for deciding, choosing, planning and trying per 1,000 words.", AG_NOTE)
 v("agency_control_per_1k", G, "Language", "continuous", P1K, "Control & restraint",
@@ -508,6 +578,11 @@ v("agency_command_share_of_speech", G, "Language", "share", SHARE, "Commands amo
   "Share of quoted passages that contain a command (see agency_commands_per_1k).")
 
 # ------------------------------------------------------------------ pacing
+v("rel_consent_per_1k", G, "Language", "continuous", P1K, "Consent and check-in language",
+  "Consent words, check-ins and safewords ('consent', 'is this okay?', 'do you want me to stop?', 'safe word') "
+  "per 1,000 words.",
+  "Counts language, not depicted consent: a check-in can be ignored in the story, and refusals are not counted. "
+  "Essays that discuss consent score high. " + AG_NOTE)
 G = "Pacing"
 PACE_NOTE = "Story split into 5 equal parts by word count; needs at least 1,000 words."
 for key, label, unit in (("sex", "sexual language", P1K), ("emotion", "emotional language", P1K),
@@ -524,6 +599,8 @@ for key, label, unit in (("sex", "sexual language", P1K), ("emotion", "emotional
       f"Middle of the fifth with the most {label} (0.1 = start, 0.9 = end).", PACE_NOTE)
 
 # ------------------------------------------------------------------ quality control
+v("time_jump_per_1k", G, "Story", "continuous", P1K, "Time jumps",
+  "Phrases that skip ahead in story time ('the next morning', 'hours later', 'weeks later') per 1,000 words.")
 G = "Quality control"
 v("has_text", G, "Quality", "binary", "yes/no", "Text collected", "Whether story text was collected.", explorer=False)
 v("text_truncated", G, "Quality", "binary", "yes/no", "Text truncated",
@@ -535,6 +612,9 @@ v("qc_english_function_word_share", G, "Quality", "share", SHARE, "English funct
   explorer=False)
 v("qc_quote_style", G, "Quality", "categorical", "double / single / none", "Quotation style",
   "Which quotation marks were treated as dialogue.", explorer=False)
+v("qc_speaker_label_format", G, "Quality", "binary", "yes/no", "Chat or script format",
+  "At least 20% of the paragraphs open with a recurring speaker label ('Anna: ...'), so the dialogue is not in "
+  "quotation marks and the dialogue measures miss it.", explorer=False)
 v("qc_dialogue_quotes_unbalanced", G, "Quality", "binary", "yes/no", "Unbalanced quotes",
   "More than half of the paragraphs with quotes have unmatched straight quotes, so dialogue measures are less "
   "reliable.", explorer=False)
@@ -550,7 +630,8 @@ v("tags", G, "Identifiers", "list", "", "Tags", "Tags the author attached (lower
   explorer=False)
 
 # Measures that need the WHOLE story text. analyze.py blanks them when the collected text is incomplete.
-NEEDS_FULL_TEXT = ("story_words", "story_chars", "story_sentences", "story_paragraphs", "story_scene_breaks",
+NEEDS_FULL_TEXT = ("end_dialogue", "end_to_be_continued", "sex_scene_count", "sex_first_scene_position",
+                   "story_words", "story_sentences", "story_paragraphs", "story_scene_breaks",
                    "story_has_author_note", "story_requests_feedback", "dlg_segments", "sex_terms",
                    "sex_first_mention_position", "sex_words_before_first", "sex_distinct_terms", "hedge_count",
                    "sense_touch_count", "sense_sight_count", "sense_sound_count", "sense_smell_count",
@@ -558,14 +639,14 @@ NEEDS_FULL_TEXT = ("story_words", "story_chars", "story_sentences", "story_parag
 _FULL_NOTE = "Blank when the collected text is incomplete (text_truncated)."
 _HANDOFF_ROUNDED = ("pop_views", "pop_favorites", "pop_comments", "pop_reading_lists", "pop_rating_count")
 # Stage 1B split-half reliability below 0.6 (odd vs even paragraphs of stories with 1,000+ words, correlated across
-# stories, Spearman-Brown corrected; docs/stage1b/VALIDATION_REPORT.md).
-LOW_RELIABILITY = {"emo_jealousy_per_1k": 0.40, "hedge_uncertainty_per_1k": 0.40, "hedge_certainty_balance": 0.43,
-                   "agency_command_share_of_speech": 0.47, "emo_anger_per_1k": 0.55, "agency_volition_per_1k": 0.56,
-                   "psy_distancing_per_1k": 0.58, "emo_anxiety_per_1k": 0.58}
+# stories, Spearman-Brown corrected; text pipeline 1.3, 4,619 stories; docs/stage1b/VALIDATION_REPORT.md).
+LOW_RELIABILITY = {"reader_address_per_1k": 0.32, "rel_consent_per_1k": 0.35, "hedge_uncertainty_per_1k": 0.40,
+                   "emo_jealousy_per_1k": 0.42, "hedge_certainty_balance": 0.43, "agency_command_share_of_speech": 0.46,
+                   "time_jump_per_1k": 0.46, "mech_missing_space_per_1k": 0.50, "dlg_alternation_index": 0.53,
+                   "emo_anger_per_1k": 0.56, "agency_volition_per_1k": 0.56, "emo_anxiety_per_1k": 0.58,
+                   "psy_distancing_per_1k": 0.58}
 # Stage 1B length check: measures that depend on story length for a mechanical reason.
 LENGTH_NOTES = {
-    "rep_repeated_5gram_per_1k": "Rises with story length (a longer text has more chances to repeat a phrase); "
-                                 "compare stories of similar length.",
     "sex_first_mention_position": "Earlier in longer stories (a longer text has more chances of an early passing "
                                   "mention); compare stories of similar length.",
     "char_name_mentions_per_1k": "Lower in short stories, where fewer names reach the three mentions needed to "

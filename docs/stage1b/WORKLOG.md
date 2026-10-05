@@ -590,3 +590,96 @@ expectation; such candidates are judged on precision, reliability and non-redund
   * settings: "outside", "park", "field", "bar", "train", "club" alone were removed.
 * One known-group result got worse as a consequence (first-time-sex-stories on consent language: 3rd → 7th).
 * 22 candidates proposed; **stopped here for approval** (nothing implemented).
+
+---
+
+## Phase 7: The approved proposal (2026-10-05, text pipeline 1.3)
+
+**Decisions (user, 2026-10-05).** Add all 22 candidates; apply every suggested retirement/merge; give "we"
+narration its own POV class; run `scripts/validate_narration.py` (download approved); keep the word-list judgement
+calls ("good girl"/"good boy", "small"/"tiny"/"petite", "baby" in `not_names`).
+
+**The collector was running** during this phase (started 09:17, pid in `data/.collector.lock` alive), so the corpus
+grew from 4,251 to 5,001 stories with text. All offline runs read the state database through `State.snapshot()`
+(the `-wal` path); the run wrapper's before/after checksum of `state.sqlite3` is meaningless while the collector
+writes, and was not used. Demo runs now use a scratch `LITCORR_LOCK_DIR`, so they no longer add mock-site lock files
+to `~/.litcorr/` (nine such files from the Phase 0–6 demo runs remain there; lock files are left untouched).
+
+### Narration validation (14 public-domain novels, 284 passages of ~5,000 words)
+
+| Rules | Correct | Confidently wrong |
+|---|---|---|
+| Stage 1 (methodology) | 93.7% | 2.8% |
+| 1.2 without the 8% rule (re-run) | 266/284 = 93.7% | 8 = 2.8% |
+| 1.2 with the 8% rule | 266/284 = 93.7% | 9 = 3.2% |
+| 1.3 (with first_plural, counted as first person) | 267/284 = 94.0% | 9 = 3.2% |
+
+The 8% rule changes one passage (a Sherlock Holmes passage in which a client tells a long third-person story:
+mixed → third). `first_plural` labels three passages of first-person novels in which the narrator mostly says
+"we" (two in Huckleberry Finn, one in Treasure Island). `scripts/validate_narration.py` now counts `first_plural`
+as first person.
+
+### "We" narration
+
+Rule (no tuning; same 15-per-1,000 threshold as "first" and "second"): first_plural when we/us/our forms in
+narration are ≥ 15 per 1,000 narration words and at least as frequent as I/me/my and as you/your. Batch 1: 22
+stories (12 reviews-and-essays, 4 adult-how-to, 4 adult-humor, ...), previously first 11, third 7, mixed 2,
+second 2. The one "we" story in the pov1 hand-check sample is now first_plural.
+
+### Hand-checks of the new detectors (fragments; hold-out = the 680 stories collected after batch 1)
+
+Each detector: 40 matches drawn at random from the hold-out (sheet `new_*`); where it failed, the rule was fixed
+and checked again on matches from hold-out stories not used before (`new_*_b`, `_c`, `_d`), and finally, for the
+two detectors fixed most, on 40 matches from batch 1, on which none of these fixes was designed (`b1_*`).
+
+| Detector | Draw | Right | Errors (types) |
+|---|---|---|---|
+| lower-case "i" | hold-out | 40/40 | — |
+| lower-case starts | hold-out, first rule | 24/40 | verse-like lines 9, sentence continued across a paragraph 5, list item 1, abbreviation 1 |
+| | after fix 1 (paragraph start only after a finished sentence) | 30/39 | dialogue tag without quotation marks 5, list item 3, abbreviation 1 |
+| | after fix 2 (tags, list markers, "Doc.") | 29/39 | sign-off 2, verse 2, chat handle, byline, list marker, thought tag, tag with adverb, abbreviation |
+| | after fix 3 (paragraph starts dropped altogether) | 30/32 | a "xxx" sign-off and a verb-first tag ("...ready? asked her friend"), both now excluded |
+| | batch 1, final rule | **39/40** | an options list |
+| missing spaces | hold-out | 14/40 | one chat log's dotted username 26 |
+| | after fix (digits, ":" handles, tokens repeated 3+ times) | **19/19** | — (every match left in the pool) |
+| word confusions | hold-out | 34/39 | possessive + adjective 4, "the might of" |
+| | after fix 1 | 36/38 | possessive "your being" 2 |
+| | after fix 2 | 29/38 | time "then" 4, "your very own" 3, "would of course", "ahead of its time" |
+| | after fix 3 | 3/3 | (pool exhausted) |
+| | batch 1, final rule | **35/40** | "your SO" (significant other) 2, time "then" before a verb 2, "your so-called" (now excluded) |
+| consent language | hold-out | 27/34 | taunts 3, generic requests 3, an idiom |
+| | after fix | **38/39** | a generic "okay with this" |
+| time jumps | hold-out | 31/39 | duration/reference after a preposition 4, future plans 4 (2 in dialogue) |
+| | after fix (narration only; not after for/in/or/until/...) | **39/40** | a reference ("a dinner later that day") |
+| address to the reader | hold-out | 36/40 | "trust me" as a verb 2, a named addressee, a deliberation |
+| | after fix | **24/25** | "trust me to" (now excluded) |
+| speaker labels | hold-out | **38/40** | recurring headings ("PS:", a contest heading), now excluded |
+| sex scenes (masked view) | hold-out scene starts | **15/20 judged** (10 unclear) | sex discussed or reflected on, an essay, an author's note, world-building, anticipation |
+
+One scene item was not judged: its masked text showed a character who does not know what a sexual act is,
+addressed with an honorific, and a minor could not be ruled out from the masked view. Reading stopped there and
+the story key was given to the user for review (not recorded in this public log).
+
+### Tuned on these samples (re-check on later stories)
+
+The detector fixes above (all designed on the `new_*` sheets of the hold-out; final precision from fresh draws or
+batch 1): lower-case-start exclusions (`_MECH_ABBREV`, `_TAG_PRONOUNS`, `_THOUGHT_VERBS`, no paragraph starts),
+missing-space exclusions (digits, ":" handles, ≥ 3 repeats), the confusion patterns, the consent and
+reader-address lists and exclusions, the time-jump preposition set, the speaker-label stoplist. The scene window
+(200 words, ≥ 6 terms, 50-word steps) and the first_plural thresholds were set in advance and not tuned.
+
+### Final audit (4,998 analysed stories; split-half on 4,619 stories of 1,000+ words)
+
+* Split-half: 13 measures below 0.6 (caveat added): the 8 from Phase 3 plus reader address 0.32, consent 0.35,
+  time jumps 0.46, missing spaces 0.50 (it was 0.97 before the fix only because of one repeated chat handle) and
+  dialogue alternation 0.53. The mechanics total is 0.94.
+* Length: no new measure has |ρ| ≥ 0.3 with log length except `sex_scene_count` (0.55, a count by design).
+  Repeated five-word phrases, now counted per 1,000-word stretch: 0.35 → 0.08.
+* Redundancy: the only new |r| ≥ 0.9 pairs are `pov_first_plural_per_1k` with its narration-only version (Pearson
+  0.92, like the singular pair) and `mech_errors_per_1k` with `mech_lowercase_i_per_1k` (Pearson 0.91 from a few
+  extreme stories; Spearman 0.39).
+* Known groups: the Phase 3 list 45/50 on medians; the Phase 5 list 41/53 on means (`measure_audit known-groups`
+  now runs both). Failures, mostly near misses (rank 7–12): erotic-novels on "to be continued", scene position and
+  time jumps; reviews-and-essays on three mechanics measures (essays are not more polished); adult-humor on untagged
+  lines; first-time-sex-stories on consent; non-consent-stories on humour; loving-wives on home settings;
+  exhibitionist-voyeur on outdoor settings; masturbation-stories on stretched words.

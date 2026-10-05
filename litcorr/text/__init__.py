@@ -5,7 +5,7 @@ a measure's value (see docs/stage1b/CHANGELOG.md). It is recorded in collection_
 hash of the lexicons/ folder, and the per-story measure cache is keyed on both.
 """
 
-TEXT_PIPELINE_VERSION = "1.2"
+TEXT_PIPELINE_VERSION = "1.3"
 
 
 def code_fingerprint() -> str:

@@ -408,17 +408,6 @@
       "explorer": true
     },
     {
-      "name": "story_chars",
-      "group": "Story basics",
-      "ui_group": "Story",
-      "kind": "count",
-      "unit": "characters",
-      "label": "Character count",
-      "description": "Number of characters in the story text (paratext excluded).",
-      "caveat": "Blank when the collected text is incomplete (text_truncated).",
-      "explorer": true
-    },
-    {
       "name": "story_sentences",
       "group": "Story basics",
       "ui_group": "Story",
@@ -548,7 +537,7 @@
       "label": "Asks readers to vote or comment",
       "description": "Whether the author's notes, or the first or last three story paragraphs, ask readers to vote, rate, comment or give feedback.",
       "caveat": "Blank when the collected text is incomplete (text_truncated).",
-      "explorer": true
+      "explorer": false
     },
     {
       "name": "title_chars",
@@ -606,6 +595,39 @@
       "explorer": true
     },
     {
+      "name": "title_sexual",
+      "group": "Title & description",
+      "ui_group": "Story",
+      "kind": "binary",
+      "unit": "yes/no",
+      "label": "Explicit title",
+      "description": "Whether the title contains a term from the sexual word lists.",
+      "caveat": "Blank when there is no title.",
+      "explorer": true
+    },
+    {
+      "name": "desc_sexual",
+      "group": "Title & description",
+      "ui_group": "Story",
+      "kind": "binary",
+      "unit": "yes/no",
+      "label": "Explicit description",
+      "description": "Whether the description contains a term from the sexual word lists.",
+      "caveat": "Blank when there is no description.",
+      "explorer": true
+    },
+    {
+      "name": "desc_pov",
+      "group": "Title & description",
+      "ui_group": "Story",
+      "kind": "categorical",
+      "unit": "first / second / third / none",
+      "label": "Person of the description",
+      "description": "Grammatical person of the description: first (I, my, we), second (you), third (he, she, they), by which personal pronouns it uses most, or none.",
+      "caveat": "About two descriptions in three use no personal pronoun ('none').",
+      "explorer": true
+    },
+    {
       "name": "series_is_part",
       "group": "Series",
       "ui_group": "Story",
@@ -650,6 +672,39 @@
       "explorer": true
     },
     {
+      "name": "open_dialogue",
+      "group": "Openings & endings",
+      "ui_group": "Story",
+      "kind": "binary",
+      "unit": "yes/no",
+      "label": "Opens with speech",
+      "description": "Whether the first word of the story (after any author's note or heading) is inside quotation marks.",
+      "caveat": "Stories written without quotation marks (chat logs, scripts) never count.",
+      "explorer": true
+    },
+    {
+      "name": "end_dialogue",
+      "group": "Openings & endings",
+      "ui_group": "Story",
+      "kind": "binary",
+      "unit": "yes/no",
+      "label": "Ends with speech",
+      "description": "Whether the last word of the story (before any closing note) is inside quotation marks.",
+      "caveat": "Stories written without quotation marks (chat logs, scripts) never count. Blank when the collected text is incomplete (text_truncated).",
+      "explorer": true
+    },
+    {
+      "name": "end_to_be_continued",
+      "group": "Openings & endings",
+      "ui_group": "Story",
+      "kind": "binary",
+      "unit": "yes/no",
+      "label": "Announces a continuation",
+      "description": "Whether the story ends by announcing more to come ('to be continued', 'next chapter', 'part 3 coming soon') in its last three paragraphs or its closing note.",
+      "caveat": "What the author announced, not whether a sequel exists; chapters of long works often leave it out. Blank when the collected text is incomplete (text_truncated).",
+      "explorer": true
+    },
+    {
       "name": "pov_first_singular_per_1k",
       "group": "Narration",
       "ui_group": "Narration",
@@ -658,7 +713,7 @@
       "label": "I / me / my",
       "description": "First-person singular pronouns (I, me, my, mine, myself, I'm …) per 1,000 words, dialogue included.",
       "caveat": "",
-      "explorer": true
+      "explorer": false
     },
     {
       "name": "pov_first_plural_per_1k",
@@ -691,7 +746,7 @@
       "label": "He / she / they",
       "description": "Third-person personal pronouns (he, she, they and their forms) per 1,000 words.",
       "caveat": "",
-      "explorer": true
+      "explorer": false
     },
     {
       "name": "pov_first_singular_narr_per_1k",
@@ -701,6 +756,17 @@
       "unit": "per 1,000 narration words",
       "label": "I / me / my in narration",
       "description": "First-person singular pronouns per 1,000 words of narration (outside quotation marks).",
+      "caveat": "",
+      "explorer": true
+    },
+    {
+      "name": "pov_first_plural_narr_per_1k",
+      "group": "Narration",
+      "ui_group": "Narration",
+      "kind": "continuous",
+      "unit": "per 1,000 narration words",
+      "label": "We / us / our in narration",
+      "description": "First-person plural pronouns per 1,000 narration words (outside quotation marks).",
       "caveat": "",
       "explorer": true
     },
@@ -742,9 +808,9 @@
       "group": "Narration",
       "ui_group": "Narration",
       "kind": "categorical",
-      "unit": "first / second / third / mixed / unknown",
+      "unit": "first / first_plural / second / third / mixed / unknown",
       "label": "Narrative perspective",
-      "description": "Estimated narrative perspective from narration pronouns: first if ≥15 I/me/my per 1,000 narration words; second if 'you' forms are ≥15 and more frequent; third if under 5, or if I/me/my are under 8% of the I/me/my plus he/she/they forms (reported thoughts or a letter inside a third-person story); otherwise mixed; unknown if under 200 narration words.",
+      "description": "Estimated narrative perspective from narration pronouns: first_plural ('we' narration) if we/us/our forms are ≥15 per 1,000 narration words and at least as frequent as I/me/my and as you/your; second if 'you' forms are ≥15 and more frequent than I/me/my; first if ≥15 I/me/my per 1,000 narration words; third if under 5, or if I/me/my are under 8% of the I/me/my plus he/she/they forms (reported thoughts or a letter inside a third-person story); otherwise mixed; unknown if under 200 narration words.",
       "caveat": "A word-counting heuristic, not true narrative analysis; see Methodology for how it was validated.",
       "explorer": true
     },
@@ -755,7 +821,7 @@
       "kind": "binary",
       "unit": "1 = first, 0 = third",
       "label": "First-person narration",
-      "description": "1 for stories classified as first person, 0 for third person, blank otherwise.",
+      "description": "1 for stories classified as first person, singular or plural ('we'), 0 for third person, blank otherwise.",
       "caveat": "A word-counting heuristic, not true narrative analysis; see Methodology for how it was validated.",
       "explorer": true
     },
@@ -790,6 +856,17 @@
       "label": "Present-tense narration",
       "description": "1 for present-tense narration, 0 for past tense, blank otherwise.",
       "caveat": "",
+      "explorer": true
+    },
+    {
+      "name": "reader_address_per_1k",
+      "group": "Narration",
+      "ui_group": "Narration",
+      "kind": "continuous",
+      "unit": "per 1,000 narration words",
+      "label": "Talking to the reader",
+      "description": "Narration that speaks to the reader ('trust me', 'believe me', 'let me tell you', 'dear reader', 'as you can imagine') per 1,000 narration words.",
+      "caveat": "Blank under 200 narration words. Low split-half reliability (0.32): a single story's value is noisy (few hits per story), so compare groups of stories rather than single stories.",
       "explorer": true
     },
     {
@@ -881,6 +958,50 @@
       "explorer": true
     },
     {
+      "name": "dlg_bare_line_share",
+      "group": "Dialogue",
+      "ui_group": "Narration",
+      "kind": "share",
+      "unit": "share (0–1)",
+      "label": "Untagged speech lines",
+      "description": "Share of dialogue paragraphs made only of quoted speech, with no narration and no 'she said'.",
+      "caveat": "Blank with fewer than 5 dialogue paragraphs.",
+      "explorer": true
+    },
+    {
+      "name": "dlg_adverb_tag_share",
+      "group": "Dialogue",
+      "ui_group": "Narration",
+      "kind": "share",
+      "unit": "share (0–1)",
+      "label": "Adverbs in speech tags",
+      "description": "Share of speech tags (a speech verb within four words of a quotation) with an -ly adverb next to the verb ('she said softly', 'he whispered hoarsely').",
+      "caveat": "Blank with fewer than 5 speech tags.",
+      "explorer": true
+    },
+    {
+      "name": "dlg_alternation_index",
+      "group": "Dialogue",
+      "ui_group": "Narration",
+      "kind": "continuous",
+      "unit": "ratio (1 = random order)",
+      "label": "Dialogue/narration alternation",
+      "description": "Switches between dialogue and narration paragraphs divided by the number expected if the same paragraphs were in random order: below 1 = dialogue comes in blocks (scenes), above 1 = dialogue and narration alternate.",
+      "caveat": "Blank unless there are at least 5 dialogue and 5 narration paragraphs. Low split-half reliability (0.53): a single story's value is noisy (few hits per story), so compare groups of stories rather than single stories.",
+      "explorer": true
+    },
+    {
+      "name": "fmt_speaker_label_share",
+      "group": "Dialogue",
+      "ui_group": "Narration",
+      "kind": "share",
+      "unit": "share (0–1)",
+      "label": "Chat or script format",
+      "description": "Share of paragraphs that open with a speaker label used at least three times ('Anna: ...'), as in chat logs, scripts and question-and-answer pieces.",
+      "caveat": "The dialogue measures only see speech in quotation marks, so they miss this format.",
+      "explorer": false
+    },
+    {
       "name": "char_recurring_names",
       "group": "Characters",
       "ui_group": "Narration",
@@ -966,28 +1087,6 @@
       "label": "Pronoun composition",
       "description": "Mostly feminine if the feminine share is ≥ 0.65, mostly masculine if ≤ 0.35, few if under 5 gendered pronouns per 1,000 words.",
       "caveat": "Pronouns describe the characters on the page, not the author; first-person narrators' gender is invisible to this measure.",
-      "explorer": true
-    },
-    {
-      "name": "punct_exclamation_per_1k",
-      "group": "Punctuation",
-      "ui_group": "Style",
-      "kind": "continuous",
-      "unit": "per 1,000 words",
-      "label": "Exclamation marks",
-      "description": "Exclamation marks per 1,000 words.",
-      "caveat": "",
-      "explorer": true
-    },
-    {
-      "name": "punct_question_per_1k",
-      "group": "Punctuation",
-      "ui_group": "Style",
-      "kind": "continuous",
-      "unit": "per 1,000 words",
-      "label": "Question marks",
-      "description": "Question marks per 1,000 words.",
-      "caveat": "",
       "explorer": true
     },
     {
@@ -1123,17 +1222,6 @@
       "explorer": true
     },
     {
-      "name": "qe_question_to_statement_ratio",
-      "group": "Questions & exclamations",
-      "ui_group": "Style",
-      "kind": "continuous",
-      "unit": "ratio",
-      "label": "Questions per statement",
-      "description": "Question sentences divided by statements (sentences not ending in ? or !).",
-      "caveat": "",
-      "explorer": true
-    },
-    {
       "name": "read_mean_word_chars",
       "group": "Readability & sentence complexity",
       "ui_group": "Story",
@@ -1186,7 +1274,7 @@
       "label": "Grade level (Flesch–Kincaid)",
       "description": "Flesch–Kincaid grade: 0.39 × words/sentence + 11.8 × syllables/word − 15.59.",
       "caveat": "",
-      "explorer": true
+      "explorer": false
     },
     {
       "name": "read_ari",
@@ -1197,7 +1285,7 @@
       "label": "Grade level (ARI)",
       "description": "Automated Readability Index: 4.71 × letters/word + 0.5 × words/sentence − 21.43.",
       "caveat": "",
-      "explorer": true
+      "explorer": false
     },
     {
       "name": "read_coleman_liau",
@@ -1208,7 +1296,7 @@
       "label": "Grade level (Coleman–Liau)",
       "description": "Coleman–Liau index from letters per 100 words and sentences per 100 words.",
       "caveat": "",
-      "explorer": true
+      "explorer": false
     },
     {
       "name": "read_gunning_fog",
@@ -1219,7 +1307,7 @@
       "label": "Fog index",
       "description": "Gunning Fog index: 0.4 × (words/sentence + 100 × share of 3+ syllable words).",
       "caveat": "",
-      "explorer": true
+      "explorer": false
     },
     {
       "name": "read_grade_composite",
@@ -1318,17 +1406,6 @@
       "label": "Vocabulary variety (moving average)",
       "description": "Moving-average type–token ratio: the share of different words in every 500-word window, averaged.",
       "caveat": "Needs at least 500 words (window size); blank for shorter stories.",
-      "explorer": true
-    },
-    {
-      "name": "lex_segment_ttr",
-      "group": "Vocabulary",
-      "ui_group": "Story",
-      "kind": "share",
-      "unit": "share (0–1)",
-      "label": "Vocabulary variety (per 1,000 words)",
-      "description": "Average share of different words within consecutive 1,000-word segments.",
-      "caveat": "Blank for stories under 1,000 words.",
       "explorer": true
     },
     {
@@ -1448,8 +1525,8 @@
       "kind": "continuous",
       "unit": "per 1,000 words",
       "label": "Repeated five-word phrases",
-      "description": "Extra occurrences of any five-word sequence that appears more than once, per 1,000 words.",
-      "caveat": "Rises with story length (a longer text has more chances to repeat a phrase); compare stories of similar length.",
+      "description": "Extra occurrences of any five-word sequence that appears more than once within the same 1,000-word stretch, per 1,000 words.",
+      "caveat": "",
       "explorer": true
     },
     {
@@ -1530,6 +1607,72 @@
       "explorer": true
     },
     {
+      "name": "style_elongated_per_1k",
+      "group": "Style",
+      "ui_group": "Style",
+      "kind": "continuous",
+      "unit": "per 1,000 words",
+      "label": "Stretched words",
+      "description": "Words with a letter repeated three or more times ('ohhh', 'yesss', 'mmmm') per 1,000 words.",
+      "caveat": "",
+      "explorer": true
+    },
+    {
+      "name": "mech_errors_per_1k",
+      "group": "Writing mechanics",
+      "ui_group": "Style",
+      "kind": "continuous",
+      "unit": "per 1,000 words",
+      "label": "Writing slips",
+      "description": "All the writing-mechanics slips below, plus doubled small words ('the the'), per 1,000 words.",
+      "caveat": "Counts slips a spell-checker or proofreader would catch; dialogue written in dialect can count too.",
+      "explorer": true
+    },
+    {
+      "name": "mech_lowercase_i_per_1k",
+      "group": "Writing mechanics",
+      "ui_group": "Style",
+      "kind": "continuous",
+      "unit": "per 1,000 words",
+      "label": "Lower-case 'i'",
+      "description": "The pronoun I written in lower case ('i', 'i'm', 'i've') per 1,000 words.",
+      "caveat": "Counts slips a spell-checker or proofreader would catch; dialogue written in dialect can count too.",
+      "explorer": false
+    },
+    {
+      "name": "mech_lowercase_start_per_1k",
+      "group": "Writing mechanics",
+      "ui_group": "Style",
+      "kind": "continuous",
+      "unit": "per 1,000 words",
+      "label": "Lower-case sentence starts",
+      "description": "Sentences inside a paragraph that start in lower case after a full stop, '!' or '?' (not after an abbreviation, an initial or a closing quote, and not a dialogue tag such as 'ready? she asked'), per 1,000 words. Paragraph starts are not counted (verse, chat lines and sign-offs often start in lower case on purpose).",
+      "caveat": "Counts slips a spell-checker or proofreader would catch; dialogue written in dialect can count too.",
+      "explorer": false
+    },
+    {
+      "name": "mech_missing_space_per_1k",
+      "group": "Writing mechanics",
+      "ui_group": "Style",
+      "kind": "continuous",
+      "unit": "per 1,000 words",
+      "label": "Missing spaces after punctuation",
+      "description": "Punctuation marks between two words with no space ('word,word', 'word.Next'), not in web or e-mail addresses or file names, per 1,000 words.",
+      "caveat": "Counts slips a spell-checker or proofreader would catch; dialogue written in dialect can count too. Low split-half reliability (0.50): a single story's value is noisy (few hits per story), so compare groups of stories rather than single stories.",
+      "explorer": false
+    },
+    {
+      "name": "mech_confusions_per_1k",
+      "group": "Writing mechanics",
+      "ui_group": "Style",
+      "kind": "continuous",
+      "unit": "per 1,000 words",
+      "label": "Common word confusions",
+      "description": "Fixed patterns of common confusions per 1,000 words: 'its' for 'it's' ('its a'), 'your' for 'you're' ('your welcome'), 'should of', 'alot', 'their is', 'better then'.",
+      "caveat": "Counts slips a spell-checker or proofreader would catch; dialogue written in dialect can count too.",
+      "explorer": false
+    },
+    {
       "name": "sex_terms",
       "group": "Sexual content",
       "ui_group": "Sexual content",
@@ -1604,7 +1747,7 @@
       "label": "How far in before explicit language",
       "description": "Position of the first sexual term as a fraction of the story.",
       "caveat": "Blank if the story has none. Blank when the collected text is incomplete (text_truncated). Earlier in longer stories (a longer text has more chances of an early passing mention); compare stories of similar length.",
-      "explorer": true
+      "explorer": false
     },
     {
       "name": "sex_words_before_first",
@@ -1629,14 +1772,36 @@
       "explorer": true
     },
     {
-      "name": "sex_has_explicit_terms",
+      "name": "sex_scene_count",
       "group": "Sexual content",
       "ui_group": "Sexual content",
-      "kind": "binary",
-      "unit": "yes/no",
-      "label": "Uses explicit terms",
-      "description": "Whether the story contains any term from the sexual word lists.",
-      "caveat": "",
+      "kind": "count",
+      "unit": "scenes",
+      "label": "Sex scenes",
+      "description": "Number of separate sex-dense stretches: 200-word windows with at least 6 sexual terms (30 per 1,000 words, about 1.75 times the median story's rate), slid in 50-word steps; overlapping windows count as one scene.",
+      "caveat": "Blank under 400 words. Depends on story length like every count: compare with sex_scenes_per_10k. A dense stretch is usually sexual activity, but can be an essay-like passage or a conversation about sex (about 1 in 4 in a Stage 1B hand-check). Blank when the collected text is incomplete (text_truncated).",
+      "explorer": true
+    },
+    {
+      "name": "sex_scenes_per_10k",
+      "group": "Sexual content",
+      "ui_group": "Sexual content",
+      "kind": "continuous",
+      "unit": "per 10,000 words",
+      "label": "Sex scenes per 10,000 words",
+      "description": "Sex scenes (see sex_scene_count) per 10,000 words: how often the story returns to a sex scene.",
+      "caveat": "Blank under 400 words.",
+      "explorer": true
+    },
+    {
+      "name": "sex_first_scene_position",
+      "group": "Sexual content",
+      "ui_group": "Sexual content",
+      "kind": "share",
+      "unit": "position (0 = start, 1 = end)",
+      "label": "Where the first sex scene starts",
+      "description": "Start of the first sex-dense stretch as a fraction of the story: the build-up before the first real scene, which a passing early mention does not trigger.",
+      "caveat": "Blank if there is no such stretch or under 400 words. Blank when the collected text is incomplete (text_truncated).",
       "explorer": true
     },
     {
@@ -1702,7 +1867,7 @@
       "unit": "per 1,000 words",
       "label": "Anger",
       "description": "Words of anger and irritation per 1,000 words.",
-      "caveat": "Keyword counts: negation ('not happy') and sarcasm are not understood. Low split-half reliability (0.55): a single story's value is noisy (few hits per story), so compare groups of stories rather than single stories.",
+      "caveat": "Keyword counts: negation ('not happy') and sarcasm are not understood. Low split-half reliability (0.56): a single story's value is noisy (few hits per story), so compare groups of stories rather than single stories.",
       "explorer": true
     },
     {
@@ -1746,7 +1911,7 @@
       "unit": "per 1,000 words",
       "label": "Jealousy & envy",
       "description": "Words of jealousy and envy per 1,000 words.",
-      "caveat": "Keyword counts: negation ('not happy') and sarcasm are not understood. Low split-half reliability (0.40): a single story's value is noisy (few hits per story), so compare groups of stories rather than single stories.",
+      "caveat": "Keyword counts: negation ('not happy') and sarcasm are not understood. Low split-half reliability (0.42): a single story's value is noisy (few hits per story), so compare groups of stories rather than single stories.",
       "explorer": true
     },
     {
@@ -1757,6 +1922,17 @@
       "unit": "−1 (all negative) to +1 (all positive)",
       "label": "Emotional tone",
       "description": "(positive − negative) ÷ (positive + negative) emotion words.",
+      "caveat": "Keyword counts: negation ('not happy') and sarcasm are not understood.",
+      "explorer": true
+    },
+    {
+      "name": "humor_per_1k",
+      "group": "Emotion",
+      "ui_group": "Language",
+      "kind": "continuous",
+      "unit": "per 1,000 words",
+      "label": "Humour and laughter",
+      "description": "Laughing and joking (laugh, giggle, chuckle, joke, funny, 'lol') per 1,000 words.",
       "caveat": "Keyword counts: negation ('not happy') and sarcasm are not understood.",
       "explorer": true
     },
@@ -2091,6 +2267,39 @@
       "explorer": true
     },
     {
+      "name": "setting_home_per_1k",
+      "group": "Settings",
+      "ui_group": "Story",
+      "kind": "continuous",
+      "unit": "per 1,000 words",
+      "label": "Home settings",
+      "description": "Rooms and places of a home (bedroom, kitchen, couch, shower, apartment) per 1,000 words.",
+      "caveat": "Counts mentions of places, not where the story mainly happens.",
+      "explorer": true
+    },
+    {
+      "name": "setting_public_per_1k",
+      "group": "Settings",
+      "ui_group": "Story",
+      "kind": "continuous",
+      "unit": "per 1,000 words",
+      "label": "Public settings",
+      "description": "Public and commercial places (office, hotel, store, restaurant, gym, 'at the bar', 'in public') per 1,000 words.",
+      "caveat": "Counts mentions of places, not where the story mainly happens.",
+      "explorer": true
+    },
+    {
+      "name": "setting_outdoors_per_1k",
+      "group": "Settings",
+      "ui_group": "Story",
+      "kind": "continuous",
+      "unit": "per 1,000 words",
+      "label": "Outdoor settings",
+      "description": "Nature and the outdoors (beach, forest, lake, trail, tent, 'in the park') per 1,000 words.",
+      "caveat": "Counts mentions of places, not where the story mainly happens.",
+      "explorer": true
+    },
+    {
       "name": "agency_passive_per_1k",
       "group": "Agency & control",
       "ui_group": "Language",
@@ -2111,17 +2320,6 @@
       "description": "Share of sentences containing a passive construction.",
       "caveat": "",
       "explorer": true
-    },
-    {
-      "name": "agency_active_sentence_share",
-      "group": "Agency & control",
-      "ui_group": "Language",
-      "kind": "share",
-      "unit": "share (0–1)",
-      "label": "Active-voice sentences",
-      "description": "Share of sentences without a passive construction (1 − passive share).",
-      "caveat": "",
-      "explorer": false
     },
     {
       "name": "agency_volition_per_1k",
@@ -2186,7 +2384,18 @@
       "unit": "share (0–1)",
       "label": "Commands among speech",
       "description": "Share of quoted passages that contain a command (see agency_commands_per_1k).",
-      "caveat": "Low split-half reliability (0.47): a single story's value is noisy (few hits per story), so compare groups of stories rather than single stories.",
+      "caveat": "Low split-half reliability (0.46): a single story's value is noisy (few hits per story), so compare groups of stories rather than single stories.",
+      "explorer": true
+    },
+    {
+      "name": "rel_consent_per_1k",
+      "group": "Agency & control",
+      "ui_group": "Language",
+      "kind": "continuous",
+      "unit": "per 1,000 words",
+      "label": "Consent and check-in language",
+      "description": "Consent words, check-ins and safewords ('consent', 'is this okay?', 'do you want me to stop?', 'safe word') per 1,000 words.",
+      "caveat": "Counts language, not depicted consent: a check-in can be ignored in the story, and refusals are not counted. Essays that discuss consent score high. Describes the language of the text, not the psychology of its author. Low split-half reliability (0.35): a single story's value is noisy (few hits per story), so compare groups of stories rather than single stories.",
       "explorer": true
     },
     {
@@ -2410,6 +2619,17 @@
       "explorer": true
     },
     {
+      "name": "time_jump_per_1k",
+      "group": "Pacing",
+      "ui_group": "Story",
+      "kind": "continuous",
+      "unit": "per 1,000 words",
+      "label": "Time jumps",
+      "description": "Phrases that skip ahead in story time ('the next morning', 'hours later', 'weeks later') per 1,000 words.",
+      "caveat": "Low split-half reliability (0.46): a single story's value is noisy (few hits per story), so compare groups of stories rather than single stories.",
+      "explorer": true
+    },
+    {
       "name": "has_text",
       "group": "Quality control",
       "ui_group": "Quality",
@@ -2461,6 +2681,17 @@
       "unit": "double / single / none",
       "label": "Quotation style",
       "description": "Which quotation marks were treated as dialogue.",
+      "caveat": "",
+      "explorer": false
+    },
+    {
+      "name": "qc_speaker_label_format",
+      "group": "Quality control",
+      "ui_group": "Quality",
+      "kind": "binary",
+      "unit": "yes/no",
+      "label": "Chat or script format",
+      "description": "At least 20% of the paragraphs open with a recurring speaker label ('Anna: ...'), so the dialogue is not in quotation marks and the dialogue measures miss it.",
       "caveat": "",
       "explorer": false
     },

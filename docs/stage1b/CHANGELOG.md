@@ -12,6 +12,7 @@ Text pipeline versions are recorded in `collection_manifest.json` as `text_pipel
 | 1.0 | 2026-10-01 | Stage 1 as delivered (no version constant yet; the baseline). |
 | 1.1 | 2026-10-04 | Phase 2: block-aware text extraction, paratext set aside, scene breaks, dashes, QC fixes. |
 | 1.2 | 2026-10-04 | Phases 3–4: word-list fixes, POV third-person rule, passive voice, commands in speech, name detection. |
+| 1.3 | 2026-10-05 | Approved Phase 5 proposal: 27 new measures and a quality flag, "we" narration class, 7 columns retired, repeated phrases counted per 1,000 words. |
 
 ---
 
@@ -353,3 +354,97 @@ not used to design the change (WORKLOG Phase 4).
 | `pov_class` | 1.7% | (categorical) | | |
 
 </details>
+
+---
+
+## 1.3 — new measures, retirements and "we" narration (approved 2026-10-05)
+
+All of `NEW_MEASURES_PROPOSAL.md` was approved: the 22 candidates, every suggested retirement or merge, a separate
+point-of-view class for "we" narration, and the word-list judgement calls as they were. Effects on existing
+measures are on the 4,248 stories analysed in both 1.2 and 1.3 (batch 1). Distributions of the new measures are on
+all 4,998 stories analysed on 2026-10-05, which includes 750 collected since batch 1 (the collector was running).
+
+### What changed and why
+
+1. **27 new measures and one quality flag** (definitions and caveats in the data dictionary; evidence in the
+   proposal):
+
+   | Column | Stories with a value ≠ 0 (or "yes") | Median | Split-half |
+   |---|---|---|---|
+   | `open_dialogue` / `end_dialogue` / `end_to_be_continued` | 8.3% / 17.3% / 7.4% | — | n/a |
+   | `sex_scene_count` / `sex_scenes_per_10k` | 81% | 2 / 5.5 | — / 0.78 |
+   | `sex_first_scene_position` (missing 19%: no scene) | — | 0.20 | 0.77 |
+   | `mech_errors_per_1k` | 31% | 0 | **0.94** |
+   | `mech_lowercase_i_per_1k` / `_lowercase_start_` / `_missing_space_` / `_confusions_` | 5.1% / 13% / 4.9% / 11% | 0 | 0.97 / 0.87 / 0.50 / 0.77 |
+   | `dlg_bare_line_share` / `dlg_adverb_tag_share` / `dlg_alternation_index` | — | 0.17 / 0.08 / 0.84 | 0.95 / 0.64 / 0.53 |
+   | `fmt_speaker_label_share` / `qc_speaker_label_format` | 1.7% / 0.9% | 0 | 1.00 / n/a |
+   | `rel_consent_per_1k` | 14% | 0 | 0.35 |
+   | `time_jump_per_1k` / `reader_address_per_1k` | 35% / 8.3% | 0 | 0.46 / 0.32 |
+   | `humor_per_1k` | 75% | 0.75 | 0.78 |
+   | `setting_home_per_1k` / `setting_public_per_1k` / `setting_outdoors_per_1k` | 78% / 70% / 50% | 1.05 / 0.57 / 0.06 | 0.75 / 0.79 / 0.84 |
+   | `style_elongated_per_1k` | 38% | 0 | 0.71 |
+   | `title_sexual` / `desc_sexual` | 7.0% / 14.5% | — | n/a |
+   | `desc_pov` | none 64%, third 25%, first 8%, second 2.5% | — | n/a |
+
+   The five with split-half reliability below 0.6 carry the standard low-reliability caveat. The new word lists
+   are in `lexicons/` (`consent_checkin`, `time_jumps`, `reader_address`, `humor_levity`, `setting_home`,
+   `setting_public`, `setting_outdoors`).
+2. **Precision fixes before release.** Every pattern-based detector was hand-checked on fragments drawn at random
+   from the 680 stories collected after batch 1 (a hold-out: nothing was designed on them before), fixed where it
+   failed, and checked again on stories not used for the fix (WORKLOG Phase 7). Changes from the prototypes:
+   * lower-case sentence starts: paragraph starts are no longer counted (they were mostly verse-like lines, chat
+     lines, letter sign-offs and list items), nor dialogue or thought tags after "?" or "!" in stories without
+     quotation marks ("...ready? she asked"), "xxx" sign-offs or a few more abbreviations ("lbs.", "Doc.", "PhD.");
+   * missing spaces: chat handles, tokens with digits and tokens repeated three or more times in a story (names,
+     usernames) are not slips;
+   * word confusions: possessives ("its good side", "your very own", "your being", "your so-called", "ahead of its
+     time"), "the might of", "would of course" and a time "then" ending a clause ("I knew better then.") no longer
+     count;
+   * consent language: taunts ("is this what you want", "too much for you", "do you want this") and generic
+     requests ("is it alright") removed; the idiom "than ask(ing) permission" excluded;
+   * time jumps: counted in narration only, and not after a preposition ("for the next week", "in the next day or
+     two");
+   * address to the reader: "trust me" and "believe me" used as ordinary verbs ("she would never trust me", "trust
+     me to") excluded;
+   * speaker labels: "PS:", "Note:", "Update:" and contest headings are not speakers.
+
+   | Detector (final rule) | Sample | Right | 95% CI | First hold-out draw |
+   |---|---|---|---|---|
+   | lower-case "i" | 40 hold-out | 40/40 | 91.2–100 | same rule |
+   | lower-case sentence starts | 40 from batch 1 | 39/40 | 87.1–99.6 | 24/40 |
+   | missing spaces | all 19 left in the hold-out | 19/19 | 83.2–100 | 14/40 |
+   | word confusions | 40 from batch 1 | 35/40 | 73.9–94.5 | 34/39 |
+   | consent language | 39 hold-out | 38/39 | 86.8–99.5 | 27/34 |
+   | time jumps | 40 hold-out | 39/40 | 87.1–99.6 | 31/39 |
+   | address to the reader | all 25 left in the hold-out | 24/25 | 80.5–99.3 | 36/40 |
+   | speaker labels | 40 hold-out | 38/40 | 83.5–98.6 | same check |
+   | sex scenes (masked view) | 30 hold-out scene starts | 15/20 judged | 53.1–88.8 | same rule |
+
+3. **"We" narration** (`pov_class` = `first_plural`): we/us/our forms at least 15 per 1,000 narration words and at
+   least as frequent as I/me/my and as you/your. 22 batch-1 stories (0.5%) move to it, from first 11, third 7,
+   mixed 2 and second 2 (half are essays with an authorial "we"); `pov_is_first_person` counts them as first
+   person (11 values change). New column `pov_first_plural_narr_per_1k`. The narration validation on 14
+   public-domain novels (downloaded with approval) gives 94.0% correct and 3.2% confidently wrong (Stage 1: 93.7%
+   and 2.8%; the difference is one Sherlock Holmes passage moved from "mixed" to "third" by the 1.2 rule).
+4. **`rep_repeated_5gram_per_1k`** counts repeats within the same 1,000-word stretch: median 1.94 → 0.93, mean
+   3.36 → 1.85 (correlation with the old values 0.67). Its correlation with story length falls from 0.35 to 0.08,
+   so its length caveat is removed; split-half reliability 0.90.
+5. **Retired** (removed from the processed data, the data dictionary and the handoff):
+   `agency_active_sentence_share` (exactly 1 − the passive share), `qe_question_to_statement_ratio` (a transform of
+   `qe_question_sentence_share`), `punct_question_per_1k` and `punct_exclamation_per_1k` (ρ ≥ 0.99 with the
+   sentence-based `qe_*` measures, which are kept), `story_chars` (ρ = 0.999 with `story_words`),
+   `sex_has_explicit_terms` (true for 97.6%), `lex_segment_ttr` (ρ = 0.96 with `lex_mattr`).
+6. **Hidden from the explorer, kept in the data** (`explorer=False`): `story_requests_feedback`,
+   `read_flesch_kincaid_grade`, `read_gunning_fog`, `read_ari`, `read_coleman_liau`, `pov_third_per_1k`,
+   `pov_first_singular_per_1k` (the narration-only versions stay in the explorer) and `sex_first_mention_position`
+   (`sex_first_scene_position` is the length-robust build-up measure).
+
+### Effect on existing measures (same 4,248 stories)
+
+| Measure | Stories changed | Median | Mean | % missing |
+|---|---|---|---|---|
+| `pov_class` | 0.5% | (categorical: see 3) | | |
+| `pov_is_first_person` | 0.3% | 1 → 1 | 0.5701 → 0.5723 | 6.5 → 6.4 |
+| `rep_repeated_5gram_per_1k` | 67.3% | 1.935 → 0.934 | 3.357 → 1.845 | 0.0 → 0.0 |
+
+Every other kept measure has exactly the same values as in 1.2.

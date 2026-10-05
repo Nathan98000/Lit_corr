@@ -66,7 +66,13 @@ def _init() -> None:
     from ..text.lexicons import load_lexicon
 
     _STATE["M"] = Measurer()
-    _STATE["P"] = {p.stem: load_lexicon(p) for p in sorted(PROTO_LEX_DIR.glob("*.txt"))}
+    from ..text.lexicons import LEXICON_DIR
+
+    # the adopted lists moved to lexicons/ (Stage 1B, text pipeline 1.3); the rest stay here
+    names = ("consent_checkin", "time_jumps", "reader_address", "humor_levity", "setting_home", "setting_public",
+             "setting_outdoors")
+    _STATE["P"] = {**{n: load_lexicon(LEXICON_DIR / f"{n}.txt") for n in names},
+                   **{p.stem: load_lexicon(p) for p in sorted(PROTO_LEX_DIR.glob("*.txt"))}}
 
 
 def _per_1k(k: float, n: int) -> float:

@@ -243,7 +243,6 @@ hand. No machine-learning model is used.
 | Variable | What it measures | Caveat |
 |---|---|---|
 | **Word count** (`story_words`) | Number of words in the story text (letters/digits, contractions count as one word). Author's notes, headings and other paratext are not counted (see Methodology). | Counted on the collected pages; long stories beyond the page cap are flagged as truncated. Blank when the collected text is incomplete (text_truncated). Use site_words_count for length then. |
-| **Character count** (`story_chars`) | Number of characters in the story text (paratext excluded). | Blank when the collected text is incomplete (text_truncated). |
 | **Sentence count** (`story_sentences`) | Number of sentences (see Methodology). | Blank when the collected text is incomplete (text_truncated). |
 | **Paragraph count** (`story_paragraphs`) | Number of non-empty story paragraphs (paratext excluded). | Blank when the collected text is incomplete (text_truncated). |
 | **Average sentence length** (`story_mean_sentence_words`) | Average number of words per sentence. |  |
@@ -264,6 +263,9 @@ hand. No machine-learning model is used.
 | **Title marks a chapter/part** (`title_has_chapter_marker`) | Whether the title contains a chapter or part marker such as 'Ch. 02', 'Pt. 3' or ends with a number. |  |
 | **Description length** (`desc_chars`) | Number of characters in the author's short description. |  |
 | **Description word count** (`desc_words`) | Number of words in the description. |  |
+| **Explicit title** (`title_sexual`) | Whether the title contains a term from the sexual word lists. | Blank when there is no title. |
+| **Explicit description** (`desc_sexual`) | Whether the description contains a term from the sexual word lists. | Blank when there is no description. |
+| **Person of the description** (`desc_pov`) | Grammatical person of the description: first (I, my, we), second (you), third (he, she, they), by which personal pronouns it uses most, or none. | About two descriptions in three use no personal pronoun ('none'). |
 
 | Variable | What it measures | Caveat |
 |---|---|---|
@@ -271,6 +273,19 @@ hand. No machine-learning model is used.
 | **Part number** (`series_part_number`) | Which part of its series the story is (1 = first), from the series list or the title. |  |
 | **Parts in series** (`series_parts_count`) | Number of parts in the series, when shown. |  |
 | **Later part of a series** (`series_is_later_part`) | Whether the story is part 2 or later of a series. |  |
+
+### Openings and endings
+
+Whether the story opens and ends on speech (its first or last word inside
+quotation marks, author's notes and headings set aside), and whether it ends by
+announcing more to come ("to be continued", "next chapter", "part 3 coming
+soon").
+
+| Variable | What it measures | Caveat |
+|---|---|---|
+| **Opens with speech** (`open_dialogue`) | Whether the first word of the story (after any author's note or heading) is inside quotation marks. | Stories written without quotation marks (chat logs, scripts) never count. |
+| **Ends with speech** (`end_dialogue`) | Whether the last word of the story (before any closing note) is inside quotation marks. | Stories written without quotation marks (chat logs, scripts) never count. Blank when the collected text is incomplete (text_truncated). |
+| **Announces a continuation** (`end_to_be_continued`) | Whether the story ends by announcing more to come ('to be continued', 'next chapter', 'part 3 coming soon') in its last three paragraphs or its closing note. | What the author announced, not whether a sequel exists; chapters of long works often leave it out. Blank when the collected text is incomplete (text_truncated). |
 
 | Variable | What it measures | Caveat |
 |---|---|---|
@@ -299,9 +314,13 @@ hand. No machine-learning model is used.
 Narrative perspective is estimated from pronouns **in the narration only**
 (dialogue is removed first, because characters say "I" and "you" whatever the
 narration does). For every 1,000 narration words the collector counts
-first-person singular pronouns (I, me, my, mine, myself, I'm…) and
-second-person pronouns (you, your…):
+first-person singular pronouns (I, me, my, mine, myself, I'm…), first-person
+plural pronouns (we, us, our…) and second-person pronouns (you, your…):
 
+* **first person plural** ("we" narration: a couple or a group telling the
+  story, or an essay's authorial "we") if there are at least 15 we/us/our
+  forms per 1,000 narration words and they are at least as frequent as the
+  I/me/my forms and the you/your forms;
 * **first person** if there are at least 15 first-person pronouns per 1,000
   narration words;
 * **second person** if there are at least 15 second-person pronouns and more
@@ -325,16 +344,21 @@ stories-within-stories. *Moby-Dick*, whose narrator drifts between first
 person, essay and stage drama, is a good example of genuinely mixed narration:
 only a quarter of its passages count as clearly first person. The script is
 in `scripts/validate_narration.py`. This is a word-counting heuristic, not an
-understanding of the story. (The novel check above was run before the 8% rule for
-third person was added in Stage 1B.)
+understanding of the story. With the Stage 1B rules (the 8% rule for third person
+and the first-person-plural class above) the same check gives **94.0% correct
+and 3.2% confidently wrong**: one Sherlock Holmes passage, in which a client tells
+a long story in the third person, moved from "mixed" to "third"; three passages
+of first-person novels in which the narrator mostly says "we" (Huck and Jim on
+the raft) are labelled first person plural, which counts as first person.
 
 **On this corpus** (Stage 1B), 48 stories drawn about evenly from the classes (12
 first, 11 second, 11 third, 12 mixed, 2 unknown) were checked by hand: 39 were
 labelled correctly by the original rule, almost all errors being third-person
 stories labelled mixed. The 8% rule was designed on that sample (46 of 48 correct
-with it; the two left: a story narrated as "we", labelled mixed, and a chat
-transcript labelled second person). On 15 further stories that it moved from
-"mixed" to "third", all 15 were indeed third person. Because the classes are very
+with it; the two left: a story narrated as "we", labelled mixed, which the
+first-person-plural class now covers, and a chat transcript labelled second
+person). On 15 further stories that it moved from "mixed" to "third", all 15 were
+indeed third person. Because the classes are very
 unequal in size (first 53%, third 40%, second 5%, mixed 1.5%), accuracy over the
 whole corpus is higher than on the balanced sample: about 97% already before the
 change.
@@ -355,14 +379,24 @@ could not be judged).
 | **You / your** (`pov_second_per_1k`) | Second-person pronouns per 1,000 words. |  |
 | **He / she / they** (`pov_third_per_1k`) | Third-person personal pronouns (he, she, they and their forms) per 1,000 words. |  |
 | **I / me / my in narration** (`pov_first_singular_narr_per_1k`) | First-person singular pronouns per 1,000 words of narration (outside quotation marks). |  |
+| **We / us / our in narration** (`pov_first_plural_narr_per_1k`) | First-person plural pronouns per 1,000 narration words (outside quotation marks). |  |
 | **You / your in narration** (`pov_second_narr_per_1k`) | Second-person pronouns per 1,000 narration words. |  |
 | **He / she / they in narration** (`pov_third_narr_per_1k`) | Third-person pronouns per 1,000 narration words. |  |
 | **First-person share of pronouns** (`pov_first_person_share`) | In narration, first-person pronouns as a share of first- plus third-person pronouns. | A word-counting heuristic, not true narrative analysis; see Methodology for how it was validated. |
-| **Narrative perspective** (`pov_class`) | Estimated narrative perspective from narration pronouns: first if ≥15 I/me/my per 1,000 narration words; second if 'you' forms are ≥15 and more frequent; third if under 5, or if I/me/my are under 8% of the I/me/my plus he/she/they forms (reported thoughts or a letter inside a third-person story); otherwise mixed; unknown if under 200 narration words. | A word-counting heuristic, not true narrative analysis; see Methodology for how it was validated. |
-| **First-person narration** (`pov_is_first_person`) | 1 for stories classified as first person, 0 for third person, blank otherwise. | A word-counting heuristic, not true narrative analysis; see Methodology for how it was validated. |
+| **Narrative perspective** (`pov_class`) | Estimated narrative perspective from narration pronouns: first_plural ('we' narration) if we/us/our forms are ≥15 per 1,000 narration words and at least as frequent as I/me/my and as you/your; second if 'you' forms are ≥15 and more frequent than I/me/my; first if ≥15 I/me/my per 1,000 narration words; third if under 5, or if I/me/my are under 8% of the I/me/my plus he/she/they forms (reported thoughts or a letter inside a third-person story); otherwise mixed; unknown if under 200 narration words. | A word-counting heuristic, not true narrative analysis; see Methodology for how it was validated. |
+| **First-person narration** (`pov_is_first_person`) | 1 for stories classified as first person, singular or plural ('we'), 0 for third person, blank otherwise. | A word-counting heuristic, not true narrative analysis; see Methodology for how it was validated. |
 | **Present-tense share** (`narr_present_tense_share`) | In narration, present-tense forms of ~70 common verbs as a share of present plus past forms. | Blank if fewer than 20 such verbs occur. A heuristic. |
 | **Narration tense** (`narr_tense_class`) | Present if the present-tense share is ≥ 0.6, past if ≤ 0.4, otherwise mixed. |  |
 | **Present-tense narration** (`narr_is_present_tense`) | 1 for present-tense narration, 0 for past tense, blank otherwise. |  |
+| **Talking to the reader** (`reader_address_per_1k`) | Narration that speaks to the reader ('trust me', 'believe me', 'let me tell you', 'dear reader', 'as you can imagine') per 1,000 narration words. | Blank under 200 narration words. Low split-half reliability (0.32): a single story's value is noisy (few hits per story), so compare groups of stories rather than single stories. |
+
+Besides how much dialogue there is, four measures describe how it is written:
+the share of speech paragraphs with no tag at all (no narration, no "she
+said"), the share of speech tags with an -ly adverb ("she said softly"),
+whether dialogue and narration paragraphs alternate or come in blocks (switches
+compared with a random order of the same paragraphs), and a flag for chat logs
+and scripts ("Anna: ..."), whose dialogue is not in quotation marks and is
+therefore invisible to the other dialogue measures.
 
 | Variable | What it measures | Caveat |
 |---|---|---|
@@ -374,16 +408,23 @@ could not be judged).
 | **Exclamations in dialogue** (`dlg_exclamation_share`) | Share of all exclamation marks that occur inside quotation marks. |  |
 | **Paragraphs with dialogue** (`dlg_paragraph_share`) | Share of paragraphs that contain at least one quoted passage. |  |
 | **Has dialogue** (`dlg_has_dialogue`) | Whether the story has any quoted speech. |  |
+| **Untagged speech lines** (`dlg_bare_line_share`) | Share of dialogue paragraphs made only of quoted speech, with no narration and no 'she said'. | Blank with fewer than 5 dialogue paragraphs. |
+| **Adverbs in speech tags** (`dlg_adverb_tag_share`) | Share of speech tags (a speech verb within four words of a quotation) with an -ly adverb next to the verb ('she said softly', 'he whispered hoarsely'). | Blank with fewer than 5 speech tags. |
+| **Dialogue/narration alternation** (`dlg_alternation_index`) | Switches between dialogue and narration paragraphs divided by the number expected if the same paragraphs were in random order: below 1 = dialogue comes in blocks (scenes), above 1 = dialogue and narration alternate. | Blank unless there are at least 5 dialogue and 5 narration paragraphs. Low split-half reliability (0.53): a single story's value is noisy (few hits per story), so compare groups of stories rather than single stories. |
+| **Chat or script format** (`fmt_speaker_label_share`) | Share of paragraphs that open with a speaker label used at least three times ('Anna: ...'), as in chat logs, scripts and question-and-answer pieces. | The dialogue measures only see speech in quotation marks, so they miss this format. |
 
 ### Characters
 
 The number of recurring names is estimated from capitalised words that are
 not at the start of a sentence, appear at least three times, and are not
 usually ordinary words (a word like "Rose" is ignored if "rose" also appears
-in lower case), not titles (Mr, Sir), not terms of address (Mom, Master), not
-days, months or nationalities. This mostly counts characters but can also
-count place or brand names; a first name and a surname count as two names;
-and it misses names that only ever start a sentence. On a 5,000-word passage
+in lower case), not titles or terms of address (Mr, Sir, Queen, Mom, Master),
+not days, months, nationalities, common place words, major places,
+organisations or brands (`lexicons/not_names.txt`), and not words that mostly
+follow "the" or "in" ("the Hilton", "in Denver"). In a hand-check of names
+detected in this corpus, about 9 in 10 were characters; the rest are rarer
+places, roles and capitalised words. A first name and a surname count as two
+names, and names that only ever start a sentence are missed. On a 5,000-word passage
 of *Emma* it found Harriet, Emma, Martin, Knightley, Elton, Woodhouse,
 Goddard, Robert, Smith and Nash, plus four place names (Hartfield, Highbury,
 Abbey, Mill). Treat it as "how many proper names keep coming up", a rough
@@ -416,8 +457,6 @@ characters' identities or readers.
 
 | Variable | What it measures | Caveat |
 |---|---|---|
-| **Exclamation marks** (`punct_exclamation_per_1k`) | Exclamation marks per 1,000 words. |  |
-| **Question marks** (`punct_question_per_1k`) | Question marks per 1,000 words. |  |
 | **Ellipses** (`punct_ellipsis_per_1k`) | Ellipses ('…' or '...') per 1,000 words. Lines made only of dots are scene breaks, not ellipses. |  |
 | **Dashes** (`punct_dash_per_1k`) | Dashes per 1,000 words: em dashes ('—'), runs of hyphens ('--'), and a hyphen or en dash with a space on each side used as a dash ('she paused - then left'). Hyphens inside words are not dashes. |  |
 | **Semicolons** (`punct_semicolon_per_1k`) | Semicolons per 1,000 words. |  |
@@ -433,7 +472,6 @@ characters' identities or readers.
 | **Exclamation sentences** (`qe_exclamation_sentence_share`) | Share of sentences that end with an exclamation mark. |  |
 | **Questions per 1,000 words** (`qe_question_sentences_per_1k`) | Sentences ending in a question mark per 1,000 words. |  |
 | **Exclamations per 1,000 words** (`qe_exclamation_sentences_per_1k`) | Sentences ending in an exclamation mark per 1,000 words. |  |
-| **Questions per statement** (`qe_question_to_statement_ratio`) | Question sentences divided by statements (sentences not ending in ? or !). |  |
 
 ### Readability
 
@@ -476,7 +514,6 @@ occurrence per million words).
 | **Unique words** (`lex_unique_words`) | Number of different words used. | Grows with story length; compare stories of similar length or use the moving-average measure. Blank when the collected text is incomplete (text_truncated). |
 | **Type–token ratio** (`lex_ttr`) | Unique words divided by total words. | Strongly depends on length (longer texts always score lower); prefer lex_mattr. Blank when the collected text is incomplete (text_truncated). |
 | **Vocabulary variety (moving average)** (`lex_mattr`) | Moving-average type–token ratio: the share of different words in every 500-word window, averaged. | Needs at least 500 words (window size); blank for shorter stories. |
-| **Vocabulary variety (per 1,000 words)** (`lex_segment_ttr`) | Average share of different words within consecutive 1,000-word segments. | Blank for stories under 1,000 words. |
 | **Everyday vocabulary** (`lex_mean_word_zipf`) | Average commonness of the words used, on the Zipf scale from the wordfreq English word-frequency list (about 7 = 'the', 3 = rare). |  |
 | **Rare words** (`lex_rare_word_share`) | Share of words that are rare in English (Zipf below 3, under ~1 per million words). |  |
 | **Unrecognised words** (`lex_unrecognized_word_share`) | Share of words not in the English frequency list: names, invented words, typos or non-English words. | Not a spelling-error rate: names and slang count too. |
@@ -498,7 +535,7 @@ before it.
 | **Overlap between neighbouring sentences** (`rep_adjacent_sentence_overlap`) | Average share of content words that consecutive sentences have in common (Jaccard overlap). |  |
 | **Sentences starting the same way** (`rep_same_start_share`) | Share of sentences that start with the same word as the sentence before ('She… She… She…'). |  |
 | **Doubled words** (`rep_immediate_word_repeats_per_1k`) | Words immediately repeated ('yes, yes', 'oh oh') per 1,000 words. |  |
-| **Repeated five-word phrases** (`rep_repeated_5gram_per_1k`) | Extra occurrences of any five-word sequence that appears more than once, per 1,000 words. | Rises with story length (a longer text has more chances to repeat a phrase); compare stories of similar length. |
+| **Repeated five-word phrases** (`rep_repeated_5gram_per_1k`) | Extra occurrences of any five-word sequence that appears more than once within the same 1,000-word stretch, per 1,000 words. |  |
 
 | Variable | What it measures | Caveat |
 |---|---|---|
@@ -509,6 +546,25 @@ before it.
 | **Physical action verbs** (`style_action_verbs_per_1k`) | Verbs of physical movement (grab, pull, turn, reach…) per 1,000 words. |  |
 | **Descriptive words** (`style_descriptive_words_per_1k`) | Descriptive adjectives and material words (beautiful, tall, slender, satin…) per 1,000 words. |  |
 | **Italics** (`style_italics_per_1k`) | Italicised passages per 1,000 words. | Italics are counted over the whole page body, author's notes included. |
+| **Stretched words** (`style_elongated_per_1k`) | Words with a letter repeated three or more times ('ohhh', 'yesss', 'mmmm') per 1,000 words. |  |
+
+### Writing mechanics
+
+Five simple checks count slips that a spell-checker or a proofreader would
+catch: "i" written in lower case, sentences and paragraphs that start in lower
+case, missing spaces after punctuation ("word,word"), common confusions ("its
+a", "your welcome", "should of", "alot") and doubled small words ("the the").
+They are habits of the writer rather than of the story, which makes them very
+consistent within a story (see the validation report). Dialogue written in
+dialect can count too.
+
+| Variable | What it measures | Caveat |
+|---|---|---|
+| **Writing slips** (`mech_errors_per_1k`) | All the writing-mechanics slips below, plus doubled small words ('the the'), per 1,000 words. | Counts slips a spell-checker or proofreader would catch; dialogue written in dialect can count too. |
+| **Lower-case 'i'** (`mech_lowercase_i_per_1k`) | The pronoun I written in lower case ('i', 'i'm', 'i've') per 1,000 words. | Counts slips a spell-checker or proofreader would catch; dialogue written in dialect can count too. |
+| **Lower-case sentence starts** (`mech_lowercase_start_per_1k`) | Sentences inside a paragraph that start in lower case after a full stop, '!' or '?' (not after an abbreviation, an initial or a closing quote, and not a dialogue tag such as 'ready? she asked'), per 1,000 words. Paragraph starts are not counted (verse, chat lines and sign-offs often start in lower case on purpose). | Counts slips a spell-checker or proofreader would catch; dialogue written in dialect can count too. |
+| **Missing spaces after punctuation** (`mech_missing_space_per_1k`) | Punctuation marks between two words with no space ('word,word', 'word.Next'), not in web or e-mail addresses or file names, per 1,000 words. | Counts slips a spell-checker or proofreader would catch; dialogue written in dialect can count too. Low split-half reliability (0.50): a single story's value is noisy (few hits per story), so compare groups of stories rather than single stories. |
+| **Common word confusions** (`mech_confusions_per_1k`) | Fixed patterns of common confusions per 1,000 words: 'its' for 'it's' ('its a'), 'your' for 'you're' ('your welcome'), 'should of', 'alot', 'their is', 'better then'. | Counts slips a spell-checker or proofreader would catch; dialogue written in dialect can count too. |
 
 ---
 
@@ -523,6 +579,15 @@ undercounts euphemistic writing and slightly overcounts stories that use
 story feels to a reader.** The position of the first sexual term gives a
 simple "slow burn" indicator.
 
+A **sex scene** is a stretch where sexual vocabulary is dense: a 200-word window
+with at least 6 sexual terms (30 per 1,000 words, about 1.75 times the median
+story's rate), slid along the text in 50-word steps, with overlapping windows
+counted as one scene. The number of scenes, their rate per 10,000 words and the
+position where the first one starts follow from this. Unlike the first sexual
+term, the first scene is not triggered by a passing early mention, and it does
+not shift with story length. The window size and threshold were fixed in
+advance, not tuned.
+
 | Variable | What it measures | Caveat |
 |---|---|---|
 | **Sexual terms** (`sex_terms`) | Number of sexual-language terms (all lists). | A keyword count from editable word lists; it does not measure how explicit a story feels to a reader. Blank when the collected text is incomplete (text_truncated). |
@@ -534,7 +599,9 @@ simple "slow burn" indicator.
 | **How far in before explicit language** (`sex_first_mention_position`) | Position of the first sexual term as a fraction of the story. | Blank if the story has none. Blank when the collected text is incomplete (text_truncated). Earlier in longer stories (a longer text has more chances of an early passing mention); compare stories of similar length. |
 | **Words before first explicit term** (`sex_words_before_first`) | Number of words before the first sexual term ('slow burn'). | Blank if the story has none. Blank when the collected text is incomplete (text_truncated). |
 | **Variety of sexual vocabulary** (`sex_distinct_terms`) | Number of different sexual-language words used. | Blank when the collected text is incomplete (text_truncated). |
-| **Uses explicit terms** (`sex_has_explicit_terms`) | Whether the story contains any term from the sexual word lists. |  |
+| **Sex scenes** (`sex_scene_count`) | Number of separate sex-dense stretches: 200-word windows with at least 6 sexual terms (30 per 1,000 words, about 1.75 times the median story's rate), slid in 50-word steps; overlapping windows count as one scene. | Blank under 400 words. Depends on story length like every count: compare with sex_scenes_per_10k. A dense stretch is usually sexual activity, but can be an essay-like passage or a conversation about sex (about 1 in 4 in a Stage 1B hand-check). Blank when the collected text is incomplete (text_truncated). |
+| **Sex scenes per 10,000 words** (`sex_scenes_per_10k`) | Sex scenes (see sex_scene_count) per 10,000 words: how often the story returns to a sex scene. | Blank under 400 words. |
+| **Where the first sex scene starts** (`sex_first_scene_position`) | Start of the first sex-dense stretch as a fraction of the story: the build-up before the first real scene, which a passing early mention does not trigger. | Blank if there is no such stretch or under 400 words. Blank when the collected text is incomplete (text_truncated). |
 
 ---
 
@@ -556,12 +623,13 @@ negative).
 | **Negative emotion** (`emo_negative_per_1k`) | Negative-emotion, anxiety, anger, sadness, shame and jealousy words per 1,000 words. | Keyword counts: negation ('not happy') and sarcasm are not understood. |
 | **Affection & love** (`emo_affection_per_1k`) | Words of love and fondness per 1,000 words. | Keyword counts: negation ('not happy') and sarcasm are not understood. |
 | **Anxiety & fear** (`emo_anxiety_per_1k`) | Words of fear, worry and nervousness per 1,000 words. | Keyword counts: negation ('not happy') and sarcasm are not understood. Low split-half reliability (0.58): a single story's value is noisy (few hits per story), so compare groups of stories rather than single stories. |
-| **Anger** (`emo_anger_per_1k`) | Words of anger and irritation per 1,000 words. | Keyword counts: negation ('not happy') and sarcasm are not understood. Low split-half reliability (0.55): a single story's value is noisy (few hits per story), so compare groups of stories rather than single stories. |
+| **Anger** (`emo_anger_per_1k`) | Words of anger and irritation per 1,000 words. | Keyword counts: negation ('not happy') and sarcasm are not understood. Low split-half reliability (0.56): a single story's value is noisy (few hits per story), so compare groups of stories rather than single stories. |
 | **Sadness** (`emo_sadness_per_1k`) | Words of sadness, crying and loneliness per 1,000 words. | Keyword counts: negation ('not happy') and sarcasm are not understood. |
 | **Excitement & arousal** (`emo_arousal_per_1k`) | Words of excitement, desire and arousal per 1,000 words. | Keyword counts: negation ('not happy') and sarcasm are not understood. |
 | **Shame & embarrassment** (`emo_shame_per_1k`) | Words of shame, embarrassment, guilt and shyness per 1,000 words. | Keyword counts: negation ('not happy') and sarcasm are not understood. |
-| **Jealousy & envy** (`emo_jealousy_per_1k`) | Words of jealousy and envy per 1,000 words. | Keyword counts: negation ('not happy') and sarcasm are not understood. Low split-half reliability (0.40): a single story's value is noisy (few hits per story), so compare groups of stories rather than single stories. |
+| **Jealousy & envy** (`emo_jealousy_per_1k`) | Words of jealousy and envy per 1,000 words. | Keyword counts: negation ('not happy') and sarcasm are not understood. Low split-half reliability (0.42): a single story's value is noisy (few hits per story), so compare groups of stories rather than single stories. |
 | **Emotional tone** (`emo_balance`) | (positive − negative) ÷ (positive + negative) emotion words. | Keyword counts: negation ('not happy') and sarcasm are not understood. |
+| **Humour and laughter** (`humor_per_1k`) | Laughing and joking (laugh, giggle, chuckle, joke, funny, 'lol') per 1,000 words. | Keyword counts: negation ('not happy') and sarcasm are not understood. |
 
 ### Psychological distancing and immediacy
 
@@ -619,26 +687,46 @@ measure places each story on a single hedging ↔ certainty scale.
 | **Familiarity** (`rel_familiarity_per_1k`) | Shared-history words (friend, as usual, for years) per 1,000 words. |  |
 | **Interpersonal closeness** (`rel_closeness_per_1k`) | Togetherness words (together, each other, side by side) per 1,000 words. |  |
 
+### Settings
+
+Three word lists count mentions of places: the rooms of a home, public and
+commercial places, and the outdoors. Ambiguous words are left out ("bar" alone
+can be a metal bar, "park" a verb, "outside" just "outside the door"), and
+places of education are left out on purpose. A mention is not the same as the
+setting, so these are rough indicators of where stories take place.
+
+| Variable | What it measures | Caveat |
+|---|---|---|
+| **Home settings** (`setting_home_per_1k`) | Rooms and places of a home (bedroom, kitchen, couch, shower, apartment) per 1,000 words. | Counts mentions of places, not where the story mainly happens. |
+| **Public settings** (`setting_public_per_1k`) | Public and commercial places (office, hotel, store, restaurant, gym, 'at the bar', 'in public') per 1,000 words. | Counts mentions of places, not where the story mainly happens. |
+| **Outdoor settings** (`setting_outdoors_per_1k`) | Nature and the outdoors (beach, forest, lake, trail, tent, 'in the park') per 1,000 words. | Counts mentions of places, not where the story mainly happens. |
+
 ### Agency and control
 
 These describe the language on the page. They are not psychological
 assessments of anyone. Passive constructions are found with a simple pattern
-("be/get" + past participle, e.g. "was taken", "got tied"). Very common
-adjective-like cases ("was tired", "was excited") are excluded, but some remain.
-A spoken command is a quoted passage that begins with a verb such as "come",
-"kneel", "look" or "don't …" and is not a question.
+("be/get" + past participle, e.g. "was taken", "got tied"). Common participles
+that describe a state or a feeling ("was tired", "was dressed in", "was
+accustomed to", "was fascinated by") are excluded, but rarer ones remain. A
+spoken command is a quoted passage with a sentence that starts with a command
+verb such as "come", "kneel" or "don't …" (possibly after "please", "now" or a
+name) and is not a question; "Look, …" and "Listen, …" used as fillers and
+"fuck" used as an expletive are not commands. Consent and check-in language
+("is this okay?", "do you want me to stop?", "safe word", "consent") is counted
+with a word list: it measures what is said on the page, not whether consent is
+depicted, and refusals ("stop", "no") are not counted.
 
 | Variable | What it measures | Caveat |
 |---|---|---|
 | **Passive constructions** (`agency_passive_per_1k`) | 'be/get + past participle' constructions ('was taken', 'got tied') per 1,000 words. | Heuristic (about 9 in 10 counted matches were passives in a Stage 1B hand-check): common participles that describe a state or feeling ('was dressed in', 'was accustomed to', 'was fascinated by') are left out; rarer ones ('was unrequited') still count. |
 | **Passive sentences** (`agency_passive_sentence_share`) | Share of sentences containing a passive construction. |  |
-| **Active-voice sentences** (`agency_active_sentence_share`) | Share of sentences without a passive construction (1 − passive share). |  |
 | **Agency (deciding & trying)** (`agency_volition_per_1k`) | Words for deciding, choosing, planning and trying per 1,000 words. | Describes the language of the text, not the psychology of its author. Low split-half reliability (0.56): a single story's value is noisy (few hits per story), so compare groups of stories rather than single stories. |
 | **Control & restraint** (`agency_control_per_1k`) | Words about control, restraint, permission and force per 1,000 words. | Describes the language of the text, not the psychology of its author. |
 | **Dominance language** (`agency_dominance_per_1k`) | Words associated with commanding and domination per 1,000 words. | Describes the language of the text, not the psychology of its author. |
 | **Submission language** (`agency_submission_per_1k`) | Words associated with obeying, kneeling and begging per 1,000 words. | Describes the language of the text, not the psychology of its author. |
 | **Spoken commands** (`agency_commands_per_1k`) | Quoted passages containing a command, i.e. a sentence that starts with a command verb, possibly after 'please', 'now' or a name ('Come here.', 'Kneel.', 'Sarah, don't stop.'), per 1,000 words. | Heuristic: question sentences, 'Do you…', 'Look, …' / 'Listen, …' as fillers and 'fuck' as an expletive are left out; commands whose verb is not on the list (lexicons/imperative_verbs.txt) are missed. |
-| **Commands among speech** (`agency_command_share_of_speech`) | Share of quoted passages that contain a command (see agency_commands_per_1k). | Low split-half reliability (0.47): a single story's value is noisy (few hits per story), so compare groups of stories rather than single stories. |
+| **Commands among speech** (`agency_command_share_of_speech`) | Share of quoted passages that contain a command (see agency_commands_per_1k). | Low split-half reliability (0.46): a single story's value is noisy (few hits per story), so compare groups of stories rather than single stories. |
+| **Consent and check-in language** (`rel_consent_per_1k`) | Consent words, check-ins and safewords ('consent', 'is this okay?', 'do you want me to stop?', 'safe word') per 1,000 words. | Counts language, not depicted consent: a check-in can be ignored in the story, and refusals are not counted. Essays that discuss consent score high. Describes the language of the text, not the psychology of its author. Low split-half reliability (0.35): a single story's value is noisy (few hits per story), so compare groups of stories rather than single stories. |
 
 ---
 
@@ -650,6 +738,8 @@ computed in each part: sexual language, emotional language, dialogue, physical
 action verbs, and descriptive/sensory language. For each one the dataset
 keeps the value in the first fifth, the value in the last fifth, the
 difference (positive = builds towards the end) and the position of the peak.
+Time jumps ("the next morning", "hours later", "weeks later") count how often
+the narrative skips ahead.
 
 | Variable | What it measures | Caveat |
 |---|---|---|
@@ -673,6 +763,7 @@ difference (positive = builds towards the end) and the position of the peak.
 | **Descriptive & sensory language in the last fifth** (`pace_descriptive_late`) | Density of descriptive & sensory language in the last fifth of the story. | Story split into 5 equal parts by word count; needs at least 1,000 words. Blank when the collected text is incomplete (text_truncated). |
 | **Build-up of descriptive & sensory language** (`pace_descriptive_shift`) | Last fifth minus first fifth: positive means descriptive & sensory language increases towards the end. | Story split into 5 equal parts by word count; needs at least 1,000 words. Blank when the collected text is incomplete (text_truncated). |
 | **Where descriptive & sensory language peaks** (`pace_descriptive_peak_position`) | Middle of the fifth with the most descriptive & sensory language (0.1 = start, 0.9 = end). | Story split into 5 equal parts by word count; needs at least 1,000 words. Blank when the collected text is incomplete (text_truncated). |
+| **Time jumps** (`time_jump_per_1k`) | Phrases that skip ahead in story time ('the next morning', 'hours later', 'weeks later') per 1,000 words. | Low split-half reliability (0.46): a single story's value is noisy (few hits per story), so compare groups of stories rather than single stories. |
 
 ---
 
@@ -711,6 +802,7 @@ length. A story with no text at all gets no text measures (blank, never zero).
 | **Text too short** (`qc_text_too_short`) | True when the text is shorter than the minimum for text measures (default 100 words). |  |
 | **English function-word share** (`qc_english_function_word_share`) | Share of words that are common English function words; very low values suggest non-English text. |  |
 | **Quotation style** (`qc_quote_style`) | Which quotation marks were treated as dialogue. |  |
+| **Chat or script format** (`qc_speaker_label_format`) | At least 20% of the paragraphs open with a recurring speaker label ('Anna: ...'), so the dialogue is not in quotation marks and the dialogue measures miss it. |  |
 | **Unbalanced quotes** (`qc_dialogue_quotes_unbalanced`) | More than half of the paragraphs with quotes have unmatched straight quotes, so dialogue measures are less reliable. |  |
 | **Quality flags** (`qc_flags`) | List of data-quality flags for the story (see Methodology, 'Quality flags'). |  |
 | **Included in analysis** (`analysis_include`) | True when the story has text (≥ minimum words), a category, a publication date and a view count, is not a duplicate and looks like English. |  |

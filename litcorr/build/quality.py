@@ -53,6 +53,8 @@ FLAG_DESCRIPTIONS = {
                                 "Literotica's by more than 25% (text may be incomplete).",
     "possibly_not_english": "Few common English function words; the text may not be English.",
     "dialogue_quotes_unbalanced": "Quotation marks are mostly unbalanced; dialogue measures less reliable.",
+    "speaker_label_format": "Dialogue is written as a chat log or script ('Name: ...'), not in quotation marks; the "
+                            "dialogue measures do not see it.",
     "duplicate_text": "Identical text to another story in the dataset.",
     "duplicate_site_id": "Same Literotica submission id as another record.",
     "parse_warnings": "The page parser reported problems (see raw parse_warnings).",
@@ -106,8 +108,9 @@ def attach_quality_flags(df: pd.DataFrame, raw: pd.DataFrame, settings: Settings
     site = pd.to_numeric(df["site_words_count"], errors="coerce")
     flags["site_word_count_mismatch"] = (site > 0) & ~flags["text_truncated"] & ((words - site).abs() / site > 0.25)
     flags["possibly_not_english"] = pd.to_numeric(df.get("qc_english_function_word_share"), errors="coerce") < MIN_ENGLISH_FUNCTION_SHARE
-    flags["dialogue_quotes_unbalanced"] = df.get("qc_dialogue_quotes_unbalanced").fillna(False).astype(bool) \
-        if "qc_dialogue_quotes_unbalanced" in df else pd.Series(False, index=df.index)
+    for name in ("dialogue_quotes_unbalanced", "speaker_label_format"):
+        flags[name] = df[f"qc_{name}"].fillna(False).astype(bool) if f"qc_{name}" in df \
+            else pd.Series(False, index=df.index)
     sha = col(r, "text_sha1")
     dup_text = sha.notna() & sha.duplicated(keep=False)
     flags["duplicate_text"] = dup_text

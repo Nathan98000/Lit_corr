@@ -11,6 +11,7 @@ Text pipeline versions are recorded in `collection_manifest.json` as `text_pipel
 |---|---|---|
 | 1.0 | 2026-10-01 | Stage 1 as delivered (no version constant yet; the baseline). |
 | 1.1 | 2026-10-04 | Phase 2: block-aware text extraction, paratext set aside, scene breaks, dashes, QC fixes. |
+| 1.2 | 2026-10-04 | Phases 3–4: word-list fixes, POV third-person rule, passive voice, commands in speech, name detection. |
 
 ---
 
@@ -239,5 +240,116 @@ Effects below are on the 4,245 stories analysed both before and after (`diff-fea
 | `narr_tense_class` | 0.2% | (categorical) | | |
 | `gender_composition` | 0.1% | (categorical) | | |
 | `qc_quote_style` | 0.1% | (categorical) | | |
+
+</details>
+
+---
+
+## 1.2 — measure audit fixes (Phases 3–4)
+
+Effects below are on the 4,248 stories analysed before and after (`diff-features` of the 1.1 and 1.2 processed
+tables). Nothing was removed or renamed. Accuracy figures come from hand-checks on fresh random samples that were
+not used to design the change (WORKLOG Phase 4).
+
+### What changed and why
+
+1. **Word lists** (Phase 3d; each change explained on the file's `# notes:` line; hit counts per list in WORKLOG
+   §3d). A new `!phrase` line removes one fixed expression from a list ("birth control", "made love", "sounds
+   good", "master bedroom"). Largest effects: `rel_disclosure_per_1k` mean 1.109 → 0.653 ("I felt" and "I was
+   feeling" were 38% of its hits and mostly report sensations), `rel_familiarity_per_1k` 0.938 → 0.795 ("used
+   to"; "childhood" entries removed because they refer to youth), `agency_dominance_per_1k` median 0.322 → 0.239
+   ("ordered" alone was mostly ordering food), `emo_anger_per_1k` median 0.263 → 0.178 ("furiously", "raging"),
+   `style_action_verbs_per_1k` −4% ("open"). Composite measures built from these lists follow (`sense_total`,
+   `emo_overall`, `emo_balance`, `style_descriptive_words`, the `pace_*` series). `style_said_share` is missing
+   for 0.7% more stories (their only speech verb was "continued", now removed).
+2. **POV class.** A story with 5–15 "I" forms per 1,000 narration words was "mixed"; it is now "third" when the
+   "I" forms are fewer than 8% of the I-forms plus he/she/they forms in narration (reported thoughts, a letter or
+   a short first-person frame in a third-person story). 72 of the 136 "mixed" stories become "third": mixed
+   3.2% → 1.5%, third 38.5% → 40.2%; `pov_is_first_person` is missing for 6.5% instead of 8.2%. Hand-check: all
+   15 stories in a hold-out sample of the moved stories are third person.
+3. **Passive voice** (`agency_passive_per_1k`, `agency_passive_sentence_share`, `agency_active_sentence_share`).
+   49 participles that in this corpus mostly describe a state or a feeling no longer count ("was dressed in",
+   "was accustomed to", "was fascinated by", "was exhausted"), nor "turned on", "worked up", "built like", nor
+   "done" except before "to" or "by"; "stuck" is no longer treated as a participle. Share of counted matches
+   that are passives: 83.1% → 91.5% (95% CI 81.6–96.3). Mean rate 3.94 → 3.33 per 1,000 words.
+4. **Commands in speech** (`agency_commands_per_1k`, `agency_command_share_of_speech`). Every sentence of a
+   quoted passage is now checked, not only the first ("Exactly. Kiss me." counts), and only question sentences
+   are skipped (before, any "?" in the passage excluded all of it); "fuck" counts only before an object (me,
+   him, her, them, us, my, his, off), not as an expletive; "Look," "Listen," "See," "Say," before a comma are
+   discourse markers. Precision 85.0% → 100% (94.0–100); among passages not counted, missed commands 6.7% →
+   1.7% (0.3–8.9), so the share of all commands found rises from about half to about 87% (wide interval:
+   roughly 53–97%). Mean rate 1.28 → 1.60 per 1,000 words; share of speech 0.093 → 0.114.
+5. **Recurring names** (`char_recurring_names`, `char_name_mentions_per_1k`, `char_top_name_share`). 360
+   capitalised words were added to `lexicons/not_names.txt` (titles and ranks, endearments and insults used as
+   address, nationalities and peoples, common place words and major places, organisations and brands), and a
+   candidate that follows "the" or "in" in at least half of its mentions is not counted ("the Hilton", "in
+   Denver"). Share of detected names that are characters, per story: 68.4% → 90.6% (79.7–95.9). Mean names per
+   story 5.45 → 4.74; stories with no recurring name 675 → 722, so `char_top_name_share` is missing for 1.1% more.
+
+### Effect on every changed measure (same 4,248 stories)
+
+<details><summary>59 measures: share of stories whose value changed; median, mean and % missing before → after</summary>
+
+| Measure | Stories changed | Median | Mean | % missing |
+|---|---|---|---|---|
+| `agency_active_sentence_share` | 74.5% | 0.953975 → 0.961853 | 0.944524 → 0.952839 | 0.0 → 0.0 |
+| `agency_command_share_of_speech` | 58.6% | 0.070964 → 0.0909091 | 0.0933585 → 0.114164 | 5.9 → 5.9 |
+| `agency_commands_per_1k` | 58.6% | 0.981557 → 1.26462 | 1.28498 → 1.60314 | 0.0 → 0.0 |
+| `agency_control_per_1k` | 4.3% | 0.687995 → 0.674631 | 1.03729 → 1.02395 | 0.0 → 0.0 |
+| `agency_dominance_per_1k` | 20.7% | 0.322321 → 0.239378 | 0.998531 → 0.923029 | 0.0 → 0.0 |
+| `agency_passive_per_1k` | 76.0% | 3.51488 → 2.85782 | 3.9427 → 3.33159 | 0.0 → 0.0 |
+| `agency_passive_sentence_share` | 74.5% | 0.0460253 → 0.0381471 | 0.0554764 → 0.0471612 | 0.0 → 0.0 |
+| `agency_submission_per_1k` | 7.5% | 0.472702 → 0.494621 | 0.931973 → 0.956609 | 0.0 → 0.0 |
+| `char_name_mentions_per_1k` | 28.5% | 18.7733 → 17.8122 | 22.7726 → 21.7954 | 0.0 → 0.0 |
+| `char_recurring_names` | 28.5% | 3 → 3 | 5.44452 → 4.74441 | 0.1 → 0.1 |
+| `char_top_name_share` | 28.5% | 0.475904 → 0.490196 | 0.523091 → 0.536095 | 15.9 → 17.0 |
+| `emo_affection_per_1k` | 19.4% | 1.11338 → 1.0507 | 1.64875 → 1.55709 | 0.0 → 0.0 |
+| `emo_anger_per_1k` | 15.4% | 0.263331 → 0.177778 | 0.479718 → 0.429098 | 0.0 → 0.0 |
+| `emo_anxiety_per_1k` | 17.1% | 0.764562 → 0.713182 | 0.967333 → 0.908091 | 0.0 → 0.0 |
+| `emo_arousal_per_1k` | 33.4% | 2.55646 → 2.67718 | 3.21155 → 3.37233 | 0.0 → 0.0 |
+| `emo_balance` | 40.3% | 0.44 → 0.451997 | 0.404571 → 0.416581 | 0.1 → 0.1 |
+| `emo_negative_per_1k` | 28.5% | 2.81624 → 2.71862 | 3.26199 → 3.15212 | 0.0 → 0.0 |
+| `emo_overall_per_1k` | 51.0% | 13.7664 → 13.7269 | 14.3541 → 14.3133 | 0.0 → 0.0 |
+| `emo_positive_per_1k` | 19.4% | 7.3884 → 7.29464 | 7.88052 → 7.78886 | 0.0 → 0.0 |
+| `pace_action_early` | 28.9% | 10.5485 → 10 | 11.5521 → 11.033 | 7.8 → 7.8 |
+| `pace_action_late` | 30.4% | 13.6646 → 13.1004 | 14.5011 → 13.9318 | 7.8 → 7.8 |
+| `pace_action_peak_position` | 6.7% | 0.5 → 0.5 | 0.550089 → 0.55303 | 7.9 → 7.9 |
+| `pace_action_shift` | 43.8% | 2.71003 → 2.66485 | 2.94902 → 2.89886 | 7.8 → 7.8 |
+| `pace_descriptive_early` | 36.9% | 27.7325 → 27.3723 | 29.2617 → 29.0443 | 7.8 → 7.8 |
+| `pace_descriptive_late` | 38.1% | 28.757 → 28.7253 | 29.7539 → 29.7867 | 7.8 → 7.8 |
+| `pace_descriptive_peak_position` | 6.1% | 0.5 → 0.5 | 0.49295 → 0.49622 | 7.8 → 7.8 |
+| `pace_descriptive_shift` | 54.5% | 0.0719282 → 0.129495 | 0.492159 → 0.742333 | 7.8 → 7.8 |
+| `pace_emotion_early` | 13.0% | 11.8644 → 11.7994 | 12.8534 → 12.7751 | 7.8 → 7.8 |
+| `pace_emotion_late` | 25.6% | 14.9254 → 14.9813 | 16.0986 → 16.0949 | 7.8 → 7.8 |
+| `pace_emotion_peak_position` | 5.6% | 0.7 → 0.7 | 0.572764 → 0.574553 | 7.9 → 7.9 |
+| `pace_emotion_shift` | 32.5% | 2.7933 → 2.94044 | 3.24519 → 3.31978 | 7.8 → 7.8 |
+| `pace_sex_early` | 1.0% | 7.16846 → 7.16846 | 11.7526 → 11.7696 | 7.8 → 7.8 |
+| `pace_sex_late` | 2.7% | 22.6415 → 22.673 | 26.1694 → 26.216 | 7.8 → 7.8 |
+| `pace_sex_peak_position` | 0.4% | 0.7 → 0.7 | 0.654844 → 0.65474 | 9.6 → 9.6 |
+| `pace_sex_shift` | 3.4% | 10.8856 → 10.929 | 14.4168 → 14.4464 | 7.8 → 7.8 |
+| `pov_is_first_person` | 1.7% | 1 → 1 | 0.58062 → 0.570098 | 8.2 → 6.5 |
+| `rel_disclosure_per_1k` | 38.7% | 0.739736 → 0.391952 | 1.10903 → 0.65281 | 0.0 → 0.0 |
+| `rel_familiarity_per_1k` | 34.9% | 0.658545 → 0.508733 | 0.938417 → 0.794888 | 0.0 → 0.0 |
+| `sense_body_count` | 33.3% | 9 → 10 | 14.8078 → 15.4511 | 0.1 → 0.1 |
+| `sense_body_per_1k` | 33.3% | 2.71223 → 2.84912 | 3.39251 → 3.55563 | 0.0 → 0.0 |
+| `sense_sight_count` | 12.7% | 34 → 34 | 54.5541 → 54.7463 | 0.1 → 0.1 |
+| `sense_sight_per_1k` | 12.7% | 10.7221 → 10.7521 | 11.0808 → 11.1185 | 0.0 → 0.0 |
+| `sense_smell_count` | 6.9% | 0 → 1 | 2.05041 → 2.13875 | 0.1 → 0.1 |
+| `sense_smell_per_1k` | 6.9% | 0 → 0.0734627 | 0.463957 → 0.482974 | 0.0 → 0.0 |
+| `sense_sound_count` | 37.1% | 13 → 13 | 22.0391 → 22.6561 | 0.1 → 0.1 |
+| `sense_sound_per_1k` | 37.2% | 4.04465 → 4.15086 | 4.45222 → 4.58667 | 0.0 → 0.0 |
+| `sense_total_per_1k` | 60.8% | 23.8395 → 23.9532 | 24.4386 → 24.6077 | 0.0 → 0.0 |
+| `sense_touch_count` | 35.0% | 11 → 11 | 17.972 → 17.0928 | 0.1 → 0.1 |
+| `sense_touch_per_1k` | 35.1% | 3.45242 → 3.26959 | 4.21822 → 4.03301 | 0.0 → 0.0 |
+| `sex_anatomy_per_1k` | 8.6% | 8.36581 → 8.40631 | 10.3617 → 10.4063 | 0.0 → 0.0 |
+| `sex_distinct_terms` | 8.6% | 20 → 20 | 21.7604 → 21.8466 | 0.1 → 0.1 |
+| `sex_other_per_1k` | 3.5% | 2.1679 → 2.17156 | 3.06862 → 3.08458 | 0.0 → 0.0 |
+| `sex_sentence_share` | 4.4% | 0.182824 → 0.183198 | 0.206172 → 0.206404 | 0.0 → 0.0 |
+| `sex_terms` | 8.6% | 52 → 52 | 83.7602 → 83.9296 | 0.1 → 0.1 |
+| `sex_terms_per_1k` | 8.6% | 17.1382 → 17.1735 | 20.0398 → 20.0844 | 0.0 → 0.0 |
+| `style_action_verbs_per_1k` | 71.1% | 13.499 → 12.9304 | 13.8917 → 13.3109 | 0.0 → 0.0 |
+| `style_descriptive_words_per_1k` | 52.1% | 5.5597 → 5.29731 | 6.30084 → 6.02929 | 0.0 → 0.0 |
+| `style_said_share` | 50.3% | 0.304348 → 0.322581 | 0.321326 → 0.336199 | 14.6 → 15.3 |
+| `pov_class` | 1.7% | (categorical) | | |
 
 </details>

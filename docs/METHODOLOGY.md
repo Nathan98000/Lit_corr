@@ -306,7 +306,10 @@ second-person pronouns (you, your…):
   narration words;
 * **second person** if there are at least 15 second-person pronouns and more
   of them than first-person ones;
-* **third person** if there are fewer than 5 first-person pronouns;
+* **third person** if there are fewer than 5 first-person pronouns, or if
+  first-person pronouns are fewer than 8% of the first-person and third-person
+  (he, she, they…) pronouns together: a third-person story in which a character's
+  thoughts or a letter are reported in the first person;
 * **mixed** in between, and **unknown** if there are fewer than 200 narration
   words.
 
@@ -322,14 +325,28 @@ stories-within-stories. *Moby-Dick*, whose narrator drifts between first
 person, essay and stage drama, is a good example of genuinely mixed narration:
 only a quarter of its passages count as clearly first person. The script is
 in `scripts/validate_narration.py`. This is a word-counting heuristic, not an
-understanding of the story.
+understanding of the story. (The novel check above was run before the 8% rule for
+third person was added in Stage 1B.)
+
+**On this corpus** (Stage 1B), 48 stories drawn about evenly from the classes (12
+first, 11 second, 11 third, 12 mixed, 2 unknown) were checked by hand: 39 were
+labelled correctly by the original rule, almost all errors being third-person
+stories labelled mixed. The 8% rule was designed on that sample (46 of 48 correct
+with it; the two left: a story narrated as "we", labelled mixed, and a chat
+transcript labelled second person). On 15 further stories that it moved from
+"mixed" to "third", all 15 were indeed third person. Because the classes are very
+unequal in size (first 53%, third 40%, second 5%, mixed 1.5%), accuracy over the
+whole corpus is higher than on the balanced sample: about 97% already before the
+change.
 
 ### Tense
 
 Present versus past tense is estimated from about 70 very common verbs
 (is/was, says/said, looks/looked, walk after "I/we/you/they" …) in the
 narration: present if at least 60% of those forms are present tense, past if
-40% or fewer, otherwise mixed. All 14 validation novels came out as past tense.
+40% or fewer, otherwise mixed. All 14 validation novels came out as past tense,
+and on this corpus a hand-check of 45 stories found every label right (one story
+could not be judged).
 
 | Variable | What it measures | Caveat |
 |---|---|---|
@@ -341,7 +358,7 @@ narration: present if at least 60% of those forms are present tense, past if
 | **You / your in narration** (`pov_second_narr_per_1k`) | Second-person pronouns per 1,000 narration words. |  |
 | **He / she / they in narration** (`pov_third_narr_per_1k`) | Third-person pronouns per 1,000 narration words. |  |
 | **First-person share of pronouns** (`pov_first_person_share`) | In narration, first-person pronouns as a share of first- plus third-person pronouns. | A word-counting heuristic, not true narrative analysis; see Methodology for how it was validated. |
-| **Narrative perspective** (`pov_class`) | Estimated narrative perspective from narration pronouns: first if ≥15 I/me/my per 1,000 narration words; second if 'you' forms are ≥15 and more frequent; third if under 5; otherwise mixed; unknown if under 200 narration words. | A word-counting heuristic, not true narrative analysis; see Methodology for how it was validated. |
+| **Narrative perspective** (`pov_class`) | Estimated narrative perspective from narration pronouns: first if ≥15 I/me/my per 1,000 narration words; second if 'you' forms are ≥15 and more frequent; third if under 5, or if I/me/my are under 8% of the I/me/my plus he/she/they forms (reported thoughts or a letter inside a third-person story); otherwise mixed; unknown if under 200 narration words. | A word-counting heuristic, not true narrative analysis; see Methodology for how it was validated. |
 | **First-person narration** (`pov_is_first_person`) | 1 for stories classified as first person, 0 for third person, blank otherwise. | A word-counting heuristic, not true narrative analysis; see Methodology for how it was validated. |
 | **Present-tense share** (`narr_present_tense_share`) | In narration, present-tense forms of ~70 common verbs as a share of present plus past forms. | Blank if fewer than 20 such verbs occur. A heuristic. |
 | **Narration tense** (`narr_tense_class`) | Present if the present-tense share is ≥ 0.6, past if ≤ 0.4, otherwise mixed. |  |
@@ -374,7 +391,7 @@ indicator of cast size.
 
 | Variable | What it measures | Caveat |
 |---|---|---|
-| **Recurring names** (`char_recurring_names`) | Number of distinct capitalised names that appear at least 3 times mid-sentence (mostly characters, sometimes places). | Heuristic: first names and surnames count separately; place and brand names can be included; names that only ever start a sentence are missed. Blank when the collected text is incomplete (text_truncated). |
+| **Recurring names** (`char_recurring_names`) | Number of distinct capitalised names that appear at least 3 times mid-sentence (mostly characters, sometimes places). | Heuristic: first names and surnames count separately. Common titles, places, nationalities, organisations and brands are left out (lexicons/not_names.txt), as is a word that mostly follows 'the' or 'in', but rarer ones can still count (about 9 in 10 detected names were characters in a Stage 1B hand-check); names that only ever start a sentence are missed. Blank when the collected text is incomplete (text_truncated). |
 | **Name mentions per 1,000 words** (`char_name_mentions_per_1k`) | Mentions of those recurring names per 1,000 words. | Lower in short stories, where fewer names reach the three mentions needed to count. |
 | **Focus on main name** (`char_top_name_share`) | Share of all name mentions taken by the most-mentioned name. |  |
 
@@ -613,15 +630,15 @@ A spoken command is a quoted passage that begins with a verb such as "come",
 
 | Variable | What it measures | Caveat |
 |---|---|---|
-| **Passive constructions** (`agency_passive_per_1k`) | 'be/get + past participle' constructions ('was taken', 'got tied') per 1,000 words. | Heuristic; some adjectival uses ('was finished') are counted. |
+| **Passive constructions** (`agency_passive_per_1k`) | 'be/get + past participle' constructions ('was taken', 'got tied') per 1,000 words. | Heuristic (about 9 in 10 counted matches were passives in a Stage 1B hand-check): common participles that describe a state or feeling ('was dressed in', 'was accustomed to', 'was fascinated by') are left out; rarer ones ('was unrequited') still count. |
 | **Passive sentences** (`agency_passive_sentence_share`) | Share of sentences containing a passive construction. |  |
 | **Active-voice sentences** (`agency_active_sentence_share`) | Share of sentences without a passive construction (1 − passive share). |  |
 | **Agency (deciding & trying)** (`agency_volition_per_1k`) | Words for deciding, choosing, planning and trying per 1,000 words. | Describes the language of the text, not the psychology of its author. Low split-half reliability (0.56): a single story's value is noisy (few hits per story), so compare groups of stories rather than single stories. |
 | **Control & restraint** (`agency_control_per_1k`) | Words about control, restraint, permission and force per 1,000 words. | Describes the language of the text, not the psychology of its author. |
 | **Dominance language** (`agency_dominance_per_1k`) | Words associated with commanding and domination per 1,000 words. | Describes the language of the text, not the psychology of its author. |
 | **Submission language** (`agency_submission_per_1k`) | Words associated with obeying, kneeling and begging per 1,000 words. | Describes the language of the text, not the psychology of its author. |
-| **Spoken commands** (`agency_commands_per_1k`) | Quoted speech that starts with a command verb ('Come here.', 'Kneel.', 'Don't stop.') per 1,000 words. | Heuristic: questions and 'Do you…' are excluded; 'Look, …' as a filler is still counted. |
-| **Commands among speech** (`agency_command_share_of_speech`) | Share of quoted passages that start with a command verb. | Low split-half reliability (0.44): a single story's value is noisy (few hits per story), so compare groups of stories rather than single stories. |
+| **Spoken commands** (`agency_commands_per_1k`) | Quoted passages containing a command, i.e. a sentence that starts with a command verb, possibly after 'please', 'now' or a name ('Come here.', 'Kneel.', 'Sarah, don't stop.'), per 1,000 words. | Heuristic: question sentences, 'Do you…', 'Look, …' / 'Listen, …' as fillers and 'fuck' as an expletive are left out; commands whose verb is not on the list (lexicons/imperative_verbs.txt) are missed. |
+| **Commands among speech** (`agency_command_share_of_speech`) | Share of quoted passages that contain a command (see agency_commands_per_1k). | Low split-half reliability (0.47): a single story's value is noisy (few hits per story), so compare groups of stories rather than single stories. |
 
 ---
 

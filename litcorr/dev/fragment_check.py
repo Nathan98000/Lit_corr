@@ -14,9 +14,11 @@ Checks:
   names               a recurring name found in a story: is it a character's name, or a place, title or
                       ordinary word? (only the name is shown)
 
-The masked view hides exactly the words these rules look at (the participle, the verb), so these checks show a
-fragment of at most five words instead: for passive voice the auxiliary, any adverbs, the participle and the
-next word; for commands the first four words of the quoted passage. Items are drawn uniformly at random from all
+The masked view hides exactly the words these rules look at (the participle, the verb), so these checks show
+fragments of at most five words instead: for passive voice the auxiliary, any adverbs, the participle and the
+next word; for a counted command the first four words of the sentence that made it a command ("... " when that
+is not the passage's first sentence); for a passage not counted, the first four words of the passage and the
+first three words of up to two later sentences, as separate fragments. Items are drawn uniformly at random from all
 matches (or passages) in the analysed stories, or in the stories of a review sample (--sample, e.g. one drawn
 with review_sample --only-new-since to re-check new stories only), so the accuracy is per match. Fragments are
 like entries of a corpus n-gram list: `show` prints them in random order without story keys, and the sheet
@@ -105,9 +107,28 @@ def fragment(doc, locator: str) -> str:
         i, j = (int(x) for x in locator[1:].split("-"))
         end = j + 2 if j + 1 < doc.n and doc.sent_idx[j + 1] == doc.sent_idx[j] else j + 1
         return " ".join(doc.orig[i:end])
-    first, count, has_q = doc.segment_info[int(locator[3:])]
-    words = " ".join(doc.orig[first:first + min(4, count)])
-    return f'"{words}{" ..." if count > 4 else ""}"' + ("  (has ?)" if has_q else "")
+    from ..text.features import passage_sentences
+
+    if _M is None:
+        _init()
+    k = int(locator[3:])
+    first, count, _ = doc.segment_info[k]
+    parts = passage_sentences(doc, first, first + count)
+    flagged = dict(_M.command_starts(doc))
+    if k in flagged:  # the sentence that made it a command
+        j = flagged[k]
+        stop = next(e for s, e in parts if s == j)
+        lead = "... " if j > first else ""
+        return f'"{lead}{_words(doc, j, stop, 4)}"'
+    # not counted: the start of the passage and of up to two later sentences
+    shown = [_words(doc, s, e, 4 if n == 0 else 3) for n, (s, e) in enumerate(parts[:3])]
+    more = " | ..." if len(parts) > 3 else ""
+    return '"' + " | ".join(shown) + more + '"' + "".join(
+        "  (question)" for s, _ in parts[:1] if doc.sentences[doc.sent_idx[s]].terminal == "?")
+
+
+def _words(doc, start: int, stop: int, k: int) -> str:
+    return " ".join(doc.orig[start:min(stop, start + k)]) + (" ..." if stop - start > k else "")
 
 
 def show(sheet: str) -> None:

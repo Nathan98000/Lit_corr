@@ -744,7 +744,7 @@
       "kind": "categorical",
       "unit": "first / second / third / mixed / unknown",
       "label": "Narrative perspective",
-      "description": "Estimated narrative perspective from narration pronouns: first if ≥15 I/me/my per 1,000 narration words; second if 'you' forms are ≥15 and more frequent; third if under 5; otherwise mixed; unknown if under 200 narration words.",
+      "description": "Estimated narrative perspective from narration pronouns: first if ≥15 I/me/my per 1,000 narration words; second if 'you' forms are ≥15 and more frequent; third if under 5, or if I/me/my are under 8% of the I/me/my plus he/she/they forms (reported thoughts or a letter inside a third-person story); otherwise mixed; unknown if under 200 narration words.",
       "caveat": "A word-counting heuristic, not true narrative analysis; see Methodology for how it was validated.",
       "explorer": true
     },
@@ -888,7 +888,7 @@
       "unit": "names",
       "label": "Recurring names",
       "description": "Number of distinct capitalised names that appear at least 3 times mid-sentence (mostly characters, sometimes places).",
-      "caveat": "Heuristic: first names and surnames count separately; place and brand names can be included; names that only ever start a sentence are missed. Blank when the collected text is incomplete (text_truncated).",
+      "caveat": "Heuristic: first names and surnames count separately. Common titles, places, nationalities, organisations and brands are left out (lexicons/not_names.txt), as is a word that mostly follows 'the' or 'in', but rarer ones can still count (about 9 in 10 detected names were characters in a Stage 1B hand-check); names that only ever start a sentence are missed. Blank when the collected text is incomplete (text_truncated).",
       "explorer": true
     },
     {
@@ -2098,7 +2098,7 @@
       "unit": "per 1,000 words",
       "label": "Passive constructions",
       "description": "'be/get + past participle' constructions ('was taken', 'got tied') per 1,000 words.",
-      "caveat": "Heuristic; some adjectival uses ('was finished') are counted.",
+      "caveat": "Heuristic (about 9 in 10 counted matches were passives in a Stage 1B hand-check): common participles that describe a state or feeling ('was dressed in', 'was accustomed to', 'was fascinated by') are left out; rarer ones ('was unrequited') still count.",
       "explorer": true
     },
     {
@@ -2174,8 +2174,8 @@
       "kind": "continuous",
       "unit": "per 1,000 words",
       "label": "Spoken commands",
-      "description": "Quoted speech that starts with a command verb ('Come here.', 'Kneel.', 'Don't stop.') per 1,000 words.",
-      "caveat": "Heuristic: questions and 'Do you…' are excluded; 'Look, …' as a filler is still counted.",
+      "description": "Quoted passages containing a command, i.e. a sentence that starts with a command verb, possibly after 'please', 'now' or a name ('Come here.', 'Kneel.', 'Sarah, don't stop.'), per 1,000 words.",
+      "caveat": "Heuristic: question sentences, 'Do you…', 'Look, …' / 'Listen, …' as fillers and 'fuck' as an expletive are left out; commands whose verb is not on the list (lexicons/imperative_verbs.txt) are missed.",
       "explorer": true
     },
     {
@@ -2185,8 +2185,8 @@
       "kind": "share",
       "unit": "share (0–1)",
       "label": "Commands among speech",
-      "description": "Share of quoted passages that start with a command verb.",
-      "caveat": "Low split-half reliability (0.44): a single story's value is noisy (few hits per story), so compare groups of stories rather than single stories.",
+      "description": "Share of quoted passages that contain a command (see agency_commands_per_1k).",
+      "caveat": "Low split-half reliability (0.47): a single story's value is noisy (few hits per story), so compare groups of stories rather than single stories.",
       "explorer": true
     },
     {

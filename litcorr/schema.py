@@ -223,8 +223,9 @@ v("pov_first_person_share", G, "Narration", "share", SHARE, "First-person share 
   "In narration, first-person pronouns as a share of first- plus third-person pronouns.", POV_NOTE)
 v("pov_class", G, "Narration", "categorical", "first / second / third / mixed / unknown", "Narrative perspective",
   "Estimated narrative perspective from narration pronouns: first if ≥15 I/me/my per 1,000 narration words; "
-  "second if 'you' forms are ≥15 and more frequent; third if under 5; otherwise mixed; unknown if under 200 "
-  "narration words.", POV_NOTE)
+  "second if 'you' forms are ≥15 and more frequent; third if under 5, or if I/me/my are under 8% of the I/me/my "
+  "plus he/she/they forms (reported thoughts or a letter inside a third-person story); otherwise mixed; unknown "
+  "if under 200 narration words.", POV_NOTE)
 v("pov_is_first_person", G, "Narration", "binary", "1 = first, 0 = third", "First-person narration",
   "1 for stories classified as first person, 0 for third person, blank otherwise.", POV_NOTE)
 v("narr_present_tense_share", G, "Narration", "share", SHARE, "Present-tense share",
@@ -254,7 +255,9 @@ v("dlg_has_dialogue", G, "Narration", "binary", "yes/no", "Has dialogue", "Wheth
 G = "Characters"
 v("char_recurring_names", G, "Narration", "count", "names", "Recurring names",
   "Number of distinct capitalised names that appear at least 3 times mid-sentence (mostly characters, sometimes "
-  "places).", "Heuristic: first names and surnames count separately; place and brand names can be included; "
+  "places).", "Heuristic: first names and surnames count separately. Common titles, places, nationalities, "
+  "organisations and brands are left out (lexicons/not_names.txt), as is a word that mostly follows 'the' or "
+  "'in', but rarer ones can still count (about 9 in 10 detected names were characters in a Stage 1B hand-check); "
   "names that only ever start a sentence are missed.")
 v("char_name_mentions_per_1k", G, "Narration", "continuous", P1K, "Name mentions per 1,000 words",
   "Mentions of those recurring names per 1,000 words.")
@@ -479,7 +482,9 @@ G = "Agency & control"
 AG_NOTE = "Describes the language of the text, not the psychology of its author."
 v("agency_passive_per_1k", G, "Language", "continuous", P1K, "Passive constructions",
   "'be/get + past participle' constructions ('was taken', 'got tied') per 1,000 words.",
-  "Heuristic; some adjectival uses ('was finished') are counted.")
+  "Heuristic (about 9 in 10 counted matches were passives in a Stage 1B hand-check): common participles that "
+  "describe a state or feeling ('was dressed in', 'was accustomed to', 'was fascinated by') are left out; rarer "
+  "ones ('was unrequited') still count.")
 v("agency_passive_sentence_share", G, "Language", "share", SHARE, "Passive sentences",
   "Share of sentences containing a passive construction.")
 v("agency_active_sentence_share", G, "Language", "share", SHARE, "Active-voice sentences",
@@ -493,10 +498,12 @@ v("agency_dominance_per_1k", G, "Language", "continuous", P1K, "Dominance langua
 v("agency_submission_per_1k", G, "Language", "continuous", P1K, "Submission language",
   "Words associated with obeying, kneeling and begging per 1,000 words.", AG_NOTE)
 v("agency_commands_per_1k", G, "Language", "continuous", P1K, "Spoken commands",
-  "Quoted speech that starts with a command verb ('Come here.', 'Kneel.', 'Don't stop.') per 1,000 words.",
-  "Heuristic: questions and 'Do you…' are excluded; 'Look, …' as a filler is still counted.")
+  "Quoted passages containing a command, i.e. a sentence that starts with a command verb, possibly after "
+  "'please', 'now' or a name ('Come here.', 'Kneel.', 'Sarah, don't stop.'), per 1,000 words.",
+  "Heuristic: question sentences, 'Do you…', 'Look, …' / 'Listen, …' as fillers and 'fuck' as an expletive "
+  "are left out; commands whose verb is not on the list (lexicons/imperative_verbs.txt) are missed.")
 v("agency_command_share_of_speech", G, "Language", "share", SHARE, "Commands among speech",
-  "Share of quoted passages that start with a command verb.")
+  "Share of quoted passages that contain a command (see agency_commands_per_1k).")
 
 # ------------------------------------------------------------------ pacing
 G = "Pacing"
@@ -551,7 +558,7 @@ _HANDOFF_ROUNDED = ("pop_views", "pop_favorites", "pop_comments", "pop_reading_l
 # Stage 1B split-half reliability below 0.6 (odd vs even paragraphs of stories with 1,000+ words, correlated across
 # stories, Spearman-Brown corrected; docs/stage1b/VALIDATION_REPORT.md).
 LOW_RELIABILITY = {"emo_jealousy_per_1k": 0.40, "hedge_uncertainty_per_1k": 0.40, "hedge_certainty_balance": 0.43,
-                   "agency_command_share_of_speech": 0.44, "emo_anger_per_1k": 0.55, "agency_volition_per_1k": 0.56,
+                   "agency_command_share_of_speech": 0.47, "emo_anger_per_1k": 0.55, "agency_volition_per_1k": 0.56,
                    "psy_distancing_per_1k": 0.58, "emo_anxiety_per_1k": 0.58}
 # Stage 1B length check: measures that depend on story length for a mechanical reason.
 LENGTH_NOTES = {

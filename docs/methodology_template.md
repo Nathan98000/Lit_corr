@@ -242,7 +242,10 @@ second-person pronouns (you, your…):
   narration words;
 * **second person** if there are at least 15 second-person pronouns and more
   of them than first-person ones;
-* **third person** if there are fewer than 5 first-person pronouns;
+* **third person** if there are fewer than 5 first-person pronouns, or if
+  first-person pronouns are fewer than 8% of the first-person and third-person
+  (he, she, they…) pronouns together: a third-person story in which a character's
+  thoughts or a letter are reported in the first person;
 * **mixed** in between, and **unknown** if there are fewer than 200 narration
   words.
 
@@ -258,14 +261,28 @@ stories-within-stories. *Moby-Dick*, whose narrator drifts between first
 person, essay and stage drama, is a good example of genuinely mixed narration:
 only a quarter of its passages count as clearly first person. The script is
 in `scripts/validate_narration.py`. This is a word-counting heuristic, not an
-understanding of the story.
+understanding of the story. (The novel check above was run before the 8% rule for
+third person was added in Stage 1B.)
+
+**On this corpus** (Stage 1B), 48 stories drawn about evenly from the classes (12
+first, 11 second, 11 third, 12 mixed, 2 unknown) were checked by hand: 39 were
+labelled correctly by the original rule, almost all errors being third-person
+stories labelled mixed. The 8% rule was designed on that sample (46 of 48 correct
+with it; the two left: a story narrated as "we", labelled mixed, and a chat
+transcript labelled second person). On 15 further stories that it moved from
+"mixed" to "third", all 15 were indeed third person. Because the classes are very
+unequal in size (first 53%, third 40%, second 5%, mixed 1.5%), accuracy over the
+whole corpus is higher than on the balanced sample: about 97% already before the
+change.
 
 ### Tense
 
 Present versus past tense is estimated from about 70 very common verbs
 (is/was, says/said, looks/looked, walk after "I/we/you/they" …) in the
 narration: present if at least 60% of those forms are present tense, past if
-40% or fewer, otherwise mixed. All 14 validation novels came out as past tense.
+40% or fewer, otherwise mixed. All 14 validation novels came out as past tense,
+and on this corpus a hand-check of 45 stories found every label right (one story
+could not be judged).
 
 {{table:Narration}}
 

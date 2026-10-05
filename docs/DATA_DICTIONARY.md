@@ -123,7 +123,7 @@ Generated from `litcorr/schema.py` by `python -m litcorr dictionary`. One row pe
 | `pov_second_narr_per_1k` | You / your in narration | per 1,000 narration words | Second-person pronouns per 1,000 narration words. |  | ✓ |
 | `pov_third_narr_per_1k` | He / she / they in narration | per 1,000 narration words | Third-person pronouns per 1,000 narration words. |  | ✓ |
 | `pov_first_person_share` | First-person share of pronouns | share (0–1) | In narration, first-person pronouns as a share of first- plus third-person pronouns. | A word-counting heuristic, not true narrative analysis; see Methodology for how it was validated. | ✓ |
-| `pov_class` | Narrative perspective | first / second / third / mixed / unknown | Estimated narrative perspective from narration pronouns: first if ≥15 I/me/my per 1,000 narration words; second if 'you' forms are ≥15 and more frequent; third if under 5; otherwise mixed; unknown if under 200 narration words. | A word-counting heuristic, not true narrative analysis; see Methodology for how it was validated. | ✓ |
+| `pov_class` | Narrative perspective | first / second / third / mixed / unknown | Estimated narrative perspective from narration pronouns: first if ≥15 I/me/my per 1,000 narration words; second if 'you' forms are ≥15 and more frequent; third if under 5, or if I/me/my are under 8% of the I/me/my plus he/she/they forms (reported thoughts or a letter inside a third-person story); otherwise mixed; unknown if under 200 narration words. | A word-counting heuristic, not true narrative analysis; see Methodology for how it was validated. | ✓ |
 | `pov_is_first_person` | First-person narration | 1 = first, 0 = third | 1 for stories classified as first person, 0 for third person, blank otherwise. | A word-counting heuristic, not true narrative analysis; see Methodology for how it was validated. | ✓ |
 | `narr_present_tense_share` | Present-tense share | share (0–1) | In narration, present-tense forms of ~70 common verbs as a share of present plus past forms. | Blank if fewer than 20 such verbs occur. A heuristic. | ✓ |
 | `narr_tense_class` | Narration tense | present / past / mixed / unknown | Present if the present-tense share is ≥ 0.6, past if ≤ 0.4, otherwise mixed. |  | ✓ |
@@ -146,7 +146,7 @@ Generated from `litcorr/schema.py` by `python -m litcorr dictionary`. One row pe
 
 | Column | Label | Unit | Meaning | Caveat | Explorer |
 |---|---|---|---|---|---|
-| `char_recurring_names` | Recurring names | names | Number of distinct capitalised names that appear at least 3 times mid-sentence (mostly characters, sometimes places). | Heuristic: first names and surnames count separately; place and brand names can be included; names that only ever start a sentence are missed. Blank when the collected text is incomplete (text_truncated). | ✓ |
+| `char_recurring_names` | Recurring names | names | Number of distinct capitalised names that appear at least 3 times mid-sentence (mostly characters, sometimes places). | Heuristic: first names and surnames count separately. Common titles, places, nationalities, organisations and brands are left out (lexicons/not_names.txt), as is a word that mostly follows 'the' or 'in', but rarer ones can still count (about 9 in 10 detected names were characters in a Stage 1B hand-check); names that only ever start a sentence are missed. Blank when the collected text is incomplete (text_truncated). | ✓ |
 | `char_name_mentions_per_1k` | Name mentions per 1,000 words | per 1,000 words | Mentions of those recurring names per 1,000 words. | Lower in short stories, where fewer names reach the three mentions needed to count. | ✓ |
 | `char_top_name_share` | Focus on main name | share (0–1) | Share of all name mentions taken by the most-mentioned name. |  | ✓ |
 
@@ -326,15 +326,15 @@ Generated from `litcorr/schema.py` by `python -m litcorr dictionary`. One row pe
 
 | Column | Label | Unit | Meaning | Caveat | Explorer |
 |---|---|---|---|---|---|
-| `agency_passive_per_1k` | Passive constructions | per 1,000 words | 'be/get + past participle' constructions ('was taken', 'got tied') per 1,000 words. | Heuristic; some adjectival uses ('was finished') are counted. | ✓ |
+| `agency_passive_per_1k` | Passive constructions | per 1,000 words | 'be/get + past participle' constructions ('was taken', 'got tied') per 1,000 words. | Heuristic (about 9 in 10 counted matches were passives in a Stage 1B hand-check): common participles that describe a state or feeling ('was dressed in', 'was accustomed to', 'was fascinated by') are left out; rarer ones ('was unrequited') still count. | ✓ |
 | `agency_passive_sentence_share` | Passive sentences | share (0–1) | Share of sentences containing a passive construction. |  | ✓ |
 | `agency_active_sentence_share` | Active-voice sentences | share (0–1) | Share of sentences without a passive construction (1 − passive share). |  |  |
 | `agency_volition_per_1k` | Agency (deciding & trying) | per 1,000 words | Words for deciding, choosing, planning and trying per 1,000 words. | Describes the language of the text, not the psychology of its author. Low split-half reliability (0.56): a single story's value is noisy (few hits per story), so compare groups of stories rather than single stories. | ✓ |
 | `agency_control_per_1k` | Control & restraint | per 1,000 words | Words about control, restraint, permission and force per 1,000 words. | Describes the language of the text, not the psychology of its author. | ✓ |
 | `agency_dominance_per_1k` | Dominance language | per 1,000 words | Words associated with commanding and domination per 1,000 words. | Describes the language of the text, not the psychology of its author. | ✓ |
 | `agency_submission_per_1k` | Submission language | per 1,000 words | Words associated with obeying, kneeling and begging per 1,000 words. | Describes the language of the text, not the psychology of its author. | ✓ |
-| `agency_commands_per_1k` | Spoken commands | per 1,000 words | Quoted speech that starts with a command verb ('Come here.', 'Kneel.', 'Don't stop.') per 1,000 words. | Heuristic: questions and 'Do you…' are excluded; 'Look, …' as a filler is still counted. | ✓ |
-| `agency_command_share_of_speech` | Commands among speech | share (0–1) | Share of quoted passages that start with a command verb. | Low split-half reliability (0.44): a single story's value is noisy (few hits per story), so compare groups of stories rather than single stories. | ✓ |
+| `agency_commands_per_1k` | Spoken commands | per 1,000 words | Quoted passages containing a command, i.e. a sentence that starts with a command verb, possibly after 'please', 'now' or a name ('Come here.', 'Kneel.', 'Sarah, don't stop.'), per 1,000 words. | Heuristic: question sentences, 'Do you…', 'Look, …' / 'Listen, …' as fillers and 'fuck' as an expletive are left out; commands whose verb is not on the list (lexicons/imperative_verbs.txt) are missed. | ✓ |
+| `agency_command_share_of_speech` | Commands among speech | share (0–1) | Share of quoted passages that contain a command (see agency_commands_per_1k). | Low split-half reliability (0.47): a single story's value is noisy (few hits per story), so compare groups of stories rather than single stories. | ✓ |
 
 ## Pacing
 

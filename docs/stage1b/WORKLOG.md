@@ -420,3 +420,60 @@ Recommendations go to the Phase 5 proposal; nothing is removed or renamed now.
 POV ("mixed" third-person stories), passive voice (participial adjectives), commands (expletive "fuck",
 "Look," / "Listen," fillers, and imperatives after the first sentence of a passage), names (titles, places,
 groups, organisations). Each fix is re-checked on a fresh random sample, never on the items used to design it.
+
+---
+
+## Phase 4: Fixes (2026-10-04, text pipeline 1.2)
+
+Every value change is in `CHANGELOG.md` (1.2) with its effect on median, mean and missing rate; regression
+tests with synthetic text are in `tests/test_stage1b_measures.py`. `analyze` on the real corpus: 72.9 s for
+4,251 texts (8 workers); `state.sqlite3` unchanged (checksum before and after every run).
+
+### Fresh-sample checks (the design samples are the seed-1 sheets; seed 2 was drawn after the change)
+
+| Rule | Before (seed 1) | After (seed 2, fresh) | Errors left |
+|---|---|---|---|
+| Passive voice, share of counted matches that are passives | 49/59 = 83.1% (71.5–90.5) | 54/59 = 91.5% (81.6–96.3) | "un-" adjectives 2 ("was unrequited"), idiom 1 ("getting started"), state 1, feeling 1 |
+| Commands, share of counted passages that are commands | 51/60 = 85.0% (73.9–91.9) | 60/60 = 100% (94.0–100) | none |
+| Commands, missed among passages not counted | 4/60 = 6.7% (2.6–15.9) | 1/60 = 1.7% (0.3–8.9) | a command verb not on the list |
+| Commands, estimated share of all commands found | ≈ 51% (≈ 28–74%) | ≈ 87% (≈ 53–97%) | |
+| Names, share of detected names that are characters | 39/57 = 68.4% (55.5–79.1) | 48/53 = 90.6% (79.7–95.9); 7 invented or ambiguous names skipped | titles and roles 3, other capitalised words 2 |
+| POV, balanced sample of 48 | 39/48 = 81.2% | 46/48 in-sample (the rule was designed here) | a "we" narrator labelled mixed, a chat transcript labelled second |
+| POV, hold-out of 15 stories the new rule moves to "third" | 0/15 | 15/15 = 100% (79.6–100) | |
+
+Split-half reliability after the fixes (3,914 stories): `agency_command_share_of_speech` 0.44 → 0.47 (still
+low; caveat value updated), `agency_commands_per_1k` 0.67 → 0.71, `agency_passive_per_1k` 0.71 → 0.73; no other
+measure moved by more than 0.005.
+
+For commands, the fragment shown for a counted passage is now the sentence that made it a command (it may be
+the passage's second or third sentence), and for a passage not counted, the start of the passage and of up to
+two later sentences, each at most four words.
+
+### Tuned on batch 1 (re-check on the stories collected later)
+
+* POV: "third" when I-forms are under **8%** of I-forms plus he/she/they forms in narration (designed on pov1;
+  hold-out povflip). The existing 5 / 15 per 1,000 thresholds are unchanged from Stage 1.
+* Passive voice: the **49 excluded participles**, "turned on" / "worked up" / "built like", "done" only before
+  "to"/"by", "stuck" removed (from the type-level list of the most frequent matches and the seed-1 sheet).
+* Commands: the object words after "fuck" (me, him, her, them, us, my, his, off) and the discourse markers
+  (look, listen, see, say + comma).
+* Names: the **360 `not_names` additions** (from the type list of names detected in the most stories and the
+  seed-1 sheet) and the **≥ 50%** "the"/"in" share (a plain majority, not searched over).
+* Lexicons: every Phase 3d edit (from the batch-1 lexicon audit).
+
+To re-estimate on new stories only: draw a sample from the stories collected after this batch,
+`python -m litcorr.dev.review_sample NEW --only-new-since 2026-10-04 ...`, then make sheets from it,
+`python -m litcorr.dev.fragment_check make passive|commands|commands_unflagged|names SHEET --sample NEW --seed 3`
+and `python -m litcorr.dev.handcheck make pov|tense|paratext ... --sample NEW`, judge them, and score them
+with `python -m litcorr.dev.handcheck score`.
+
+### Not changed (known limitations, documented in the schema)
+
+* Passive voice: "un-" adjectives ("was unexpected", "was unrequited") and other rare participial adjectives.
+* Commands: verbs missing from `lexicons/imperative_verbs.txt`; "you" + imperative ("You two, go"); imperatives
+  after a comma inside a sentence ("Good, good, now kneel").
+* Names: rarer places, titles and roles ("the Mage" when not after "the"); invented names in fantasy stories
+  cannot be judged from the name alone.
+* POV: first-person-plural narration ("we") still lands in "mixed" (a decision for the user: a "first plural"
+  class, or counting "we" as first person).
+* Sentence splitting after "etc." (1 error in 50).

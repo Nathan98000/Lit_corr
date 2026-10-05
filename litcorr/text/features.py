@@ -99,6 +99,9 @@ SECOND = frozenset("you your yours yourself yourselves you're you've you'd you'l
 MASC = frozenset("he him his himself he's he'd he'll".split())
 FEM = frozenset("she her hers herself she's she'd she'll".split())
 NEUTRAL = frozenset("they them their theirs themselves themself they're they've they'd they'll".split())
+# POV class: a story with 5-15 "I" forms per 1,000 narration words is still third person when "I" forms are fewer
+# than this share of the first-person-singular plus third-person pronouns in narration (Stage 1B, tuned on batch 1).
+POV_THIRD_MAX_I_SHARE = 0.08
 
 _VERB_PAIRS = (
     "be:am/is/are:was/were have:has:had do:does:did say:says:said go:goes:went look:looks:looked "
@@ -132,14 +135,26 @@ _IRREGULAR_PARTICIPLES = frozenset(
     "taken given seen done made held bound tied kept left told shown known brought bought caught taught found "
     "beaten bitten broken chosen driven eaten fallen forgotten forgiven frozen hidden ridden risen shaken spoken "
     "stolen sworn torn thrown woken worn written laid paid sold sent spent built led fed won drawn grown flown "
-    "swung stuck struck hung spun sought fought shot lit slid spread shut born".split()
+    "swung struck hung spun sought fought shot lit slid spread shut born".split()
 )
 _ED_NOT_PASSIVE = frozenset(
     "need bed red seed shed speed feed weed breed bleed proceed succeed exceed indeed naked sacred wicked hundred "
     "kindred rugged jagged ragged beloved wed fled sled tired excited interested scared worried surprised pleased "
     "bored confused embarrassed married relieved amazed annoyed frustrated disappointed determined satisfied "
-    "convinced shocked stunned aroused aged supposed used talented crooked learned".split()
+    "convinced shocked stunned aroused aged supposed used talented crooked learned "
+    # Stage 1B: participles that in this corpus mostly describe a state or a feeling rather than something done
+    # to the subject ("was dressed in", "was accustomed to", "was fascinated by").
+    "dressed finished involved concerned prepared soaked drenched impressed focused attracted seated pissed "
+    "distracted exhausted ashamed tempted thrilled flushed startled terrified engaged overwhelmed headed "
+    "delighted settled accustomed acquainted fascinated intimidated humiliated damned horrified mortified "
+    "petrified dazed puzzled perplexed bewildered intrigued amused disgusted flustered frightened mesmerized "
+    "obsessed relaxed stressed astonished captivated".split()
 )
+# Participles that are not passive before one particular word ("was turned on", "got worked up", "was built like"),
+# and "done", which is a passive only before "to" or "by" ("it was done to her"; "I'm done" means finished).
+_NOT_PASSIVE_BEFORE = {"turned": frozenset({"on"}), "worked": frozenset({"up"}), "built": frozenset({"like"})}
+_PASSIVE_ONLY_BEFORE = {"done": frozenset({"to", "by"})}
+# "stuck" (a state: "was stuck in traffic") is not listed among the irregular participles.
 
 # --- misc --------------------------------------------------------------------------
 _CHAPTER = re.compile(
@@ -172,6 +187,11 @@ _LY_NOT_ADVERB = frozenset(
     "imply reply bodily".split())
 _NAME_SHAPE = re.compile(r"^[A-Z][a-z]+(?:[A-Z][a-z]+)?$")
 _FILLERS = frozenset("please now just oh so okay ok well then and baby honey darling sweetheart babe".split())
+# Before a comma these are discourse markers, not commands ("Look, I didn't mean it"); "look at me" still counts.
+_DISCOURSE_MARKERS = frozenset("look listen say see".split())
+# "fuck" is a command only before one of these ("fuck me", "fuck off"); otherwise it is an expletive ("Fuck!",
+# "fuck yes", "fuck you", "fuck it").
+_FUCK_OBJECTS = frozenset("me him her them us my his off".split())
 
 LEXICON_MEASURES = {  # lexicon file -> used as a measured category
     "sexual_anatomy", "sexual_action", "sexual_general", "emotion_positive", "emotion_negative", "emotion_affection",
@@ -187,7 +207,7 @@ SUPPORT_LEXICONS = {"stopwords", "not_names", "imperative_verbs"}
 
 def passive_matches(doc: TextDoc) -> list[tuple[int, int]]:
     """(auxiliary, participle) word positions of every passive-voice match: a form of "be" or "get", up to two
-    adverbs, then a past participle in the same sentence ("was taken", "got completely soaked")."""
+    adverbs, then a past participle in the same sentence ("was taken", "got completely covered")."""
     n, toks = doc.n, doc.tokens
     aux_type = np.fromiter((w in _BE_AUX for w in doc.vocab), dtype=bool, count=len(doc.vocab))
     out = []
@@ -200,7 +220,24 @@ def passive_matches(doc: TextDoc) -> list[tuple[int, int]]:
             continue
         w = toks[j]
         if w in _IRREGULAR_PARTICIPLES or (w.endswith("ed") and len(w) > 4 and w not in _ED_NOT_PASSIVE):
+            nxt = toks[j + 1] if j + 1 < n and doc.sent_idx[j + 1] == doc.sent_idx[j] else ""
+            if nxt in _NOT_PASSIVE_BEFORE.get(w, ()):
+                continue
+            if w in _PASSIVE_ONLY_BEFORE and nxt not in _PASSIVE_ONLY_BEFORE[w]:
+                continue
             out.append((int(i), int(j)))
+    return out
+
+
+def passage_sentences(doc: TextDoc, first: int, end: int) -> list[tuple[int, int]]:
+    """(start, stop) word positions of the parts of a quoted passage that belong to different sentences."""
+    out, j = [], first
+    while j < end:
+        stop = j + 1
+        while stop < end and doc.sent_idx[stop] == doc.sent_idx[j]:
+            stop += 1
+        out.append((j, stop))
+        j = stop
     return out
 
 
@@ -353,7 +390,9 @@ class Measurer:
             cls = "second"
         elif fp_rate >= 15:
             cls = "first"
-        elif fp_rate < 5:
+        elif fp_rate < 5 or fp_n < POV_THIRD_MAX_I_SHARE * (fp_n + tp_n):
+            # Few "I" forms in narration, or "I" forms that are a small minority next to he/she/they (reported
+            # thoughts, a letter or a short first-person frame in a third-person story): third person.
             cls = "third"
         else:
             cls = "mixed"
@@ -504,26 +543,39 @@ class Measurer:
         out["agency_command_share_of_speech"] = share(commands, len(doc.segment_info))
 
     def command_segments(self, doc: TextDoc) -> list[int]:
-        """Indices (in ``doc.segment_info``) of the quoted passages counted as commands: the first word, after
-        fillers and a vocative name, is an imperative verb, and the passage has no question mark."""
-        toks, out = doc.tokens, []
-        for k, (first, count, has_q) in enumerate(doc.segment_info):
-            if has_q:
-                continue
-            j, end = first, first + count
-            steps = 0
-            # Skip fillers ("please", "now") and a vocative name followed by a comma ("Sarah, come here"),
-            # but never ordinary words such as "You", "We", "It" ("You look beautiful" is not a command).
-            while j < end and steps < 3 and (toks[j] in _FILLERS or (
-                    _NAME_SHAPE.match(doc.orig[j]) and toks[j] not in self.stop and toks[j] not in self.imperatives
-                    and doc.comma_after[j] and j + 1 < end)):
-                j += 1
-                steps += 1
-            if j < end and toks[j] in self.imperatives:
-                if toks[j] in ("don't", "do") and j + 1 < end and toks[j + 1] in ("you", "i", "we", "they"):
-                    continue  # "Do you ...", a question without a question mark
-                out.append(k)
+        """Indices (in ``doc.segment_info``) of the quoted passages counted as commands: some sentence of the
+        passage that is not a question starts, after fillers and a vocative name, with an imperative verb."""
+        return [k for k, _ in self.command_starts(doc)]
+
+    def command_starts(self, doc: TextDoc) -> list[tuple[int, int]]:
+        """(passage index, first word of the first command sentence) for every passage counted as a command."""
+        out = []
+        for k, (first, count, _) in enumerate(doc.segment_info):
+            for j, stop in passage_sentences(doc, first, first + count):
+                if doc.sentences[doc.sent_idx[j]].terminal != "?" and self._starts_with_imperative(doc, j, stop):
+                    out.append((k, j))
+                    break
         return out
+
+    def _starts_with_imperative(self, doc: TextDoc, j: int, end: int) -> bool:
+        toks, steps = doc.tokens, 0
+        # Skip fillers ("please", "now"), a discourse marker before a comma ("Look, ...") and a vocative name
+        # followed by a comma ("Sarah, come here"), but never ordinary words such as "You", "We", "It" ("You look
+        # beautiful" is not a command).
+        while j < end and steps < 3 and (toks[j] in _FILLERS or (toks[j] in _DISCOURSE_MARKERS and doc.comma_after[j])
+                                         or (_NAME_SHAPE.match(doc.orig[j]) and toks[j] not in self.stop
+                                             and toks[j] not in self.imperatives and doc.comma_after[j]
+                                             and j + 1 < end)):
+            j += 1
+            steps += 1
+        if j >= end or toks[j] not in self.imperatives:
+            return False
+        nxt = toks[j + 1] if j + 1 < end else ""
+        if toks[j] in ("don't", "do") and nxt in ("you", "i", "we", "they"):
+            return False  # "Do you ...", a question without a question mark
+        if toks[j] == "fuck" and nxt not in _FUCK_OBJECTS:
+            return False
+        return True
 
     def _gender(self, doc: TextDoc, out: dict[str, Any]) -> None:
         n = doc.n
@@ -727,6 +779,7 @@ class Measurer:
         """The capitalised words counted as recurring names, and how often each occurs anywhere."""
         mid: Counter[str] = Counter()
         anywhere: Counter[str] = Counter()
+        after_the_in: Counter[str] = Counter()
         lower_counts = Counter(t for t, o in zip(doc.tokens, doc.orig) if o[:1].islower())
         for i, o in enumerate(doc.orig):
             base = o[:-2] if o.endswith(("'s", "’s")) else o
@@ -738,6 +791,9 @@ class Measurer:
             anywhere[base] += 1
             if not doc.sent_initial[i]:
                 mid[base] += 1
+            prev = doc.tokens[i - 1] if i > 0 else ""
+            if prev == "the" or (prev == "in" and base == o):
+                after_the_in[base] += 1
         names = []
         for name, cnt in mid.items():
             if cnt < 3:
@@ -745,6 +801,8 @@ class Measurer:
             lc = lower_counts.get(name.lower(), 0)
             if lc > 0.2 * (anywhere[name] + lc):
                 continue  # mostly an ordinary word that is sometimes capitalised
+            if after_the_in[name] >= 0.5 * anywhere[name]:
+                continue  # mostly "the X" or "in X": a place, organisation or title ("the Hilton", "in Denver")
             names.append(name)
         return names, anywhere
 

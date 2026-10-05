@@ -1,0 +1,30 @@
+# name: reader_address
+# label: Address to the reader (prototype)
+# description: Narration that speaks to the reader ("dear reader", "let me tell you", "as you can imagine").
+# notes: Phase 5 prototype only; counted in narration (outside quotation marks) only.
+dear reader
+dear readers
+gentle reader
+my readers
+you may be wondering
+you might be wondering
+you may wonder
+you might wonder
+you may ask
+you might ask
+let me tell you
+let me explain
+as you can imagine
+as you might imagine
+as you may know
+as you might know
+as you may have guessed
+as you might have guessed
+i must confess
+i have to admit
+i must admit
+believe me
+trust me
+i should explain
+i should mention
+i should point out

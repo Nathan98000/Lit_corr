@@ -1,0 +1,19 @@
+# name: intensifiers
+# label: Intensifiers (prototype)
+# description: Degree words that intensify (very, really, extremely, totally, absolutely).
+# notes: Phase 5 prototype only. "so" is left out (also "therefore"); "pretty" is left out (also an adjective).
+very
+really
+extremely
+incredibly
+totally
+absolutely
+completely
+utterly
+terribly
+awfully
+insanely
+ridiculously
+unbelievably
+seriously
+super

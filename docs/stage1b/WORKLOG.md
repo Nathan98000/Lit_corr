@@ -462,7 +462,7 @@ two later sentences, each at most four words.
 * Lexicons: every Phase 3d edit (from the batch-1 lexicon audit).
 
 To re-estimate on new stories only: draw a sample from the stories collected after this batch,
-`python -m litcorr.dev.review_sample NEW --only-new-since 2026-10-04 ...`, then make sheets from it,
+`python -m litcorr.dev.review_sample NEW --only-new-since data/dev/batch1_features.parquet ...`, then make sheets from it,
 `python -m litcorr.dev.fragment_check make passive|commands|commands_unflagged|names SHEET --sample NEW --seed 3`
 and `python -m litcorr.dev.handcheck make pov|tense|paratext ... --sample NEW`, judge them, and score them
 with `python -m litcorr.dev.handcheck score`.
@@ -534,3 +534,59 @@ weights are provisional while collection runs.
 `python -m litcorr refresh` = incremental build-raw + analyze + report, then a profile of every measure saved to
 `data/derived/profiles/<processed_at>/` (aggregate statistics only, no story keys; tested) and compared with
 the previous refresh (`latest_diff.md`). No export. Documented in README §5.
+
+---
+
+## Phase 5: New-measure candidates (2026-10-04)
+
+### Expectations, written before any candidate was computed
+
+Ranking by category **mean** (most candidates are zero in many stories, so medians tie). HIGH / LOW = top /
+bottom 6 of 30; ABOVE / BELOW = above / below the median of the 30 category means. "—" = no confident category
+expectation; such candidates are judged on precision, reliability and non-redundancy instead.
+
+| Candidate | Expectations |
+|---|---|
+| `open_dialogue` (story opens with speech) | LOW erotic-letters, reviews-and-essays, adult-how-to |
+| `open_sex_per_1k` (sexual terms in the first 500 words) | HIGH masturbation-stories, anal-sex-stories; LOW non-erotic-stories, reviews-and-essays, adult-romance |
+| `end_dialogue` (story ends on speech) | LOW erotic-letters, reviews-and-essays, adult-how-to |
+| `end_to_be_continued` | HIGH erotic-novels; LOW erotic-letters, adult-how-to |
+| `sex_scene_count` | HIGH group-sex-stories, erotic-novels; LOW non-erotic-stories, reviews-and-essays |
+| `sex_scene_share` | HIGH masturbation-stories, anal-sex-stories; LOW non-erotic-stories, adult-romance, reviews-and-essays |
+| `sex_first_scene_position` | HIGH adult-romance, erotic-novels; LOW masturbation-stories, anal-sex-stories |
+| `mech_lowercase_i_per_1k` | BELOW reviews-and-essays, erotic-novels |
+| `mech_lowercase_start_share` | BELOW reviews-and-essays |
+| `mech_missing_space_per_1k` | BELOW reviews-and-essays |
+| `mech_doubled_word_per_1k` (doubled function words) | BELOW reviews-and-essays |
+| `mech_confusions_per_1k` (its/it's, your/you're, "should of", "alot") | BELOW reviews-and-essays, erotic-novels |
+| `dlg_tag_variety` | —; expected correlation with `style_said_share` about −0.5 to −0.8 |
+| `dlg_adverb_tag_share` ("said softly") | —; expected positive correlation with `style_ly_adverbs_per_1k` |
+| `dlg_unattributed_share` (speech paragraphs with no tag) | HIGH adult-humor |
+| `dlg_switches_per_1k` (dialogue ↔ narration paragraph switches) | LOW erotic-letters, reviews-and-essays, adult-how-to |
+| `rel_consent_per_1k` (asking, checking in, safewords) | HIGH bdsm-stories, first-time-sex-stories; LOW non-erotic-stories |
+| `time_jump_per_1k` ("the next morning", "weeks later") | HIGH erotic-novels, adult-romance, loving-wives; LOW masturbation-stories, adult-how-to |
+| `reader_address_per_1k` ("dear reader", "let me tell you") | HIGH reviews-and-essays, adult-how-to |
+| `humor_per_1k` (laughing, joking) | HIGH adult-humor; LOW erotic-horror, non-consent-stories |
+| `setting_home_per_1k` | HIGH loving-wives |
+| `setting_public_per_1k` (bars, shops, hotels, offices) | HIGH exhibitionist-voyeur |
+| `setting_outdoors_per_1k` | HIGH exhibitionist-voyeur |
+| `title_sexual` (title contains a sexual term) | HIGH anal-sex-stories, group-sex-stories, masturbation-stories; LOW adult-romance, non-erotic-stories, science-fiction-fantasy |
+| `desc_pov` (blurb in first / second / third person) | erotic-letters HIGH first person; adult-how-to HIGH second person |
+| `style_elongated_per_1k` ("ohhh", "yesss", "mmmm") | HIGH masturbation-stories, group-sex-stories; LOW reviews-and-essays, non-erotic-stories, adult-how-to |
+| `style_intensifiers_per_1k` ("very", "really", "totally") | — |
+
+### Results (details and evidence in `NEW_MEASURES_PROPOSAL.md`)
+
+* 34 candidate columns prototyped on the 4,248 analysed stories
+  (`python -m litcorr.dev.prototype_measures run` / `report`; aggregate tables in `data/dev/proposal/`).
+* 51 of the 67 expectations above hold (desc_pov 2/2 included).
+* The failures are explained in the proposal; the main surprise is that reviews-and-essays is *less* polished
+  than average on lowercase "i", lowercase starts, missing spaces and doubled words.
+* Not proposed because redundant (|ρ| ≥ 0.85 with an existing measure): sexual terms in the first 500 words
+  (0.86 with `pace_sex_early`), scene share (0.97), scene concentration (0.86).
+* Prototype word lists were tightened for precision from their most frequent matches, never from the
+  known-group results:
+  * consent: generic questions were 48% of hits, hotel "check in"s were ~20% after that;
+  * settings: "outside", "park", "field", "bar", "train", "club" alone were removed.
+* One known-group result got worse as a consequence (first-time-sex-stories on consent language: 3rd → 7th).
+* 22 candidates proposed; **stopped here for approval** (nothing implemented).

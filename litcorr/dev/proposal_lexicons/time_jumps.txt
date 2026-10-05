@@ -1,0 +1,44 @@
+# name: time_jumps
+# label: Time jumps (prototype)
+# description: Phrases that skip ahead in time ("the next morning", "weeks later").
+# notes: Phase 5 prototype only.
+the next morning
+the next day
+the next night
+the next evening
+the next afternoon
+the next week
+the next weekend
+the next month
+the next year
+the following morning
+the following day
+the following night
+the following evening
+the following week
+the following weekend
+later that night
+later that day
+later that evening
+later that morning
+later that afternoon
+later that week
+hours later
+days later
+weeks later
+months later
+years later
+a few days later
+a few weeks later
+a few months later
+a few hours later
+a day later
+a week later
+a month later
+a year later
+some time later
+sometime later
+time passed
+the days passed
+the weeks passed
+the months passed

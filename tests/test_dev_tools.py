@@ -106,3 +106,19 @@ def test_fragment_check_shows_at_most_five_words_around_each_match():
     assert Measurer().command_segments(doc) == [0]
     names = Measurer().recurring_names(doc)[0]
     assert [fragment(doc, f"n{k}") for k in range(len(names))] == names
+
+
+def test_proposal_word_lists_load_and_contain_no_age_words():
+    from litcorr.dev.prototype_measures import PROTO_LEX_DIR
+    from litcorr.text.lexicons import load_lexicon
+
+    age = {"teen", "teens", "teenage", "teenager", "young", "younger", "youth", "little", "child", "children", "kid",
+           "kids", "minor", "underage", "school", "schoolgirl", "student", "barely", "campus", "dorm", "classroom"}
+    files = sorted(PROTO_LEX_DIR.glob("*.txt"))
+    assert len(files) >= 8
+    for f in files:
+        x = load_lexicon(f)
+        words = set(x.words) | {w for phs in list(x.phrases.values()) + list(x.exclusions.values()) for ph in phs
+                                for w in ph}
+        assert x.n_entries > 0 and not (words & age), (f.name, words & age)
+        assert not any(p.startswith(a) or a.startswith(p) for p in x.prefixes for a in age), f.name

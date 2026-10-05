@@ -1,0 +1,36 @@
+# name: humor_levity
+# label: Humour and levity (prototype)
+# description: Laughing, joking and amusement (laugh, giggle, chuckle, joke, funny).
+# notes: Phase 5 prototype only. "Teasing" is left out (in this corpus it is mostly sexual); smiles are left out (they are in the positive-emotion list).
+laugh
+laughs
+laughed
+laughing
+laughter
+giggl*
+chuckl*
+snicker*
+guffaw*
+chortl*
+joke
+jokes
+joked
+joking
+jokingly
+jokester
+funny
+funnier
+funniest
+hilarious
+hilariously
+amused
+amusing
+amusement
+witty
+humor
+humour
+humorous
+lol
+haha
+hahaha
+hehe

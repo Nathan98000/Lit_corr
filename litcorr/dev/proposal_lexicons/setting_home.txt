@@ -1,0 +1,30 @@
+# name: setting_home
+# label: Home settings (prototype)
+# description: Rooms and places of a home (bedroom, kitchen, couch, shower, apartment).
+# notes: Phase 5 prototype only.
+bedroom
+bedrooms
+kitchen
+living room
+dining room
+guest room
+bathroom
+shower
+bathtub
+couch
+sofa
+garage
+basement
+attic
+hallway
+backyard
+porch
+laundry room
+apartment
+condo
+at home
+my house
+his house
+her house
+their house
+our house

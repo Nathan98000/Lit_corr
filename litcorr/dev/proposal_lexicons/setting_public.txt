@@ -1,0 +1,46 @@
+# name: setting_public
+# label: Public and commercial settings (prototype)
+# description: Bars, clubs, restaurants, hotels, shops, gyms, offices and transport.
+# notes: Phase 5 prototype only. Places of education are left out on purpose. "bar", "train" and "club" alone are left out (metal bar, to train someone, golf club); only their place phrases count.
+pub
+nightclub
+restaurant
+cafe
+coffee shop
+diner
+hotel
+motel
+hotel room
+store
+shop
+mall
+supermarket
+gym
+locker room
+theater
+theatre
+cinema
+movie theater
+library
+museum
+office
+conference room
+elevator
+airport
+airplane
+plane
+bus
+subway
+parking lot
+public
+in public
+crowd
+crowded
+at the bar
+to the bar
+in the bar
+behind the bar
+bartender
+the club
+on the train
+train station

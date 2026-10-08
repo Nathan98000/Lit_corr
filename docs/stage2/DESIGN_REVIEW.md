@@ -1,7 +1,8 @@
 # Stage 2 design review
 
-*Phases 0–3 of `STAGE2_DESIGN_REVIEW_PROMPT.md`, 8 October 2026. Nothing in `site/` or `litcorr/` has been changed.
-This is the report and the proposals; implementation waits for your approval (section 7).*
+*Phases 0–3 of `STAGE2_DESIGN_REVIEW_PROMPT.md`, 8 October 2026. **Status: approved and implemented** on branch
+`design-review` (October 8, 2026), following `STAGE2_DESIGN_IMPLEMENTATION_PROMPT.md`. Sections 1–7 are the review as
+written; what changed, with before and after numbers, is in section 8.*
 
 - **Screenshots** are in [`design-review/`](design-review/): `b…` files are the current site (baseline), `m…`
   files are mock-ups of proposals.
@@ -695,3 +696,205 @@ not a library), so it is your call (question 4).
 | Clear titles and axes | Passes, apart from the loading flip (F5) and one-group titles (F17) | passes |
 | Tooltips are understandable | Desktop yes; **touch no**; compare = browser `title` only | values printed on the chart; tap to pin |
 | Nothing implies causation | Charts and notes pass; **the headline frames a causal question** (F10) | passes |
+
+
+---
+
+## 8. Before and after
+
+Implemented on branch `design-review` (16 commits, not pushed). All three checks pass at every commit:
+`npm test` (64 tests, was 18), `npm run build`, `python -m pytest tests/test_stage2_site_data.py` (18 tests, was 13).
+Measurements use the same method as section 2: the built site served with gzip, headless Chromium at 320×568,
+375×667, 768×1024 and 1440×900, and the same throttling (fast 4G 9 Mbps/60 ms; slow 4G 1.6 Mbps/150 ms with a 4×
+slower CPU; 3G 400 kbps/300 ms).
+
+### 8.1 Headline numbers
+
+| Measure | Before | After |
+|---|---|---|
+| Top of the page to the plot, 320 × 568 | 1,423 px (2.5 screens) | 575 px (1.0); first row ends at 661 px |
+| Top of the page to the plot, 375 × 667 | 1,282 px (1.9 screens) | 532 px (0.8); **first chart row visible** (ends at 618 px) |
+| Top of the page to the plot, 768 × 1024 | 988 px | 499 px |
+| 1440 × 900 | plot starts at 998 px, below the fold | **whole default chart on screen** (plot 533–886 px) |
+| Tab stops before the chart | 23 | 9 (skip link, name, 3 nav links, genre, measure, characteristic, only include) |
+| Cumulative layout shift, first load | 0.92 at every speed | 0.00 at every speed (0.002 after changing views) |
+| First load, gzipped | 126 KB, 6 requests | 154.7 KB (budget 155): JS 92.6 KB (+3 KB), CSS 6.2 KB, font 21.5 KB, meta 19.2 KB, chart 18.0 KB |
+| First chart: local / fast 4G / slow 4G / 3G | 0.24 / 0.84 / 2.16 / 4.69 s | 0.06 / 0.89 / 2.02 / 4.68 s |
+| Largest contentful paint | 0.13 / 0.44 / 1.16 / 2.80 s | 0.06 / 0.29 / 1.02 / 3.17 s (the heading font now arrives with the first screen) |
+| New characteristic (one file, 17.6 KB) | 0.05–0.82 s with a "Loading…" flash and a wrong title | 0.04 / 0.11 / 0.27 / 0.69 s; the previous chart stays, dimmed, until the new one is ready |
+| New genre or measure (same file) | ≤ 0.09 s, jump | ≤ 0.02 s, marks glide for 250 ms (none under reduced motion) |
+| Overlapping chart labels | default view, months and author counts on phones | none: tested for every characteristic × 10 measures × 4 genres at 320 and 375 px on the real data (estimated text boxes) |
+| Horizontal page scroll | compare table, numbers table, brand wrap at 320 | none at 320, 375, 768, 1440 or 200% zoom, for all the views in 2.2 plus Patterns, the age check and How it works |
+| Smallest text | 11 px (step numbers) | 11.5 px (group labels under "All genres" on desktop genre cards); 12 px ticks elsewhere |
+
+**Taps to change each control** (phone): genre 2 (unchanged, native list); measure 2 (menu, each with one-line help;
+was 2 plus an "i" that did not open); characteristic 2 from Popular or search, 3 through a topic (was 2–3 plus
+guesswork, and each tab loaded an arbitrary chart); only include 2; compare all genres 1; a genre while comparing 1;
+back to one genre 1; example question 1; story-age check 1; switch a total to its per-month version 1.
+
+**Touch targets** (height of the tap area): every button, chip, menu option, disclosure and nav item ≥ 44 px; the
+words of the sentence and "Only include" keep their text size but have 44 px tall tap areas; How it works contents
+links 40 px on desktop (44 px on phones). Was 17–36 px for the "i", chips, tabs, toggles and links.
+
+**Color pairs** (WCAG 2.1): every text pair passes 4.5:1 (lowest: muted text 5.0, warm "tends lower" 5.1, links on the
+age box 5.3); every graphical mark and control boundary passes 3:1 (median dot on its bar 4.1, bar outline 3.3,
+control borders 3.3, dots on the genre-card band 4.9, small-group outlines 3.3, focus ring 5.4); compare-table text
+on the stepped fills 8.1–14.1. Before: five failures (section 2.3).
+
+### 8.2 The five tasks again
+
+1. **First-time visitor on a phone.** The first screen states the question as a sentence, the answer in a heading and
+   a takeaway with two numbers, and the first chart row. Values are printed beside each dot, so nothing needs a
+   tooltip; a tap pins the details (mean, middle half, age). Exploring further is the sentence itself or "Try
+   another question" below the chart.
+2. **Writer in Romance.** Genre (2 taps), characteristic (2 taps: "Present-tense narration" is in Popular, or type
+   "tense"). Answer: "Too few stories to judge a pattern", typical story 0.22 against 0.53, with an age box ("15 years
+   against 10") and "Check stories of similar age" (1 tap) showing 2000–2009, 2010–2019 and 2020+ side by side, each
+   with its count and verdict. The useful all-genres view is one tap away ("In Romance" → All genres) or through
+   "Compare all 30 genres".
+3. **Comparing genres.** "Compare all 30 genres" (1 tap), measure → Views (2 taps): the totals box offers "Switch to
+   views per month" (1 tap), and the heading answers "Tends higher in 18 of 30 genres, tends lower in none, no clear
+   pattern in 12." Cards fit two per row on a phone with the verdict under each name; no sideways scrolling.
+4. **Sceptic.** "What “Sexual language” measures" → "How was this measured?" opens How it works at Explicitness;
+   "Why no clear pattern?" opens "When a title says ‘tend to’"; every row shows its number of stories, and the
+   numbers table (always in the page) gives median, middle half, mean and typical age.
+5. **Keyboard and screen reader.** 9 tab stops to the chart; the skip link lands on the question; chart rows are
+   focusable with a visible ring, each with a full spoken label; the chart is a named group with a one-sentence
+   summary, the numbers table follows it; the answer is announced once, after the data has loaded; menus follow the
+   combobox and listbox patterns, Escape returns focus to the slot that opened them.
+
+### 8.3 Every finding and idea
+
+| ID | What changed | Commit | Before → after |
+|---|---|---|---|
+| F1 | Rows instead of columns (C2): labels above the bars on phones, a label column wider; thinned ticks | 7387ca5 | overlaps in the default view → none on real data |
+| F2 | Concept B: kicker, question sentence, answer, chart; examples below the chart | 780c733 | plot at 1,282 px → 532 px (375 × 667) |
+| F3 | Search-first picker with Popular and eight topics; tabs gone; synonyms | 0702877, 4912fce | 3 taps + guesswork → 2 taps |
+| F4 | Measure menu with one-line help replaces the "i" (which now also opened on click until it was removed) | 123ec67, 4912fce | help unreachable by tap → in the menu |
+| F5 | The shown chart stays until the next has loaded; wording only from loaded data | 4a02284 | wrong title and "too few" flash → none |
+| F6 | Genre cards (D2); repaired table with steps, a neutral band and no color under 30 stories (D1) | 95b0129 | noise colored like findings → dots against a band |
+| F7 | Cards two per row on phones; sticky genre names and the verdict second in the table | 95b0129 | sideways scroll → none |
+| F8 | Age warnings as boxes with actions, three disclosures, margin notes on desktop | 48bb257 | 592 px, 161 words under the chart → age box + three 48 px rows |
+| F9 | Values printed on the chart; a tap pins the details; compare cells show their numbers on tap or focus | 7387ca5, 95b0129 | tooltip closed on tap → pinned |
+| F10 | "What do popular Literotica stories have in common?" | d7c1c78 | causal framing → descriptive |
+| F11 | 2 px focus ring on chart rows | 123ec67, 7387ca5 | 6% tint → ring |
+| F12 | Named group + summary; focusable labelled rows; numbers table always present | 7387ca5 | title only → data available |
+| F13 | Token fixes from section 4 (plus small-cell outlines in the control color) | 123ec67, 5ef0fc2 | 5 contrast failures → 0 |
+| F14 | 44 px targets everywhere | 123ec67, 5ef0fc2 | 17–36 px → ≥ 44 px |
+| F15 | Frame, headline and placeholder before the data; `main` one screen tall; width measured before paint | 4a02284, 5ef0fc2 | CLS 0.92 → 0.00 |
+| F16 | No "Loading…" box after the first chart; dim instead of jump | 4a02284 | 75–122 px jumps → none during loading |
+| F17 | "Too few stories to compare here" and "Only “Past tense” has enough stories in this selection (102)." with All genres / All stories buttons | 7387ca5 | comparative title on one group → honest |
+| F18 | "Compare all 30 genres →" and "← Back to one genre"; "Genre by genre, how do …" | 48bb257, 4912fce | "One genre: All genres" → gone |
+| F19 | Example questions name the measure they open; under "Try another question" | 0702877, 780c733 | mismatched → matched |
+| F20 | US English everywhere, US dates; "How it works" in nav and footer; "genre" with one note on "categories" | 0702877, d7c1c78, 86a8007 | mixed → US; tests scan for UK spellings |
+| F21 | Plural-aware pacing, "the number of …", "the use of ‘we / us / our’", "the share of dialogue paragraphs" | 0702877 | slips → read through all 935 generated titles |
+| F22 | "Story Patterns", one constant, never wraps | 780c733 | wrapped at 320 px → one line |
+| F23 | Compact ticks on phones (60k, 800k), margin from the first tick label | 7387ca5 | "800,000" 4 px from the edge → "800k" inside |
+| F24 | No mean marker; mean in details and table | 7387ca5 | four encodings → two plus a line |
+| F25 | One number of decimals per axis and column; "0.10–0.66" | 8942b1e | "1" next to "1.5" → "1.0", "1.5" |
+| F26 | Numbers table: cards on phones | 7387ca5 | 560 px min width → no scroll |
+| F27 | How it works: In short, contents, section routes, links from charts | 86a8007 | 4,700 px wall, unlinkable → linkable sections |
+| F28 | Reduced motion honored in CSS and JS (scrolling, glide, fades) | 123ec67, 1a500b8 | smooth scroll always → only when allowed |
+| F29 | Favicon from the chart's mark | 123ec67 | analytics bars → capsule and dot |
+| F30 | Source Serif 4 600, self-hosted, headings only | 123ec67 | system fallbacks → the same face everywhere |
+| F31 | No form grid any more; checked at 768 px | 780c733 | cut select → sentence |
+| F32 | "We couldn’t load the data. Check your connection and try again." + Try again | 8942b1e | technical message → retry |
+| F33 | "Link copied", or the address selected in a read-only field | 8942b1e | silent failure → fallback |
+| F34 | Default kept; the similar-age check answers its age warning | 48bb257 | caveat → check |
+| F35 | "Only include"; conflicting options disabled with the reason in the option | 4912fce | one-group views by accident → prevented |
+| F36 | Glossary by topic, 44 px headings, filter box, "See the chart" | 86a8007 | 25 px headings → 44 px, searchable |
+| I1 | Stories of similar age: three periods, one shared scale, in the address (`check=age`) | 48bb257 | |
+| I2 | Next questions: per-month version of totals, next two in the topic, link to Patterns | 48bb257, b01bf2e | |
+| I3 | 250 ms glide for genre and measure changes; 150 ms cross-fade for a new characteristic | 1a500b8 | |
+| I4 | Patterns page and `patterns.json` (11 KB gzipped) | b01bf2e | |
+| I5 | Favicon, values on the chart, row emphasis on hover/focus, fades | 123ec67, 1a500b8 | |
+
+### 8.4 After screenshots
+
+Each image shows 375 px (left, full size) and 1440 px (right, half size).
+
+| View | Screenshot |
+|---|---|
+| First screen | [a01](design-review/a01-first-screen-375-1440.png) |
+| Ranged characteristic (default) | [a02](design-review/a02-default-chart-375-1440.png) |
+| Yes/no characteristic | [a03](design-review/a03-yes-no-375-1440.png) |
+| 12 groups (month) | [a04](design-review/a04-month-375-1440.png) |
+| Compare genres (views per month) | [a05](design-review/a05-compare-375-1440.png) |
+| Compare, 12 groups | [a06](design-review/a06-compare-month-375-1440.png) |
+| One group left | [a07](design-review/a07-one-group-375-1440.png) |
+| Small genre (How To) | [a08](design-review/a08-small-genre-375-1440.png) |
+| Large values | [a09](design-review/a09-large-values-375-1440.png) |
+| Stories of similar age | [a10](design-review/a10-age-check-375-1440.png) |
+| Patterns | [a11](design-review/a11-patterns-375-1440.png) |
+| How it works | [a12](design-review/a12-how-it-works-375-1440.png) |
+| Characteristic picker | [a13](design-review/a13-picker-375-1440.png) |
+
+![First screen after](design-review/a01-first-screen-375-1440.png)
+
+![Compare genres after](design-review/a05-compare-375-1440.png)
+
+### 8.5 Judgment calls
+
+Decisions the implementation prompt left open, with one line of reasoning each.
+
+1. **Compare-mode heading** is the compare summary ("Tends higher in 18 of 30 genres, …"), or "Each group on its own"
+   for characteristics without order: it is the answer to the question the sentence asks; the full compare title
+   stays as the page title.
+2. **"Compare all 30 genres"** sits once, in the action row under the chart; next questions are the per-month version
+   (for totals) and the next two characteristics, plus a separate link to Patterns, to avoid three copies of one button.
+3. **Label column** is `min(220, max(110, 25% of width, longest label))` px, so long labels such as "First part or
+   stand-alone" never run off the left edge.
+4. **Group sizes** read "2,708 stories" beside the label on wider screens and "n = 2,708" on phones (space);
+   hidden groups "fewer than 10" (or "n < 10" in the 64 px column).
+5. **Ticks** use steps of 1, 2, 2.5 or 5 and are thinned until their labels fit, so a narrow plot can show 3 ticks.
+6. **One number of decimals** for all printed medians of a chart; the takeaway uses the same.
+7. **Sentence weight**: only the 600 weight ships, so the sentence uses 600 at clamp(23 px, 3.9 vw, 37 px).
+8. **"Explore" nav item** is hidden below 400 px (the name links to the explorer too), so three items never wrap.
+9. **"Only include" conflicts**: the reason is in the disabled option ("Under 2,000 words (not with word count)") and a
+   visually hidden note; a conflicting option in a shared address falls back to All stories.
+10. **Similar-age panel** uses one value scale for the three periods, so the charts compare at a glance; it is offered
+    only in one-genre mode with All stories, as specified.
+11. **Age boxes order**: "groups differ in age" first, then "totals grow", matching the review's E1 mock-up.
+12. **Descriptions** no longer say "(see the methodology page)", since every chart links to the right section.
+13. **Topics**: Narration opens with the general characteristics (perspective, tense, talking to the reader) before
+    the pronoun counts; Sexual content keeps its four pacing items (the review's table); its sub-group is called
+    "Amount & variety" to avoid repeating the topic name.
+14. **Renamed labels**: "Romance language" (clashed with the genre), "Word variety (type–token ratio)", "General sexual
+    words" (was "Other sexual vocabulary"), "Focus on one main name", "Where action verbs peak".
+15. **Patterns page**: each item shows the characteristic's name above its sentence so the alphabetical order is
+    visible; "the other M don't" includes characteristics with too few stories to judge (they are named as such
+    when "Show the ones with no clear pattern too" is on).
+16. **patterns.json format**: one character per characteristic (`a`–`i` = direction × strength, `.` = not computed)
+    in meta.json's order, with the key in the file; the smallest form that holds exactly the approved fields.
+17. **Slots** are inline `span role="button"` elements, because a real `<button>` cannot wrap like text and broke the
+    sentence into blocks for long characteristics.
+18. **Small table cells** use the control color for their dashed outline: the specified `#b5b0a6` is 2.1:1, below the
+    3:1 rule for boundaries.
+19. **The synthetic handoff** gained views per month so the tests cover the totals → per-month switch.
+20. **"Shared-link text"** is taken to be the page title (what a bookmark or a shared tab shows); Copy link copies the
+    address only.
+21. **Takeaway with a hidden end group**: "Typical story: 0.89 for “7,000+”; “Under 2,000” has too few stories."
+22. **Compare summary with zero**: "tends lower in none"; "tends higher in none of 30 genres".
+23. **Picker keys**: Home and End move between options (not the caret), as the prompt lists them with the arrows.
+24. **First-load budget**: `meta.json` is written without indentation and the glide interpolates plain numbers, to stay
+    within 155 KB with the font.
+25. **Contents links** on How it works are 40 px tall in the desktop sidebar (pointer use) and 44 px on phones.
+
+### 8.6 Still open
+
+- **Dark mode**: not in this round, as decided; every color is a CSS variable, so it can be added.
+- **Real devices and screen readers**: everything was checked in headless Chromium (with touch emulation) and with
+  Testing Library; not on a physical iPhone or Android phone, and not with VoiceOver, TalkBack or NVDA.
+- **Swipe down to close the bottom sheet** (optional in the prompt) is not implemented; Close, Escape and a tap on the
+  dimmed page close it.
+- **Story counts near the chart**: the kicker says 8,996 stories, the default chart 8,987 (stories with both
+  measures). How it works explains it under "Missing data"; nothing next to the chart does yet.
+- **Long genre names** are cut with an ellipsis on two-column phone cards (e.g. "Fan Fiction & Celebr…"); the full
+  name is in the card's accessible name and title, and on the chart it opens.
+- **Budget headroom**: the first load is 154.7 KB of the 155 KB budget.
+
+### 8.7 Not done, on purpose
+
+- No log scale for totals (section 6.3): the per-month and per-1,000-views switches address age instead.
+- No mean marker anywhere on the chart (decision 6).
+- Nothing on the Patterns page or the genre cards is ordered by a result.

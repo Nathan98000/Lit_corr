@@ -251,7 +251,8 @@ cd site && npm install && npm run dev
 ```
 
 `site-data` reads only the newest handoff zip and writes the small summaries the website needs (no story-level
-data). The website itself is a static React + Vite app: see [site/README.md](site/README.md) for development,
+data), including `patterns.json`, the existing pattern verdicts collected for the site's Patterns page. The website,
+*Story Patterns* ("What do popular Literotica stories have in common?"), is a static React + Vite app: see [site/README.md](site/README.md) for development,
 tests and deployment to Vercel or Netlify.
 
 ---

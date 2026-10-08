@@ -78,6 +78,14 @@ describe("addresses", () => {
     const state = { mode: "compare", genre: "adult-romance", metric: "pop_views", v: "story_words", sub: "y2020" };
     expect(parseHash(toHash("explore", state))).toEqual({ page: "explore", state });
     expect(parseHash("#/methodology").page).toBe("methodology");
+    expect(parseHash("#/methodology/tend-to")).toMatchObject({ page: "methodology", section: "tend-to" });
+    expect(parseHash("#/patterns?genre=adult-romance&metric=pop_views")).toEqual({
+      page: "patterns",
+      state: { genre: "adult-romance", metric: "pop_views" },
+    });
+    expect(toHash("methodology", { section: "explicitness" })).toBe("#/methodology/explicitness");
+    expect(toHash("patterns", { genre: "all", metric: "pop_views", v: "x" })).toBe("#/patterns?genre=all&metric=pop_views");
+    expect(parseHash("#/explore?var=story_words&check=age").state.check).toBe("age");
     expect(parseHash("").page).toBe("explore");
   });
   it("replaces anything the data does not know about", () => {
@@ -161,14 +169,16 @@ describe("chart titles", () => {
 
   it("warns about story age for totals and when groups differ in age", () => {
     const views = m("pop_views");
-    expect(ageNotes({ metric: views, ends: null })[0]).toMatch(/Totals grow with time online/);
+    expect(ageNotes({ metric: views, ends: null })[0]).toMatchObject({ kind: "total", lead: "Totals grow with time online." });
+    expect(ageNotes({ metric: views, ends: null })[0].text).toBe("Older stories have had longer to collect views.");
     const ends = [
       { label: "Low", stats: { age: 12 } },
       { label: "High", stats: { age: 4 } },
     ];
     const notes = ageNotes({ metric: m("pop_fav_per_1k_views"), ends });
     expect(notes).toHaveLength(1);
-    expect(notes[0]).toMatch(/“Low” has been online 12 years, in “High” 4 years/);
+    expect(notes[0].kind).toBe("groups");
+    expect(notes[0].text).toMatch(/“Low” has been online 12 years, in “High” 4 years\. Age goes with popularity too, so it can shape this chart\.$/);
     expect(ageNotes({ metric: m("pop_fav_per_1k_views"), ends: [ends[0], { label: "x", stats: { age: 11 } }] })).toEqual([]);
   });
 });

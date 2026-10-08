@@ -73,26 +73,64 @@ export function patternNote({ variable, direction, effect, compare = false, show
   return "No clear pattern: the groups differ only a little, or not consistently enough to sum up in a sentence.";
 }
 
-/** Notes about story age: totals grow with time online, and groups can differ in age. */
+// Totals and the measure that makes old and new stories easier to compare.
+export const RATE_FOR = {
+  pop_views: "pop_views_per_month",
+  pop_favorites: "pop_fav_per_1k_views",
+  pop_comments: "pop_comments_per_1k_views",
+  pop_rating_count: "pop_ratings_per_1k_views",
+};
+
+/**
+ * Story-age warnings, shown as boxes: { kind: "total" } when the measure is a total that grows with time online,
+ * and { kind: "groups" } when the end groups differ a lot in age. Each has a bold lead and a sentence.
+ */
 export function ageNotes({ metric, ends }) {
   const notes = [];
-  if (metric.age) {
-    notes.push(`Totals grow with time online, so older stories have had longer to collect ${metric.noun}. ` +
-      "Views per month and the per-1,000-views measures make old and new stories easier to compare.");
-  }
   if (ends) {
     const [a, b] = ends.map((r) => r.stats.age);
     if (a != null && b != null) {
       const lo = Math.min(a, b);
       const hi = Math.max(a, b);
       if (hi - lo >= 2 && hi >= 1.4 * Math.max(lo, 0.5)) {
-        notes.push(`The groups also differ in age: the typical story in “${ends[0].label}” has been online ` +
-          `${fmtYears(a)}, in “${ends[1].label}” ${fmtYears(b)}. Age goes with popularity too, so it can ` +
-          "shape this chart. To compare stories of similar age, use a “Published …” option under Stories included.");
+        notes.push({
+          kind: "groups",
+          lead: "Story age.",
+          text:
+            `The groups also differ in age: the typical story in “${ends[0].label}” has been online ` +
+            `${fmtYears(a)}, in “${ends[1].label}” ${fmtYears(b)}. Age goes with popularity too, so it can ` +
+            "shape this chart.",
+        });
       }
     }
   }
+  if (metric.age) {
+    notes.push({
+      kind: "total",
+      lead: "Totals grow with time online.",
+      text: `Older stories have had longer to collect ${metric.noun}.`,
+    });
+  }
   return notes;
+}
+
+/** The section of “How it works” that explains how a characteristic was measured. */
+export function methodSection(variable) {
+  const id = variable.id;
+  if (/^(pov_|narr_|reader_address)/.test(id)) return "point-of-view";
+  if (/^(sex_|pace_sex_)/.test(id)) return "explicitness";
+  if (/^(emo_|humor_|psy_|hedge_|rel_|agency_)/.test(id)) return "emotion";
+  return "measures";
+}
+
+/** One short paragraph on how to read the one-genre chart. */
+export function howToRead({ smallN }) {
+  return (
+    "Each row is a group of stories. The dot is the typical story (the median: half the stories score higher, " +
+    "half lower) and its value is printed beside it; the bar spans the middle half of stories. The dashed line " +
+    `is the typical story among all stories shown. Hatched bars with hollow dots hold fewer than ${smallN} ` +
+    "stories and deserve less trust."
+  );
 }
 
 function fmtYears(y) {

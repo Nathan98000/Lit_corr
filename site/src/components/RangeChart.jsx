@@ -33,7 +33,18 @@ function rowDetails(row, format, minN) {
  * half of stories as a capsule, the typical story (median) as a dot with its value printed, and a dashed line for
  * all stories shown. Rows are focusable; hover, focus or a tap shows the details (a tap pins them).
  */
-export default function RangeChart({ rows, overall, metric, variable, smallN, minN, title, n, compact = false }) {
+export default function RangeChart({
+  rows,
+  overall,
+  metric,
+  variable,
+  smallN,
+  minN,
+  title,
+  n,
+  compact = false,
+  domainRows = null,
+}) {
   const [ref, width] = useWidth(720);
   const [active, setActive] = useState(null); // index of the row whose details are shown
   const [pinned, setPinned] = useState(false);
@@ -43,7 +54,7 @@ export default function RangeChart({ rows, overall, metric, variable, smallN, mi
   const descId = `${ids}-desc`;
   const hatchId = `${ids}-hatch`.replace(/:/g, "");
 
-  const layout = rangeLayout({ rows, overall, format: metric.format, width, smallN, minN });
+  const layout = rangeLayout({ rows, overall, format: metric.format, width, smallN, minN, domainRows });
   const anySmall = layout.rows.some((r) => r.small);
   const shownCount = layout.rows.filter((r) => r.ok).length;
 

@@ -3,6 +3,7 @@ import { cellStats, endGroups, groupRows, loadVariable, pattern } from "../lib/d
 import { chartValueText } from "../lib/rangeLayout.js";
 import {
   ASSOCIATION_NOTE,
+  RATE_FOR,
   ageNotes,
   answerHeading,
   chartTitle,
@@ -11,12 +12,16 @@ import {
   subtitle,
   takeawaySegments,
 } from "../lib/wording.js";
+import { toHash } from "../lib/urlState.js";
+import AgeCheck from "./AgeCheck.jsx";
+import ChartNotes from "./ChartNotes.jsx";
 import CompareTable from "./CompareTable.jsx";
 import Controls from "./Controls.jsx";
 import CopyLink from "./CopyLink.jsx";
 import LoadError from "./LoadError.jsx";
 import NumbersTable from "./NumbersTable.jsx";
 import RangeChart from "./RangeChart.jsx";
+import useMediaQuery from "./useMediaQuery.js";
 
 const fileKey = (s) => `${s.v}/${s.sub}`;
 
@@ -68,7 +73,7 @@ export function describeView(meta, view, data) {
   const shownRows = rows.filter((r) => r.stats && !r.stats.suppressed);
   const shownCount = shownRows.length;
   const pNote = patternNote({ variable, direction, effect, compare, shown: shownCount });
-  const notes = [pNote, ...ageNotes({ metric, ends: !compare && readable ? endGroups(rows) : null })];
+  const ageWarnings = ageNotes({ metric, ends: !compare && readable ? endGroups(rows) : null });
   const valueText = chartValueText(rows, overall, metric.format);
   const answer = compare ? title : answerHeading({ variable, metric, genre, direction, effect, shown: shownCount });
   const takeaway = compare || shownCount < 2 ? null : takeawaySegments({ variable, rows, valueText });
@@ -87,7 +92,8 @@ export function describeView(meta, view, data) {
     effect,
     title,
     sub,
-    notes,
+    ageNotes: ageWarnings,
+    readable,
     pNote,
     answer,
     takeaway,
@@ -96,15 +102,48 @@ export function describeView(meta, view, data) {
   };
 }
 
-/** The takeaway line: plain text with the numbers in bold. */
-function Takeaway({ segments, note }) {
+/** The takeaway line: plain text with the numbers in bold, then how clear the pattern is. */
+function Takeaway({ segments, note, why }) {
   return (
     <p className="takeaway">
       {segments &&
         segments.map((seg, i) => (typeof seg === "string" ? seg : <strong key={i}>{seg.strong}</strong>))}{" "}
       {note && <span className="takeaway-note">{note}</span>}
+      {why && (
+        <>
+          {" "}
+          <a className="why" href={toHash("methodology", { section: "tend-to" })}>
+            Why no clear pattern?
+          </a>
+        </>
+      )}
     </p>
   );
+}
+
+/**
+ * Next questions (idea I2): the per-month or per-1,000-views version when the measure is a total, and the next
+ * two characteristics in the same topic's order. Never chosen by their results.
+ */
+export function nextQuestions(meta, view) {
+  const out = [];
+  const metric = meta.metrics.find((m) => m.id === view.metric);
+  const rateId = RATE_FOR[metric.id];
+  const rate = rateId && meta.metrics.find((m) => m.id === rateId);
+  if (rate) {
+    out.push({ key: "rate", text: `The same chart with ${rate.label.toLowerCase()}`, state: { ...view, metric: rate.id } });
+  }
+  const variable = meta.variables.find((v) => v.id === view.v);
+  const topic = meta.topics.find((t) => t.id === variable.topic);
+  if (topic && topic.ids.length > 1) {
+    const i = topic.ids.indexOf(variable.id);
+    const picks = [1, 2].map((j) => topic.ids[(i + j) % topic.ids.length]).filter((id) => id !== variable.id);
+    for (const id of [...new Set(picks)]) {
+      const v = meta.variables.find((x) => x.id === id);
+      out.push({ key: id, text: `${v.label}`, prefix: `Next in ${topic.label}: `, state: { ...view, v: id, check: undefined } });
+    }
+  }
+  return out;
 }
 
 export default function Explorer({ meta, state, onChange }) {
@@ -112,10 +151,17 @@ export default function Explorer({ meta, state, onChange }) {
   const d = view ? describeView(meta, view, data) : null;
   const [showNumbers, setShowNumbers] = useState(false);
   const numbersId = useId();
+  const wide = useMediaQuery("(min-width: 900px)");
+  const genreCount = meta.genres.length - 1;
 
   useEffect(() => {
     if (d && !busy) document.title = d.title;
   }, [d?.title, busy]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const ageCheckOpen = Boolean(
+    d && !d.compare && view.check === "age" && view.sub === "all" && d.ageNotes.some((n) => n.kind === "groups"),
+  );
+  const next = view && !d?.compare ? nextQuestions(meta, view) : [];
 
   return (
     <section className="explorer" id="explore" aria-label="Explorer">
@@ -135,89 +181,117 @@ export default function Explorer({ meta, state, onChange }) {
             <h2 className="chart-title">{d.answer}</h2>
             <p className="chart-sub">{d.sub}</p>
           </header>
-          {!d.compare &&
-            (d.oneGroup ? (
-              <div className="takeaway one-group">
-                <p>{oneGroupNote(d.oneGroup)}</p>
-                {(view.genre !== "all" || view.sub !== "all") && (
-                  <p className="inline-actions">
-                    {view.genre !== "all" && (
-                      <button type="button" className="btn" onClick={() => onChange({ ...state, genre: "all" })}>
-                        All genres
-                      </button>
-                    )}
-                    {view.sub !== "all" && (
-                      <button type="button" className="btn" onClick={() => onChange({ ...state, sub: "all" })}>
-                        All stories
-                      </button>
-                    )}
-                  </p>
-                )}
-              </div>
-            ) : (
-              d.shownCount > 0 && <Takeaway segments={d.takeaway} note={d.pNote} />
-            ))}
           {d.compare ? (
-            <CompareTable
-              meta={meta}
-              variable={d.variable}
-              varData={data}
-              k={d.k}
-              metric={d.metric}
-              smallN={meta.small_n}
-              minN={meta.min_n}
-              onPickGenre={(id) => onChange({ ...state, mode: "one", genre: id })}
-            />
-          ) : (
             <>
-              <RangeChart
-                rows={d.rows}
-                overall={d.overall}
-                metric={d.metric}
+              <CompareTable
+                meta={meta}
                 variable={d.variable}
+                varData={data}
+                k={d.k}
+                metric={d.metric}
                 smallN={meta.small_n}
                 minN={meta.min_n}
-                title={d.title}
-                n={d.gd?.n}
+                onPickGenre={(id) => onChange({ ...state, mode: "one", genre: id })}
               />
-              <NumbersTable
-                id={numbersId}
-                rows={d.rows}
-                overall={d.overall}
-                metric={d.metric}
-                minN={meta.min_n}
-                visible={showNumbers}
-                caption={`The numbers behind the chart: ${d.title}`}
-              />
+              <div className="notes">
+                <p>{d.pNote}</p>
+                <p className="association">{ASSOCIATION_NOTE}</p>
+              </div>
+              <div className="chart-actions">
+                <CopyLink />
+              </div>
             </>
+          ) : (
+            <div className={`answer-grid${wide ? " wide" : ""}`}>
+              <div className="answer-main">
+                {d.oneGroup ? (
+                  <div className="takeaway one-group">
+                    <p>{oneGroupNote(d.oneGroup)}</p>
+                    {(view.genre !== "all" || view.sub !== "all") && (
+                      <p className="inline-actions">
+                        {view.genre !== "all" && (
+                          <button type="button" className="btn" onClick={() => onChange({ ...state, genre: "all" })}>
+                            All genres
+                          </button>
+                        )}
+                        {view.sub !== "all" && (
+                          <button type="button" className="btn" onClick={() => onChange({ ...state, sub: "all" })}>
+                            All stories
+                          </button>
+                        )}
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  d.shownCount > 0 && (
+                    <Takeaway
+                      segments={d.takeaway}
+                      note={d.pNote}
+                      why={d.readable && !d.direction && d.effect != null}
+                    />
+                  )
+                )}
+                <RangeChart
+                  rows={d.rows}
+                  overall={d.overall}
+                  metric={d.metric}
+                  variable={d.variable}
+                  smallN={meta.small_n}
+                  minN={meta.min_n}
+                  title={d.title}
+                  n={d.gd?.n}
+                />
+                <NumbersTable
+                  id={numbersId}
+                  rows={d.rows}
+                  overall={d.overall}
+                  metric={d.metric}
+                  minN={meta.min_n}
+                  visible={showNumbers}
+                  caption={`The numbers behind the chart: ${d.title}`}
+                />
+              </div>
+              <ChartNotes
+                meta={meta}
+                d={d}
+                view={view}
+                wide={wide}
+                onChange={onChange}
+                ageCheckOpen={ageCheckOpen}
+              />
+              <div className="chart-actions">
+                <button
+                  type="button"
+                  className="btn"
+                  aria-expanded={showNumbers}
+                  aria-controls={numbersId}
+                  onClick={() => setShowNumbers((x) => !x)}
+                >
+                  {showNumbers ? "Hide the numbers" : "Show the numbers"}
+                </button>
+                <CopyLink />
+                <button type="button" className="btn primary" onClick={() => onChange({ ...state, mode: "compare", check: undefined })}>
+                  Compare all {genreCount} genres →
+                </button>
+              </div>
+            </div>
           )}
-          <div className="notes">
-            {d.notes.slice(d.compare ? 0 : 1).map((n) => (
-              <p key={n}>{n}</p>
-            ))}
-            <p>
-              <strong>{d.variable.label}.</strong> {d.variable.description}
-              {d.variable.caveat ? <span className="caveat"> {d.variable.caveat}</span> : null}
-            </p>
-            <p>
-              <strong>{d.metric.label}.</strong> {d.metric.help}
-            </p>
-            <p className="association">{ASSOCIATION_NOTE}</p>
-          </div>
-          <div className="chart-actions">
-            {!d.compare && (
-              <button
-                type="button"
-                className="btn"
-                aria-expanded={showNumbers}
-                aria-controls={numbersId}
-                onClick={() => setShowNumbers((x) => !x)}
-              >
-                {showNumbers ? "Hide the numbers" : "Show the numbers"}
-              </button>
-            )}
-            <CopyLink />
-          </div>
+          {ageCheckOpen && <AgeCheck meta={meta} view={view} d={d} onClose={() => onChange({ ...state, check: undefined })} />}
+          {next.length > 0 && (
+            <nav className="next-questions" aria-label="Next questions">
+              <h3>Next questions</h3>
+              <ul>
+                {next.map((q) => (
+                  <li key={q.key}>
+                    <a href={toHash("explore", q.state)}>
+                      {q.prefix && <span className="muted">{q.prefix}</span>}
+                      {q.text} →
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </nav>
+          )}
         </article>
       )}
     </section>

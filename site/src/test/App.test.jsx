@@ -182,3 +182,76 @@ describe("loading", () => {
     await screen.findByRole("heading", { level: 2 });
   });
 });
+
+describe("notes, age check and next questions", () => {
+  /** Serve the fixtures, with the end groups of dialogue share made 15 and 3 years old. */
+  function agedFetch() {
+    const serve = fixtureFetch();
+    const fn = async (url) => {
+      const res = await serve(url);
+      if (!String(url).includes("v/dlg_word_share/")) return res;
+      const body = await res.json();
+      for (const gd of Object.values(body.g)) {
+        const cells = gd.b.filter(Boolean);
+        if (cells.length >= 2) {
+          cells[0][1] = 15;
+          cells[cells.length - 1][1] = 3;
+        }
+      }
+      return { ok: true, status: 200, json: async () => body };
+    };
+    fn.calls = serve.calls;
+    return fn;
+  }
+
+  it("warns about totals with a one-tap switch to the per-month measure", async () => {
+    const user = await renderApp("#/explore?var=dlg_word_share&metric=pop_views");
+    expect(screen.getByText("Totals grow with time online.")).toBeTruthy();
+    expect(screen.getByText(/Older stories have had longer to collect views\./)).toBeTruthy();
+    await user.click(screen.getByRole("button", { name: "Switch to views per month" }));
+    await waitFor(() => expect(window.location.hash).toMatch(/metric=pop_views_per_month/));
+    expect(screen.queryByText("Totals grow with time online.")).toBeNull();
+  });
+
+  it("puts the definitions behind three disclosures and links to How it works", async () => {
+    await renderApp();
+    expect(screen.getByText("How to read this chart", { selector: "summary" })).toBeTruthy();
+    expect(screen.getByText("What “Dialogue share” measures", { selector: "summary" })).toBeTruthy();
+    expect(screen.getByText("What “Favorites per 1,000 views” means", { selector: "summary" })).toBeTruthy();
+    expect(screen.getByRole("link", { name: "How was this measured?" }).getAttribute("href")).toBe("#/methodology/measures");
+    expect(screen.getByText(/do not show that a characteristic changes how popular/)).toBeTruthy();
+  });
+
+  it("checks stories of similar age in three periods, with the state in the address", async () => {
+    fetchMock = agedFetch();
+    vi.stubGlobal("fetch", fetchMock);
+    const user = await renderApp("#/explore?var=dlg_word_share");
+    expect(screen.getByText("Story age.")).toBeTruthy();
+    await user.click(screen.getByRole("button", { name: "Check stories of similar age" }));
+    await waitFor(() => expect(window.location.hash).toMatch(/check=age/));
+    expect(await screen.findByRole("heading", { name: "Stories of similar age" })).toBeTruthy();
+    for (const p of ["y2000", "y2010", "y2020"]) {
+      await waitFor(() => expect(fetchMock.calls.some((u) => u.endsWith(`v/dlg_word_share/${p}.json`))).toBe(true));
+    }
+    expect(await screen.findByRole("heading", { level: 4, name: "Published 2000–2009" })).toBeTruthy();
+    expect(screen.getByText(/so the stories compared are of similar age/)).toBeTruthy();
+    await user.click(screen.getByRole("button", { name: "Close" }));
+    await waitFor(() => expect(window.location.hash).not.toMatch(/check=age/));
+  });
+
+  it("offers the next two characteristics of the topic and the rate version of a total", async () => {
+    await renderApp("#/explore?var=dlg_word_share&metric=pop_views");
+    const nav = screen.getByRole("navigation", { name: "Next questions" });
+    const links = within(nav).getAllByRole("link");
+    expect(links[0].textContent).toMatch(/views per month/);
+    expect(links[0].getAttribute("href")).toMatch(/metric=pop_views_per_month/);
+    expect(links[1].getAttribute("href")).toMatch(/var=dlg_has_dialogue/);
+    expect(links).toHaveLength(2); // the fixture's Dialogue topic has only two characteristics
+  });
+
+  it("switches to comparing all genres", async () => {
+    const user = await renderApp();
+    await user.click(screen.getByRole("button", { name: /Compare all 3 genres/ }));
+    await waitFor(() => expect(window.location.hash).toMatch(/mode=compare/));
+  });
+});

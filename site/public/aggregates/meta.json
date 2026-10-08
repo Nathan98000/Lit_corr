@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-10-08T19:38:09Z",
+ "generated_at": "2026-10-08T19:55:32Z",
  "source": {
   "handoff": "litcorr_stage2_handoff_20261008.zip",
   "processed_at": "2026-10-08T17:00:26+00:00",
@@ -887,7 +887,7 @@
    "subgroup": "Story basics",
    "kind": "count",
    "unit": "words",
-   "description": "Number of words in the story text (letters/digits, contractions count as one word). Author’s notes, headings and similar notes around the story are not counted (see the methodology page).",
+   "description": "Number of words in the story text (letters/digits, contractions count as one word). Author’s notes, headings and similar notes around the story are not counted.",
    "caveat": "",
    "bins": {
     "type": "ranges",
@@ -912,7 +912,7 @@
    "subgroup": "Story basics",
    "kind": "count",
    "unit": "sentences",
-   "description": "Number of sentences (see the methodology page).",
+   "description": "Number of sentences.",
    "caveat": "",
    "bins": {
     "type": "ranges",
@@ -1125,7 +1125,7 @@
    "subgroup": "Story basics",
    "kind": "binary",
    "unit": "yes/no",
-   "description": "Whether the story opens or closes with an author’s or editor’s note, disclaimer, dedication, copyright line or words to readers, or has a paragraph labeled as an author’s note (see the methodology page).",
+   "description": "Whether the story opens or closes with an author’s or editor’s note, disclaimer, dedication, copyright line or words to readers, or has a paragraph labeled as an author’s note.",
    "caveat": "Rule-based; misses notes that use no recognizable wording (about 1 in 3 in a hand check).",
    "bins": {
     "type": "levels",
@@ -1637,7 +1637,7 @@
    "kind": "share",
    "unit": "share (0–1)",
    "description": "In narration, first-person pronouns as a share of first- plus third-person pronouns.",
-   "caveat": "A word-counting rule, not a reading of the story; see the methodology page for how it was validated.",
+   "caveat": "A word-counting rule, not a reading of the story; see How it works for how it was validated.",
    "bins": {
     "type": "ranges",
     "labels": [
@@ -1662,7 +1662,7 @@
    "kind": "categorical",
    "unit": "first / first_plural / second / third / mixed / unknown",
    "description": "Estimated from the pronouns in the narration, leaving dialogue out: plenty of I/me/my means first person; ‘we’ narration and ‘you’ narration have their own groups; very few I/me/my compared with he/she/they means third person; anything in between is mixed. Stories with under 200 words of narration are left out.",
-   "caveat": "A word-counting rule, not a reading of the story; see the methodology page for how it was validated.",
+   "caveat": "A word-counting rule, not a reading of the story; see How it works for how it was validated.",
    "bins": {
     "type": "levels",
     "labels": [
@@ -1686,7 +1686,7 @@
    "kind": "binary",
    "unit": "1 = first, 0 = third",
    "description": "Compares stories narrated in the first person (I, or we) with stories narrated in the third person. Second-person and mixed stories are left out here; “Narrative perspective” shows them all.",
-   "caveat": "A word-counting rule, not a reading of the story; see the methodology page for how it was validated.",
+   "caveat": "A word-counting rule, not a reading of the story; see How it works for how it was validated.",
    "bins": {
     "type": "levels",
     "labels": [

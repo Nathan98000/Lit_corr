@@ -423,9 +423,10 @@ _SITE_TEXT = [
      "steadier."),
     (r" in a Stage 1B hand-check", " in a hand check"),
     (r"\s*\(lexicons/[a-z_]+\.txt\)", ""),
-    (r"\(see Methodology, '[^']+'\)", "(see the methodology page)"),
-    (r"\(see Methodology\)", "(see the methodology page)"),
-    (r"see Methodology", "see the methodology page"),
+    # every chart links to the right section of "How it works", so the pointer is not repeated in the text
+    (r"\s*\(see Methodology, '[^']+'\)", ""),
+    (r"\s*\(see Methodology\)", ""),
+    (r"see Methodology", "see How it works"),
     (r"other paratext", "similar notes around the story"),
     (r"A word-counting heuristic, not true narrative analysis", "A word-counting rule, not a reading of the story"),
     (r"\bA heuristic\.", "A rule-based estimate."),

@@ -9,28 +9,40 @@ export const DEFAULT_STATE = {
   sub: "all",
 };
 
-const PARAMS = { mode: "mode", genre: "genre", metric: "metric", v: "var", sub: "include" };
+const PARAMS = { mode: "mode", genre: "genre", metric: "metric", v: "var", sub: "include", check: "check" };
+const PATTERN_PARAMS = { genre: "genre", metric: "metric" };
 
+/**
+ * Pages: #/explore?… (the explorer), #/patterns?genre=…&metric=… (the pattern browser) and
+ * #/methodology or #/methodology/<section> (How it works).
+ */
 export function parseHash(hash) {
   const h = (hash || "").replace(/^#/, "");
-  const [path, query = ""] = h.split("?");
-  const page = path.replace(/^\/+/, "") === "methodology" ? "methodology" : "explore";
+  const [rawPath, query = ""] = h.split("?");
+  const parts = rawPath.replace(/^\/+/, "").split("/").filter(Boolean);
   const params = new URLSearchParams(query);
-  const state = {};
-  for (const [key, param] of Object.entries(PARAMS)) {
-    if (params.has(param)) state[key] = params.get(param);
-  }
-  return { page, state };
+  const read = (map) => {
+    const state = {};
+    for (const [key, param] of Object.entries(map)) {
+      if (params.has(param)) state[key] = params.get(param);
+    }
+    return state;
+  };
+  if (parts[0] === "methodology") return { page: "methodology", section: parts[1] || null, state: {} };
+  if (parts[0] === "patterns") return { page: "patterns", state: read(PATTERN_PARAMS) };
+  return { page: "explore", state: read(PARAMS) };
 }
 
 export function toHash(page, state = {}) {
-  if (page === "methodology") return "#/methodology";
+  if (page === "methodology") return state.section ? `#/methodology/${state.section}` : "#/methodology";
+  const map = page === "patterns" ? PATTERN_PARAMS : PARAMS;
   const params = new URLSearchParams();
-  for (const [key, param] of Object.entries(PARAMS)) {
+  for (const [key, param] of Object.entries(map)) {
     if (state[key] != null) params.set(param, state[key]);
   }
   const q = params.toString();
-  return q ? `#/explore?${q}` : "#/explore";
+  const base = page === "patterns" ? "#/patterns" : "#/explore";
+  return q ? `${base}?${q}` : base;
 }
 
 /** Fill in defaults and replace anything the data does not know about. */
@@ -42,5 +54,6 @@ export function sanitize(state, meta) {
   if (!has(meta.metrics, s.metric)) s.metric = has(meta.metrics, meta.default_metric) ? meta.default_metric : meta.metrics[0].id;
   if (!has(meta.variables, s.v)) s.v = has(meta.variables, DEFAULT_STATE.v) ? DEFAULT_STATE.v : meta.variables[0].id;
   if (!has(meta.subsets, s.sub)) s.sub = "all";
+  if (s.check !== "age" || s.mode !== "one" || s.sub !== "all") delete s.check;
   return s;
 }

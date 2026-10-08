@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-10-08T19:38:17Z",
+ "generated_at": "2026-10-08T19:56:05Z",
  "source": {
   "handoff": "litcorr_stage2_handoff_20261008.zip",
   "processed_at": "2026-10-08T17:00:26+00:00",
@@ -58,6 +58,19 @@
    "format": "rate",
    "age": false,
    "help": "How often readers who opened the story added it to their favorites. Dividing by views makes stories that have been read a lot comparable with stories that have been read a little.",
+   "coverage": 1.0
+  },
+  {
+   "id": "pop_views_per_month",
+   "label": "Views per month",
+   "group": "Per month online",
+   "noun": "views per month",
+   "plural": true,
+   "more": "receive more views per month",
+   "less": "receive fewer views per month",
+   "format": "count",
+   "age": false,
+   "help": "Total views divided by the number of months the story has been online. A simple way to compare old and new stories, since older stories have had longer to collect views.",
    "coverage": 1.0
   },
   {

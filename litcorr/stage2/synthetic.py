@@ -47,10 +47,12 @@ def synthetic_stories(seed: int = 7) -> pd.DataFrame:
             words = float(np.round(rng.lognormal(8, 0.7)))
             dialogue = float(rng.uniform(0, 0.5))
             views = float(np.round(rng.lognormal(10, 0.6), -1))
+            age = float(rng.uniform(0, 20))
             rows.append({
                 "story_key": f"k{slug}{i:04d}", "queue_category_slug": slug, "category_slug": slug,
                 "analysis_include": True, "has_text": True, "exclusion_reasons": [],
-                "sampling_weight": size / n, "age_years": float(rng.uniform(0, 20)),
+                "sampling_weight": size / n, "age_years": age,
+                "pop_views_per_month": float(np.round(views / max(1.0, age * 12), 1)),
                 "pub_year": float(rng.integers(2000, 2027)), "story_words": words,
                 "pop_views": views, "pop_rating_count": float(rng.integers(0, 300)),
                 # favorites per 1,000 views rise with the dialogue share: a pattern the build should report

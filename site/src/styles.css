@@ -1358,3 +1358,232 @@ table.numbers {
   gap: 8px;
   margin-top: 10px !important;
 }
+
+/* ----------------------------------------------- answer layout: E1 (stacked) / E2 (margin notes) */
+.answer-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: "main" "notes" "actions";
+  column-gap: 40px;
+}
+
+.answer-grid.wide {
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  grid-template-areas: "main notes" "actions notes";
+  grid-template-rows: auto 1fr;
+  align-items: start;
+}
+
+.answer-main {
+  grid-area: main;
+  min-width: 0;
+}
+
+.answer-grid > .notes {
+  grid-area: notes;
+}
+
+.answer-grid > .chart-actions {
+  grid-area: actions;
+  justify-content: flex-start;
+  margin-top: 16px;
+}
+
+.notes.notes-stack,
+.notes.notes-margin {
+  margin-top: 20px;
+  padding-top: 0;
+  border-top: 0;
+  max-width: 62ch;
+}
+
+.notes.notes-margin {
+  margin-top: 14px;
+  padding-left: 22px;
+  border-left: 1px solid var(--rule);
+  font-size: 14px;
+}
+
+.notes-margin .note-block h3 {
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 650;
+  letter-spacing: 0;
+  color: var(--ink);
+  margin: 0 0 4px;
+}
+
+.notes-margin .note-block p {
+  margin: 0 0 16px;
+}
+
+.agebox {
+  background: var(--age-bg);
+  border: 1px solid var(--age-border);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  margin: 0 0 12px;
+  color: var(--age-ink);
+  font-size: 14.5px;
+}
+
+.agebox p {
+  margin: 0;
+}
+
+.agebox b {
+  color: var(--age-lead);
+}
+
+.agebox .link-button {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--target);
+  font-size: 14.5px;
+}
+
+.disclosure {
+  border-top: 1px solid var(--rule);
+}
+
+.disclosure:last-of-type {
+  border-bottom: 1px solid var(--rule);
+}
+
+.disclosure summary {
+  list-style: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  min-height: 48px;
+  cursor: pointer;
+  font-size: 15px;
+  color: var(--ink);
+}
+
+.disclosure summary::-webkit-details-marker {
+  display: none;
+}
+
+.disclosure summary::after {
+  content: "+";
+  font-size: 20px;
+  line-height: 1;
+  color: var(--ink-3);
+}
+
+.disclosure[open] summary::after {
+  content: "–";
+}
+
+.disclosure p {
+  margin: 0 0 14px;
+  font-size: 15px;
+  color: var(--ink-2);
+}
+
+.notes .association {
+  margin-top: 14px;
+  font-size: 13.5px;
+}
+
+.why {
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+/* ---------------------------------------------------- stories of similar age (I1) */
+.age-check {
+  margin-top: 28px;
+  padding-top: 18px;
+  border-top: 1px solid var(--rule);
+}
+
+.age-check-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.age-check-head h3 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.age-check-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 24px;
+  margin-top: 12px;
+}
+
+@media (min-width: 900px) {
+  .age-check-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.age-period h4 {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.age-period-meta {
+  margin: 2px 0 0;
+  font-size: 13.5px;
+  color: var(--ink-3);
+}
+
+.age-period-meta .up {
+  color: var(--accent-ink);
+}
+
+.age-period-meta .down {
+  color: var(--warm-ink);
+}
+
+.age-ph {
+  height: 220px;
+  background: var(--band);
+  border-radius: var(--radius);
+}
+
+/* ------------------------------------------------------------- next questions (I2) */
+.next-questions {
+  margin-top: 28px;
+}
+
+.next-questions h3 {
+  margin: 0 0 6px;
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 650;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.next-questions ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.next-questions a {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+  min-height: var(--target);
+  font-size: 15px;
+  text-decoration: none;
+  border-bottom: 1px solid var(--rule);
+}
+
+.next-questions a:hover {
+  text-decoration: underline;
+}

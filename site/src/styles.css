@@ -167,45 +167,40 @@ main.wrap {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
-  min-height: 56px;
+  gap: 12px;
+  height: 52px;
 }
 
 .brand {
   font-family: var(--serif);
-  font-size: 19px;
+  font-size: 18px;
   font-weight: 600;
   color: var(--ink);
   text-decoration: none;
   letter-spacing: -0.01em;
-}
-
-.brand span {
-  color: var(--ink-3);
-  font-weight: 400;
+  white-space: nowrap;
 }
 
 .masthead nav {
   display: flex;
-  gap: 20px;
+  gap: 4px;
   font-size: 15px;
 }
 
 .masthead nav a {
+  display: inline-flex;
+  align-items: center;
+  height: 52px;
+  padding: 0 8px;
   color: var(--ink-2);
   text-decoration: none;
-  padding: 4px 0;
+  white-space: nowrap;
   border-bottom: 2px solid transparent;
 }
 
 .masthead nav a[aria-current="page"] {
   color: var(--ink);
   border-bottom-color: var(--accent);
-}
-
-/* -------------------------------------------------------------------- hero */
-.hero {
-  padding: 48px 0 28px;
 }
 
 h1,
@@ -218,42 +213,15 @@ h3 {
   text-wrap: balance;
 }
 
-.hero h1 {
-  font-size: clamp(32px, 5vw, 50px);
-  margin: 0 0 14px;
-  max-width: 16ch;
-}
-
-.lede {
-  font-size: 18px;
-  color: var(--ink-2);
-  max-width: 62ch;
-  margin: 0 0 22px;
-}
-
-.featured {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-}
-
-.featured-label {
-  font-size: 13px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--ink-3);
-  margin-right: 4px;
-}
-
 .chip {
+  display: inline-flex;
+  align-items: center;
   min-height: var(--target);
   border: 1px solid var(--control);
   background: var(--paper);
   border-radius: 999px;
-  padding: 6px 13px;
-  font-size: 14px;
+  padding: 6px 14px;
+  font-size: 14.5px;
   color: var(--ink-2);
   cursor: pointer;
   text-align: left;
@@ -265,10 +233,74 @@ h3 {
 }
 
 /* ---------------------------------------------------------------- controls */
+/* --------------------------------------------------------------- first screen (B) */
+.intro {
+  padding: 22px 0 6px;
+}
+
+.kicker {
+  margin: 0;
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.45;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  text-wrap: pretty;
+}
+
+.kicker-counts {
+  white-space: nowrap;
+}
+
 .explorer {
+  margin-bottom: 24px;
+}
+
+.sentence-placeholder {
+  color: var(--ink-3);
+}
+
+.try-another {
+  margin: 8px 0 56px;
+  padding-top: 18px;
   border-top: 1px solid var(--rule);
-  padding-top: 22px;
-  margin-bottom: 56px;
+}
+
+.try-another h2 {
+  margin: 0 0 10px;
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 650;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.chips-row {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 4px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+@media (max-width: 699px) {
+  /* one row that scrolls sideways, with a fade showing there is more */
+  .chips-row {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    margin-right: -16px;
+    padding-right: 32px;
+    mask-image: linear-gradient(90deg, #000 82%, transparent);
+  }
+
+  .chips-row .chip {
+    white-space: nowrap;
+  }
 }
 
 .controls {
@@ -283,9 +315,10 @@ h3 {
 }
 
 .chart-title {
-  font-size: clamp(22px, 3vw, 29px);
-  margin: 0 0 6px;
-  max-width: 34ch;
+  font-size: clamp(20px, 2.6vw, 26px);
+  line-height: 1.22;
+  margin: 0 0 4px;
+  max-width: 40ch;
 }
 
 .chart-sub {
@@ -821,20 +854,8 @@ table.numbers {
     padding: 0 16px;
   }
 
-  .hero {
-    padding: 30px 0 22px;
-  }
-
-  .lede {
-    font-size: 16.5px;
-  }
-
   .masthead nav {
     gap: 14px;
-  }
-
-  .brand span {
-    display: none;
   }
 
   .compare-table .genre-col {
@@ -1769,4 +1790,53 @@ table.numbers {
   margin: 0 0 4px;
   font-size: 13.5px;
   color: var(--ink-2);
+}
+
+/* ----------------------------------------------------------- narrow phones */
+@media (max-width: 559px) {
+  .intro {
+    padding-top: 14px;
+  }
+
+  .question-after {
+    margin-top: 6px;
+  }
+
+  .controls {
+    margin-bottom: 14px;
+  }
+
+  .takeaway {
+    margin-top: 10px;
+    font-size: 15.5px;
+  }
+
+  .range-chart .legend {
+    margin-top: 10px;
+    gap: 2px 14px;
+    font-size: 12.5px;
+  }
+
+  .range-chart .axis-title {
+    margin-top: 4px;
+  }
+}
+
+@media (max-width: 399px) {
+  .brand {
+    font-size: 17px;
+  }
+
+  .masthead nav {
+    gap: 0;
+    font-size: 14.5px;
+  }
+
+  .masthead nav a {
+    padding: 0 6px;
+  }
+
+  .masthead nav a.nav-explore {
+    display: none; /* the name links to the explorer too */
+  }
 }

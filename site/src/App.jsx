@@ -7,7 +7,40 @@ import { scrollBehavior } from "./lib/motion.js";
 import { formatCount, formatDate } from "./lib/format.js";
 import { parseHash, sanitize, toHash } from "./lib/urlState.js";
 
-const TITLE = "What do popular Literotica stories have in common?";
+export const TITLE = "What do popular Literotica stories have in common?";
+export const SITE_NAME = "Story Patterns"; // the masthead name: change it here
+const PAGE_TITLES = { methodology: `How it works · ${TITLE}`, patterns: `Patterns · ${TITLE}` };
+const DEFAULT_QUESTION = "In All genres, how do favorites per 1,000 views vary with story length?";
+
+/** The headline as a kicker, with the story and genre counts (filled in when the data arrives). */
+function Kicker({ meta }) {
+  return (
+    <h1 className="kicker">
+      {TITLE}{" "}
+      <span className="kicker-counts">
+        · {meta ? formatCount(meta.counts.included) : "8,996"} stories · {meta ? meta.genres.length - 1 : 30} genres
+      </span>
+    </h1>
+  );
+}
+
+/** Example questions under the chart: a row that scrolls sideways on phones and wraps on wider screens. */
+function TryAnother({ meta, onAsk }) {
+  return (
+    <section className="try-another" aria-labelledby="try-title">
+      <h2 id="try-title">Try another question</h2>
+      <ul className="chips-row">
+        {meta.featured.map((q) => (
+          <li key={q.question}>
+            <button type="button" className="chip" onClick={() => onAsk(q)}>
+              {q.question}
+            </button>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
 
 export default function App() {
   const [meta, setMeta] = useState(null);
@@ -33,7 +66,7 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    document.title = route.page === "methodology" ? `Methodology · ${TITLE}` : TITLE;
+    document.title = PAGE_TITLES[route.page] || TITLE;
     window.scrollTo?.(0, 0);
   }, [route.page]);
 
@@ -52,15 +85,21 @@ export default function App() {
     window.history.pushState(null, "", toHash("explore", next));
     setRoute({ page: "explore", state: next });
     const later = window.requestAnimationFrame || ((f) => setTimeout(f, 0));
-    later(() => document.getElementById("explore")?.scrollIntoView?.({ behavior: scrollBehavior() }));
+    later(() => {
+      const q = document.getElementById("question");
+      q?.scrollIntoView?.({ behavior: scrollBehavior(), block: "start" });
+      q?.focus({ preventScroll: true });
+    });
   };
 
+  // The skip link goes to the question sentence (or to the page's content elsewhere).
   const skip = (e) => {
     e.preventDefault();
-    mainRef.current?.focus();
+    const target = (route.page === "explore" && document.getElementById("question")) || mainRef.current;
+    target?.focus();
+    target?.scrollIntoView?.({ block: "start" });
   };
 
-  const genreCount = meta ? meta.genres.length - 1 : 0;
   return (
     <div className="site">
       <a className="skip-link" href="#/explore" onClick={skip}>
@@ -69,14 +108,18 @@ export default function App() {
       <header className="masthead">
         <div className="wrap masthead-inner">
           <a className="brand" href={toHash("explore", lastExplore.current)}>
-            Story popularity <span>· an explorer</span>
+            {SITE_NAME}
           </a>
           <nav aria-label="Pages">
-            <a href={toHash("explore", lastExplore.current)} aria-current={route.page === "explore" ? "page" : undefined}>
+            <a
+              className="nav-explore"
+              href={toHash("explore", lastExplore.current)}
+              aria-current={route.page === "explore" ? "page" : undefined}
+            >
               Explore
             </a>
             <a href="#/methodology" aria-current={route.page === "methodology" ? "page" : undefined}>
-              Methodology
+              How it works
             </a>
           </nav>
         </div>
@@ -89,25 +132,27 @@ export default function App() {
           meta ? <Methodology meta={meta} /> : <div className="page-placeholder" aria-busy="true" />
         ) : (
           <>
-            <section className="hero">
-              <h1>{TITLE}</h1>
-              <p className="lede">
-                Choose a genre, a way of measuring popularity and a story characteristic to see how they go together
-                across {meta ? formatCount(meta.counts.included) : "about 9,000"} stories from{" "}
-                {meta ? genreCount : 30} of Literotica’s genres.
-              </p>
-              {meta && (
-                <div className="featured" aria-label="Example questions">
-                  <span className="featured-label">Try</span>
-                  {meta.featured.map((q) => (
-                    <button type="button" key={q.question} className="chip" onClick={() => ask(q)}>
-                      {q.question}
-                    </button>
-                  ))}
+            <div className="intro">
+              <Kicker meta={meta} />
+            </div>
+            {meta ? (
+              <>
+                <Explorer meta={meta} state={state} onChange={update} />
+                <TryAnother meta={meta} onAsk={ask} />
+              </>
+            ) : (
+              <div className="explorer" aria-busy="true">
+                <div className="controls">
+                  <p className="sentence sentence-placeholder" aria-hidden="true">
+                    {Object.keys(route.state).length ? "\u00a0" : DEFAULT_QUESTION}
+                  </p>
+                  <div className="question-after" aria-hidden="true">
+                    <span className="include">Only include: All stories</span>
+                  </div>
                 </div>
-              )}
-            </section>
-            {meta ? <Explorer meta={meta} state={state} onChange={update} /> : <ChartPlaceholder />}
+                <ChartPlaceholder />
+              </div>
+            )}
           </>
         )}
       </main>

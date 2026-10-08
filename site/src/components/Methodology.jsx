@@ -42,7 +42,7 @@ export default function Methodology({ meta }) {
   const reasons = Object.entries(counts.excluded_reasons || {});
   return (
     <article className="prose methodology">
-      <h1>Methodology</h1>
+      <h1>How it works</h1>
       <p className="lede">
         How the stories were chosen, what was measured, and how the charts summarize them. Written for curious
         readers, not statisticians.

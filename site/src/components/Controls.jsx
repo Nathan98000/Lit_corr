@@ -133,7 +133,7 @@ export default function Controls({ meta, state, onChange }) {
         )}
       </div>
       {anyConflict && (
-        <p className="include-note" id={`${ids}-include-note`}>
+        <p className="include-note visually-hidden" id={`${ids}-include-note`}>
           Options that would leave only one group of {variable.label.toLowerCase()} are turned off.
         </p>
       )}

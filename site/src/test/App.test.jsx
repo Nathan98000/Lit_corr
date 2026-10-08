@@ -14,7 +14,7 @@ beforeEach(() => {
   vi.stubGlobal("fetch", fetchMock);
 });
 
-const chartTitle = () => screen.getByRole("heading", { level: 2 }); // the answer heading
+const chartTitle = () => document.querySelector(".chart-title"); // the answer heading
 const fullTitle = () => document.title; // the full chart title, also the chart's accessible name
 
 /** Choose a characteristic through the picker: open it, search, press Enter. */
@@ -35,7 +35,6 @@ async function renderApp(hash = "") {
   if (hash) window.history.replaceState(null, "", `/${hash}`);
   const user = userEvent.setup();
   render(<App />);
-  await screen.findByRole("heading", { level: 2 });
   await screen.findByText(/Typical story \(median\)/);
   return user;
 }
@@ -43,7 +42,11 @@ async function renderApp(hash = "") {
 describe("the explorer", () => {
   it("opens with a plain-English title and the disclaimer", async () => {
     await renderApp();
-    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("What do popular Literotica stories have in common?");
+    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe(
+      "What do popular Literotica stories have in common? · 3 stories · 3 genres".replace("3 stories", `${fixtureMeta.counts.included} stories`),
+    );
+    expect(screen.getByRole("link", { name: "Story Patterns" })).toBeTruthy();
+    expect(screen.getByRole("group", { name: "Choose what to compare" })).toBeTruthy();
     expect(chartTitle().textContent).toBe("Stories with more dialogue tend to get more favorites per 1,000 views");
     expect(screen.getAllByText(/do not establish causation/).length).toBeGreaterThan(0);
     expect(screen.getByText(/not affiliated with or endorsed by Literotica/)).toBeTruthy();
@@ -112,8 +115,10 @@ describe("the explorer", () => {
 
   it("has a methodology page with the required statement", async () => {
     const user = await renderApp();
-    await user.click(screen.getByRole("link", { name: "Methodology" }));
-    await screen.findByRole("heading", { level: 1, name: "Methodology" });
+    await user.click(within(screen.getByRole("navigation", { name: "Pages" })).getByRole("link", { name: "How it works" }));
+    expect(screen.getAllByRole("link", { name: "How it works" })).toHaveLength(2); // nav and footer agree
+    await screen.findByRole("heading", { level: 1, name: "How it works" });
+    expect(document.title).toBe("How it works · What do popular Literotica stories have in common?");
     expect(screen.getAllByText(/should not be assumed to represent all erotic fiction, readers, or human sexuality/).length).toBe(2);
     expect(screen.getByText(/What this site does not contain/)).toBeTruthy();
   });
@@ -135,7 +140,7 @@ describe("robustness", () => {
     expect(await screen.findByText(/We couldn’t load the data/)).toBeTruthy();
     fail = false;
     await user.click(screen.getByRole("button", { name: "Try again" }));
-    expect(await screen.findByRole("heading", { level: 2 })).toBeTruthy();
+    expect(await screen.findByText(/Typical story \(median\)/)).toBeTruthy();
   });
 
   it("copies the link, or shows it to copy by hand when the clipboard is unavailable", async () => {
@@ -194,7 +199,7 @@ describe("loading", () => {
     expect(screen.getByRole("heading", { level: 1 })).toBeTruthy();
     expect(document.querySelector(".chart-placeholder")).toBeTruthy();
     release();
-    await screen.findByRole("heading", { level: 2 });
+    await screen.findByText(/Typical story \(median\)/);
   });
 });
 

@@ -279,6 +279,7 @@ export default function Explorer({ meta, state, onChange }) {
                   )
                 )}
                 <RangeChart
+                  key={`${d.variable.id}/${view.sub}`}
                   rows={d.rows}
                   overall={d.overall}
                   metric={d.metric}

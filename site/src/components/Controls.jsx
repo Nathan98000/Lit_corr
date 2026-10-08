@@ -1,4 +1,4 @@
-import { useCallback, useId, useRef, useState } from "react";
+import { forwardRef, useCallback, useId, useRef, useState } from "react";
 import { subsetConflict } from "../lib/urlState.js";
 import { questionParts } from "../lib/wording.js";
 import CharacteristicPicker from "./CharacteristicPicker.jsx";
@@ -14,6 +14,32 @@ function groupBy(list, key) {
   }
   return out;
 }
+
+/**
+ * A word of the sentence that opens a menu. A real <button> cannot wrap like text, so this is an inline span with
+ * the button role and the keyboard behavior of a button.
+ */
+const SlotButton = forwardRef(function SlotButton({ expanded, onPress, children }, ref) {
+  return (
+    <span
+      ref={ref}
+      role="button"
+      tabIndex={0}
+      className="slot slot-button"
+      aria-haspopup="dialog"
+      aria-expanded={expanded}
+      onClick={onPress}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onPress();
+        }
+      }}
+    >
+      {children}
+    </span>
+  );
+});
 
 /**
  * The controls are the question itself (concept B): "In [All genres], how do [favorites per 1,000 views] vary with
@@ -73,31 +99,25 @@ export default function Controls({ meta, state, onChange }) {
             </>
           )}
           how {p.aux}{" "}
-          <button
+          <SlotButton
             ref={metricBtn}
-            type="button"
-            className="slot slot-button"
-            aria-haspopup="dialog"
-            aria-expanded={menu === "metric"}
-            onClick={() => setMenu(menu === "metric" ? null : "metric")}
+            expanded={menu === "metric"}
+            onPress={() => setMenu(menu === "metric" ? null : "metric")}
           >
             <span className="visually-hidden">Popularity measure: </span>
             {p.measure}
             <Caret />
-          </button>{" "}
+          </SlotButton>{" "}
           {p.verb}{" "}
-          <button
+          <SlotButton
             ref={varBtn}
-            type="button"
-            className="slot slot-button"
-            aria-haspopup="dialog"
-            aria-expanded={menu === "variable"}
-            onClick={() => setMenu(menu === "variable" ? null : "variable")}
+            expanded={menu === "variable"}
+            onPress={() => setMenu(menu === "variable" ? null : "variable")}
           >
             <span className="visually-hidden">Story characteristic: </span>
             {p.characteristic}
             <Caret />
-          </button>
+          </SlotButton>
           ?
         </p>
       </fieldset>

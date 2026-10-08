@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { formatAge, formatCount, formatFixed, formatRange, columnDecimals } from "../lib/format.js";
 import { rangeLayout } from "../lib/rangeLayout.js";
 import { chartSummary } from "../lib/wording.js";
+import useGlide from "./useGlide.js";
 import useWidth from "./useWidth.js";
 
 /** The unit of a characteristic's ranges, when it helps to read the group labels (e.g. "per 1,000 words"). */
@@ -55,6 +56,11 @@ export default function RangeChart({
   const hatchId = `${ids}-hatch`.replace(/:/g, "");
 
   const layout = rangeLayout({ rows, overall, format: metric.format, width, smallN, minN, domainRows });
+  // genre or measure changes glide the marks to their new places; another characteristic or width redraws them
+  const glide = useGlide(
+    layout.rows.map((r) => (r.ok ? [r.bar.x, r.bar.width, r.dotX, r.value.x] : null)),
+    `${variable.id}|${rows.map((r) => r.label).join("|")}|${layout.width}|${layout.mode}`,
+  );
   const anySmall = layout.rows.some((r) => r.small);
   const shownCount = layout.rows.filter((r) => r.ok).length;
 
@@ -138,6 +144,7 @@ export default function RangeChart({
           width={layout.width}
           height={layout.height}
           role="group"
+          className={active != null ? "has-active" : undefined}
           aria-labelledby={titleId}
           aria-describedby={descId}
         >
@@ -165,7 +172,8 @@ export default function RangeChart({
               </g>
             )}
           </g>
-          {layout.rows.map((r) => {
+          {layout.rows.map((r, ri) => {
+            const g = glide[ri] || (r.ok ? [r.bar.x, r.bar.width, r.dotX, r.value.x] : null);
             const details = rowDetails(rows[r.index], metric.format, minN);
             const on = active === r.index;
             return (
@@ -198,15 +206,15 @@ export default function RangeChart({
                   <>
                     <rect
                       className="iqr"
-                      x={r.bar.x}
+                      x={g[0]}
                       y={r.cy - 6}
-                      width={r.bar.width}
+                      width={g[1]}
                       height={12}
                       rx={6}
                       fill={r.small ? `url(#${hatchId})` : undefined}
                     />
-                    <circle className="median" cx={r.dotX} cy={r.cy} r={7} />
-                    <text className="gval" x={r.value.x} y={r.value.y}>
+                    <circle className="median" cx={g[2]} cy={r.cy} r={7} />
+                    <text className="gval" x={g[3]} y={r.value.y}>
                       {r.value.text}
                     </text>
                   </>

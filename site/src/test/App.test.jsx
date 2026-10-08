@@ -137,3 +137,48 @@ describe("robustness", () => {
     expect(screen.getAllByText("Link copied").length).toBeGreaterThan(0);
   });
 });
+
+describe("loading", () => {
+  it("keeps the previous heading and chart until the new data has arrived, and announces only the result", async () => {
+    let release;
+    const gate = new Promise((r) => {
+      release = r;
+    });
+    const serve = fixtureFetch();
+    vi.stubGlobal("fetch", async (url) => {
+      if (String(url).includes("v/emo_anger_per_1k/")) await gate;
+      return serve(url);
+    });
+    const user = await renderApp();
+    const before = chartTitle().textContent;
+    await user.click(screen.getByRole("button", { name: "Emotion & relationships" }));
+    // the new file is still on its way: the old chart stays, marked busy, and nothing is worded from missing data
+    expect(chartTitle().textContent).toBe(before);
+    expect(document.querySelector(".chart-panel").getAttribute("aria-busy")).toBe("true");
+    expect(screen.queryByText(/too few stories/i)).toBeNull();
+    expect(screen.queryByText(/Loading/)).toBeNull();
+    const live = document.querySelector("[aria-live]");
+    expect(live.textContent).toBe("");
+    release();
+    await waitFor(() => expect(chartTitle().textContent).toMatch(/anger/i));
+    expect(document.querySelector(".chart-panel").getAttribute("aria-busy")).toBe("false");
+    expect(live.textContent).toBe(chartTitle().textContent);
+  });
+
+  it("draws the page frame before the data arrives", async () => {
+    let release;
+    const gate = new Promise((r) => {
+      release = r;
+    });
+    const serve = fixtureFetch();
+    vi.stubGlobal("fetch", async (url) => {
+      await gate;
+      return serve(url);
+    });
+    render(<App />);
+    expect(screen.getByRole("heading", { level: 1 })).toBeTruthy();
+    expect(document.querySelector(".chart-placeholder")).toBeTruthy();
+    release();
+    await screen.findByRole("heading", { level: 2 });
+  });
+});

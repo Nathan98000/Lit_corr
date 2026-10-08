@@ -36,6 +36,14 @@ function getJson(path) {
 export const loadMeta = () => getJson("meta.json");
 export const loadVariable = (variable, subset) => getJson(`v/${variable}/${subset}.json`);
 export const clearCache = () => cache.clear();
+/** Has this file already been fetched (or is it on its way)? */
+export const isCached = (variable, subset) => cache.has(`v/${variable}/${subset}.json`);
+
+/** Start fetching a file the visitor is likely to open next (e.g. a characteristic they hover); errors are ignored. */
+export function prefetchVariable(variable, subset) {
+  if (!variable || !subset) return;
+  loadVariable(variable, subset).catch(() => {});
+}
 
 /** Summary of one popularity measure in one cell, or null if the group is not shown. */
 export function cellStats(cell, k) {

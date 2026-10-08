@@ -104,6 +104,45 @@ main.wrap:focus {
   outline: none;
 }
 
+main.wrap {
+  min-height: 100vh; /* the footer never jumps up into view while the first chart loads */
+}
+
+/* A chart that is being replaced stays on screen, dimmed, until the next one has loaded. */
+.chart-panel.is-busy {
+  opacity: 0.55;
+  transition: opacity 150ms ease-out 120ms;
+}
+
+.chart-placeholder .ph-line,
+.chart-placeholder .ph-chart,
+.page-placeholder {
+  background: var(--band);
+  border-radius: var(--radius);
+}
+
+.ph-title {
+  height: 30px;
+  width: min(30ch, 80%);
+  margin: 6px 0 10px;
+}
+
+.ph-sub {
+  height: 14px;
+  width: 12em;
+  margin-bottom: 24px;
+}
+
+.ph-chart {
+  height: 300px;
+}
+
+.page-placeholder {
+  height: 60vh;
+  margin-top: 44px;
+  background: transparent;
+}
+
 .skip-link {
   position: absolute;
   left: 12px;

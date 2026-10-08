@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import Explorer from "./components/Explorer.jsx";
+import Explorer, { ChartPlaceholder } from "./components/Explorer.jsx";
 import LoadError from "./components/LoadError.jsx";
 import Methodology from "./components/Methodology.jsx";
 import { clearCache, loadMeta } from "./lib/data.js";
@@ -85,28 +85,29 @@ export default function App() {
       <main id="main" ref={mainRef} tabIndex={-1} className="wrap">
         {error ? (
           <LoadError onRetry={retry} detail={error} />
-        ) : !meta ? (
-          <p className="chart-loading">Loading…</p>
         ) : route.page === "methodology" ? (
-          <Methodology meta={meta} />
+          meta ? <Methodology meta={meta} /> : <div className="page-placeholder" aria-busy="true" />
         ) : (
           <>
             <section className="hero">
               <h1>{TITLE}</h1>
               <p className="lede">
                 Choose a genre, a way of measuring popularity and a story characteristic to see how they go together
-                across {formatCount(meta.counts.included)} stories from {genreCount} of Literotica’s genres.
+                across {meta ? formatCount(meta.counts.included) : "about 9,000"} stories from{" "}
+                {meta ? genreCount : 30} of Literotica’s genres.
               </p>
-              <div className="featured" aria-label="Example questions">
-                <span className="featured-label">Try</span>
-                {meta.featured.map((q) => (
-                  <button type="button" key={q.question} className="chip" onClick={() => ask(q)}>
-                    {q.question}
-                  </button>
-                ))}
-              </div>
+              {meta && (
+                <div className="featured" aria-label="Example questions">
+                  <span className="featured-label">Try</span>
+                  {meta.featured.map((q) => (
+                    <button type="button" key={q.question} className="chip" onClick={() => ask(q)}>
+                      {q.question}
+                    </button>
+                  ))}
+                </div>
+              )}
             </section>
-            <Explorer meta={meta} state={state} onChange={update} />
+            {meta ? <Explorer meta={meta} state={state} onChange={update} /> : <ChartPlaceholder />}
           </>
         )}
       </main>

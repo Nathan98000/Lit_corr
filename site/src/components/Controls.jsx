@@ -1,3 +1,4 @@
+import { prefetchVariable } from "../lib/data.js";
 import InfoTip from "./InfoTip.jsx";
 
 function groupBy(list, key) {
@@ -98,6 +99,8 @@ export default function Controls({ meta, state, onChange }) {
                 key={g.id}
                 aria-pressed={g.id === activeGroup}
                 onClick={() => pickGroup(g.id)}
+                onMouseEnter={() => prefetchVariable(g.ids[0], state.sub)}
+                onFocus={() => prefetchVariable(g.ids[0], state.sub)}
               >
                 {g.label}
               </button>

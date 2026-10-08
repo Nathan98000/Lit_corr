@@ -2,7 +2,7 @@
 
 Network commands (talk to Literotica, slowly):  probe, collect
 Offline commands (never touch the network):     status, categories, build-raw, analyze, report, refresh,
-                                                docs, export-handoff, process, demo
+                                                docs, export-handoff, process, demo, site-data
 """
 
 from __future__ import annotations
@@ -148,6 +148,16 @@ def cmd_process(args):
     cmd_export(args)
 
 
+def cmd_site_data(args):
+    """Stage 2: the website's aggregates, from the handoff zip only."""
+    from .stage2.site_data import build_site_data
+
+    setup_logging(None, args.verbose)
+    summary = build_site_data(Path(args.handoff) if args.handoff else None, Path(args.out) if args.out else None,
+                              workers=args.workers)
+    print(f"Site aggregates: {summary}")
+
+
 def cmd_demo(args):
     from .demo import run_demo
 
@@ -183,6 +193,10 @@ def main(argv: list[str] | None = None) -> int:
     sub.add_parser("export-handoff", help="zip the processed data for Stage 2 (no text, no identifiers)")
     p = sub.add_parser("process", help="build-raw + analyze + report + docs + export-handoff (offline)")
     p.add_argument("--workers", type=int, default=0)
+    sd = sub.add_parser("site-data", help="Stage 2: build the website's aggregates from the handoff zip (offline)")
+    sd.add_argument("--handoff", default=None, help="handoff zip (default: the newest in data/handoff/)")
+    sd.add_argument("--out", default=None, help="output folder (default: site/public/aggregates/)")
+    sd.add_argument("--workers", type=int, default=0)
     d = sub.add_parser("demo", help="run the whole pipeline against a local synthetic site (no internet)")
     d.add_argument("--out", default="data_demo", help="output folder for the demo (default data_demo/)")
     d.add_argument("--stories", type=int, default=40, help="synthetic stories per category")
@@ -190,7 +204,7 @@ def main(argv: list[str] | None = None) -> int:
     handlers = {"probe": cmd_probe, "collect": cmd_collect, "status": cmd_status, "categories": cmd_categories,
                 "build-raw": cmd_build_raw, "analyze": cmd_analyze, "report": cmd_report, "refresh": cmd_refresh,
                 "docs": cmd_docs,
-                "export-handoff": cmd_export, "process": cmd_process, "demo": cmd_demo}
+                "export-handoff": cmd_export, "process": cmd_process, "site-data": cmd_site_data, "demo": cmd_demo}
     from .collect.session import AlreadyRunning
     from .net.fetcher import StopCollection
 

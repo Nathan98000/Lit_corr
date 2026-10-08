@@ -1,4 +1,4 @@
-import { interpolateArray } from "d3-interpolate";
+import { interpolateNumber } from "d3-interpolate";
 import { useEffect, useRef, useState } from "react";
 import { prefersReducedMotion } from "../lib/motion.js";
 
@@ -32,7 +32,11 @@ export default function useGlide(target, key) {
       setShown(target);
       return undefined;
     }
-    const interp = target.map((t, i) => (t ? interpolateArray(from.values[i], t) : () => t));
+    const interp = target.map((t, i) => {
+      if (!t) return () => t;
+      const parts = t.map((v, j) => interpolateNumber(from.values[i][j], v));
+      return (e) => parts.map((f) => f(e));
+    });
     let id;
     let start = null;
     const step = (now) => {

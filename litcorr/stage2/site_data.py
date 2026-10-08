@@ -526,7 +526,7 @@ def build_site_data(handoff: Path | None = None, out_dir: Path | None = None, wo
         "variables": variables,
         "featured": [{"question": q, **s} for q, s in W.FEATURED if s["var"] in {v["id"] for v in variables}],
     }
-    (out_dir / "meta.json").write_text(json.dumps(meta, ensure_ascii=False, indent=1), encoding="utf-8")
+    (out_dir / "meta.json").write_text(json.dumps(meta, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     patterns = build_patterns(out_dir, [v["id"] for v in variables], genre_ids, len(metrics))
     (out_dir / "patterns.json").write_text(json.dumps(patterns, separators=(",", ":")), encoding="utf-8")
     size = sum(p.stat().st_size for p in out_dir.rglob("*.json"))

@@ -10,19 +10,22 @@ export function tableDecimals(rows, overall, format) {
   };
 }
 
-/** The chart's numbers as a table (also what screen readers use). */
-export default function NumbersTable({ rows, overall, metric, minN }) {
+/**
+ * The chart's numbers as a table. It is always in the page right after the chart (screen readers find it there);
+ * sighted visitors open it with "Show the numbers". On phones each group becomes a small card instead of a row.
+ */
+export default function NumbersTable({ rows, overall, metric, minN, id, visible = true, caption }) {
   const d = tableDecimals(rows, overall, metric.format);
   const line = (label, s, key, extraClass) => (
     <tr key={key} className={extraClass}>
       <th scope="row">{label}</th>
       {s && !s.suppressed ? (
         <>
-          <td>{formatCount(s.n)}</td>
-          <td>{formatFixed(s.median, d.median)}</td>
-          <td>{formatRange(s.p25, s.p75, d.range)}</td>
-          <td>{formatFixed(s.mean, d.mean)}</td>
-          <td>{formatAge(s.age)}</td>
+          <td data-label="Stories">{formatCount(s.n)}</td>
+          <td data-label="Median">{formatFixed(s.median, d.median)}</td>
+          <td data-label="Middle half">{formatRange(s.p25, s.p75, d.range)}</td>
+          <td data-label="Mean">{formatFixed(s.mean, d.mean)}</td>
+          <td data-label="Typical age">{formatAge(s.age)}</td>
         </>
       ) : (
         <td colSpan={5} className="muted">
@@ -32,8 +35,9 @@ export default function NumbersTable({ rows, overall, metric, minN }) {
     </tr>
   );
   return (
-    <div className="numbers-scroll">
+    <div id={id} className={visible ? "numbers-wrap" : "numbers-wrap visually-hidden"}>
       <table className="numbers">
+        {caption && <caption className="visually-hidden">{caption}</caption>}
         <thead>
           <tr>
             <th scope="col">Group</th>

@@ -1,12 +1,22 @@
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { cellStats, endGroups, groupRows, loadVariable, pattern } from "../lib/data.js";
-import { ASSOCIATION_NOTE, ageNotes, chartTitle, patternNote, subtitle } from "../lib/wording.js";
+import { chartValueText } from "../lib/rangeLayout.js";
+import {
+  ASSOCIATION_NOTE,
+  ageNotes,
+  answerHeading,
+  chartTitle,
+  oneGroupNote,
+  patternNote,
+  subtitle,
+  takeawaySegments,
+} from "../lib/wording.js";
 import CompareTable from "./CompareTable.jsx";
 import Controls from "./Controls.jsx";
 import CopyLink from "./CopyLink.jsx";
-import GroupChart from "./GroupChart.jsx";
 import LoadError from "./LoadError.jsx";
 import NumbersTable from "./NumbersTable.jsx";
+import RangeChart from "./RangeChart.jsx";
 
 const fileKey = (s) => `${s.v}/${s.sub}`;
 
@@ -55,23 +65,63 @@ export function describeView(meta, view, data) {
   const title = chartTitle({ variable, metric, genre, direction, compare });
   const sub = subtitle({ genre, subset, n: gd?.n, compare, genreCount: meta.genres.length - 1 });
   const readable = variable.bins.ordered || Boolean(variable.yes_subject);
-  const shownCount = rows.filter((r) => r.stats && !r.stats.suppressed).length;
-  const notes = [
-    patternNote({ variable, direction, effect, compare, shown: shownCount }),
-    ...ageNotes({ metric, ends: !compare && readable ? endGroups(rows) : null }),
-  ];
-  return { variable, k, metric, genre, subset, compare, gd, rows, overall, direction, effect, title, sub, notes };
+  const shownRows = rows.filter((r) => r.stats && !r.stats.suppressed);
+  const shownCount = shownRows.length;
+  const pNote = patternNote({ variable, direction, effect, compare, shown: shownCount });
+  const notes = [pNote, ...ageNotes({ metric, ends: !compare && readable ? endGroups(rows) : null })];
+  const valueText = chartValueText(rows, overall, metric.format);
+  const answer = compare ? title : answerHeading({ variable, metric, genre, direction, effect, shown: shownCount });
+  const takeaway = compare || shownCount < 2 ? null : takeawaySegments({ variable, rows, valueText });
+  const oneGroup = !compare && shownCount === 1 ? shownRows[0] : null;
+  return {
+    variable,
+    k,
+    metric,
+    genre,
+    subset,
+    compare,
+    gd,
+    rows,
+    overall,
+    direction,
+    effect,
+    title,
+    sub,
+    notes,
+    pNote,
+    answer,
+    takeaway,
+    oneGroup,
+    shownCount,
+  };
+}
+
+/** The takeaway line: plain text with the numbers in bold. */
+function Takeaway({ segments, note }) {
+  return (
+    <p className="takeaway">
+      {segments &&
+        segments.map((seg, i) => (typeof seg === "string" ? seg : <strong key={i}>{seg.strong}</strong>))}{" "}
+      {note && <span className="takeaway-note">{note}</span>}
+    </p>
+  );
 }
 
 export default function Explorer({ meta, state, onChange }) {
   const { view, data, busy, error, retry } = useShownData(state);
   const d = view ? describeView(meta, view, data) : null;
+  const [showNumbers, setShowNumbers] = useState(false);
+  const numbersId = useId();
+
+  useEffect(() => {
+    if (d && !busy) document.title = d.title;
+  }, [d?.title, busy]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <section className="explorer" id="explore" aria-label="Explorer">
       <Controls meta={meta} state={state} onChange={onChange} />
       <p className="visually-hidden" aria-live="polite">
-        {!busy && d ? d.title : ""}
+        {!busy && d ? d.answer : ""}
       </p>
       {error ? (
         <article className="chart-panel">
@@ -82,9 +132,31 @@ export default function Explorer({ meta, state, onChange }) {
       ) : (
         <article className={`chart-panel${busy ? " is-busy" : ""}`} aria-busy={busy}>
           <header className="chart-head">
-            <h2 className="chart-title">{d.title}</h2>
+            <h2 className="chart-title">{d.answer}</h2>
             <p className="chart-sub">{d.sub}</p>
           </header>
+          {!d.compare &&
+            (d.oneGroup ? (
+              <div className="takeaway one-group">
+                <p>{oneGroupNote(d.oneGroup)}</p>
+                {(view.genre !== "all" || view.sub !== "all") && (
+                  <p className="inline-actions">
+                    {view.genre !== "all" && (
+                      <button type="button" className="btn" onClick={() => onChange({ ...state, genre: "all" })}>
+                        All genres
+                      </button>
+                    )}
+                    {view.sub !== "all" && (
+                      <button type="button" className="btn" onClick={() => onChange({ ...state, sub: "all" })}>
+                        All stories
+                      </button>
+                    )}
+                  </p>
+                )}
+              </div>
+            ) : (
+              d.shownCount > 0 && <Takeaway segments={d.takeaway} note={d.pNote} />
+            ))}
           {d.compare ? (
             <CompareTable
               meta={meta}
@@ -97,18 +169,30 @@ export default function Explorer({ meta, state, onChange }) {
               onPickGenre={(id) => onChange({ ...state, mode: "one", genre: id })}
             />
           ) : (
-            <GroupChart
-              rows={d.rows}
-              overall={d.overall}
-              metric={d.metric}
-              variable={d.variable}
-              smallN={meta.small_n}
-              minN={meta.min_n}
-              title={d.title}
-            />
+            <>
+              <RangeChart
+                rows={d.rows}
+                overall={d.overall}
+                metric={d.metric}
+                variable={d.variable}
+                smallN={meta.small_n}
+                minN={meta.min_n}
+                title={d.title}
+                n={d.gd?.n}
+              />
+              <NumbersTable
+                id={numbersId}
+                rows={d.rows}
+                overall={d.overall}
+                metric={d.metric}
+                minN={meta.min_n}
+                visible={showNumbers}
+                caption={`The numbers behind the chart: ${d.title}`}
+              />
+            </>
           )}
           <div className="notes">
-            {d.notes.map((n) => (
+            {d.notes.slice(d.compare ? 0 : 1).map((n) => (
               <p key={n}>{n}</p>
             ))}
             <p>
@@ -122,10 +206,15 @@ export default function Explorer({ meta, state, onChange }) {
           </div>
           <div className="chart-actions">
             {!d.compare && (
-              <details className="numbers-details">
-                <summary>Show the numbers</summary>
-                <NumbersTable rows={d.rows} overall={d.overall} metric={d.metric} minN={meta.min_n} />
-              </details>
+              <button
+                type="button"
+                className="btn"
+                aria-expanded={showNumbers}
+                aria-controls={numbersId}
+                onClick={() => setShowNumbers((x) => !x)}
+              >
+                {showNumbers ? "Hide the numbers" : "Show the numbers"}
+              </button>
             )}
             <CopyLink />
           </div>

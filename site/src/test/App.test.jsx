@@ -14,14 +14,15 @@ beforeEach(() => {
   vi.stubGlobal("fetch", fetchMock);
 });
 
-const chartTitle = () => screen.getByRole("heading", { level: 2 });
+const chartTitle = () => screen.getByRole("heading", { level: 2 }); // the answer heading
+const fullTitle = () => document.title; // the full chart title, also the chart's accessible name
 
 async function renderApp(hash = "") {
   if (hash) window.history.replaceState(null, "", `/${hash}`);
   const user = userEvent.setup();
   render(<App />);
   await screen.findByRole("heading", { level: 2 });
-  await screen.findByText(/Median \(the typical story\)/);
+  await screen.findByText(/Typical story \(median\)/);
   return user;
 }
 
@@ -38,17 +39,16 @@ describe("the explorer", () => {
     const user = await renderApp();
     await user.selectOptions(screen.getByLabelText(/Genre/), "romance");
     // Romance has ~24 stories per group in the test data, too few (< 30) for a "tend to" title.
-    await waitFor(() =>
-      expect(chartTitle().textContent).toBe("How favorites per 1,000 views vary with dialogue share in Romance"),
-    );
+    await waitFor(() => expect(fullTitle()).toBe("How favorites per 1,000 views vary with dialogue share in Romance"));
+    expect(chartTitle().textContent).toBe("No clear pattern");
     expect(window.location.hash).toMatch(/genre=romance/);
 
     await user.selectOptions(screen.getByLabelText(/Popularity/), "pop_views");
-    await waitFor(() => expect(chartTitle().textContent).toBe("How views vary with dialogue share in Romance"));
+    await waitFor(() => expect(fullTitle()).toBe("How views vary with dialogue share in Romance"));
     expect(screen.getByText(/Totals grow with time online/)).toBeTruthy();
 
     await user.click(screen.getByRole("button", { name: "Emotion & relationships" }));
-    await waitFor(() => expect(chartTitle().textContent).toMatch(/anger/i));
+    await waitFor(() => expect(fullTitle()).toMatch(/anger/i));
     expect(screen.getByLabelText(/Story characteristic/).value).toBe("emo_anger_per_1k");
 
     await user.selectOptions(screen.getByLabelText(/Stories included/), "y2020");
@@ -58,7 +58,7 @@ describe("the explorer", () => {
 
   it("shows the right numbers for each group", async () => {
     const user = await renderApp("#/explore?genre=fetish&var=dlg_word_share&metric=pop_fav_per_1k_views");
-    await user.click(screen.getByText("Show the numbers"));
+    await user.click(screen.getByRole("button", { name: "Show the numbers" }));
     const table = screen.getByRole("table");
     const data = fixtureFile("v/dlg_word_share/all.json").g.fetish;
     const rows = within(table).getAllByRole("row").slice(1);
@@ -150,17 +150,17 @@ describe("loading", () => {
       return serve(url);
     });
     const user = await renderApp();
-    const before = chartTitle().textContent;
+    const before = fullTitle();
     await user.click(screen.getByRole("button", { name: "Emotion & relationships" }));
     // the new file is still on its way: the old chart stays, marked busy, and nothing is worded from missing data
-    expect(chartTitle().textContent).toBe(before);
+    expect(fullTitle()).toBe(before);
     expect(document.querySelector(".chart-panel").getAttribute("aria-busy")).toBe("true");
     expect(screen.queryByText(/too few stories/i)).toBeNull();
     expect(screen.queryByText(/Loading/)).toBeNull();
     const live = document.querySelector("[aria-live]");
     expect(live.textContent).toBe("");
     release();
-    await waitFor(() => expect(chartTitle().textContent).toMatch(/anger/i));
+    await waitFor(() => expect(fullTitle()).toMatch(/anger/i));
     expect(document.querySelector(".chart-panel").getAttribute("aria-busy")).toBe("false");
     expect(live.textContent).toBe(chartTitle().textContent);
   });

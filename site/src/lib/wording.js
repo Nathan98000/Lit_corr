@@ -111,3 +111,70 @@ export function subtitle({ genre, subset, n, compare = false, genreCount = 0 }) 
   if (n != null && !compare) parts.push(`${n.toLocaleString("en-US")} stories`);
   return parts.join(" · ");
 }
+
+const readsAsTrend = (variable) => variable.bins.ordered || Boolean(variable.yes_subject);
+
+/**
+ * The answer heading above a one-genre chart, from the existing pattern fields and group counts only:
+ * a clear pattern gets the chart title ("Longer stories tend to …"); everything else a short, neutral answer.
+ */
+export function answerHeading({ variable, metric, genre, direction, effect, shown }) {
+  if (shown != null && shown < 2) return "Too few stories to compare here";
+  if (!readsAsTrend(variable)) return "Each group on its own";
+  if (effect == null) return "Too few stories to judge a pattern";
+  if (direction) return chartTitle({ variable, metric, genre, direction });
+  return "No clear pattern";
+}
+
+const quoted = (label) => `“${label}”`;
+
+/**
+ * The takeaway line above the chart, as segments: plain strings and { strong } for the numbers.
+ * "Typical story: 0.28 for “Under 2,000”, 0.89 for “7,000+”." Only for ordered and yes/no characteristics
+ * with at least two groups shown; end groups that are hidden are named, never skipped silently.
+ */
+export function takeawaySegments({ variable, rows, valueText }) {
+  if (!readsAsTrend(variable) || rows.length < 2) return null;
+  const shown = rows.filter((r) => r.stats && !r.stats.suppressed);
+  if (shown.length < 2) return null;
+  const ends = [rows[0], rows[rows.length - 1]];
+  const binary = Boolean(variable.yes_subject);
+  const name = (r, i) => (binary ? lowerFirst(i === 0 ? variable.yes_subject : variable.no_subject) : quoted(r.label));
+  const segs = ["Typical story: "];
+  const visible = ends.map((r, i) => ({ r, i })).filter(({ r }) => r.stats && !r.stats.suppressed);
+  const hidden = ends.filter((r) => !(r.stats && !r.stats.suppressed));
+  visible.forEach(({ r, i }, j) => {
+    if (j > 0) segs.push(", ");
+    segs.push({ strong: valueText(r.stats.median) }, ` for ${name(r, i)}`);
+  });
+  if (hidden.length) {
+    const names = hidden.map((r) => quoted(r.label));
+    if (visible.length) segs.push("; ");
+    segs.push(`${names.join(" and ")} ${hidden.length > 1 ? "have" : "has"} too few stories`);
+  }
+  segs.push(".");
+  return segs;
+}
+
+export const segmentsText = (segs) => (segs || []).map((s) => (typeof s === "string" ? s : s.strong)).join("");
+
+/** When only one group has enough stories: name it and its size. */
+export function oneGroupNote(row) {
+  return `Only ${quoted(row.label)} has enough stories in this selection (${row.stats.n.toLocaleString("en-US")}).`;
+}
+
+/** A one-sentence description of the chart for screen readers. */
+export function chartSummary({ rows, valueText, n }) {
+  const shown = rows.filter((r) => r.stats && !r.stats.suppressed);
+  const count = n != null ? `; ${n.toLocaleString("en-US")} stories` : "";
+  if (!shown.length) return `No group has enough stories to show${count}.`;
+  if (shown.length === 1) {
+    return `Typical story ${valueText(shown[0].stats.median)} for ${shown[0].label}; 1 group shown${count}.`;
+  }
+  const a = shown[0];
+  const b = shown[shown.length - 1];
+  return (
+    `Typical story from ${valueText(a.stats.median)} for ${a.label} to ${valueText(b.stats.median)} for ` +
+    `${b.label}; ${shown.length} groups${count}.`
+  );
+}

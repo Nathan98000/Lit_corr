@@ -738,11 +738,16 @@ select:hover {
   margin-top: 10px;
 }
 
+.numbers-wrap {
+  margin-top: 12px;
+}
+
 table.numbers {
   border-collapse: collapse;
+  width: 100%;
+  max-width: 720px;
   font-size: 14px;
   font-variant-numeric: tabular-nums;
-  min-width: 560px;
 }
 
 .numbers th,
@@ -1102,4 +1107,254 @@ table.numbers {
   border-radius: var(--radius);
   background: var(--paper);
   font-size: 14px;
+}
+
+/* ------------------------------------------------------------ range chart (C2) */
+.range-chart {
+  margin-top: 4px;
+}
+
+.range-chart .axis-title {
+  margin: 10px 0 0;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+
+.range-chart svg {
+  display: block;
+  overflow: visible;
+  font-family: var(--sans);
+}
+
+.range-chart .grid {
+  stroke: var(--rule);
+}
+
+.range-chart .tick {
+  fill: var(--ink-3);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.range-chart .ref line {
+  stroke: var(--ink-2);
+  stroke-width: 1.2;
+  stroke-dasharray: 4 3;
+}
+
+.range-chart .reflab {
+  fill: var(--ink-2);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.range-chart .reflab-value {
+  font-weight: 600;
+}
+
+.range-chart .glabel {
+  fill: var(--ink);
+  font-size: 14px;
+}
+
+.range-chart .gn {
+  fill: var(--ink-3);
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+.range-chart .gval {
+  fill: var(--ink);
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.range-chart .gnone {
+  fill: var(--ink-3);
+  font-size: 12.5px;
+  font-style: italic;
+}
+
+/* a halo in the background color, so grid and reference lines never cut through text */
+.range-chart .glabel,
+.range-chart .gn,
+.range-chart .gval,
+.range-chart .gnone,
+.range-chart .reflab,
+.range-chart .tick {
+  paint-order: stroke;
+  stroke: var(--bg);
+  stroke-width: 5px;
+  stroke-linejoin: round;
+}
+
+.range-chart .iqr {
+  fill: var(--accent-bar);
+  stroke: var(--accent);
+  stroke-width: 1;
+}
+
+.range-chart .median {
+  fill: var(--accent-ink);
+  stroke: #fff;
+  stroke-width: 2;
+}
+
+.range-chart .row.small .iqr {
+  stroke-dasharray: 3 2;
+}
+
+.range-chart .row.small .median {
+  fill: #fff;
+  stroke: var(--accent-ink);
+  stroke-width: 2;
+}
+
+.range-chart .hatch-line {
+  stroke: #b9d0fa;
+  stroke-width: 2.4;
+}
+
+.range-chart .row-hit {
+  fill: transparent;
+}
+
+.range-chart .row {
+  cursor: pointer;
+  outline: none;
+}
+
+.range-chart .row:hover .row-hit,
+.range-chart .row.active .row-hit {
+  fill: rgb(74 137 243 / 0.06);
+}
+
+.range-chart .row:focus-visible .row-hit {
+  fill: rgb(74 137 243 / 0.1);
+  stroke: var(--accent-ink);
+  stroke-width: 2px;
+}
+
+.key-small {
+  width: 22px;
+  height: 10px;
+  border-radius: 5px;
+  border: 1px dashed var(--accent);
+  background: repeating-linear-gradient(135deg, #fff 0 3px, #b9d0fa 3px 5px);
+}
+
+.range-chart .key-median {
+  background: var(--accent-ink);
+  width: 12px;
+  height: 12px;
+}
+
+.range-chart .key-iqr {
+  width: 22px;
+  height: 10px;
+  border-radius: 5px;
+  background: var(--accent-bar);
+  border: 1px solid var(--accent);
+}
+
+.range-chart .key-ref {
+  width: 0;
+  height: 14px;
+  border-top: 0;
+  border-left: 1.5px dashed var(--ink-2);
+}
+
+.range-chart .chart-tip {
+  transform: translateX(-50%);
+}
+
+.range-chart .chart-tip.pinned {
+  border-color: var(--accent-ink);
+}
+
+/* On phones the numbers table becomes one card per group instead of scrolling sideways (F26). */
+@media (max-width: 559px) {
+  table.numbers,
+  table.numbers tbody,
+  table.numbers tr,
+  table.numbers th,
+  table.numbers td {
+    display: block;
+  }
+
+  table.numbers thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
+
+  table.numbers tr {
+    border: 1px solid var(--rule);
+    border-radius: var(--radius);
+    background: var(--paper);
+    padding: 8px 12px;
+    margin-bottom: 8px;
+  }
+
+  table.numbers th,
+  table.numbers td {
+    border: 0;
+    padding: 2px 0;
+    text-align: left;
+    white-space: normal;
+  }
+
+  table.numbers th {
+    font-weight: 600;
+    margin-bottom: 2px;
+  }
+
+  table.numbers td {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  table.numbers td::before {
+    content: attr(data-label);
+    color: var(--ink-3);
+  }
+
+  table.numbers td.muted::before {
+    content: none;
+  }
+}
+
+/* ------------------------------------------------------------ takeaway line */
+.takeaway {
+  border-left: 3px solid var(--accent-ink);
+  padding: 2px 0 2px 14px;
+  margin: 14px 0 6px;
+  max-width: 62ch;
+  font-size: 16px;
+  color: var(--ink);
+}
+
+.takeaway strong {
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+
+.takeaway-note {
+  color: var(--ink-2);
+}
+
+.takeaway.one-group p {
+  margin: 0;
+}
+
+.inline-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px !important;
 }

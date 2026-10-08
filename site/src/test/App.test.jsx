@@ -137,7 +137,7 @@ describe("the explorer", () => {
     await screen.findByRole("heading", { level: 1, name: "How it works" });
     expect(document.title).toBe("How it works · What do popular Literotica stories have in common?");
     expect(screen.getAllByText(/should not be assumed to represent all erotic fiction, readers, or human sexuality/).length).toBe(2);
-    expect(screen.getByText(/What this site does not contain/)).toBeTruthy();
+    expect(screen.getByRole("heading", { level: 2, name: "What this site does not contain" })).toBeTruthy();
   });
 
   it("falls back to sensible settings for an unknown address", async () => {
@@ -329,5 +329,29 @@ describe("the pattern browser", () => {
     await user.selectOptions(screen.getByLabelText("Genre"), "tiny");
     await waitFor(() => expect(window.location.hash).toBe("#/patterns?genre=tiny&metric=pop_fav_per_1k_views"));
     expect(document.querySelector(".pattern-count").textContent).toMatch(/^0 of 3 /);
+  });
+});
+
+describe("How it works", () => {
+  it("has an In short box, contents, linkable sections and a filterable glossary", async () => {
+    window.history.replaceState(null, "", "/#/methodology/tend-to");
+    const user = userEvent.setup();
+    render(<App />);
+    const heading = await screen.findByRole("heading", { level: 2, name: "When a title says “tend to”" });
+    await waitFor(() => expect(document.activeElement).toBe(heading));
+    const short = screen.getByRole("complementary", { name: "In short" });
+    expect(within(short).getAllByRole("listitem")).toHaveLength(5);
+    expect(short.textContent).toMatch(/collected October 1, 2026 to October 8, 2026/);
+    const contents = screen.getByRole("navigation", { name: "Contents" });
+    for (const id of ["point-of-view", "explicitness", "emotion", "charts", "tend-to", "missing-data"]) {
+      expect(within(contents).getAllByRole("link").some((a) => a.getAttribute("href") === `#/methodology/${id}`)).toBe(true);
+      expect(document.getElementById(id)).toBeTruthy();
+    }
+    expect(screen.getAllByText(/do not establish causation/).length).toBe(2);
+    // the glossary uses the topics and can be filtered
+    expect(screen.getByText("Dialogue & characters", { selector: "summary" })).toBeTruthy();
+    await user.type(screen.getByLabelText("Find a characteristic"), "anger");
+    expect(screen.getByText("1 match")).toBeTruthy();
+    expect(screen.getByRole("link", { name: "See the chart" }).getAttribute("href")).toMatch(/var=emo_anger_per_1k/);
   });
 });

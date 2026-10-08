@@ -68,8 +68,8 @@ export default function App() {
 
   useEffect(() => {
     document.title = PAGE_TITLES[route.page] || TITLE;
-    window.scrollTo?.(0, 0);
-  }, [route.page]);
+    if (!route.section) window.scrollTo?.(0, 0);
+  }, [route.page]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const state = useMemo(() => (meta ? sanitize(route.state, meta) : null), [meta, route.state]);
   useEffect(() => {
@@ -141,7 +141,7 @@ export default function App() {
         {error ? (
           <LoadError onRetry={retry} detail={error} />
         ) : route.page === "methodology" ? (
-          meta ? <Methodology meta={meta} /> : <div className="page-placeholder" aria-busy="true" />
+          meta ? <Methodology meta={meta} section={route.section} /> : <div className="page-placeholder" aria-busy="true" />
         ) : route.page === "patterns" ? (
           meta ? (
             <PatternBrowser meta={meta} state={sanitize(route.state, meta)} onChange={updatePatterns} />

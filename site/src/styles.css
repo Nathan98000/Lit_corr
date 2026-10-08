@@ -881,9 +881,152 @@ table.numbers {
 }
 
 /* ------------------------------------------------------------ methodology */
+.methodology-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 40px;
+}
+
+@media (min-width: 1000px) {
+  .methodology-layout {
+    grid-template-columns: 220px minmax(0, 1fr);
+  }
+
+  .contents {
+    position: sticky;
+    top: 16px;
+    align-self: start;
+    max-height: calc(100vh - 32px);
+    overflow: auto;
+    padding-top: 44px;
+  }
+}
+
+.contents {
+  font-size: 14px;
+}
+
+.contents-title {
+  margin: 0 0 6px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.contents ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.contents a {
+  display: flex;
+  align-items: center;
+  min-height: 32px;
+  color: var(--ink-2);
+  text-decoration: none;
+}
+
+.contents li.sub a {
+  padding-left: 14px;
+  font-size: 13.5px;
+}
+
+.contents a:hover,
+.contents a[aria-current] {
+  color: var(--accent-ink);
+  text-decoration: underline;
+}
+
+@media (max-width: 999px) {
+  .methodology-layout {
+    gap: 0;
+  }
+
+  .contents {
+    padding-top: 24px;
+  }
+
+  .contents ol {
+    columns: 2 200px;
+    column-gap: 24px;
+  }
+
+  .contents a {
+    min-height: var(--target);
+  }
+
+  .methodology-layout > .prose {
+    padding-top: 16px;
+  }
+}
+
 .prose {
-  max-width: 72ch;
+  max-width: 68ch;
   padding: 44px 0 56px;
+}
+
+.prose .lede {
+  font-size: 18px;
+  color: var(--ink-2);
+  margin: 0 0 22px;
+}
+
+.prose [tabindex="-1"]:focus {
+  outline: none;
+}
+
+.prose h2,
+.prose h3 {
+  scroll-margin-top: 16px;
+}
+
+.in-short {
+  margin: 0 0 22px;
+  padding: 14px 18px 6px;
+  border: 1px solid var(--rule-2);
+  border-radius: var(--radius);
+  background: var(--paper);
+}
+
+.in-short h2 {
+  margin: 0 0 6px !important;
+  font-size: 18px !important;
+}
+
+.in-short ul {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.glossary-filter {
+  display: grid;
+  gap: 6px;
+  margin: 10px 0 14px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+
+.glossary-filter input {
+  min-height: var(--target);
+  max-width: 420px;
+  padding: 0 12px;
+  border: 1px solid var(--control);
+  border-radius: var(--radius);
+  background: var(--paper);
+  font-size: 16px;
+  font-weight: 400;
+}
+
+.glossary-blurb {
+  display: block;
+  flex-basis: 100%;
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--ink-3);
 }
 
 .prose h1 {
@@ -926,8 +1069,9 @@ table.numbers {
 
 .glossary-group summary {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 6px;
+  gap: 0 6px;
   min-height: var(--target);
   cursor: pointer;
   font-weight: 600;

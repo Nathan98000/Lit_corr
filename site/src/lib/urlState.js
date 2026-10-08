@@ -45,6 +45,19 @@ export function toHash(page, state = {}) {
   return q ? `${base}?${q}` : base;
 }
 
+/**
+ * "Only include" options that cannot go with a characteristic: a length option while the chart is about word
+ * count, a "Published …" option while it is about publication year or years online. Returns the reason, or null.
+ */
+export function subsetConflict(subset, variable) {
+  if (!subset || !variable) return null;
+  if (subset.group === "Length" && variable.id === "story_words") return "not with word count";
+  if (subset.group === "Published" && (variable.id === "pub_year" || variable.id === "age_years")) {
+    return `not with ${variable.label.toLowerCase()}`;
+  }
+  return null;
+}
+
 /** Fill in defaults and replace anything the data does not know about. */
 export function sanitize(state, meta) {
   const has = (list, id) => list.some((x) => x.id === id);
@@ -54,6 +67,8 @@ export function sanitize(state, meta) {
   if (!has(meta.metrics, s.metric)) s.metric = has(meta.metrics, meta.default_metric) ? meta.default_metric : meta.metrics[0].id;
   if (!has(meta.variables, s.v)) s.v = has(meta.variables, DEFAULT_STATE.v) ? DEFAULT_STATE.v : meta.variables[0].id;
   if (!has(meta.subsets, s.sub)) s.sub = "all";
+  const variable = meta.variables.find((v) => v.id === s.v);
+  if (subsetConflict(meta.subsets.find((x) => x.id === s.sub), variable)) s.sub = "all";
   if (s.check !== "age" || s.mode !== "one" || s.sub !== "all") delete s.check;
   return s;
 }

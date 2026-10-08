@@ -17,6 +17,20 @@ beforeEach(() => {
 const chartTitle = () => screen.getByRole("heading", { level: 2 }); // the answer heading
 const fullTitle = () => document.title; // the full chart title, also the chart's accessible name
 
+/** Choose a characteristic through the picker: open it, search, press Enter. */
+async function pickCharacteristic(user, query) {
+  await user.click(screen.getByRole("button", { name: /^Story characteristic:/ }));
+  await user.type(screen.getByRole("combobox", { name: /^Search/ }), query);
+  await user.keyboard("{Enter}");
+}
+
+/** Choose a popularity measure through its menu. */
+async function pickMeasure(user, label) {
+  await user.click(screen.getByRole("button", { name: /^Popularity measure:/ }));
+  const option = screen.getAllByRole("option").find((o) => o.querySelector(".pick-label")?.firstChild.textContent === label);
+  await user.click(option);
+}
+
 async function renderApp(hash = "") {
   if (hash) window.history.replaceState(null, "", `/${hash}`);
   const user = userEvent.setup();
@@ -37,21 +51,21 @@ describe("the explorer", () => {
 
   it("switches genre, popularity measure, characteristic and the stories included", async () => {
     const user = await renderApp();
-    await user.selectOptions(screen.getByLabelText(/Genre/), "romance");
+    await user.selectOptions(screen.getByLabelText("Genre"), "romance");
     // Romance has ~24 stories per group in the test data, too few (< 30) for a "tend to" title.
     await waitFor(() => expect(fullTitle()).toBe("How favorites per 1,000 views vary with dialogue share in Romance"));
     expect(chartTitle().textContent).toBe("No clear pattern");
     expect(window.location.hash).toMatch(/genre=romance/);
 
-    await user.selectOptions(screen.getByLabelText(/Popularity/), "pop_views");
+    await pickMeasure(user, "Views");
     await waitFor(() => expect(fullTitle()).toBe("How views vary with dialogue share in Romance"));
     expect(screen.getByText(/Totals grow with time online/)).toBeTruthy();
 
-    await user.click(screen.getByRole("button", { name: "Emotion & relationships" }));
+    await pickCharacteristic(user, "anger");
     await waitFor(() => expect(fullTitle()).toMatch(/anger/i));
-    expect(screen.getByLabelText(/Story characteristic/).value).toBe("emo_anger_per_1k");
+    expect(window.location.hash).toMatch(/var=emo_anger_per_1k/);
 
-    await user.selectOptions(screen.getByLabelText(/Stories included/), "y2020");
+    await user.selectOptions(screen.getByLabelText("Only include"), "y2020");
     await waitFor(() => expect(fetchMock.calls.some((u) => u.endsWith("v/emo_anger_per_1k/y2020.json"))).toBe(true));
     await waitFor(() => expect(screen.getByText(/Published 2020 or later/, { selector: ".chart-sub" })).toBeTruthy());
   });
@@ -74,17 +88,18 @@ describe("the explorer", () => {
 
   it("compares genres side by side and opens a genre from the table", async () => {
     const user = await renderApp();
-    await user.click(screen.getByRole("button", { name: "Compare genres" }));
+    await user.click(screen.getByRole("button", { name: /Compare all 3 genres/ }));
     const table = await screen.findByRole("table");
     expect(chartTitle().textContent).toMatch(/genre by genre$/);
     const names = within(table).getAllByRole("rowheader").map((th) => th.textContent);
     expect(names).toEqual(fixtureMeta.genres.map((g) => g.name));
     const tiny = within(table).getAllByRole("row").find((r) => r.textContent.startsWith("Tiny Genre"));
     expect(within(tiny).getAllByRole("cell").filter((c) => c.textContent === "·").length).toBeGreaterThan(0);
-    expect(screen.queryByLabelText(/^1 Genre$/)).toBeNull();
+    expect(screen.queryByLabelText("Genre")).toBeNull();
+    expect(screen.getByText(/Genre by genre/)).toBeTruthy();
 
     await user.click(within(table).getByRole("button", { name: "Romance" }));
-    await waitFor(() => expect(screen.getByLabelText(/Genre/).value).toBe("romance"));
+    await waitFor(() => expect(screen.getByLabelText("Genre").value).toBe("romance"));
     expect(window.location.hash).toMatch(/mode=one/);
   });
 
@@ -92,7 +107,7 @@ describe("the explorer", () => {
     const user = await renderApp("#/explore?var=emo_anger_per_1k");
     const chip = screen.getByRole("button", { name: /Do stories with more dialogue get more comments/ });
     await user.click(chip);
-    await waitFor(() => expect(screen.getByLabelText(/Story characteristic/).value).toBe("dlg_word_share"));
+    await waitFor(() => expect(window.location.hash).toMatch(/var=dlg_word_share/));
   });
 
   it("has a methodology page with the required statement", async () => {
@@ -105,8 +120,8 @@ describe("the explorer", () => {
 
   it("falls back to sensible settings for an unknown address", async () => {
     await renderApp("#/explore?genre=nope&metric=nope&var=nope&include=nope");
-    expect(screen.getByLabelText(/Genre/).value).toBe("all");
-    expect(screen.getByLabelText(/Stories included/).value).toBe("all");
+    expect(screen.getByLabelText("Genre").value).toBe("all");
+    expect(screen.getByLabelText("Only include").value).toBe("all");
   });
 });
 
@@ -151,7 +166,7 @@ describe("loading", () => {
     });
     const user = await renderApp();
     const before = fullTitle();
-    await user.click(screen.getByRole("button", { name: "Emotion & relationships" }));
+    await pickCharacteristic(user, "anger");
     // the new file is still on its way: the old chart stays, marked busy, and nothing is worded from missing data
     expect(fullTitle()).toBe(before);
     expect(document.querySelector(".chart-panel").getAttribute("aria-busy")).toBe("true");

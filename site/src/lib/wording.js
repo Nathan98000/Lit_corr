@@ -216,3 +216,26 @@ export function chartSummary({ rows, valueText, n }) {
     `${b.label}; ${shown.length} groups${count}.`
   );
 }
+
+/**
+ * The question sentence (concept B), in pieces so that each bracketed part can be a control:
+ * "In [All genres], how do [favorites per 1,000 views] vary with [story length]?"
+ * "does" for singular measures; "vary with" for ordered characteristics, "vary by" for unordered ones and
+ * "differ between [first-person stories and third-person stories]" for yes/no ones.
+ */
+export function questionParts({ variable, metric }) {
+  const binary = Boolean(variable.yes_subject);
+  return {
+    aux: metric.plural ? "do" : "does",
+    verb: binary ? "differ between" : variable.bins.ordered ? "vary with" : "vary by",
+    measure: metric.noun,
+    characteristic: binary ? `${lowerFirst(variable.yes_subject)} and ${variable.no_subject}` : variable.noun,
+  };
+}
+
+/** The whole question as text (for tests and for screen readers' summary). */
+export function questionText({ variable, metric, genre, compare = false }) {
+  const p = questionParts({ variable, metric });
+  const lead = compare ? "Genre by genre," : `In ${genre.name},`;
+  return `${lead} how ${p.aux} ${p.measure} ${p.verb} ${p.characteristic}?`;
+}

@@ -1,5 +1,9 @@
-import { prefetchVariable } from "../lib/data.js";
-import InfoTip from "./InfoTip.jsx";
+import { useCallback, useId, useRef, useState } from "react";
+import { subsetConflict } from "../lib/urlState.js";
+import { questionParts } from "../lib/wording.js";
+import CharacteristicPicker from "./CharacteristicPicker.jsx";
+import InlineSelect, { Caret } from "./InlineSelect.jsx";
+import MetricMenu from "./MetricMenu.jsx";
 
 function groupBy(list, key) {
   const out = new Map();
@@ -11,141 +15,155 @@ function groupBy(list, key) {
   return out;
 }
 
-/** The explorer's controls, in the order of the question: genre → popularity → story characteristic. */
+/**
+ * The controls are the question itself (concept B): "In [All genres], how do [favorites per 1,000 views] vary with
+ * [story length]?", then "Only include: [All stories]". Genre and "only include" are native selects styled as words;
+ * the measure and the characteristic open a menu and a picker. Comparing genres: "Genre by genre, how do …".
+ */
 export default function Controls({ meta, state, onChange }) {
   const set = (patch) => onChange({ ...state, ...patch });
   const variable = meta.variables.find((v) => v.id === state.v);
-  const activeGroup = variable?.topic;
-  const topic = meta.topics.find((t) => t.id === activeGroup);
-  const byId = new Map(meta.variables.map((v) => [v.id, v]));
-  const groupVars = (topic?.ids || []).map((id) => byId.get(id));
-  const subgroups = groupBy(groupVars, "subgroup");
-  const metricGroups = groupBy(meta.metrics, "group");
+  const metric = meta.metrics.find((m) => m.id === state.metric);
+  const genre = meta.genres.find((g) => g.id === state.genre);
+  const subset = meta.subsets.find((s) => s.id === state.sub);
+  const compare = state.mode === "compare";
+  const p = questionParts({ variable, metric });
+  const [menu, setMenu] = useState(null); // "metric" | "variable" | null
+  const metricBtn = useRef(null);
+  const varBtn = useRef(null);
+  const ids = useId();
+  const close = useCallback(() => setMenu(null), []);
   const subsetGroups = groupBy(meta.subsets, "group");
+  const anyConflict = meta.subsets.some((s) => subsetConflict(s, variable));
 
-  const pickGroup = (groupId) => {
-    if (groupId === activeGroup) return;
-    const first = meta.topics.find((t) => t.id === groupId)?.ids[0];
-    if (first) set({ v: first });
+  const option = (s) => {
+    const reason = subsetConflict(s, variable);
+    return (
+      <option key={s.id} value={s.id} disabled={Boolean(reason)}>
+        {s.label}
+        {reason ? ` (${reason})` : ""}
+      </option>
+    );
   };
 
   return (
     <div className="controls">
-      <div className="mode-toggle" role="group" aria-label="View">
-        <button type="button" aria-pressed={state.mode === "one"} onClick={() => set({ mode: "one" })}>
-          One genre
-        </button>
-        <button type="button" aria-pressed={state.mode === "compare"} onClick={() => set({ mode: "compare" })}>
-          Compare genres
-        </button>
-      </div>
-
-      <div className="control-grid">
-        {state.mode === "one" ? (
-          <label className="control">
-            <span className="control-label">
-              <span className="step">1</span> Genre
-            </span>
-            <select value={state.genre} onChange={(e) => set({ genre: e.target.value })}>
-              {meta.genres.map((g) => (
-                <option key={g.id} value={g.id}>
-                  {g.name}
-                </option>
-              ))}
-            </select>
-          </label>
-        ) : (
-          <div className="control control-static">
-            <span className="control-label">
-              <span className="step">1</span> Genre
-            </span>
-            <span className="static-value">All genres, one row each</span>
-          </div>
-        )}
-
-        <div className="control">
-          <span className="control-label">
-            <label htmlFor="metric-select">
-              <span className="step">2</span> Popularity
-            </label>
-            <InfoTip label="About the popularity measures">
-              Totals such as views keep growing while a story is online, so older stories have had more time to
-              collect them. “Per month” and “per 1,000 views” measures make old and new stories easier to compare.
-            </InfoTip>
-          </span>
-          <select id="metric-select" value={state.metric} onChange={(e) => set({ metric: e.target.value })}>
-            {meta.metric_groups.map((g) =>
-              metricGroups.has(g) ? (
-                <optgroup key={g} label={g}>
-                  {metricGroups.get(g).map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.label}
-                    </option>
-                  ))}
-                </optgroup>
-              ) : null,
-            )}
-          </select>
-        </div>
-
-        <div className="control control-wide">
-          <span className="control-label" id="characteristic-label">
-            <span className="step">3</span> Story characteristic
-          </span>
-          <div className="group-tabs" role="group" aria-label="Kind of characteristic">
-            {meta.topics.map((g) => (
-              <button
-                type="button"
-                key={g.id}
-                aria-pressed={g.id === activeGroup}
-                onClick={() => pickGroup(g.id)}
-                onMouseEnter={() => prefetchVariable(g.ids[0], state.sub)}
-                onFocus={() => prefetchVariable(g.ids[0], state.sub)}
+      <fieldset className="question" id="question" tabIndex={-1}>
+        <legend className="visually-hidden">Choose what to compare</legend>
+        <p className="sentence">
+          {compare ? (
+            "Genre by genre, "
+          ) : (
+            <>
+              In{" "}
+              <InlineSelect
+                id={`${ids}-genre`}
+                label="Genre"
+                value={state.genre}
+                text={genre.name}
+                onChange={(g) => set({ genre: g })}
               >
-                {g.label}
-              </button>
-            ))}
-          </div>
-          <select
-            aria-labelledby="characteristic-label"
-            value={state.v}
-            onChange={(e) => set({ v: e.target.value })}
-          >
-            {[...subgroups.entries()].map(([sub, vars]) => (
-              <optgroup key={sub} label={sub}>
-                {vars.map((v) => (
-                  <option key={v.id} value={v.id}>
-                    {v.label}
+                {meta.genres.map((g) => (
+                  <option key={g.id} value={g.id}>
+                    {g.name}
                   </option>
                 ))}
-              </optgroup>
-            ))}
-          </select>
-        </div>
+              </InlineSelect>
+              ,{" "}
+            </>
+          )}
+          how {p.aux}{" "}
+          <button
+            ref={metricBtn}
+            type="button"
+            className="slot slot-button"
+            aria-haspopup="dialog"
+            aria-expanded={menu === "metric"}
+            onClick={() => setMenu(menu === "metric" ? null : "metric")}
+          >
+            <span className="visually-hidden">Popularity measure: </span>
+            {p.measure}
+            <Caret />
+          </button>{" "}
+          {p.verb}{" "}
+          <button
+            ref={varBtn}
+            type="button"
+            className="slot slot-button"
+            aria-haspopup="dialog"
+            aria-expanded={menu === "variable"}
+            onClick={() => setMenu(menu === "variable" ? null : "variable")}
+          >
+            <span className="visually-hidden">Story characteristic: </span>
+            {p.characteristic}
+            <Caret />
+          </button>
+          ?
+        </p>
+      </fieldset>
 
-        <label className="control control-secondary">
-          <span className="control-label">Stories included</span>
-          <select value={state.sub} onChange={(e) => set({ sub: e.target.value })}>
+      <div className="question-after">
+        <span className="include">
+          <span className="include-label" id={`${ids}-include-label`}>
+            Only include:
+          </span>{" "}
+          <InlineSelect
+            id={`${ids}-include`}
+            label="Only include"
+            value={state.sub}
+            text={subset.label}
+            onChange={(sub) => set({ sub, check: undefined })}
+            describedBy={anyConflict ? `${ids}-include-note` : undefined}
+          >
             {[...subsetGroups.entries()].map(([grp, subs]) =>
               grp ? (
                 <optgroup key={grp} label={grp}>
-                  {subs.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.label}
-                    </option>
-                  ))}
+                  {subs.map(option)}
                 </optgroup>
               ) : (
-                subs.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.label}
-                  </option>
-                ))
+                subs.map(option)
               ),
             )}
-          </select>
-        </label>
+          </InlineSelect>
+        </span>
+        {compare && (
+          <button type="button" className="btn" onClick={() => set({ mode: "one" })}>
+            ← Back to one genre
+          </button>
+        )}
       </div>
+      {anyConflict && (
+        <p className="include-note" id={`${ids}-include-note`}>
+          Options that would leave only one group of {variable.label.toLowerCase()} are turned off.
+        </p>
+      )}
+
+      <MetricMenu
+        meta={meta}
+        value={state.metric}
+        open={menu === "metric"}
+        anchor={metricBtn}
+        onClose={close}
+        onPick={(id) => {
+          setMenu(null);
+          set({ metric: id });
+        }}
+      />
+      <CharacteristicPicker
+        meta={meta}
+        value={state.v}
+        sub={state.sub}
+        open={menu === "variable"}
+        anchor={varBtn}
+        onClose={close}
+        onPick={(id) => {
+          setMenu(null);
+          const next = { ...state, v: id, check: undefined };
+          const nextVar = meta.variables.find((v) => v.id === id);
+          if (subsetConflict(meta.subsets.find((s) => s.id === state.sub), nextVar)) next.sub = "all";
+          onChange(next);
+        }}
+      />
     </div>
   );
 }

@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { cellStats, endGroups, groupRows, loadVariable, pattern } from "../lib/data.js";
 import { ASSOCIATION_NOTE, ageNotes, chartTitle, patternNote, subtitle } from "../lib/wording.js";
 import CompareTable from "./CompareTable.jsx";
+import CopyLink from "./CopyLink.jsx";
+import LoadError from "./LoadError.jsx";
 import Controls from "./Controls.jsx";
 import GroupChart from "./GroupChart.jsx";
 import NumbersTable from "./NumbersTable.jsx";
@@ -10,7 +12,7 @@ export default function Explorer({ meta, state, onChange }) {
   const key = `${state.v}/${state.sub}`;
   const [loaded, setLoaded] = useState(null); // { key, value }
   const [error, setError] = useState(null);
-  const [copied, setCopied] = useState(false);
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     let live = true;
@@ -22,7 +24,7 @@ export default function Explorer({ meta, state, onChange }) {
     return () => {
       live = false;
     };
-  }, [key, state.v, state.sub]);
+  }, [key, state.v, state.sub, attempt]);
 
   const variable = meta.variables.find((v) => v.id === state.v);
   const k = meta.metrics.findIndex((m) => m.id === state.metric);
@@ -49,16 +51,6 @@ export default function Explorer({ meta, state, onChange }) {
     ...ageNotes({ metric, ends: !compare && readable ? endGroups(rows) : null }),
   ];
 
-  const copyLink = async () => {
-    try {
-      await navigator.clipboard.writeText(window.location.href);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      setCopied(false);
-    }
-  };
-
   return (
     <section className="explorer" id="explore" aria-label="Explorer">
       <Controls meta={meta} state={state} onChange={onChange} />
@@ -70,7 +62,7 @@ export default function Explorer({ meta, state, onChange }) {
           <p className="chart-sub">{sub}</p>
         </header>
         {error ? (
-          <p className="chart-empty">Sorry, this chart could not be loaded ({error}).</p>
+          <LoadError onRetry={() => setAttempt((a) => a + 1)} detail={error} />
         ) : !varData ? (
           <div className="chart-loading" aria-busy="true">
             Loading…
@@ -117,9 +109,7 @@ export default function Explorer({ meta, state, onChange }) {
               <NumbersTable rows={rows} overall={overall} metric={metric} minN={meta.min_n} />
             </details>
           )}
-          <button type="button" className="link-button copy-link" onClick={copyLink}>
-            {copied ? "Link copied" : "Copy a link to this chart"}
-          </button>
+          <CopyLink />
         </div>
       </article>
     </section>

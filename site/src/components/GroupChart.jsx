@@ -1,6 +1,6 @@
 import { scaleBand, scaleLinear } from "d3-scale";
 import { useState } from "react";
-import { formatAge, formatCount, formatValue } from "../lib/format.js";
+import { formatAge, formatCount, formatFixed, formatRange, formatValue, stepDecimals } from "../lib/format.js";
 import useWidth from "./useWidth.js";
 
 function wrap(label, maxChars) {
@@ -66,6 +66,7 @@ export default function GroupChart({ rows, overall, metric, variable, smallN, mi
   const barW = Math.min(52, x.bandwidth() * 0.62);
   const maxChars = Math.max(4, Math.floor(x.bandwidth() / 6.6));
   const ticks = y.ticks(narrow ? 4 : 5);
+  const tickD = ticks.length > 1 ? stepDecimals(ticks[1] - ticks[0]) : 0;
   const fmt = (v) => formatValue(v, metric.format);
   const anySmall = shown.some((r) => r.stats.n < smallN);
   const activeRow = active == null ? null : rows[active];
@@ -106,7 +107,7 @@ export default function GroupChart({ rows, overall, metric, variable, smallN, mi
               <g key={t} transform={`translate(0,${y(t)})`}>
                 <line className="grid" x1={0} x2={innerW} />
                 <text className="tick" x={-8} dy="0.32em" textAnchor="end">
-                  {fmt(t)}
+                  {formatFixed(t, tickD)}
                 </text>
               </g>
             ))}
@@ -194,9 +195,7 @@ export default function GroupChart({ rows, overall, metric, variable, smallN, mi
                 <dt>Median</dt>
                 <dd>{fmt(activeRow.stats.median)}</dd>
                 <dt>Middle half</dt>
-                <dd>
-                  {fmt(activeRow.stats.p25)} – {fmt(activeRow.stats.p75)}
-                </dd>
+                <dd>{formatRange(activeRow.stats.p25, activeRow.stats.p75, Math.max(...[activeRow.stats.p25, activeRow.stats.p75].map((v) => fmt(v).split(".")[1]?.length || 0)))}</dd>
                 <dt>Mean</dt>
                 <dd>{fmt(activeRow.stats.mean)}</dd>
                 <dt>Typical age</dt>

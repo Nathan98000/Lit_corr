@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Explorer from "./components/Explorer.jsx";
+import LoadError from "./components/LoadError.jsx";
 import Methodology from "./components/Methodology.jsx";
-import { loadMeta } from "./lib/data.js";
+import { clearCache, loadMeta } from "./lib/data.js";
+import { scrollBehavior } from "./lib/motion.js";
 import { formatCount, formatDate } from "./lib/format.js";
 import { parseHash, sanitize, toHash } from "./lib/urlState.js";
 
@@ -14,9 +16,15 @@ export default function App() {
   const lastExplore = useRef(route.page === "explore" ? route.state : {});
   const mainRef = useRef(null);
 
+  const [attempt, setAttempt] = useState(0);
   useEffect(() => {
+    setError(null);
     loadMeta().then(setMeta, (e) => setError(e.message));
-  }, []);
+  }, [attempt]);
+  const retry = () => {
+    clearCache();
+    setAttempt((a) => a + 1);
+  };
 
   useEffect(() => {
     const onHash = () => setRoute(parseHash(window.location.hash));
@@ -44,7 +52,7 @@ export default function App() {
     window.history.pushState(null, "", toHash("explore", next));
     setRoute({ page: "explore", state: next });
     const later = window.requestAnimationFrame || ((f) => setTimeout(f, 0));
-    later(() => document.getElementById("explore")?.scrollIntoView?.({ behavior: "smooth" }));
+    later(() => document.getElementById("explore")?.scrollIntoView?.({ behavior: scrollBehavior() }));
   };
 
   const skip = (e) => {
@@ -76,7 +84,7 @@ export default function App() {
 
       <main id="main" ref={mainRef} tabIndex={-1} className="wrap">
         {error ? (
-          <p className="chart-empty">The data could not be loaded ({error}).</p>
+          <LoadError onRetry={retry} detail={error} />
         ) : !meta ? (
           <p className="chart-loading">Loading…</p>
         ) : route.page === "methodology" ? (

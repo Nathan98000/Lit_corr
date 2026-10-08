@@ -1,6 +1,16 @@
 import { describe, expect, it } from "vitest";
 import { cellStats, endGroups, groupRows, relativeMedian } from "../lib/data.js";
-import { formatAge, formatRatio, formatValue } from "../lib/format.js";
+import {
+  columnDecimals,
+  formatAge,
+  formatCompact,
+  formatDate,
+  formatFixed,
+  formatRange,
+  formatRatio,
+  formatValue,
+  stepDecimals,
+} from "../lib/format.js";
 import { DEFAULT_STATE, parseHash, sanitize, toHash } from "../lib/urlState.js";
 import { ageNotes, chartTitle, patternNote, strengthWord } from "../lib/wording.js";
 import { fixtureMeta, realMeta } from "./fixtures.js";
@@ -18,6 +28,28 @@ describe("formatting", () => {
     expect(formatAge(0.4)).toBe("under a year");
     expect(formatAge(1)).toBe("1 year");
     expect(formatAge(12.2)).toBe("12 years");
+  });
+});
+
+describe("consistent number formats", () => {
+  it("uses one number of decimals per column and axis", () => {
+    expect(columnDecimals([1, 1.5, 0.66], "rate")).toBe(2);
+    expect(columnDecimals([22437, 500], "count")).toBe(0);
+    expect(columnDecimals([4.4], "rating")).toBe(2);
+    expect(stepDecimals(0.25)).toBe(2);
+    expect(stepDecimals(0.2)).toBe(1);
+    expect(stepDecimals(5000)).toBe(0);
+    expect(formatFixed(1, 1)).toBe("1.0");
+    expect(formatFixed(22437, 0)).toBe("22,437");
+    expect(formatRange(0.1, 0.66, 2)).toBe("0.10–0.66");
+  });
+  it("writes compact axis labels and US dates", () => {
+    expect(formatCompact(60000)).toBe("60k");
+    expect(formatCompact(800000)).toBe("800k");
+    expect(formatCompact(12500)).toBe("12.5k");
+    expect(formatCompact(1200000)).toBe("1.2M");
+    expect(formatCompact(5000)).toBe("5,000");
+    expect(formatDate("2026-10-01")).toBe("October 1, 2026");
   });
 });
 
@@ -138,5 +170,18 @@ describe("chart titles", () => {
     expect(notes).toHaveLength(1);
     expect(notes[0]).toMatch(/“Low” has been online 12 years, in “High” 4 years/);
     expect(ageNotes({ metric: m("pop_fav_per_1k_views"), ends: [ends[0], { label: "x", stats: { age: 11 } }] })).toEqual([]);
+  });
+});
+
+describe("reduced motion", () => {
+  it("scrolls without animation when the visitor asks for reduced motion", async () => {
+    const { scrollBehavior, prefersReducedMotion } = await import("../lib/motion.js");
+    const original = window.matchMedia;
+    window.matchMedia = (q) => ({ matches: q.includes("reduce"), media: q });
+    expect(prefersReducedMotion()).toBe(true);
+    expect(scrollBehavior()).toBe("auto");
+    window.matchMedia = () => ({ matches: false });
+    expect(scrollBehavior()).toBe("smooth");
+    window.matchMedia = original;
   });
 });

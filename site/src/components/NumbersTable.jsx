@@ -1,19 +1,27 @@
-import { formatAge, formatCount, formatValue } from "../lib/format.js";
+import { columnDecimals, formatAge, formatCount, formatFixed, formatRange } from "../lib/format.js";
+
+/** The decimals for each column of a chart's numbers: one setting per column ("1.0", "0.10–0.66"). */
+export function tableDecimals(rows, overall, format) {
+  const stats = [...rows.map((r) => r.stats), overall].filter((s) => s && !s.suppressed);
+  return {
+    median: columnDecimals(stats.map((s) => s.median), format),
+    range: columnDecimals(stats.flatMap((s) => [s.p25, s.p75]), format),
+    mean: columnDecimals(stats.map((s) => s.mean), format),
+  };
+}
 
 /** The chart's numbers as a table (also what screen readers use). */
 export default function NumbersTable({ rows, overall, metric, minN }) {
-  const fmt = (v) => formatValue(v, metric.format);
+  const d = tableDecimals(rows, overall, metric.format);
   const line = (label, s, key, extraClass) => (
     <tr key={key} className={extraClass}>
       <th scope="row">{label}</th>
       {s && !s.suppressed ? (
         <>
           <td>{formatCount(s.n)}</td>
-          <td>{fmt(s.median)}</td>
-          <td>
-            {fmt(s.p25)} – {fmt(s.p75)}
-          </td>
-          <td>{fmt(s.mean)}</td>
+          <td>{formatFixed(s.median, d.median)}</td>
+          <td>{formatRange(s.p25, s.p75, d.range)}</td>
+          <td>{formatFixed(s.mean, d.mean)}</td>
           <td>{formatAge(s.age)}</td>
         </>
       ) : (

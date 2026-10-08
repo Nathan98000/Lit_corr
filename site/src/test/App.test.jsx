@@ -109,3 +109,31 @@ describe("the explorer", () => {
     expect(screen.getByLabelText(/Stories included/).value).toBe("all");
   });
 });
+
+describe("robustness", () => {
+  it("shows a friendly error and loads again on Try again", async () => {
+    const ok = fetchMock;
+    let fail = true;
+    vi.stubGlobal("fetch", async (url) => (fail ? { ok: false, status: 503, json: async () => ({}) } : ok(url)));
+    const user = userEvent.setup();
+    render(<App />);
+    expect(await screen.findByText(/We couldn’t load the data/)).toBeTruthy();
+    fail = false;
+    await user.click(screen.getByRole("button", { name: "Try again" }));
+    expect(await screen.findByRole("heading", { level: 2 })).toBeTruthy();
+  });
+
+  it("copies the link, or shows it to copy by hand when the clipboard is unavailable", async () => {
+    const user = await renderApp();
+    Object.defineProperty(navigator, "clipboard", { value: undefined, configurable: true });
+    await user.click(screen.getByRole("button", { name: "Copy link" }));
+    const field = screen.getByLabelText("Copy this link:");
+    expect(field.value).toBe(window.location.href);
+    expect(field.readOnly).toBe(true);
+    const writeText = vi.fn(async () => {});
+    Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });
+    await user.click(screen.getByRole("button", { name: "Copy link" }));
+    expect(writeText).toHaveBeenCalledWith(window.location.href);
+    expect(screen.getAllByText("Link copied").length).toBeGreaterThan(0);
+  });
+});

@@ -8,8 +8,8 @@ website that lets visitors explore which story characteristics are
 
 **Stage 1 (this repository, now):** you run the collector on your own machine,
 then the offline processing, then send back one zip file.
-**Stage 2 (later):** the website is built from that zip only. No scraping, no
-live connection, no raw text.
+**Stage 2:** the website in [`site/`](site/README.md), built from that zip only. No
+scraping, no live connection, no raw text: it ships summaries of groups of stories.
 
 > Before collecting, read **[docs/SITE_RULES.md](docs/SITE_RULES.md)**. In
 > short: Literotica's robots.txt blocks AI crawlers entirely and blocks the API
@@ -242,6 +242,17 @@ from being matched back to particular stories or authors, the zip also:
 - leaves out exact publication dates.
 
 Please also mention anything unusual from `quality_report.md`.
+
+## 7. Stage 2: the website
+
+```bash
+python -m litcorr site-data        # handoff zip -> site/public/aggregates/ (offline, about 20 s)
+cd site && npm install && npm run dev
+```
+
+`site-data` reads only the newest handoff zip and writes the small summaries the website needs (no story-level
+data). The website itself is a static React + Vite app: see [site/README.md](site/README.md) for development,
+tests and deployment to Vercel or Netlify.
 
 ---
 

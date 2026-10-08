@@ -1,0 +1,13 @@
+# Netlify: builds the Stage 2 website in site/ (the Python pipeline is not needed: the aggregates are committed).
+[build]
+  base = "site"
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+[[headers]]
+  for = "/aggregates/*"
+  [headers.values]
+    Cache-Control = "public, max-age=3600"

@@ -1,5 +1,16 @@
-/* Story popularity explorer: an editorial, data-journalism look. Literotica's own accent blue (#4a89f3, the
-   theme colour of its pages) carries the data; everything else stays quiet. */
+/* Story Patterns: an editorial, data-journalism look. Literotica's own accent blue (#4a89f3, the theme color of
+   its pages) carries the data; one warm color marks "lower" and story-age warnings; everything else stays quiet.
+   All colors are variables so that a dark theme can be added later. */
+
+@font-face {
+  font-family: "Source Serif 4";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("/fonts/source-serif-4-latin-600-normal.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
 
 :root {
   --bg: #fbfaf7;
@@ -9,15 +20,25 @@
   --ink-3: #6b6b75;
   --rule: #e7e4dd;
   --rule-2: #d2cec5;
+  --control: #8f8a80; /* borders of selects, buttons and pills: 3.3:1 on --bg */
   --accent: #4a89f3;
   --accent-ink: #2b63c6;
+  --accent-bar: #c9dcfb; /* middle-half bars */
   --accent-soft: #d7e5fd;
   --accent-wash: #eef4fe;
+  --band: #f1efe9; /* the 0.67×–1.5× band on genre cards */
+  --spark-line: #9db8e6;
   --warm: #e8894a;
   --warm-ink: #a9531d;
-  --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+  --age-bg: #fff6ec;
+  --age-border: #f1d6bd;
+  --age-ink: #5b3a1e;
+  --age-lead: #7a3f12;
+  --mark: #fff1b8;
+  --serif: "Source Serif 4", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
   --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --radius: 6px;
+  --target: 44px;
   color-scheme: light;
 }
 
@@ -51,7 +72,7 @@ select {
 }
 
 :focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--accent-ink);
   outline-offset: 2px;
 }
 
@@ -188,7 +209,8 @@ h3 {
 }
 
 .chip {
-  border: 1px solid var(--rule-2);
+  min-height: var(--target);
+  border: 1px solid var(--control);
   background: var(--paper);
   border-radius: 999px;
   padding: 6px 13px;
@@ -219,7 +241,7 @@ h3 {
 .mode-toggle {
   display: inline-flex;
   justify-self: start;
-  border: 1px solid var(--rule-2);
+  border: 1px solid var(--control);
   border-radius: 999px;
   padding: 3px;
   background: var(--paper);
@@ -229,6 +251,7 @@ h3 {
   border: 0;
   background: transparent;
   border-radius: 999px;
+  min-height: 38px;
   padding: 6px 16px;
   font-size: 14px;
   color: var(--ink-2);
@@ -284,7 +307,7 @@ h3 {
   width: 19px;
   height: 19px;
   border-radius: 50%;
-  background: var(--accent);
+  background: var(--accent-ink);
   color: #fff;
   font-size: 11px;
   font-weight: 700;
@@ -299,7 +322,8 @@ h3 {
 select {
   appearance: none;
   width: 100%;
-  border: 1px solid var(--rule-2);
+  min-height: var(--target);
+  border: 1px solid var(--control);
   border-radius: var(--radius);
   background: var(--paper)
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%2345454f' stroke-width='1.6'/%3E%3C/svg%3E")
@@ -321,7 +345,8 @@ select:hover {
 }
 
 .group-tabs button {
-  border: 1px solid var(--rule-2);
+  min-height: var(--target);
+  border: 1px solid var(--control);
   background: var(--paper);
   border-radius: 999px;
   padding: 5px 13px;
@@ -349,6 +374,7 @@ select:hover {
 }
 
 .infotip-button {
+  position: relative;
   width: 17px;
   height: 17px;
   border-radius: 50%;
@@ -361,6 +387,12 @@ select:hover {
   line-height: 1;
   cursor: help;
   padding: 0;
+}
+
+.infotip-button::after {
+  content: "";
+  position: absolute;
+  inset: -14px;
 }
 
 .infotip-body {
@@ -496,11 +528,12 @@ select:hover {
 }
 
 .group-chart .iqr {
-  fill: var(--accent-soft);
+  fill: var(--accent-bar);
+  stroke: var(--accent);
 }
 
 .group-chart .median {
-  fill: var(--accent);
+  fill: var(--accent-ink);
   stroke: #fff;
   stroke-width: 2;
 }
@@ -538,9 +571,14 @@ select:hover {
   outline: none;
 }
 
-.group-chart .hit:focus-visible,
 .group-chart .hit:hover {
   fill: rgb(74 137 243 / 0.06);
+}
+
+.group-chart .hit:focus-visible {
+  fill: rgb(74 137 243 / 0.1);
+  stroke: var(--accent-ink);
+  stroke-width: 2px;
 }
 
 .chart-tip {
@@ -631,6 +669,9 @@ select:hover {
 }
 
 .numbers-details summary {
+  display: flex;
+  align-items: center;
+  min-height: var(--target);
   cursor: pointer;
   color: var(--accent-ink);
   font-size: 14px;
@@ -648,6 +689,7 @@ select:hover {
 }
 
 .copy-link {
+  min-height: var(--target);
   font-size: 14px;
 }
 
@@ -730,6 +772,7 @@ table.numbers {
 }
 
 .compare-table tbody th .link-button {
+  min-height: var(--target);
   color: var(--ink);
   text-decoration: none;
   font-size: 13.5px;
@@ -849,6 +892,10 @@ table.numbers {
 }
 
 .glossary-group summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: var(--target);
   cursor: pointer;
   font-weight: 600;
 }
@@ -937,7 +984,83 @@ table.numbers {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  * {
+  *,
+  *::before,
+  *::after {
     scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
+}
+
+/* ------------------------------------------------------------- buttons, errors */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: var(--target);
+  padding: 0 16px;
+  border: 1px solid var(--control);
+  border-radius: 999px;
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 14.5px;
+  line-height: 1.2;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.btn:hover {
+  border-color: var(--accent-ink);
+  color: var(--accent-ink);
+}
+
+.btn.primary {
+  background: var(--accent-ink);
+  border-color: var(--accent-ink);
+  color: #fff;
+}
+
+.load-error {
+  min-height: 320px;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 12px;
+  color: var(--ink-2);
+  text-align: center;
+  padding: 24px;
+}
+
+.load-error p {
+  margin: 0;
+  max-width: 40ch;
+}
+
+.copy-link {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+
+.copy-manual {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+  font-size: 14px;
+  color: var(--ink-2);
+}
+
+.copy-manual input {
+  min-height: var(--target);
+  width: min(100%, 420px);
+  padding: 0 10px;
+  border: 1px solid var(--control);
+  border-radius: var(--radius);
+  background: var(--paper);
+  font-size: 14px;
 }

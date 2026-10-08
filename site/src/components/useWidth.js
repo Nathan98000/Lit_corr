@@ -1,10 +1,10 @@
-import { useEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 
 /** Width of an element, kept up to date as the layout changes (charts redraw to fit). */
 export default function useWidth(fallback = 720) {
   const ref = useRef(null);
   const [width, setWidth] = useState(fallback);
-  useEffect(() => {
+  useLayoutEffect(() => {
     const el = ref.current;
     if (!el) return undefined;
     const measure = () => {

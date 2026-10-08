@@ -383,6 +383,33 @@ def _subset_mask(df: pd.DataFrame, col: str | None, low: float | None, high: flo
     return m
 
 
+# The pattern index (patterns.json) re-packages the pattern results already in v/<characteristic>/all.json: for
+# every genre and measure, one character per characteristic (meta.json's order) giving the direction (-1, 0, +1)
+# and the strength band of the existing effect, with the site's own cut-offs (weak < 0.2 <= moderate < 0.4 <= strong).
+PATTERN_CODES = {(-1, "weak"): "a", (-1, "moderate"): "b", (-1, "strong"): "c",
+                 (0, "weak"): "d", (0, "moderate"): "e", (0, "strong"): "f",
+                 (1, "weak"): "g", (1, "moderate"): "h", (1, "strong"): "i"}
+PATTERN_NONE = "."  # the effect was not computed (too few stories, or a characteristic without order)
+
+
+def strength_band(effect: float) -> str:
+    a = abs(effect)
+    return "weak" if a < 0.2 else ("moderate" if a < 0.4 else "strong")
+
+
+def pattern_code(p: list[Any]) -> str:
+    direction, effect = p
+    return PATTERN_NONE if effect is None else PATTERN_CODES[(int(direction), strength_band(effect))]
+
+
+def build_patterns(out_dir: Path, variable_ids: list[str], genre_ids: list[str], n_metrics: int) -> dict[str, Any]:
+    """patterns.json: {"key": ..., "g": {genre: [one string per measure, one character per characteristic]}}."""
+    files = {v: json.loads((out_dir / "v" / v / "all.json").read_text(encoding="utf-8")) for v in variable_ids}
+    return {"key": "".join(PATTERN_CODES.values()) + PATTERN_NONE,
+            "g": {g: ["".join(pattern_code(files[v]["g"][g]["p"][k]) for v in variable_ids) for k in range(n_metrics)]
+                  for g in genre_ids}}
+
+
 def _topics(variables: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """The eight browsing topics, each with its characteristics in display order (sub-group, then dictionary)."""
     order = {v["id"]: i for i, v in enumerate(variables)}
@@ -500,6 +527,8 @@ def build_site_data(handoff: Path | None = None, out_dir: Path | None = None, wo
         "featured": [{"question": q, **s} for q, s in W.FEATURED if s["var"] in {v["id"] for v in variables}],
     }
     (out_dir / "meta.json").write_text(json.dumps(meta, ensure_ascii=False, indent=1), encoding="utf-8")
+    patterns = build_patterns(out_dir, [v["id"] for v in variables], genre_ids, len(metrics))
+    (out_dir / "patterns.json").write_text(json.dumps(patterns, separators=(",", ":")), encoding="utf-8")
     size = sum(p.stat().st_size for p in out_dir.rglob("*.json"))
     files = sum(1 for _ in out_dir.rglob("*.json"))
     summary = {"variables": len(variables), "metrics": len(metrics), "genres": len(genre_ids) - 1,

@@ -36,6 +36,18 @@ function getJson(path) {
 export const loadMeta = () => getJson("meta.json");
 export const loadVariable = (variable, subset) => getJson(`v/${variable}/${subset}.json`);
 export const clearCache = () => cache.clear();
+export const loadPatterns = () => getJson("patterns.json");
+
+/**
+ * One characteristic's entry in patterns.json: { direction, strength } ("weak" | "moderate" | "strong"), or null
+ * when the pattern was not computed. The file's key lists the codes in order: -1, 0, +1, each weak/moderate/strong.
+ */
+export function decodePattern(key, code) {
+  const i = key.indexOf(code);
+  if (i < 0 || i >= 9) return null;
+  return { direction: Math.floor(i / 3) - 1, strength: ["weak", "moderate", "strong"][i % 3] };
+}
+
 /** Has this file already been fetched (or is it on its way)? */
 export const isCached = (variable, subset) => cache.has(`v/${variable}/${subset}.json`);
 

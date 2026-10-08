@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Explorer, { ChartPlaceholder } from "./components/Explorer.jsx";
 import LoadError from "./components/LoadError.jsx";
 import Methodology from "./components/Methodology.jsx";
+import PatternBrowser from "./components/PatternBrowser.jsx";
 import { clearCache, loadMeta } from "./lib/data.js";
 import { scrollBehavior } from "./lib/motion.js";
 import { formatCount, formatDate } from "./lib/format.js";
@@ -75,6 +76,11 @@ export default function App() {
     if (route.page === "explore" && state) lastExplore.current = state;
   }, [route.page, state]);
 
+  const updatePatterns = useCallback((next) => {
+    window.history.replaceState(null, "", toHash("patterns", next));
+    setRoute({ page: "patterns", state: next });
+  }, []);
+
   const update = useCallback((next) => {
     window.history.replaceState(null, "", toHash("explore", next));
     setRoute({ page: "explore", state: next });
@@ -118,6 +124,12 @@ export default function App() {
             >
               Explore
             </a>
+            <a
+              href={toHash("patterns", { genre: lastExplore.current.genre, metric: lastExplore.current.metric })}
+              aria-current={route.page === "patterns" ? "page" : undefined}
+            >
+              Patterns
+            </a>
             <a href="#/methodology" aria-current={route.page === "methodology" ? "page" : undefined}>
               How it works
             </a>
@@ -130,6 +142,12 @@ export default function App() {
           <LoadError onRetry={retry} detail={error} />
         ) : route.page === "methodology" ? (
           meta ? <Methodology meta={meta} /> : <div className="page-placeholder" aria-busy="true" />
+        ) : route.page === "patterns" ? (
+          meta ? (
+            <PatternBrowser meta={meta} state={sanitize(route.state, meta)} onChange={updatePatterns} />
+          ) : (
+            <div className="page-placeholder" aria-busy="true" />
+          )
         ) : (
           <>
             <div className="intro">

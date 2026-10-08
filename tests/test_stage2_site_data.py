@@ -244,3 +244,42 @@ def test_us_english_and_generated_phrases():
     assert "with" not in W.noun_for("dlg_paragraph_share", "Paragraphs with dialogue")
     assert W.noun_for("emo_affection_per_1k", "Affection & love") == "affection and love"
     assert W.synonyms_for("pov_is_first_person").startswith("pov point of view")
+
+
+# ---------------------------------------------------------------------------------------------- patterns.json
+def _check_patterns(meta, out):
+    pats = json.loads((out / "patterns.json").read_text())
+    assert set(pats) == {"key", "g"} and set(pats["g"]) == {g["id"] for g in meta["genres"]}
+    ids = [v["id"] for v in meta["variables"]]
+    files = {v: _file(out, v) for v in ids}
+    for g, per_metric in pats["g"].items():
+        assert len(per_metric) == len(meta["metrics"])
+        for k, codes in enumerate(per_metric):
+            assert isinstance(codes, str) and len(codes) == len(ids)
+            for v, c in zip(ids, codes):
+                p = files[v]["g"][g]["p"][k]
+                assert c == sd.pattern_code(p), (g, k, v)
+                if p[1] is None:
+                    assert c == "."
+                else:  # direction and strength band decode back to the per-characteristic file
+                    d, band = next(key for key, code in sd.PATTERN_CODES.items() if code == c)
+                    assert d == p[0] and band == sd.strength_band(p[1])
+    return pats
+
+
+def test_pattern_index_repackages_the_per_characteristic_files(built):
+    _, meta, out, _ = built
+    pats = _check_patterns(meta, out)
+    assert pats["g"]["all"][0][0] == "i"  # dialogue share: a clear, strong pattern in the synthetic data
+
+
+def test_real_pattern_index_is_small_and_holds_nothing_else():
+    if not REAL_META.exists():
+        pytest.skip("site aggregates not generated")
+    import gzip
+    meta = json.loads(REAL_META.read_text())
+    out = REAL_META.parent
+    _check_patterns(meta, out)
+    raw = (out / "patterns.json").read_bytes()
+    assert len(gzip.compress(raw, 9)) <= 40_000
+    assert set(raw.decode()) <= set('{}[]":,abcdefghi.' + "".join({c for g in meta["genres"] for c in g["id"]}) + "keyg")

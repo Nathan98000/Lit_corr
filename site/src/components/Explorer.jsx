@@ -337,6 +337,12 @@ export default function Explorer({ meta, state, onChange }) {
                   </li>
                 ))}
               </ul>
+              <p className="next-patterns">
+                <a href={toHash("patterns", { genre: view.genre, metric: view.metric })}>
+                  Every clear pattern with {d.metric.noun}
+                  {view.genre === "all" ? " across all genres" : ` in ${d.genre.name}`} →
+                </a>
+              </p>
             </nav>
           )}
         </article>

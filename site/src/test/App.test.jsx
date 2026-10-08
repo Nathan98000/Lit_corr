@@ -279,16 +279,55 @@ describe("notes, age check and next questions", () => {
   it("offers the next two characteristics of the topic and the rate version of a total", async () => {
     await renderApp("#/explore?var=dlg_word_share&metric=pop_views");
     const nav = screen.getByRole("navigation", { name: "Next questions" });
-    const links = within(nav).getAllByRole("link");
+    const links = within(within(nav).getByRole("list")).getAllByRole("link");
     expect(links[0].textContent).toMatch(/views per month/);
     expect(links[0].getAttribute("href")).toMatch(/metric=pop_views_per_month/);
     expect(links[1].getAttribute("href")).toMatch(/var=dlg_has_dialogue/);
     expect(links).toHaveLength(2); // the fixture's Dialogue topic has only two characteristics
+    expect(within(nav).getByRole("link", { name: /Every clear pattern with views across all genres/ }).getAttribute("href")).toBe(
+      "#/patterns?genre=all&metric=pop_views",
+    );
   });
 
   it("switches to comparing all genres", async () => {
     const user = await renderApp();
     await user.click(screen.getByRole("button", { name: /Compare all 3 genres/ }));
     await waitFor(() => expect(window.location.hash).toMatch(/mode=compare/));
+  });
+});
+
+describe("the pattern browser", () => {
+  it("counts clear patterns, lists them by topic and alphabetically, and links each to its chart", async () => {
+    window.history.replaceState(null, "", "/#/patterns?genre=all&metric=pop_fav_per_1k_views");
+    const user = userEvent.setup();
+    render(<App />);
+    await screen.findByRole("heading", { level: 1, name: "Patterns" });
+    expect(document.title).toBe("Patterns · What do popular Literotica stories have in common?");
+    // fixture: 3 characteristics read as a trend (dialogue share, has dialogue, anger), 1 without order
+    const count = await screen.findByText(/characteristics that can show a trend/);
+    expect(count.textContent).toBe(
+      "2 of 3 characteristics that can show a trend have a clear pattern with favorites per 1,000 views across all genres. The other 1 don’t, which is just as informative.",
+    );
+    expect(screen.getByText(/1 characteristics have no order/)).toBeTruthy();
+    const topics = screen.getAllByRole("heading", { level: 2 }).map((h) => h.textContent);
+    expect(topics).toEqual(["Dialogue & characters"]);
+    const items = within(screen.getByRole("region", { name: "Dialogue & characters" })).getAllByRole("link");
+    expect(items.map((a) => a.textContent)).toEqual([
+      "Stories with more dialogue tend to get more favorites per 1,000 views",
+      "Stories with dialogue tend to get more favorites per 1,000 views than stories without dialogue",
+    ]);
+    expect(items[0].getAttribute("href")).toMatch(/var=dlg_word_share/);
+    expect(screen.getByRole("link", { name: /When a title says/ }).getAttribute("href")).toBe("#/methodology/tend-to");
+
+    await user.click(screen.getByRole("button", { name: "Show the ones with no clear pattern too" }));
+    expect(screen.getAllByRole("heading", { level: 2 }).map((h) => h.textContent)).toEqual([
+      "Dialogue & characters",
+      "Emotion & relationships",
+    ]);
+    expect(screen.getByRole("link", { name: "Anger" })).toBeTruthy();
+
+    await user.selectOptions(screen.getByLabelText("Genre"), "tiny");
+    await waitFor(() => expect(window.location.hash).toBe("#/patterns?genre=tiny&metric=pop_fav_per_1k_views"));
+    expect(document.querySelector(".pattern-count").textContent).toMatch(/^0 of 3 /);
   });
 });

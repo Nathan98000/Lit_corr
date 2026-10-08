@@ -28,7 +28,7 @@ async function renderApp(hash = "") {
 describe("the explorer", () => {
   it("opens with a plain-English title and the disclaimer", async () => {
     await renderApp();
-    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("What makes a Literotica story popular?");
+    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("What do popular Literotica stories have in common?");
     expect(chartTitle().textContent).toBe("Stories with more dialogue tend to get more favorites per 1,000 views");
     expect(screen.getAllByText(/do not establish causation/).length).toBeGreaterThan(0);
     expect(screen.getByText(/not affiliated with or endorsed by Literotica/)).toBeTruthy();
@@ -47,7 +47,7 @@ describe("the explorer", () => {
     await waitFor(() => expect(chartTitle().textContent).toBe("How views vary with dialogue share in Romance"));
     expect(screen.getByText(/Totals grow with time online/)).toBeTruthy();
 
-    await user.click(screen.getByRole("button", { name: "Language" }));
+    await user.click(screen.getByRole("button", { name: "Emotion & relationships" }));
     await waitFor(() => expect(chartTitle().textContent).toMatch(/anger/i));
     expect(screen.getByLabelText(/Story characteristic/).value).toBe("emo_anger_per_1k");
 
@@ -90,7 +90,7 @@ describe("the explorer", () => {
 
   it("opens an example question", async () => {
     const user = await renderApp("#/explore?var=emo_anger_per_1k");
-    const chip = screen.getByRole("button", { name: /Is more dialogue linked to more comments/ });
+    const chip = screen.getByRole("button", { name: /Do stories with more dialogue get more comments/ });
     await user.click(chip);
     await waitFor(() => expect(screen.getByLabelText(/Story characteristic/).value).toBe("dlg_word_share"));
   });

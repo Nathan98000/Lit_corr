@@ -32,5 +32,5 @@ export function formatRatio(r) {
 export function formatDate(iso) {
   if (!iso) return "";
   const d = new Date(`${iso.slice(0, 10)}T12:00:00Z`);
-  return d.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
+  return d.toLocaleDateString("en-US", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
 }

@@ -14,16 +14,18 @@ function groupBy(list, key) {
 export default function Controls({ meta, state, onChange }) {
   const set = (patch) => onChange({ ...state, ...patch });
   const variable = meta.variables.find((v) => v.id === state.v);
-  const activeGroup = variable?.group;
-  const groupVars = meta.variables.filter((v) => v.group === activeGroup);
+  const activeGroup = variable?.topic;
+  const topic = meta.topics.find((t) => t.id === activeGroup);
+  const byId = new Map(meta.variables.map((v) => [v.id, v]));
+  const groupVars = (topic?.ids || []).map((id) => byId.get(id));
   const subgroups = groupBy(groupVars, "subgroup");
   const metricGroups = groupBy(meta.metrics, "group");
   const subsetGroups = groupBy(meta.subsets, "group");
 
   const pickGroup = (groupId) => {
     if (groupId === activeGroup) return;
-    const first = meta.variables.find((v) => v.group === groupId);
-    if (first) set({ v: first.id });
+    const first = meta.topics.find((t) => t.id === groupId)?.ids[0];
+    if (first) set({ v: first });
   };
 
   return (
@@ -90,7 +92,7 @@ export default function Controls({ meta, state, onChange }) {
             <span className="step">3</span> Story characteristic
           </span>
           <div className="group-tabs" role="group" aria-label="Kind of characteristic">
-            {meta.groups.map((g) => (
+            {meta.topics.map((g) => (
               <button
                 type="button"
                 key={g.id}

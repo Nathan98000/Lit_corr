@@ -1,17 +1,18 @@
 import { formatCount, formatDate } from "../lib/format.js";
 
 const REASONS = {
-  no_text: "no story text could be collected",
-  text_too_short: "it had fewer than 100 words of text",
-  possibly_not_english: "the text did not look like English",
-  missing_date: "it had no publication date",
-  missing_views: "it had no view count",
-  duplicate_text: "it had the same text as another story",
+  no_text: "had no story text that could be collected",
+  text_too_short: "had fewer than 100 words of text",
+  possibly_not_english: "did not look like English",
+  missing_date: "had no publication date",
+  missing_views: "had no view count",
+  duplicate_text: "had the same text as another story",
 };
 
 function Glossary({ meta }) {
-  return meta.groups.map((g) => {
-    const vars = meta.variables.filter((v) => v.group === g.id);
+  const byId = new Map(meta.variables.map((v) => [v.id, v]));
+  return meta.topics.map((g) => {
+    const vars = g.ids.map((id) => byId.get(id));
     if (!vars.length) return null;
     return (
       <details key={g.id} className="glossary-group">
@@ -43,7 +44,7 @@ export default function Methodology({ meta }) {
     <article className="prose methodology">
       <h1>Methodology</h1>
       <p className="lede">
-        How the stories were chosen, what was measured, and how the charts summarise them. Written for curious
+        How the stories were chosen, what was measured, and how the charts summarize them. Written for curious
         readers, not statisticians.
       </p>
 
@@ -57,7 +58,7 @@ export default function Methodology({ meta }) {
       <p>
         The stories were collected from Literotica’s public pages between {formatDate(source.collected_from)} and{" "}
         {formatDate(source.collected_to)}, by a slow collector that read one page at a time, at least eight seconds
-        apart, followed the site’s robots.txt rules and stopped whenever the site signalled it should. It read only
+        apart, followed the site’s robots.txt rules and stopped whenever the site signaled it should. It read only
         pages that anyone can open without logging in: the list of categories, category listing pages, and story
         pages. It never used search, accounts, comments or voting.
       </p>
@@ -66,7 +67,7 @@ export default function Methodology({ meta }) {
         For each of {genres.length} of Literotica’s own categories (genres), the collector read an evenly spread
         selection of the category’s alphabetical listing pages, which list every story whatever its popularity,
         and then picked 300 stories at random from them. The audio, illustrated and non-English categories were
-        left out because the measures need English prose. When a sampled story could not be collected (it had
+        left out, since the measures need English prose. When a sampled story could not be collected (it had
         been removed, or the site kept returning an error for it), the next story in that category’s random order
         took its place, so every genre has its full sample. In all, {formatCount(counts.with_text)} stories were
         collected with their text.
@@ -129,7 +130,7 @@ export default function Methodology({ meta }) {
         whatever the narration does). Plenty of I/me/my means first person; very few, or very few compared with
         he/she/they, means third person; “we” narration and second-person “you” narration get their own groups, and
         stories in between are “mixed”. Checked against 284 passages from 14 classic novels whose narration is
-        known, the rule labelled 94% correctly and was confidently wrong 3% of the time; a hand check of stories
+        known, the rule labeled 94% correctly and was confidently wrong 3% of the time; a hand check of stories
         from this collection found similar accuracy. It counts words; it does not understand the story.
       </p>
       <h3>Explicitness</h3>
@@ -142,13 +143,13 @@ export default function Methodology({ meta }) {
       <h3>Emotion and psychological language</h3>
       <p>
         Emotion measures count words from small, hand-checked lists (positive, negative, affection, anxiety, anger,
-        sadness, excitement and arousal, shame, jealousy, humour). Psychological measures count kinds of wording:
+        sadness, excitement and arousal, shame, jealousy, humor). Psychological measures count kinds of wording:
         thinking and perception verbs, “filter” words such as noticed or felt, distancing phrases, immediacy words,
         hedges (maybe, perhaps, seemed) and certainty words (definitely, of course). These are features of the
         writing, not diagnoses of authors or characters.
       </p>
 
-      <h2 id="charts">How the charts summarise stories</h2>
+      <h2 id="charts">How the charts summarize stories</h2>
       <p>
         For each characteristic, stories are split into groups: ranges chosen so that each holds a similar share of
         stories (with readable round boundaries), a separate “None” group when many stories have none at all, or
@@ -186,7 +187,7 @@ export default function Methodology({ meta }) {
             {reasons.map(([r, n], i) => (
               <span key={r}>
                 {i > 0 ? (i === reasons.length - 1 ? " and " : ", ") : ""}
-                {formatCount(n)} because {REASONS[r] || r.replace(/_/g, " ")}
+                {formatCount(n)} {REASONS[r] || `left out (${r.replace(/_/g, " ")})`}
               </span>
             ))}
             .

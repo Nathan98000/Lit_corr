@@ -1,4 +1,4 @@
-# What makes a Literotica story popular? (Stage 2 website)
+# What do popular Literotica stories have in common? (Stage 2 website)
 
 A static website for exploring how the popularity of Literotica stories varies with their characteristics,
 overall and within each of Literotica's genres. Pick a genre, a popularity measure and a story characteristic;

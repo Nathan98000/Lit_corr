@@ -5,7 +5,7 @@ import { loadMeta } from "./lib/data.js";
 import { formatCount, formatDate } from "./lib/format.js";
 import { parseHash, sanitize, toHash } from "./lib/urlState.js";
 
-const TITLE = "What makes a Literotica story popular?";
+const TITLE = "What do popular Literotica stories have in common?";
 
 export default function App() {
   const [meta, setMeta] = useState(null);

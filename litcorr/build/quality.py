@@ -229,7 +229,9 @@ def _progress_lines(p: dict[str, Any] | None) -> list[str]:
         return []
     if p["complete"]:
         return ["## Collection progress", "", f"Collection complete: {p['collected']:,} of {p['sampled']:,} sampled "
-                f"stories collected; {p['not_collectable']:,} could not be collected.", ""]
+                f"stories collected; {p['not_collectable']:,} could not be collected. A sampled story that could not "
+                "be collected (gone, unavailable or failing on the site) was replaced by the next story in its "
+                "category's shuffled order.", ""]
     lines = ["## Collection progress: PARTIAL", "",
              f"**This dataset comes from a collection still in progress: {p['collected']:,} of {p['sampled']:,} "
              f"sampled stories collected ({p['share_collected']:.0%}), {p['still_queued']:,} still queued.** "

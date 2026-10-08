@@ -172,7 +172,10 @@ any 24 hours); when the limit is used up, `collect` says when it can continue.
 * **A few stories keep failing with HTTP 500?** That is the site failing on
   those particular pages, not a block. Such a story is tried again in later
   runs, after all the other stories and with a single request per run, and is
-  given up (`failed` in `status`) after `max_attempts_per_url` runs.
+  given up (`failed` in `status`) after `max_attempts_per_url` runs. Like a
+  story that has gone from the site, it is then replaced by the next story in
+  its category's shuffled order, so each category still ends up with
+  `max_stories_per_category` stories.
 
 ## 5. Process (offline)
 

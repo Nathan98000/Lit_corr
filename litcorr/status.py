@@ -44,12 +44,14 @@ def status_text(settings: Settings) -> str:
         pages = st.conn.execute("SELECT kind, status, COUNT(*) n FROM pages GROUP BY kind, status").fetchall()
         lines.append("Pages: " + "; ".join(f"{r['kind']}/{r['status']} {r['n']}" for r in pages))
         rows = st.conn.execute(
-            "SELECT s.category_slug, COUNT(*) n, SUM(s.status='done') d FROM stories s GROUP BY s.category_slug"
+            "SELECT s.category_slug, COUNT(*) n, SUM(s.status='done') d, "
+            "SUM(s.status IN ('failed', 'gone', 'unavailable')) x FROM stories s GROUP BY s.category_slug"
         ).fetchall()
         if rows:
-            lines.append("Per category (done / queued):")
+            lines.append("Per category (done / sampled, including replacements):")
             for r in rows:
-                lines.append(f"  {r['category_slug']:<32} {r['d'] or 0:>6} / {r['n']}")
+                note = f"  ({r['x']} could not be collected)" if r["x"] else ""
+                lines.append(f"  {r['category_slug']:<32} {r['d'] or 0:>6} / {r['n']}{note}")
         runs = st.runs()[-5:]
         if runs:
             lines.append("Recent sessions:")

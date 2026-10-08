@@ -11,6 +11,8 @@ later session, up to ``max_attempts_per_url`` attempts), and a request the
 server refuses as invalid (4xx other than 404/410/429) is not retried at all.
 Stories that failed before are tried after all the others, so a few pages the
 site keeps failing on cannot stop every session at the front of the queue.
+When the queue runs out, stories that could not be collected in this session
+are replaced (see sample.py) and their replacements are collected straight away.
 
 If a downloaded page 1 cannot be read by the parser (an unexpected page format),
 the story stays queued and the error is logged; the next run reads the saved
@@ -28,6 +30,7 @@ from ..net.fetcher import StopCollection
 from ..site.parse_story import parse_story_page
 from ..site.urls import story_page_url, story_slug
 from ..state import DISALLOWED, DONE, FAILED, GONE, PARTIAL, QUEUED, UNAVAILABLE
+from .sample import build_queue
 from .session import Ctx
 
 log = get_logger("stories")
@@ -157,7 +160,13 @@ def collect_stories(ctx: Ctx) -> dict[str, int]:
     while True:
         batch = [r for r in ctx.state.next_open_stories(25 + len(tried)) if r["story_slug"] not in tried]
         if not batch:
-            break
+            # Queue the replacements of stories given up in this session and collect them too; but not straight
+            # after missing pages, which a soft block found by the next requests would put back in the queue.
+            added = 0 if gone_run else sum(v["newly_queued"] for v in build_queue(ctx).values())
+            if not added:
+                break
+            total_open += added
+            continue
         for row in batch[:25]:
             tried.add(row["story_slug"])
             try:

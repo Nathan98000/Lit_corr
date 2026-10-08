@@ -87,7 +87,10 @@ collector reads a sample:
 3. **Stories.** From the stories seen on those listing pages, a fixed-seed
    random sample (by default 300 per category) is drawn and collected
    round-robin across categories, so the sample stays balanced across
-   categories if collection stops early.
+   categories if collection stops early. A sampled story that cannot be
+   collected (removed from the site, shown as unavailable, or answered with a
+   server error in three separate runs) is replaced by the next story in its
+   category's shuffled order, so each category keeps its full sample.
 
 Because every category gets a similar number of stories regardless of its
 size, "All categories" summaries should use `sampling_weight` (category size ÷

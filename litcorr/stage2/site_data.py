@@ -139,7 +139,7 @@ class Bins:
         return out
 
     def to_json(self) -> dict[str, Any]:
-        return {"type": self.type, "labels": self.labels, "ordered": self.ordered}
+        return {"type": self.type, "labels": [W.us_english(lab) for lab in self.labels], "ordered": self.ordered}
 
 
 def _fmt(v: float, style: str) -> str:
@@ -383,6 +383,21 @@ def _subset_mask(df: pd.DataFrame, col: str | None, low: float | None, high: flo
     return m
 
 
+def _topics(variables: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """The eight browsing topics, each with its characteristics in display order (sub-group, then dictionary)."""
+    order = {v["id"]: i for i, v in enumerate(variables)}
+    out = []
+    for i, (tid, label, blurb, pairs) in enumerate(W.TOPICS):
+        members = [v for v in variables if v["topic"] == tid]
+        sub_order = {W.us_english(W.SUBGROUP_LABEL.get(g, g)): j for j, (_, g) in reversed(list(enumerate(pairs)))}
+        lead = {vid: j for j, vid in enumerate(W.TOPIC_LEAD)}
+        members.sort(key=lambda v: (lead.get(v["id"], len(lead)), sub_order.get(v["subgroup"], 99), order[v["id"]]))
+        if members:
+            out.append({"id": tid, "label": label, "blurb": blurb, "syn": W.TOPIC_SYNONYMS.get(tid, ""),
+                        "ids": [v["id"] for v in members]})
+    return out
+
+
 def build_site_data(handoff: Path | None = None, out_dir: Path | None = None, workers: int = 0) -> dict[str, Any]:
     t0 = time.time()
     h = load_handoff(handoff or latest_handoff())
@@ -409,13 +424,14 @@ def build_site_data(handoff: Path | None = None, out_dir: Path | None = None, wo
     subset_defs = [s for s in W.SUBSETS if s[3] is None or s[3] in df.columns]
     subsets = {sid: _subset_mask(df, col, lo, hi) for sid, _, _, col, lo, hi in subset_defs}
 
-    labels = {v["name"]: v["label"] for v in h.dictionary}
-    group_ids = [gid for gid, _ in W.GROUPS]
+    labels = {v["name"]: W.label_for(v["name"], v["label"]) for v in h.dictionary}
     variables, tasks = [], []
     for v in h.dictionary:
         name = v["name"]
-        if not v.get("explorer") or name in W.EXCLUDED or name not in df.columns or v["ui_group"] not in group_ids:
+        if not v.get("explorer") or name in W.EXCLUDED or name not in df.columns or v["ui_group"] not in W.GROUPS:
             continue
+        if (v["ui_group"], v["group"]) not in W.TOPIC_OF:
+            raise ValueError(f"{name}: no topic for {(v['ui_group'], v['group'])}; add it to TOPICS in wording.py")
         bins = make_bins(name, v["kind"], v.get("unit", ""), df[name], w)
         if bins is None or len(bins.labels) < 2:
             log.info("Skipping %s: it does not split stories into groups.", name)
@@ -424,15 +440,20 @@ def build_site_data(handoff: Path | None = None, out_dir: Path | None = None, wo
         x = _numeric(raw) if raw.dtype != object and str(raw.dtype) not in ("str", "string") else np.full(len(df), np.nan)
         codes = bins.codes(raw.to_numpy() if bins.type == "levels" and isinstance(bins.values[0], str) else _numeric(raw))
         kind = "binary" if bins.binary else ("ordered" if bins.ordered else "categorical")
-        entry = {"id": name, "label": v["label"], "group": v["ui_group"], "subgroup": v["group"], "kind": v["kind"],
+        label = labels[name]
+        entry = {"id": name, "label": label, "topic": W.TOPIC_OF[(v["ui_group"], v["group"])][2],
+                 "subgroup": W.us_english(W.SUBGROUP_LABEL.get(v["group"], v["group"])), "kind": v["kind"],
                  "unit": v.get("unit", ""),
-                 "description": W.SITE_DESCRIPTION.get(name) or W.site_text(v.get("description", ""), labels),
+                 "description": W.us_english(W.SITE_DESCRIPTION.get(name) or W.site_text(v.get("description", ""), labels)),
                  "caveat": W.site_text(v.get("caveat", ""), labels),
-                 "bins": bins.to_json(), "noun": W.noun_for(name, v["label"]), "n": int((codes >= 0).sum())}
+                 "bins": bins.to_json(), "noun": W.us_english(W.noun_for(name, label)), "n": int((codes >= 0).sum())}
+        syn = W.synonyms_for(name)
+        if syn:
+            entry["syn"] = syn
         if bins.binary:
-            entry.update(dict(zip(("yes", "no", "yes_subject", "no_subject"), W.BINARY[name])))
+            entry.update(dict(zip(("yes", "no", "yes_subject", "no_subject"), map(W.us_english, W.BINARY[name]))))
         elif bins.ordered:
-            entry["more"] = W.more_for(name, v["label"])
+            entry["more"] = W.us_english(W.more_for(name, label))
         variables.append(entry)
         tasks.append((name, codes, x, kind, len(bins.labels)))
 
@@ -473,7 +494,8 @@ def build_site_data(handoff: Path | None = None, out_dir: Path | None = None, wo
         "metrics": metrics, "metric_groups": W.METRIC_GROUPS, "default_metric": W.DEFAULT_METRIC,
         "subsets": [{"id": sid, "label": lab, "group": grp, "n": int(subsets[sid].sum())}
                     for sid, lab, grp, *_ in subset_defs],
-        "groups": [{"id": gid, "label": lab} for gid, lab in W.GROUPS],
+        "topics": _topics(variables),
+        "popular": [p for p in W.POPULAR if p in {v["id"] for v in variables}],
         "variables": variables,
         "featured": [{"question": q, **s} for q, s in W.FEATURED if s["var"] in {v["id"] for v in variables}],
     }

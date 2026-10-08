@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-10-08T17:31:42Z",
+ "generated_at": "2026-10-08T19:38:17Z",
  "source": {
   "handoff": "litcorr_stage2_handoff_20261008.zip",
   "processed_at": "2026-10-08T17:00:26+00:00",
@@ -150,37 +150,44 @@
    "n": 245
   }
  ],
- "groups": [
+ "topics": [
   {
-   "id": "Story",
-   "label": "Story"
+   "id": "narration",
+   "label": "Narration",
+   "blurb": "First or third person, tense, talking to the reader",
+   "syn": "pov point of view person narrator tense voice",
+   "ids": [
+    "pov_class"
+   ]
   },
   {
-   "id": "Narration",
-   "label": "Narration"
+   "id": "dialogue",
+   "label": "Dialogue & characters",
+   "blurb": "How much speech, names, he/she",
+   "syn": "dialog speech talking conversation quotes characters names pronouns gender",
+   "ids": [
+    "dlg_word_share",
+    "dlg_has_dialogue"
+   ]
   },
   {
-   "id": "Language",
-   "label": "Language"
-  },
-  {
-   "id": "Sexual content",
-   "label": "Sexual content"
-  },
-  {
-   "id": "Style",
-   "label": "Style"
-  },
-  {
-   "id": "Publication",
-   "label": "When published"
+   "id": "emotion",
+   "label": "Emotion & relationships",
+   "blurb": "Tone, affection, consent, control",
+   "syn": "feelings mood sentiment love romance relationship consent",
+   "ids": [
+    "emo_anger_per_1k"
+   ]
   }
+ ],
+ "popular": [
+  "dlg_word_share"
  ],
  "variables": [
   {
    "id": "dlg_word_share",
    "label": "Dialogue share",
-   "group": "Narration",
+   "topic": "dialogue",
    "subgroup": "Dialogue",
    "kind": "share",
    "unit": "share (0–1)",
@@ -199,12 +206,13 @@
    },
    "noun": "dialogue share",
    "n": 278,
+   "syn": "dialog speech talking conversation",
    "more": "Stories with more dialogue"
   },
   {
    "id": "dlg_has_dialogue",
    "label": "Has dialogue",
-   "group": "Narration",
+   "topic": "dialogue",
    "subgroup": "Dialogue",
    "kind": "binary",
    "unit": "yes/no",
@@ -220,6 +228,7 @@
    },
    "noun": "has dialogue",
    "n": 278,
+   "syn": "dialog speech talking conversation",
    "yes": "Has dialogue",
    "no": "No dialogue",
    "yes_subject": "Stories with dialogue",
@@ -228,7 +237,7 @@
   {
    "id": "pov_class",
    "label": "Narrative perspective",
-   "group": "Narration",
+   "topic": "narration",
    "subgroup": "Narration",
    "kind": "categorical",
    "unit": "",
@@ -246,12 +255,13 @@
     "ordered": false
    },
    "noun": "narrative perspective",
-   "n": 278
+   "n": 278,
+   "syn": "pov point of view person narrator"
   },
   {
    "id": "emo_anger_per_1k",
    "label": "Anger",
-   "group": "Language",
+   "topic": "emotion",
    "subgroup": "Emotion",
    "kind": "continuous",
    "unit": "per 1,000 words",
@@ -269,12 +279,13 @@
    },
    "noun": "anger",
    "n": 278,
+   "syn": "feelings mood sentiment",
    "more": "Stories with more anger"
   }
  ],
  "featured": [
   {
-   "question": "Is more dialogue linked to more comments?",
+   "question": "Do stories with more dialogue get more comments per 1,000 views?",
    "var": "dlg_word_share",
    "metric": "pop_comments_per_1k_views"
   }

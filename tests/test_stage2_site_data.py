@@ -4,12 +4,14 @@ handoff zip (sample sizes, medians, weights, suppression of small groups, no per
 from __future__ import annotations
 
 import json
+import re
 
 import numpy as np
 import pandas as pd
 import pytest
 
 from litcorr.stage2 import site_data as sd
+from litcorr.stage2 import wording as W
 from litcorr.stage2.synthetic import write_synthetic_handoff
 from litcorr.stage2.stats import (rank_biserial_se, sig, weighted_auc, weighted_mean, weighted_quantiles,
                                   weighted_spearman)
@@ -168,3 +170,77 @@ def test_binary_and_categorical_groups_keep_their_order(built):
     assert var["dlg_has_dialogue"]["yes_subject"] == "Stories with dialogue"
     assert var["pov_class"]["bins"]["labels"][0] == "First person (I)"
     assert var["emo_anger_per_1k"]["bins"]["labels"][0] == "None"
+
+
+# ------------------------------------------------------------------------------------------------ wording
+REAL_META = sd.DEFAULT_OUT / "meta.json"
+UK_SPELLINGS = re.compile(
+    r"\b(humour\w*|neighbour\w*|favourit\w*|colour\w*|behaviour\w*|centre|labelled|labelling|signalled|"
+    r"travelled|modelling|\w+isation\w*|organis\w*|recognis\w*|realis\w*|summaris\w*|capitalis\w*|italicis\w*|"
+    r"unrecognis\w*|analys(e|ed|ing)|emphasis(e|ed)|apologis\w*|categoris\w*|criticis\w*|grey|towards)\b|"
+    r"\bat the weekend", re.I)
+CAUSAL = re.compile(r"\b(cause[sd]?|causing|drives?|driven|driving|makes? readers|leads? to|led to|boosts?|"
+                    r"because of|effect of|impacts?|results? in)\b", re.I)
+
+
+def _visitor_strings(meta):
+    """Every string in meta.json that a visitor can read (not ids, dates or file names)."""
+    skip = {"id", "generated_at", "source", "var", "metric", "genre", "mode", "kind", "unit", "ids", "topic",
+            "default_metric", "format", "excluded_reasons"}
+    out = []
+
+    def walk(x, key=None):
+        if key in skip:
+            return
+        if isinstance(x, str):
+            out.append(x)
+        elif isinstance(x, dict):
+            for k, v in x.items():
+                walk(v, k)
+        elif isinstance(x, list):
+            for v in x:
+                walk(v, key)
+    walk(meta)
+    return out
+
+
+def _metas(built):
+    metas = [built[1]]
+    if REAL_META.exists():
+        metas.append(json.loads(REAL_META.read_text()))
+    return metas
+
+
+def test_topics_cover_every_characteristic_once_and_popular_ids_exist(built):
+    for meta in _metas(built):
+        ids = [v["id"] for v in meta["variables"]]
+        listed = [i for t in meta["topics"] for i in t["ids"]]
+        assert sorted(listed) == sorted(ids) and len(listed) == len(set(listed))
+        assert all(v["topic"] == t["id"] for t in meta["topics"] for v in meta["variables"] if v["id"] in t["ids"])
+        assert set(meta["popular"]) <= set(ids)
+        assert all(t["label"] and t["blurb"] for t in meta["topics"])
+    real = _metas(built)[-1]
+    if len(real["variables"]) > 100:  # the real aggregates: eight topics and the full Popular list
+        assert [t["label"] for t in real["topics"]] == [t[1] for t in W.TOPICS]
+        assert real["popular"] == W.POPULAR
+
+
+def test_visitor_text_is_us_english_and_never_causal(built):
+    for meta in _metas(built):
+        for text in _visitor_strings(meta):
+            assert not UK_SPELLINGS.search(text), text
+            assert not CAUSAL.search(text), text
+            assert "'" not in text, text  # typographic quotes and apostrophes only
+
+
+def test_us_english_and_generated_phrases():
+    assert W.us_english("Humour and 'filter' words, the author's favourite") == \
+        "Humor and ‘filter’ words, the author’s favorite"
+    assert W.us_english("published at the weekend") == "published on the weekend"
+    assert W.NOUN["pace_action_peak_position"] == "where action verbs peak"
+    assert W.MORE["pace_action_shift"] == "Stories in which action verbs build up more"
+    assert W.MORE["pace_dialogue_peak_position"] == "Stories in which dialogue peaks later"
+    assert W.more_for("meta_tag_count", "Number of tags") == "Stories with more tags"
+    assert "with" not in W.noun_for("dlg_paragraph_share", "Paragraphs with dialogue")
+    assert W.noun_for("emo_affection_per_1k", "Affection & love") == "affection and love"
+    assert W.synonyms_for("pov_is_first_person").startswith("pov point of view")

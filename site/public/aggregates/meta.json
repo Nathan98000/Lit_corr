@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-10-08T17:30:51Z",
+ "generated_at": "2026-10-08T19:38:09Z",
  "source": {
   "handoff": "litcorr_stage2_handoff_20261008.zip",
   "processed_at": "2026-10-08T17:00:26+00:00",
@@ -405,37 +405,278 @@
    "n": 7410
   }
  ],
- "groups": [
+ "topics": [
   {
-   "id": "Story",
-   "label": "Story"
+   "id": "length",
+   "label": "Length & structure",
+   "blurb": "Word count, paragraphs, series, titles",
+   "syn": "long short size words pages",
+   "ids": [
+    "story_words",
+    "story_sentences",
+    "story_paragraphs",
+    "story_mean_sentence_words",
+    "story_median_sentence_words",
+    "story_mean_paragraph_words",
+    "story_median_paragraph_words",
+    "story_one_sentence_paragraph_share",
+    "story_long_paragraph_share",
+    "story_scene_breaks_per_1k",
+    "story_has_author_note",
+    "story_pages",
+    "meta_tag_count",
+    "author_stories_count",
+    "title_chars",
+    "title_words",
+    "title_has_chapter_marker",
+    "desc_chars",
+    "desc_words",
+    "title_sexual",
+    "desc_sexual",
+    "desc_pov",
+    "series_is_part",
+    "series_part_number",
+    "series_is_later_part",
+    "open_dialogue",
+    "end_dialogue",
+    "end_to_be_continued"
+   ]
   },
   {
-   "id": "Narration",
-   "label": "Narration"
+   "id": "narration",
+   "label": "Narration",
+   "blurb": "First or third person, tense, talking to the reader",
+   "syn": "pov point of view person narrator tense voice",
+   "ids": [
+    "pov_class",
+    "pov_is_first_person",
+    "narr_tense_class",
+    "narr_is_present_tense",
+    "narr_present_tense_share",
+    "reader_address_per_1k",
+    "pov_first_person_share",
+    "pov_first_plural_per_1k",
+    "pov_second_per_1k",
+    "pov_first_singular_narr_per_1k",
+    "pov_first_plural_narr_per_1k",
+    "pov_second_narr_per_1k",
+    "pov_third_narr_per_1k"
+   ]
   },
   {
-   "id": "Language",
-   "label": "Language"
+   "id": "dialogue",
+   "label": "Dialogue & characters",
+   "blurb": "How much speech, names, he/she",
+   "syn": "dialog speech talking conversation quotes characters names pronouns gender",
+   "ids": [
+    "dlg_word_share",
+    "dlg_segments_per_1k",
+    "dlg_mean_segment_words",
+    "dlg_question_share",
+    "dlg_exclamation_share",
+    "dlg_paragraph_share",
+    "dlg_has_dialogue",
+    "dlg_bare_line_share",
+    "dlg_adverb_tag_share",
+    "dlg_alternation_index",
+    "char_recurring_names",
+    "char_name_mentions_per_1k",
+    "char_top_name_share",
+    "gender_masculine_per_1k",
+    "gender_feminine_per_1k",
+    "gender_neutral_plural_per_1k",
+    "gender_feminine_share",
+    "gender_composition"
+   ]
   },
   {
-   "id": "Sexual content",
-   "label": "Sexual content"
+   "id": "sex",
+   "label": "Sexual content",
+   "blurb": "How much, how early, how varied",
+   "syn": "explicit sex sexual smut erotic steamy spicy heat",
+   "ids": [
+    "sex_terms_per_1k",
+    "sex_anatomy_per_1k",
+    "sex_action_per_1k",
+    "sex_other_per_1k",
+    "sex_sentence_share",
+    "sex_words_before_first",
+    "sex_distinct_terms",
+    "sex_scene_count",
+    "sex_scenes_per_10k",
+    "sex_first_scene_position",
+    "pace_sex_early",
+    "pace_sex_late",
+    "pace_sex_shift",
+    "pace_sex_peak_position"
+   ]
   },
   {
-   "id": "Style",
-   "label": "Style"
+   "id": "emotion",
+   "label": "Emotion & relationships",
+   "blurb": "Tone, affection, consent, control",
+   "syn": "feelings mood sentiment love romance relationship consent",
+   "ids": [
+    "emo_overall_per_1k",
+    "emo_positive_per_1k",
+    "emo_negative_per_1k",
+    "emo_affection_per_1k",
+    "emo_anxiety_per_1k",
+    "emo_anger_per_1k",
+    "emo_sadness_per_1k",
+    "emo_arousal_per_1k",
+    "emo_shame_per_1k",
+    "emo_jealousy_per_1k",
+    "emo_balance",
+    "humor_per_1k",
+    "rel_romance_per_1k",
+    "rel_intimacy_per_1k",
+    "rel_terms_per_1k",
+    "rel_disclosure_per_1k",
+    "rel_familiarity_per_1k",
+    "rel_closeness_per_1k",
+    "agency_passive_per_1k",
+    "agency_passive_sentence_share",
+    "agency_volition_per_1k",
+    "agency_control_per_1k",
+    "agency_dominance_per_1k",
+    "agency_submission_per_1k",
+    "agency_commands_per_1k",
+    "agency_command_share_of_speech",
+    "rel_consent_per_1k"
+   ]
   },
   {
-   "id": "Publication",
-   "label": "When published"
+   "id": "pacing",
+   "label": "Pacing & setting",
+   "blurb": "What builds up, what peaks where, where it happens",
+   "syn": "pace build-up structure setting location place",
+   "ids": [
+    "pace_emotion_early",
+    "pace_emotion_late",
+    "pace_emotion_shift",
+    "pace_emotion_peak_position",
+    "pace_dialogue_early",
+    "pace_dialogue_late",
+    "pace_dialogue_shift",
+    "pace_dialogue_peak_position",
+    "pace_action_early",
+    "pace_action_late",
+    "pace_action_shift",
+    "pace_action_peak_position",
+    "pace_descriptive_early",
+    "pace_descriptive_late",
+    "pace_descriptive_shift",
+    "pace_descriptive_peak_position",
+    "time_jump_per_1k",
+    "setting_home_per_1k",
+    "setting_public_per_1k",
+    "setting_outdoors_per_1k"
+   ]
+  },
+  {
+   "id": "style",
+   "label": "Word choice & style",
+   "blurb": "Vocabulary, readability, punctuation",
+   "syn": "writing style vocabulary readability grammar punctuation",
+   "ids": [
+    "lex_unique_words",
+    "lex_ttr",
+    "lex_mattr",
+    "lex_mean_word_zipf",
+    "lex_rare_word_share",
+    "lex_unrecognized_word_share",
+    "lex_long_word_share",
+    "read_mean_word_chars",
+    "read_mean_syllables_per_word",
+    "read_polysyllable_share",
+    "read_flesch_reading_ease",
+    "read_grade_composite",
+    "syn_commas_per_sentence",
+    "syn_subordinators_per_sentence",
+    "syn_long_sentence_share",
+    "syn_short_sentence_share",
+    "syn_sentence_length_sd",
+    "rep_top10_content_share",
+    "rep_bigram_repeat_share",
+    "rep_trigram_repeat_share",
+    "rep_adjacent_sentence_overlap",
+    "rep_same_start_share",
+    "rep_immediate_word_repeats_per_1k",
+    "rep_repeated_5gram_per_1k",
+    "hedge_per_1k",
+    "hedge_modal_per_1k",
+    "hedge_uncertainty_per_1k",
+    "hedge_certainty_per_1k",
+    "hedge_certainty_balance",
+    "psy_mental_verbs_per_1k",
+    "psy_perception_verbs_per_1k",
+    "psy_filter_words_per_1k",
+    "psy_distancing_per_1k",
+    "psy_immediacy_per_1k",
+    "sense_touch_per_1k",
+    "sense_sight_per_1k",
+    "sense_sound_per_1k",
+    "sense_smell_per_1k",
+    "sense_taste_per_1k",
+    "sense_body_per_1k",
+    "sense_total_per_1k",
+    "style_profanity_per_1k",
+    "style_all_caps_words_per_1k",
+    "style_ly_adverbs_per_1k",
+    "style_said_share",
+    "style_action_verbs_per_1k",
+    "style_descriptive_words_per_1k",
+    "style_italics_per_1k",
+    "style_elongated_per_1k",
+    "punct_ellipsis_per_1k",
+    "punct_dash_per_1k",
+    "punct_semicolon_per_1k",
+    "punct_colon_per_1k",
+    "punct_comma_per_1k",
+    "punct_quote_marks_per_1k",
+    "punct_parentheses_per_1k",
+    "punct_repeated_per_1k",
+    "qe_question_sentence_share",
+    "qe_exclamation_sentence_share",
+    "qe_question_sentences_per_1k",
+    "qe_exclamation_sentences_per_1k",
+    "mech_errors_per_1k"
+   ]
+  },
+  {
+   "id": "published",
+   "label": "When published",
+   "blurb": "Year, month, weekday, years online",
+   "syn": "date time when age old new",
+   "ids": [
+    "pub_year",
+    "pub_month",
+    "pub_weekday",
+    "pub_is_weekend",
+    "age_years"
+   ]
   }
+ ],
+ "popular": [
+  "story_words",
+  "pov_is_first_person",
+  "narr_is_present_tense",
+  "dlg_word_share",
+  "sex_terms_per_1k",
+  "sex_words_before_first",
+  "emo_balance",
+  "series_is_part",
+  "story_has_author_note",
+  "read_flesch_reading_ease",
+  "reader_address_per_1k",
+  "pub_year"
  ],
  "variables": [
   {
    "id": "pub_year",
    "label": "Publication year",
-   "group": "Publication",
+   "topic": "published",
    "subgroup": "Publication",
    "kind": "count",
    "unit": "year",
@@ -459,7 +700,7 @@
   {
    "id": "pub_month",
    "label": "Publication month",
-   "group": "Publication",
+   "topic": "published",
    "subgroup": "Publication",
    "kind": "count",
    "unit": "month (1–12)",
@@ -489,7 +730,7 @@
   {
    "id": "pub_weekday",
    "label": "Publication weekday",
-   "group": "Publication",
+   "topic": "published",
    "subgroup": "Publication",
    "kind": "categorical",
    "unit": "0 = Monday … 6 = Sunday",
@@ -514,7 +755,7 @@
   {
    "id": "pub_is_weekend",
    "label": "Published on a weekend",
-   "group": "Publication",
+   "topic": "published",
    "subgroup": "Publication",
    "kind": "binary",
    "unit": "yes/no",
@@ -532,13 +773,13 @@
    "n": 8996,
    "yes": "Weekend",
    "no": "Weekday",
-   "yes_subject": "Stories published at the weekend",
+   "yes_subject": "Stories published on the weekend",
    "no_subject": "stories published on weekdays"
   },
   {
    "id": "age_years",
    "label": "Years online",
-   "group": "Publication",
+   "topic": "published",
    "subgroup": "Publication",
    "kind": "continuous",
    "unit": "years",
@@ -557,12 +798,13 @@
    },
    "noun": "story age",
    "n": 8996,
+   "syn": "old new age",
    "more": "Older stories"
   },
   {
    "id": "story_pages",
    "label": "Pages on site",
-   "group": "Story",
+   "topic": "length",
    "subgroup": "Site metadata",
    "kind": "count",
    "unit": "pages",
@@ -578,14 +820,14 @@
     ],
     "ordered": true
    },
-   "noun": "number of pages",
+   "noun": "the number of pages",
    "n": 8996,
    "more": "Stories spread over more pages"
   },
   {
    "id": "meta_tag_count",
    "label": "Number of tags",
-   "group": "Story",
+   "topic": "length",
    "subgroup": "Site metadata",
    "kind": "count",
    "unit": "tags",
@@ -607,14 +849,14 @@
     ],
     "ordered": true
    },
-   "noun": "number of tags",
+   "noun": "the number of tags",
    "n": 8996,
-   "more": "Stories with more number of tags"
+   "more": "Stories with more tags"
   },
   {
    "id": "author_stories_count",
-   "label": "Author's story count",
-   "group": "Story",
+   "label": "Author’s story count",
+   "topic": "length",
    "subgroup": "Site metadata",
    "kind": "count",
    "unit": "stories",
@@ -633,18 +875,19 @@
     ],
     "ordered": true
    },
-   "noun": "the author's number of stories",
+   "noun": "the author’s number of stories",
    "n": 8996,
+   "syn": "prolific writer author",
    "more": "Stories by more prolific authors"
   },
   {
    "id": "story_words",
    "label": "Word count",
-   "group": "Story",
+   "topic": "length",
    "subgroup": "Story basics",
    "kind": "count",
    "unit": "words",
-   "description": "Number of words in the story text (letters/digits, contractions count as one word). Author's notes, headings and similar notes around the story are not counted (see the methodology page).",
+   "description": "Number of words in the story text (letters/digits, contractions count as one word). Author’s notes, headings and similar notes around the story are not counted (see the methodology page).",
    "caveat": "",
    "bins": {
     "type": "ranges",
@@ -659,12 +902,13 @@
    },
    "noun": "story length",
    "n": 8987,
+   "syn": "length long short size",
    "more": "Longer stories"
   },
   {
    "id": "story_sentences",
    "label": "Sentence count",
-   "group": "Story",
+   "topic": "length",
    "subgroup": "Story basics",
    "kind": "count",
    "unit": "sentences",
@@ -681,14 +925,14 @@
     ],
     "ordered": true
    },
-   "noun": "number of sentences",
+   "noun": "the number of sentences",
    "n": 8987,
-   "more": "Stories with more number of sentences"
+   "more": "Stories with more sentences"
   },
   {
    "id": "story_paragraphs",
    "label": "Paragraph count",
-   "group": "Story",
+   "topic": "length",
    "subgroup": "Story basics",
    "kind": "count",
    "unit": "paragraphs",
@@ -705,14 +949,14 @@
     ],
     "ordered": true
    },
-   "noun": "number of paragraphs",
+   "noun": "the number of paragraphs",
    "n": 8987,
-   "more": "Stories with more number of paragraphs"
+   "more": "Stories with more paragraphs"
   },
   {
    "id": "story_mean_sentence_words",
    "label": "Average sentence length",
-   "group": "Style",
+   "topic": "length",
    "subgroup": "Story basics",
    "kind": "continuous",
    "unit": "words",
@@ -736,7 +980,7 @@
   {
    "id": "story_median_sentence_words",
    "label": "Median sentence length",
-   "group": "Style",
+   "topic": "length",
    "subgroup": "Story basics",
    "kind": "continuous",
    "unit": "words",
@@ -760,7 +1004,7 @@
   {
    "id": "story_mean_paragraph_words",
    "label": "Average paragraph length",
-   "group": "Style",
+   "topic": "length",
    "subgroup": "Story basics",
    "kind": "continuous",
    "unit": "words",
@@ -784,7 +1028,7 @@
   {
    "id": "story_median_paragraph_words",
    "label": "Median paragraph length",
-   "group": "Style",
+   "topic": "length",
    "subgroup": "Story basics",
    "kind": "continuous",
    "unit": "words",
@@ -808,7 +1052,7 @@
   {
    "id": "story_one_sentence_paragraph_share",
    "label": "One-sentence paragraphs",
-   "group": "Style",
+   "topic": "length",
    "subgroup": "Story basics",
    "kind": "share",
    "unit": "share (0–1)",
@@ -831,8 +1075,8 @@
   },
   {
    "id": "story_long_paragraph_share",
-   "label": "Very long paragraphs ('walls of text')",
-   "group": "Style",
+   "label": "Very long paragraphs (‘walls of text’)",
+   "topic": "length",
    "subgroup": "Story basics",
    "kind": "share",
    "unit": "share (0–1)",
@@ -855,7 +1099,7 @@
   {
    "id": "story_scene_breaks_per_1k",
    "label": "Scene breaks per 1,000 words",
-   "group": "Story",
+   "topic": "length",
    "subgroup": "Story basics",
    "kind": "continuous",
    "unit": "per 1,000 words",
@@ -876,32 +1120,32 @@
   },
   {
    "id": "story_has_author_note",
-   "label": "Has an author's note",
-   "group": "Story",
+   "label": "Has an author’s note",
+   "topic": "length",
    "subgroup": "Story basics",
    "kind": "binary",
    "unit": "yes/no",
-   "description": "Whether the story opens or closes with an author's or editor's note, disclaimer, dedication, copyright line or words to readers, or has a paragraph labelled as an author's note (see the methodology page).",
-   "caveat": "Rule-based; misses notes that use no recognisable wording (about 1 in 3 in a hand check).",
+   "description": "Whether the story opens or closes with an author’s or editor’s note, disclaimer, dedication, copyright line or words to readers, or has a paragraph labeled as an author’s note (see the methodology page).",
+   "caveat": "Rule-based; misses notes that use no recognizable wording (about 1 in 3 in a hand check).",
    "bins": {
     "type": "levels",
     "labels": [
-     "Author's note",
-     "No author's note"
+     "Author’s note",
+     "No author’s note"
     ],
     "ordered": false
    },
-   "noun": "has an author's note",
+   "noun": "has an author’s note",
    "n": 8987,
-   "yes": "Author's note",
-   "no": "No author's note",
-   "yes_subject": "Stories with an author's note",
+   "yes": "Author’s note",
+   "no": "No author’s note",
+   "yes_subject": "Stories with an author’s note",
    "no_subject": "stories without one"
   },
   {
    "id": "title_chars",
    "label": "Title length",
-   "group": "Story",
+   "topic": "length",
    "subgroup": "Title & description",
    "kind": "count",
    "unit": "characters",
@@ -925,7 +1169,7 @@
   {
    "id": "title_words",
    "label": "Title word count",
-   "group": "Story",
+   "topic": "length",
    "subgroup": "Title & description",
    "kind": "count",
    "unit": "words",
@@ -950,11 +1194,11 @@
   {
    "id": "title_has_chapter_marker",
    "label": "Title marks a chapter/part",
-   "group": "Story",
+   "topic": "length",
    "subgroup": "Title & description",
    "kind": "binary",
    "unit": "yes/no",
-   "description": "Whether the title contains a chapter or part marker such as 'Ch. 02', 'Pt. 3' or ends with a number.",
+   "description": "Whether the title contains a chapter or part marker such as ‘Ch. 02’, ‘Pt. 3’ or ends with a number.",
    "caveat": "",
    "bins": {
     "type": "levels",
@@ -974,11 +1218,11 @@
   {
    "id": "desc_chars",
    "label": "Description length",
-   "group": "Story",
+   "topic": "length",
    "subgroup": "Title & description",
    "kind": "count",
    "unit": "characters",
-   "description": "Number of characters in the author's short description.",
+   "description": "Number of characters in the author’s short description.",
    "caveat": "",
    "bins": {
     "type": "ranges",
@@ -998,7 +1242,7 @@
   {
    "id": "desc_words",
    "label": "Description word count",
-   "group": "Story",
+   "topic": "length",
    "subgroup": "Title & description",
    "kind": "count",
    "unit": "words",
@@ -1022,7 +1266,7 @@
   {
    "id": "title_sexual",
    "label": "Explicit title",
-   "group": "Story",
+   "topic": "length",
    "subgroup": "Title & description",
    "kind": "binary",
    "unit": "yes/no",
@@ -1046,7 +1290,7 @@
   {
    "id": "desc_sexual",
    "label": "Explicit description",
-   "group": "Story",
+   "topic": "length",
    "subgroup": "Title & description",
    "kind": "binary",
    "unit": "yes/no",
@@ -1070,12 +1314,12 @@
   {
    "id": "desc_pov",
    "label": "Person of the description",
-   "group": "Story",
+   "topic": "length",
    "subgroup": "Title & description",
    "kind": "categorical",
    "unit": "first / second / third / none",
    "description": "Grammatical person of the description: first (I, my, we), second (you), third (he, she, they), by which personal pronouns it uses most, or none.",
-   "caveat": "About two descriptions in three use no personal pronoun ('none').",
+   "caveat": "About two descriptions in three use no personal pronoun (‘none’).",
    "bins": {
     "type": "levels",
     "labels": [
@@ -1092,7 +1336,7 @@
   {
    "id": "series_is_part",
    "label": "Part of a series",
-   "group": "Story",
+   "topic": "length",
    "subgroup": "Series",
    "kind": "binary",
    "unit": "yes/no",
@@ -1108,6 +1352,7 @@
    },
    "noun": "part of a series",
    "n": 8996,
+   "syn": "chapters parts sequel",
    "yes": "Part of a series",
    "no": "Stand-alone",
    "yes_subject": "Stories in a series",
@@ -1116,7 +1361,7 @@
   {
    "id": "series_part_number",
    "label": "Part number",
-   "group": "Story",
+   "topic": "length",
    "subgroup": "Series",
    "kind": "count",
    "unit": "part",
@@ -1134,12 +1379,13 @@
    },
    "noun": "part number in a series",
    "n": 4741,
+   "syn": "chapters parts sequel",
    "more": "Later parts of a series"
   },
   {
    "id": "series_is_later_part",
    "label": "Later part of a series",
-   "group": "Story",
+   "topic": "length",
    "subgroup": "Series",
    "kind": "binary",
    "unit": "yes/no",
@@ -1155,19 +1401,20 @@
    },
    "noun": "later part of a series",
    "n": 8989,
+   "syn": "chapters parts sequel",
    "yes": "Later part of a series",
    "no": "First part or stand-alone",
    "yes_subject": "Later parts of a series",
-   "no_subject": "first parts and stand-alone stories"
+   "no_subject": "first parts or stand-alone stories"
   },
   {
    "id": "open_dialogue",
    "label": "Opens with speech",
-   "group": "Story",
+   "topic": "length",
    "subgroup": "Openings & endings",
    "kind": "binary",
    "unit": "yes/no",
-   "description": "Whether the first word of the story (after any author's note or heading) is inside quotation marks.",
+   "description": "Whether the first word of the story (after any author’s note or heading) is inside quotation marks.",
    "caveat": "Stories written without quotation marks (chat logs, scripts) never count.",
    "bins": {
     "type": "levels",
@@ -1187,7 +1434,7 @@
   {
    "id": "end_dialogue",
    "label": "Ends with speech",
-   "group": "Story",
+   "topic": "length",
    "subgroup": "Openings & endings",
    "kind": "binary",
    "unit": "yes/no",
@@ -1211,11 +1458,11 @@
   {
    "id": "end_to_be_continued",
    "label": "Announces a continuation",
-   "group": "Story",
+   "topic": "length",
    "subgroup": "Openings & endings",
    "kind": "binary",
    "unit": "yes/no",
-   "description": "Whether the story ends by announcing more to come ('to be continued', 'next chapter', 'part 3 coming soon') in its last three paragraphs or its closing note.",
+   "description": "Whether the story ends by announcing more to come (‘to be continued’, ‘next chapter’, ‘part 3 coming soon’) in its last three paragraphs or its closing note.",
    "caveat": "What the author announced, not whether a sequel exists; chapters of long works often leave it out.",
    "bins": {
     "type": "levels",
@@ -1235,7 +1482,7 @@
   {
    "id": "pov_first_plural_per_1k",
    "label": "We / us / our",
-   "group": "Narration",
+   "topic": "narration",
    "subgroup": "Narration",
    "kind": "continuous",
    "unit": "per 1,000 words",
@@ -1252,14 +1499,15 @@
     ],
     "ordered": true
    },
-   "noun": "‘we / us / our’",
+   "noun": "the use of ‘we / us / our’",
    "n": 8996,
-   "more": "Stories with more ‘we / us / our’"
+   "syn": "pov point of view person narrator",
+   "more": "Stories that use ‘we / us / our’ more"
   },
   {
    "id": "pov_second_per_1k",
    "label": "You / your",
-   "group": "Narration",
+   "topic": "narration",
    "subgroup": "Narration",
    "kind": "continuous",
    "unit": "per 1,000 words",
@@ -1276,14 +1524,15 @@
     ],
     "ordered": true
    },
-   "noun": "‘you / your’",
+   "noun": "the use of ‘you / your’",
    "n": 8996,
-   "more": "Stories with more ‘you / your’"
+   "syn": "pov point of view person narrator",
+   "more": "Stories that use ‘you / your’ more"
   },
   {
    "id": "pov_first_singular_narr_per_1k",
    "label": "I / me / my in narration",
-   "group": "Narration",
+   "topic": "narration",
    "subgroup": "Narration",
    "kind": "continuous",
    "unit": "per 1,000 narration words",
@@ -1300,14 +1549,15 @@
     ],
     "ordered": true
    },
-   "noun": "‘I / me / my’ in the narration",
+   "noun": "the use of ‘I / me / my’ in the narration",
    "n": 8993,
-   "more": "Stories with more ‘I / me / my’ in the narration"
+   "syn": "pov point of view person narrator",
+   "more": "Stories whose narration uses ‘I / me / my’ more"
   },
   {
    "id": "pov_first_plural_narr_per_1k",
    "label": "We / us / our in narration",
-   "group": "Narration",
+   "topic": "narration",
    "subgroup": "Narration",
    "kind": "continuous",
    "unit": "per 1,000 narration words",
@@ -1324,14 +1574,15 @@
     ],
     "ordered": true
    },
-   "noun": "‘we / us / our’ in the narration",
+   "noun": "the use of ‘we / us / our’ in the narration",
    "n": 8993,
-   "more": "Stories with more ‘we / us / our’ in the narration"
+   "syn": "pov point of view person narrator",
+   "more": "Stories whose narration uses ‘we / us / our’ more"
   },
   {
    "id": "pov_second_narr_per_1k",
    "label": "You / your in narration",
-   "group": "Narration",
+   "topic": "narration",
    "subgroup": "Narration",
    "kind": "continuous",
    "unit": "per 1,000 narration words",
@@ -1348,14 +1599,15 @@
     ],
     "ordered": true
    },
-   "noun": "‘you / your’ in the narration",
+   "noun": "the use of ‘you / your’ in the narration",
    "n": 8993,
-   "more": "Stories with more ‘you / your’ in the narration"
+   "syn": "pov point of view person narrator",
+   "more": "Stories whose narration uses ‘you / your’ more"
   },
   {
    "id": "pov_third_narr_per_1k",
    "label": "He / she / they in narration",
-   "group": "Narration",
+   "topic": "narration",
    "subgroup": "Narration",
    "kind": "continuous",
    "unit": "per 1,000 narration words",
@@ -1372,14 +1624,15 @@
     ],
     "ordered": true
    },
-   "noun": "‘he / she / they’ in the narration",
+   "noun": "the use of ‘he / she / they’ in the narration",
    "n": 8993,
-   "more": "Stories with more ‘he / she / they’ in the narration"
+   "syn": "pov point of view person narrator",
+   "more": "Stories whose narration uses ‘he / she / they’ more"
   },
   {
    "id": "pov_first_person_share",
    "label": "First-person share of pronouns",
-   "group": "Narration",
+   "topic": "narration",
    "subgroup": "Narration",
    "kind": "share",
    "unit": "share (0–1)",
@@ -1396,14 +1649,15 @@
     ],
     "ordered": true
    },
-   "noun": "first-person share of pronouns",
+   "noun": "the first-person share of pronouns",
    "n": 8993,
+   "syn": "pov point of view person narrator",
    "more": "Stories with a larger first-person share of pronouns"
   },
   {
    "id": "pov_class",
    "label": "Narrative perspective",
-   "group": "Narration",
+   "topic": "narration",
    "subgroup": "Narration",
    "kind": "categorical",
    "unit": "first / first_plural / second / third / mixed / unknown",
@@ -1421,12 +1675,13 @@
     "ordered": false
    },
    "noun": "narrative perspective",
-   "n": 8983
+   "n": 8983,
+   "syn": "pov point of view person narrator"
   },
   {
    "id": "pov_is_first_person",
    "label": "First-person narration",
-   "group": "Narration",
+   "topic": "narration",
    "subgroup": "Narration",
    "kind": "binary",
    "unit": "1 = first, 0 = third",
@@ -1442,6 +1697,7 @@
    },
    "noun": "first-person narration",
    "n": 8447,
+   "syn": "pov point of view person narrator",
    "yes": "First person",
    "no": "Third person",
    "yes_subject": "First-person stories",
@@ -1450,7 +1706,7 @@
   {
    "id": "narr_present_tense_share",
    "label": "Present-tense share",
-   "group": "Narration",
+   "topic": "narration",
    "subgroup": "Narration",
    "kind": "share",
    "unit": "share (0–1)",
@@ -1467,18 +1723,19 @@
     ],
     "ordered": true
    },
-   "noun": "present-tense share",
+   "noun": "the present-tense share of the narration",
    "n": 8962,
+   "syn": "tense present past",
    "more": "Stories told more in the present tense"
   },
   {
    "id": "narr_tense_class",
    "label": "Narration tense",
-   "group": "Narration",
+   "topic": "narration",
    "subgroup": "Narration",
    "kind": "categorical",
    "unit": "present / past / mixed / unknown",
-   "description": "Present tense if at least 60% of the narration's verbs are in the present tense, past tense if 40% or fewer, mixed in between.",
+   "description": "Present tense if at least 60% of the narration’s verbs are in the present tense, past tense if 40% or fewer, mixed in between.",
    "caveat": "",
    "bins": {
     "type": "levels",
@@ -1490,12 +1747,13 @@
     "ordered": false
    },
    "noun": "narration tense",
-   "n": 8962
+   "n": 8962,
+   "syn": "tense present past"
   },
   {
    "id": "narr_is_present_tense",
    "label": "Present-tense narration",
-   "group": "Narration",
+   "topic": "narration",
    "subgroup": "Narration",
    "kind": "binary",
    "unit": "1 = present, 0 = past",
@@ -1511,6 +1769,7 @@
    },
    "noun": "present-tense narration",
    "n": 8685,
+   "syn": "tense present past",
    "yes": "Present tense",
    "no": "Past tense",
    "yes_subject": "Present-tense stories",
@@ -1519,12 +1778,12 @@
   {
    "id": "reader_address_per_1k",
    "label": "Talking to the reader",
-   "group": "Narration",
+   "topic": "narration",
    "subgroup": "Narration",
    "kind": "continuous",
    "unit": "per 1,000 narration words",
-   "description": "Narration that speaks to the reader ('trust me', 'believe me', 'let me tell you', 'dear reader', 'as you can imagine') per 1,000 narration words.",
-   "caveat": "Not measured under 200 narration words. One story's value rests on only a few instances and is noisy; summaries of groups, as shown here, are steadier.",
+   "description": "Narration that speaks to the reader (‘trust me’, ‘believe me’, ‘let me tell you’, ‘dear reader’, ‘as you can imagine’) per 1,000 narration words.",
+   "caveat": "Not measured under 200 narration words. One story’s value rests on only a few instances and is noisy; summaries of groups, as shown here, are steadier.",
    "bins": {
     "type": "ranges",
     "labels": [
@@ -1533,14 +1792,15 @@
     ],
     "ordered": true
    },
-   "noun": "talking to the reader",
+   "noun": "how often the narration talks to the reader",
    "n": 8983,
+   "syn": "second person addressing the reader",
    "more": "Stories that talk to the reader more"
   },
   {
    "id": "dlg_word_share",
    "label": "Dialogue share",
-   "group": "Narration",
+   "topic": "dialogue",
    "subgroup": "Dialogue",
    "kind": "share",
    "unit": "share (0–1)",
@@ -1559,12 +1819,13 @@
    },
    "noun": "dialogue share",
    "n": 8996,
+   "syn": "dialog speech talking conversation",
    "more": "Stories with more dialogue"
   },
   {
    "id": "dlg_segments_per_1k",
    "label": "Dialogue segments per 1,000 words",
-   "group": "Narration",
+   "topic": "dialogue",
    "subgroup": "Dialogue",
    "kind": "continuous",
    "unit": "per 1,000 words",
@@ -1583,12 +1844,13 @@
    },
    "noun": "dialogue segments per 1,000 words",
    "n": 8996,
+   "syn": "dialog speech talking conversation",
    "more": "Stories with more dialogue segments per 1,000 words"
   },
   {
    "id": "dlg_mean_segment_words",
    "label": "Average speech length",
-   "group": "Narration",
+   "topic": "dialogue",
    "subgroup": "Dialogue",
    "kind": "continuous",
    "unit": "words",
@@ -1607,12 +1869,13 @@
    },
    "noun": "average speech length",
    "n": 8473,
+   "syn": "dialog speech talking conversation",
    "more": "Stories with longer speeches"
   },
   {
    "id": "dlg_question_share",
    "label": "Questions asked in dialogue",
-   "group": "Narration",
+   "topic": "dialogue",
    "subgroup": "Dialogue",
    "kind": "share",
    "unit": "share (0–1)",
@@ -1629,14 +1892,15 @@
     ],
     "ordered": true
    },
-   "noun": "questions asked in dialogue",
+   "noun": "questions in dialogue",
    "n": 8289,
+   "syn": "dialog speech talking conversation",
    "more": "Stories with more questions in their dialogue"
   },
   {
    "id": "dlg_exclamation_share",
    "label": "Exclamations in dialogue",
-   "group": "Narration",
+   "topic": "dialogue",
    "subgroup": "Dialogue",
    "kind": "share",
    "unit": "share (0–1)",
@@ -1654,12 +1918,13 @@
    },
    "noun": "exclamations in dialogue",
    "n": 7134,
+   "syn": "dialog speech talking conversation",
    "more": "Stories with more exclamations in their dialogue"
   },
   {
    "id": "dlg_paragraph_share",
    "label": "Paragraphs with dialogue",
-   "group": "Narration",
+   "topic": "dialogue",
    "subgroup": "Dialogue",
    "kind": "share",
    "unit": "share (0–1)",
@@ -1676,14 +1941,15 @@
     ],
     "ordered": true
    },
-   "noun": "paragraphs with dialogue",
+   "noun": "the share of dialogue paragraphs",
    "n": 8996,
+   "syn": "dialog speech talking conversation",
    "more": "Stories with more paragraphs of dialogue"
   },
   {
    "id": "dlg_has_dialogue",
    "label": "Has dialogue",
-   "group": "Narration",
+   "topic": "dialogue",
    "subgroup": "Dialogue",
    "kind": "binary",
    "unit": "yes/no",
@@ -1699,6 +1965,7 @@
    },
    "noun": "has dialogue",
    "n": 8996,
+   "syn": "dialog speech talking conversation",
    "yes": "Has dialogue",
    "no": "No dialogue",
    "yes_subject": "Stories with dialogue",
@@ -1707,11 +1974,11 @@
   {
    "id": "dlg_bare_line_share",
    "label": "Untagged speech lines",
-   "group": "Narration",
+   "topic": "dialogue",
    "subgroup": "Dialogue",
    "kind": "share",
    "unit": "share (0–1)",
-   "description": "Share of dialogue paragraphs made only of quoted speech, with no narration and no 'she said'.",
+   "description": "Share of dialogue paragraphs made only of quoted speech, with no narration and no ‘she said’.",
    "caveat": "Not measured with fewer than 5 dialogue paragraphs.",
    "bins": {
     "type": "ranges",
@@ -1726,16 +1993,17 @@
    },
    "noun": "untagged speech lines",
    "n": 7561,
+   "syn": "dialog speech talking conversation",
    "more": "Stories with more untagged speech lines"
   },
   {
    "id": "dlg_adverb_tag_share",
    "label": "Adverbs in speech tags",
-   "group": "Narration",
+   "topic": "dialogue",
    "subgroup": "Dialogue",
    "kind": "share",
    "unit": "share (0–1)",
-   "description": "Share of speech tags (a speech verb within four words of a quotation) with an -ly adverb next to the verb ('she said softly', 'he whispered hoarsely').",
+   "description": "Share of speech tags (a speech verb within four words of a quotation) with an -ly adverb next to the verb (‘she said softly’, ‘he whispered hoarsely’).",
    "caveat": "Not measured with fewer than 5 speech tags.",
    "bins": {
     "type": "ranges",
@@ -1750,17 +2018,18 @@
    },
    "noun": "adverbs in speech tags",
    "n": 6007,
+   "syn": "dialog speech talking conversation",
    "more": "Stories with more adverbs in speech tags"
   },
   {
    "id": "dlg_alternation_index",
    "label": "Dialogue/narration alternation",
-   "group": "Narration",
+   "topic": "dialogue",
    "subgroup": "Dialogue",
    "kind": "continuous",
    "unit": "ratio (1 = random order)",
    "description": "How often the story switches between dialogue and narration paragraphs, compared with a random order: below 1 means dialogue comes in blocks (scenes), above 1 means dialogue and narration alternate.",
-   "caveat": "Not measured unless there are at least 5 dialogue and 5 narration paragraphs. One story's value rests on only a few instances and is noisy; summaries of groups, as shown here, are steadier.",
+   "caveat": "Not measured unless there are at least 5 dialogue and 5 narration paragraphs. One story’s value rests on only a few instances and is noisy; summaries of groups, as shown here, are steadier.",
    "bins": {
     "type": "ranges",
     "labels": [
@@ -1772,19 +2041,20 @@
     ],
     "ordered": true
    },
-   "noun": "dialogue/narration alternation",
+   "noun": "how often dialogue and narration alternate",
    "n": 7392,
+   "syn": "dialog speech talking conversation",
    "more": "Stories that switch more between dialogue and narration"
   },
   {
    "id": "char_recurring_names",
    "label": "Recurring names",
-   "group": "Narration",
+   "topic": "dialogue",
    "subgroup": "Characters",
    "kind": "count",
    "unit": "names",
-   "description": "Number of distinct capitalised names that appear at least 3 times mid-sentence (mostly characters, sometimes places).",
-   "caveat": "A rule-based estimate: first names and surnames count separately. Common titles, places, nationalities, organisations and brands are left out, as is a word that mostly follows 'the' or 'in', but rarer ones can still count (about 9 in 10 detected names were characters in a hand check); names that only ever start a sentence are missed.",
+   "description": "Number of distinct capitalized names that appear at least 3 times mid-sentence (mostly characters, sometimes places).",
+   "caveat": "A rule-based estimate: first names and surnames count separately. Common titles, places, nationalities, organizations and brands are left out, as is a word that mostly follows ‘the’ or ‘in’, but rarer ones can still count (about 9 in 10 detected names were characters in a hand check); names that only ever start a sentence are missed.",
    "bins": {
     "type": "ranges",
     "labels": [
@@ -1796,14 +2066,14 @@
     ],
     "ordered": true
    },
-   "noun": "number of recurring names",
+   "noun": "the number of recurring names",
    "n": 8987,
    "more": "Stories with more recurring named characters"
   },
   {
    "id": "char_name_mentions_per_1k",
    "label": "Name mentions per 1,000 words",
-   "group": "Narration",
+   "topic": "dialogue",
    "subgroup": "Characters",
    "kind": "continuous",
    "unit": "per 1,000 words",
@@ -1826,8 +2096,8 @@
   },
   {
    "id": "char_top_name_share",
-   "label": "Focus on main name",
-   "group": "Narration",
+   "label": "Focus on one main name",
+   "topic": "dialogue",
    "subgroup": "Characters",
    "kind": "share",
    "unit": "share (0–1)",
@@ -1844,19 +2114,19 @@
     ],
     "ordered": true
    },
-   "noun": "focus on main name",
+   "noun": "focus on one main name",
    "n": 7443,
    "more": "Stories focused more on one main name"
   },
   {
    "id": "gender_masculine_per_1k",
    "label": "He / him / his",
-   "group": "Narration",
+   "topic": "dialogue",
    "subgroup": "Gendered language",
    "kind": "continuous",
    "unit": "per 1,000 words",
    "description": "Masculine pronouns per 1,000 words.",
-   "caveat": "Pronouns describe the characters on the page, not the author; first-person narrators' gender is invisible to this measure.",
+   "caveat": "Pronouns describe the characters on the page, not the author; first-person narrators’ gender is invisible to this measure.",
    "bins": {
     "type": "ranges",
     "labels": [
@@ -1868,19 +2138,19 @@
     ],
     "ordered": true
    },
-   "noun": "‘he / him / his’",
+   "noun": "the use of ‘he / him / his’",
    "n": 8996,
-   "more": "Stories with more ‘he / him / his’"
+   "more": "Stories that use ‘he / him / his’ more"
   },
   {
    "id": "gender_feminine_per_1k",
    "label": "She / her / hers",
-   "group": "Narration",
+   "topic": "dialogue",
    "subgroup": "Gendered language",
    "kind": "continuous",
    "unit": "per 1,000 words",
    "description": "Feminine pronouns per 1,000 words.",
-   "caveat": "Pronouns describe the characters on the page, not the author; first-person narrators' gender is invisible to this measure.",
+   "caveat": "Pronouns describe the characters on the page, not the author; first-person narrators’ gender is invisible to this measure.",
    "bins": {
     "type": "ranges",
     "labels": [
@@ -1892,19 +2162,19 @@
     ],
     "ordered": true
    },
-   "noun": "‘she / her / hers’",
+   "noun": "the use of ‘she / her / hers’",
    "n": 8996,
-   "more": "Stories with more ‘she / her / hers’"
+   "more": "Stories that use ‘she / her / hers’ more"
   },
   {
    "id": "gender_neutral_plural_per_1k",
    "label": "They / them / their",
-   "group": "Narration",
+   "topic": "dialogue",
    "subgroup": "Gendered language",
    "kind": "continuous",
    "unit": "per 1,000 words",
    "description": "They/them/their pronouns per 1,000 words (plural or singular).",
-   "caveat": "Pronouns describe the characters on the page, not the author; first-person narrators' gender is invisible to this measure.",
+   "caveat": "Pronouns describe the characters on the page, not the author; first-person narrators’ gender is invisible to this measure.",
    "bins": {
     "type": "ranges",
     "labels": [
@@ -1916,19 +2186,19 @@
     ],
     "ordered": true
    },
-   "noun": "‘they / them / their’",
+   "noun": "the use of ‘they / them / their’",
    "n": 8996,
-   "more": "Stories with more ‘they / them / their’"
+   "more": "Stories that use ‘they / them / their’ more"
   },
   {
    "id": "gender_feminine_share",
    "label": "Feminine share of he/she pronouns",
-   "group": "Narration",
+   "topic": "dialogue",
    "subgroup": "Gendered language",
    "kind": "share",
    "unit": "share (0–1)",
    "description": "Feminine pronouns as a share of feminine plus masculine pronouns.",
-   "caveat": "Pronouns describe the characters on the page, not the author; first-person narrators' gender is invisible to this measure.",
+   "caveat": "Pronouns describe the characters on the page, not the author; first-person narrators’ gender is invisible to this measure.",
    "bins": {
     "type": "ranges",
     "labels": [
@@ -1940,19 +2210,19 @@
     ],
     "ordered": true
    },
-   "noun": "feminine share of he/she pronouns",
+   "noun": "the feminine share of he/she pronouns",
    "n": 8749,
    "more": "Stories with a larger share of she/her among he/she pronouns"
   },
   {
    "id": "gender_composition",
    "label": "Pronoun composition",
-   "group": "Narration",
+   "topic": "dialogue",
    "subgroup": "Gendered language",
    "kind": "categorical",
    "unit": "mostly_feminine / mixed / mostly_masculine / few_gendered_pronouns",
    "description": "Mostly she/her if at least 65% of the he/she pronouns are feminine, mostly he/him if 35% or fewer, and “few he/she” when there are fewer than 5 such pronouns per 1,000 words.",
-   "caveat": "Pronouns describe the characters on the page, not the author; first-person narrators' gender is invisible to this measure.",
+   "caveat": "Pronouns describe the characters on the page, not the author; first-person narrators’ gender is invisible to this measure.",
    "bins": {
     "type": "levels",
     "labels": [
@@ -1969,11 +2239,11 @@
   {
    "id": "punct_ellipsis_per_1k",
    "label": "Ellipses",
-   "group": "Style",
+   "topic": "style",
    "subgroup": "Punctuation",
    "kind": "continuous",
    "unit": "per 1,000 words",
-   "description": "Ellipses ('…' or '...') per 1,000 words. Lines made only of dots are scene breaks, not ellipses.",
+   "description": "Ellipses (‘…’ or ‘...’) per 1,000 words. Lines made only of dots are scene breaks, not ellipses.",
    "caveat": "",
    "bins": {
     "type": "ranges",
@@ -1993,11 +2263,11 @@
   {
    "id": "punct_dash_per_1k",
    "label": "Dashes",
-   "group": "Style",
+   "topic": "style",
    "subgroup": "Punctuation",
    "kind": "continuous",
    "unit": "per 1,000 words",
-   "description": "Dashes per 1,000 words: em dashes ('—'), runs of hyphens ('--'), and a hyphen or en dash with a space on each side used as a dash ('she paused - then left'). Hyphens inside words are not dashes.",
+   "description": "Dashes per 1,000 words: em dashes (‘—’), runs of hyphens (‘--’), and a hyphen or en dash with a space on each side used as a dash (‘she paused - then left’). Hyphens inside words are not dashes.",
    "caveat": "",
    "bins": {
     "type": "ranges",
@@ -2016,7 +2286,7 @@
   {
    "id": "punct_semicolon_per_1k",
    "label": "Semicolons",
-   "group": "Style",
+   "topic": "style",
    "subgroup": "Punctuation",
    "kind": "continuous",
    "unit": "per 1,000 words",
@@ -2039,7 +2309,7 @@
   {
    "id": "punct_colon_per_1k",
    "label": "Colons",
-   "group": "Style",
+   "topic": "style",
    "subgroup": "Punctuation",
    "kind": "continuous",
    "unit": "per 1,000 words",
@@ -2062,7 +2332,7 @@
   {
    "id": "punct_comma_per_1k",
    "label": "Commas",
-   "group": "Style",
+   "topic": "style",
    "subgroup": "Punctuation",
    "kind": "continuous",
    "unit": "per 1,000 words",
@@ -2086,7 +2356,7 @@
   {
    "id": "punct_quote_marks_per_1k",
    "label": "Quotation marks",
-   "group": "Style",
+   "topic": "style",
    "subgroup": "Punctuation",
    "kind": "continuous",
    "unit": "per 1,000 words",
@@ -2110,7 +2380,7 @@
   {
    "id": "punct_parentheses_per_1k",
    "label": "Parentheses",
-   "group": "Style",
+   "topic": "style",
    "subgroup": "Punctuation",
    "kind": "continuous",
    "unit": "per 1,000 words",
@@ -2132,11 +2402,11 @@
   {
    "id": "punct_repeated_per_1k",
    "label": "Repeated punctuation (!!, ?!)",
-   "group": "Style",
+   "topic": "style",
    "subgroup": "Punctuation",
    "kind": "continuous",
    "unit": "per 1,000 words",
-   "description": "Runs of two or more ! or ? marks (e.g. '!!', '?!') per 1,000 words.",
+   "description": "Runs of two or more ! or ? marks (e.g. ‘!!’, ‘?!’) per 1,000 words.",
    "caveat": "",
    "bins": {
     "type": "ranges",
@@ -2154,7 +2424,7 @@
   {
    "id": "qe_question_sentence_share",
    "label": "Question sentences",
-   "group": "Style",
+   "topic": "style",
    "subgroup": "Questions & exclamations",
    "kind": "share",
    "unit": "share (0–1)",
@@ -2178,7 +2448,7 @@
   {
    "id": "qe_exclamation_sentence_share",
    "label": "Exclamation sentences",
-   "group": "Style",
+   "topic": "style",
    "subgroup": "Questions & exclamations",
    "kind": "share",
    "unit": "share (0–1)",
@@ -2202,7 +2472,7 @@
   {
    "id": "qe_question_sentences_per_1k",
    "label": "Questions per 1,000 words",
-   "group": "Style",
+   "topic": "style",
    "subgroup": "Questions & exclamations",
    "kind": "continuous",
    "unit": "per 1,000 words",
@@ -2226,7 +2496,7 @@
   {
    "id": "qe_exclamation_sentences_per_1k",
    "label": "Exclamations per 1,000 words",
-   "group": "Style",
+   "topic": "style",
    "subgroup": "Questions & exclamations",
    "kind": "continuous",
    "unit": "per 1,000 words",
@@ -2250,7 +2520,7 @@
   {
    "id": "read_mean_word_chars",
    "label": "Average word length",
-   "group": "Story",
+   "topic": "style",
    "subgroup": "Readability & sentence complexity",
    "kind": "continuous",
    "unit": "letters",
@@ -2269,12 +2539,13 @@
    },
    "noun": "average word length",
    "n": 8996,
+   "syn": "readability difficulty easy hard",
    "more": "Stories with longer words"
   },
   {
    "id": "read_mean_syllables_per_word",
    "label": "Syllables per word",
-   "group": "Story",
+   "topic": "style",
    "subgroup": "Readability & sentence complexity",
    "kind": "continuous",
    "unit": "syllables",
@@ -2293,12 +2564,13 @@
    },
    "noun": "syllables per word",
    "n": 8996,
+   "syn": "readability difficulty easy hard",
    "more": "Stories with more syllables per word"
   },
   {
    "id": "read_polysyllable_share",
    "label": "Long (3+ syllable) words",
-   "group": "Story",
+   "topic": "style",
    "subgroup": "Readability & sentence complexity",
    "kind": "share",
    "unit": "share (0–1)",
@@ -2317,16 +2589,17 @@
    },
    "noun": "long (3+ syllable) words",
    "n": 8996,
+   "syn": "readability difficulty easy hard",
    "more": "Stories with more long (3+ syllable) words"
   },
   {
    "id": "read_flesch_reading_ease",
    "label": "Reading ease (Flesch)",
-   "group": "Story",
+   "topic": "style",
    "subgroup": "Readability & sentence complexity",
    "kind": "continuous",
    "unit": "score (higher = easier)",
-   "description": "Flesch Reading Ease: 206.835 − 1.015 × words/sentence − 84.6 × syllables/word. Higher is easier.",
+   "description": "How easy the text is to read: higher scores mean shorter sentences and shorter words. Calculated with the Flesch Reading Ease formula (206.835 − 1.015 × words per sentence − 84.6 × syllables per word).",
    "caveat": "Dialogue-heavy text has short sentences and scores as easy.",
    "bins": {
     "type": "ranges",
@@ -2341,16 +2614,17 @@
    },
    "noun": "reading ease",
    "n": 8996,
+   "syn": "readability difficulty easy hard",
    "more": "Easier-to-read stories"
   },
   {
    "id": "read_grade_composite",
    "label": "Reading difficulty (grade)",
-   "group": "Story",
+   "topic": "style",
    "subgroup": "Readability & sentence complexity",
    "kind": "continuous",
    "unit": "US school grade",
-   "description": "Average of the Flesch–Kincaid, ARI and Coleman–Liau grade levels: a single 'estimated school grade'.",
+   "description": "Average of the Flesch–Kincaid, ARI and Coleman–Liau grade levels: a single ‘estimated school grade’.",
    "caveat": "",
    "bins": {
     "type": "ranges",
@@ -2365,12 +2639,13 @@
    },
    "noun": "reading difficulty",
    "n": 8996,
+   "syn": "readability difficulty easy hard",
    "more": "Harder-to-read stories"
   },
   {
    "id": "syn_commas_per_sentence",
    "label": "Commas per sentence",
-   "group": "Style",
+   "topic": "style",
    "subgroup": "Readability & sentence complexity",
    "kind": "continuous",
    "unit": "commas",
@@ -2394,7 +2669,7 @@
   {
    "id": "syn_subordinators_per_sentence",
    "label": "Subordinate clauses per sentence",
-   "group": "Style",
+   "topic": "style",
    "subgroup": "Readability & sentence complexity",
    "kind": "continuous",
    "unit": "words",
@@ -2417,7 +2692,7 @@
   {
    "id": "syn_long_sentence_share",
    "label": "Long sentences (>30 words)",
-   "group": "Style",
+   "topic": "style",
    "subgroup": "Readability & sentence complexity",
    "kind": "share",
    "unit": "share (0–1)",
@@ -2441,7 +2716,7 @@
   {
    "id": "syn_short_sentence_share",
    "label": "Short sentences (≤5 words)",
-   "group": "Style",
+   "topic": "style",
    "subgroup": "Readability & sentence complexity",
    "kind": "share",
    "unit": "share (0–1)",
@@ -2465,7 +2740,7 @@
   {
    "id": "syn_sentence_length_sd",
    "label": "Sentence-length variety",
-   "group": "Style",
+   "topic": "style",
    "subgroup": "Readability & sentence complexity",
    "kind": "continuous",
    "unit": "words",
@@ -2489,7 +2764,7 @@
   {
    "id": "lex_unique_words",
    "label": "Unique words",
-   "group": "Story",
+   "topic": "style",
    "subgroup": "Vocabulary",
    "kind": "count",
    "unit": "words",
@@ -2512,12 +2787,12 @@
   },
   {
    "id": "lex_ttr",
-   "label": "Type–token ratio",
-   "group": "Story",
+   "label": "Word variety (type–token ratio)",
+   "topic": "style",
    "subgroup": "Vocabulary",
    "kind": "share",
    "unit": "share (0–1)",
-   "description": "Unique words divided by total words.",
+   "description": "Different words divided by all words: how varied the vocabulary is (the type–token ratio).",
    "caveat": "Strongly depends on length (longer texts always score lower); prefer “Vocabulary variety (moving average)”.",
    "bins": {
     "type": "ranges",
@@ -2530,18 +2805,18 @@
     ],
     "ordered": true
    },
-   "noun": "type–token ratio",
+   "noun": "word variety (type–token ratio)",
    "n": 8987,
-   "more": "Stories with a higher type–token ratio"
+   "more": "Stories with a higher type–token ratio (more varied words)"
   },
   {
    "id": "lex_mattr",
    "label": "Vocabulary variety (moving average)",
-   "group": "Story",
+   "topic": "style",
    "subgroup": "Vocabulary",
    "kind": "share",
    "unit": "share (0–1)",
-   "description": "Moving-average type–token ratio: the share of different words in every 500-word window, averaged.",
+   "description": "The share of different words in each 500-word stretch, averaged over the story, so that long and short stories can be compared (a moving-average type–token ratio).",
    "caveat": "Needs at least 500 words (window size); blank for shorter stories.",
    "bins": {
     "type": "ranges",
@@ -2554,18 +2829,18 @@
     ],
     "ordered": true
    },
-   "noun": "vocabulary variety (moving average)",
+   "noun": "vocabulary variety",
    "n": 8990,
    "more": "Stories with more varied vocabulary"
   },
   {
    "id": "lex_mean_word_zipf",
    "label": "Everyday vocabulary",
-   "group": "Story",
+   "topic": "style",
    "subgroup": "Vocabulary",
    "kind": "continuous",
    "unit": "Zipf scale (higher = more common)",
-   "description": "Average commonness of the words used, on the Zipf scale from the wordfreq English word-frequency list (about 7 = 'the', 3 = rare).",
+   "description": "How common the story’s words are on average, on a scale where about 7 is as common as ‘the’ and 3 is rare (the Zipf scale of a standard English word-frequency list).",
    "caveat": "",
    "bins": {
     "type": "ranges",
@@ -2585,11 +2860,11 @@
   {
    "id": "lex_rare_word_share",
    "label": "Rare words",
-   "group": "Story",
+   "topic": "style",
    "subgroup": "Vocabulary",
    "kind": "share",
    "unit": "share (0–1)",
-   "description": "Share of words that are rare in English (Zipf below 3, under ~1 per million words).",
+   "description": "Share of words that are rare in English (fewer than about one in a million words).",
    "caveat": "",
    "bins": {
     "type": "ranges",
@@ -2608,8 +2883,8 @@
   },
   {
    "id": "lex_unrecognized_word_share",
-   "label": "Unrecognised words",
-   "group": "Story",
+   "label": "Unrecognized words",
+   "topic": "style",
    "subgroup": "Vocabulary",
    "kind": "share",
    "unit": "share (0–1)",
@@ -2626,14 +2901,15 @@
     ],
     "ordered": true
    },
-   "noun": "unrecognised words",
+   "noun": "unrecognized words",
    "n": 8996,
-   "more": "Stories with more unrecognised words"
+   "syn": "typos spelling",
+   "more": "Stories with more unrecognized words"
   },
   {
    "id": "lex_long_word_share",
    "label": "Long words (7+ letters)",
-   "group": "Story",
+   "topic": "style",
    "subgroup": "Vocabulary",
    "kind": "share",
    "unit": "share (0–1)",
@@ -2657,7 +2933,7 @@
   {
    "id": "rep_top10_content_share",
    "label": "Focus on a few words",
-   "group": "Language",
+   "topic": "style",
    "subgroup": "Repetition",
    "kind": "share",
    "unit": "share (0–1)",
@@ -2674,14 +2950,14 @@
     ],
     "ordered": true
    },
-   "noun": "focus on a few words",
+   "noun": "reliance on a few words",
    "n": 8990,
-   "more": "Stories that lean more on a few favourite words"
+   "more": "Stories that lean more on a few favorite words"
   },
   {
    "id": "rep_bigram_repeat_share",
    "label": "Repeated word pairs",
-   "group": "Language",
+   "topic": "style",
    "subgroup": "Repetition",
    "kind": "share",
    "unit": "share (0–1)",
@@ -2705,7 +2981,7 @@
   {
    "id": "rep_trigram_repeat_share",
    "label": "Repeated three-word phrases",
-   "group": "Language",
+   "topic": "style",
    "subgroup": "Repetition",
    "kind": "share",
    "unit": "share (0–1)",
@@ -2728,8 +3004,8 @@
   },
   {
    "id": "rep_adjacent_sentence_overlap",
-   "label": "Overlap between neighbouring sentences",
-   "group": "Language",
+   "label": "Overlap between neighboring sentences",
+   "topic": "style",
    "subgroup": "Repetition",
    "kind": "share",
    "unit": "share (0–1)",
@@ -2745,18 +3021,18 @@
     ],
     "ordered": true
    },
-   "noun": "overlap between neighbouring sentences",
+   "noun": "overlap between neighboring sentences",
    "n": 8996,
-   "more": "Stories whose neighbouring sentences overlap more"
+   "more": "Stories whose neighboring sentences overlap more"
   },
   {
    "id": "rep_same_start_share",
    "label": "Sentences starting the same way",
-   "group": "Language",
+   "topic": "style",
    "subgroup": "Repetition",
    "kind": "share",
    "unit": "share (0–1)",
-   "description": "Share of sentences that start with the same word as the sentence before ('She… She… She…').",
+   "description": "Share of sentences that start with the same word as the sentence before (‘She… She… She…’).",
    "caveat": "",
    "bins": {
     "type": "ranges",
@@ -2776,11 +3052,11 @@
   {
    "id": "rep_immediate_word_repeats_per_1k",
    "label": "Doubled words",
-   "group": "Language",
+   "topic": "style",
    "subgroup": "Repetition",
    "kind": "continuous",
    "unit": "per 1,000 words",
-   "description": "Words immediately repeated ('yes, yes', 'oh oh') per 1,000 words.",
+   "description": "Words immediately repeated (‘yes, yes’, ‘oh oh’) per 1,000 words.",
    "caveat": "",
    "bins": {
     "type": "ranges",
@@ -2800,7 +3076,7 @@
   {
    "id": "rep_repeated_5gram_per_1k",
    "label": "Repeated five-word phrases",
-   "group": "Language",
+   "topic": "style",
    "subgroup": "Repetition",
    "kind": "continuous",
    "unit": "per 1,000 words",
@@ -2824,12 +3100,12 @@
   {
    "id": "style_profanity_per_1k",
    "label": "Profanity",
-   "group": "Style",
+   "topic": "style",
    "subgroup": "Style",
    "kind": "continuous",
    "unit": "per 1,000 words",
-   "description": "Swear words per 1,000 words (lexicon).",
-   "caveat": "Overlaps with the sexual-action list for 'fuck'.",
+   "description": "Swear words per 1,000 words.",
+   "caveat": "Overlaps with the sexual-action list for ‘fuck’.",
    "bins": {
     "type": "ranges",
     "labels": [
@@ -2843,12 +3119,13 @@
    },
    "noun": "profanity",
    "n": 8996,
+   "syn": "swearing cursing swear words curse words bad language",
    "more": "Stories with more profanity"
   },
   {
    "id": "style_all_caps_words_per_1k",
    "label": "ALL-CAPS words",
-   "group": "Style",
+   "topic": "style",
    "subgroup": "Style",
    "kind": "continuous",
    "unit": "per 1,000 words",
@@ -2872,11 +3149,11 @@
   {
    "id": "style_ly_adverbs_per_1k",
    "label": "-ly adverbs",
-   "group": "Style",
+   "topic": "style",
    "subgroup": "Style",
    "kind": "continuous",
    "unit": "per 1,000 words",
-   "description": "Words ending in -ly (excluding common non-adverbs like 'only', 'family', 'lovely') per 1,000 words.",
+   "description": "Words ending in -ly (excluding common non-adverbs like ‘only’, ‘family’, ‘lovely’) per 1,000 words.",
    "caveat": "",
    "bins": {
     "type": "ranges",
@@ -2895,12 +3172,12 @@
   },
   {
    "id": "style_said_share",
-   "label": "Plain 'said' in dialogue tags",
-   "group": "Style",
+   "label": "Plain ‘said’ in dialogue tags",
+   "topic": "style",
    "subgroup": "Style",
    "kind": "share",
    "unit": "share (0–1)",
-   "description": "'said'/'says' as a share of all speech verbs (said, asked, whispered, moaned…).",
+   "description": "‘said’/‘says’ as a share of all speech verbs (said, asked, whispered, moaned…).",
    "caveat": "Not measured when fewer than 5 speech verbs occur.",
    "bins": {
     "type": "ranges",
@@ -2913,14 +3190,14 @@
     ],
     "ordered": true
    },
-   "noun": "plain 'said' in dialogue tags",
+   "noun": "plain ‘said’ in dialogue tags",
    "n": 7642,
    "more": "Stories that use plain ‘said’ more in speech tags"
   },
   {
    "id": "style_action_verbs_per_1k",
    "label": "Physical action verbs",
-   "group": "Style",
+   "topic": "style",
    "subgroup": "Style",
    "kind": "continuous",
    "unit": "per 1,000 words",
@@ -2944,7 +3221,7 @@
   {
    "id": "style_descriptive_words_per_1k",
    "label": "Descriptive words",
-   "group": "Style",
+   "topic": "style",
    "subgroup": "Style",
    "kind": "continuous",
    "unit": "per 1,000 words",
@@ -2968,12 +3245,12 @@
   {
    "id": "style_italics_per_1k",
    "label": "Italics",
-   "group": "Style",
+   "topic": "style",
    "subgroup": "Style",
    "kind": "continuous",
    "unit": "per 1,000 words",
-   "description": "Italicised passages per 1,000 words.",
-   "caveat": "Italics are counted over the whole page body, author's notes included.",
+   "description": "Italicized passages per 1,000 words.",
+   "caveat": "Italics are counted over the whole page body, author’s notes included.",
    "bins": {
     "type": "ranges",
     "labels": [
@@ -2990,11 +3267,11 @@
   {
    "id": "style_elongated_per_1k",
    "label": "Stretched words",
-   "group": "Style",
+   "topic": "style",
    "subgroup": "Style",
    "kind": "continuous",
    "unit": "per 1,000 words",
-   "description": "Words with a letter repeated three or more times ('ohhh', 'yesss', 'mmmm') per 1,000 words.",
+   "description": "Words with a letter repeated three or more times (‘ohhh’, ‘yesss’, ‘mmmm’) per 1,000 words.",
    "caveat": "",
    "bins": {
     "type": "ranges",
@@ -3013,11 +3290,11 @@
   {
    "id": "mech_errors_per_1k",
    "label": "Writing slips",
-   "group": "Style",
+   "topic": "style",
    "subgroup": "Writing mechanics",
    "kind": "continuous",
    "unit": "per 1,000 words",
-   "description": "All the writing-mechanics slips below, plus doubled small words ('the the'), per 1,000 words.",
+   "description": "All the writing-mechanics slips below, plus doubled small words (‘the the’), per 1,000 words.",
    "caveat": "Counts slips a spell-checker or proofreader would catch; dialogue written in dialect can count too.",
    "bins": {
     "type": "ranges",
@@ -3030,13 +3307,14 @@
    },
    "noun": "writing slips",
    "n": 8996,
+   "syn": "typos spelling mistakes errors grammar",
    "more": "Stories with more writing slips"
   },
   {
    "id": "sex_terms_per_1k",
    "label": "Sexual language",
-   "group": "Sexual content",
-   "subgroup": "Sexual content",
+   "topic": "sex",
+   "subgroup": "Amount & variety",
    "kind": "continuous",
    "unit": "per 1,000 words",
    "description": "Sexual terms per 1,000 words.",
@@ -3054,13 +3332,14 @@
    },
    "noun": "sexual language",
    "n": 8996,
+   "syn": "explicit",
    "more": "Stories with more sexual language"
   },
   {
    "id": "sex_anatomy_per_1k",
    "label": "Anatomical terms",
-   "group": "Sexual content",
-   "subgroup": "Sexual content",
+   "topic": "sex",
+   "subgroup": "Amount & variety",
    "kind": "continuous",
    "unit": "per 1,000 words",
    "description": "Explicit or clinical words for sexual body parts per 1,000 words.",
@@ -3078,13 +3357,14 @@
    },
    "noun": "anatomical terms",
    "n": 8996,
+   "syn": "explicit",
    "more": "Stories with more anatomical terms"
   },
   {
    "id": "sex_action_per_1k",
    "label": "Sexual-action terms",
-   "group": "Sexual content",
-   "subgroup": "Sexual content",
+   "topic": "sex",
+   "subgroup": "Amount & variety",
    "kind": "continuous",
    "unit": "per 1,000 words",
    "description": "Words and phrases for sexual acts per 1,000 words.",
@@ -3102,13 +3382,14 @@
    },
    "noun": "sexual-action terms",
    "n": 8996,
+   "syn": "explicit",
    "more": "Stories with more sexual-action terms"
   },
   {
    "id": "sex_other_per_1k",
-   "label": "Other sexual vocabulary",
-   "group": "Sexual content",
-   "subgroup": "Sexual content",
+   "label": "General sexual words",
+   "topic": "sex",
+   "subgroup": "Amount & variety",
    "kind": "continuous",
    "unit": "per 1,000 words",
    "description": "General sexual words (sex, naked, erotic, toys, lingerie) per 1,000 words.",
@@ -3124,15 +3405,16 @@
     ],
     "ordered": true
    },
-   "noun": "other sexual vocabulary",
+   "noun": "general sexual words",
    "n": 8996,
-   "more": "Stories with more other sexual vocabulary"
+   "syn": "explicit",
+   "more": "Stories with more general sexual words"
   },
   {
    "id": "sex_sentence_share",
    "label": "Sentences with sexual language",
-   "group": "Sexual content",
-   "subgroup": "Sexual content",
+   "topic": "sex",
+   "subgroup": "Amount & variety",
    "kind": "share",
    "unit": "share (0–1)",
    "description": "Share of sentences containing at least one sexual term.",
@@ -3148,18 +3430,19 @@
     ],
     "ordered": true
    },
-   "noun": "sentences with sexual language",
+   "noun": "the share of sentences with sexual language",
    "n": 8996,
+   "syn": "explicit",
    "more": "Stories in which more sentences contain sexual language"
   },
   {
    "id": "sex_words_before_first",
    "label": "Words before first explicit term",
-   "group": "Sexual content",
-   "subgroup": "Sexual content",
+   "topic": "sex",
+   "subgroup": "Amount & variety",
    "kind": "count",
    "unit": "words",
-   "description": "Number of words before the first sexual term ('slow burn').",
+   "description": "Number of words before the first sexual term (‘slow burn’).",
    "caveat": "Not measured if the story has none.",
    "bins": {
     "type": "ranges",
@@ -3172,15 +3455,16 @@
     ],
     "ordered": true
    },
-   "noun": "words before first explicit term",
+   "noun": "words before the first explicit term",
    "n": 8771,
+   "syn": "explicit",
    "more": "Stories that take longer to reach explicit language"
   },
   {
    "id": "sex_distinct_terms",
    "label": "Variety of sexual vocabulary",
-   "group": "Sexual content",
-   "subgroup": "Sexual content",
+   "topic": "sex",
+   "subgroup": "Amount & variety",
    "kind": "count",
    "unit": "terms",
    "description": "Number of different sexual-language words used.",
@@ -3196,18 +3480,19 @@
     ],
     "ordered": true
    },
-   "noun": "variety of sexual vocabulary",
+   "noun": "the variety of sexual vocabulary",
    "n": 8987,
+   "syn": "explicit",
    "more": "Stories with more varied sexual vocabulary"
   },
   {
    "id": "sex_scene_count",
    "label": "Sex scenes",
-   "group": "Sexual content",
-   "subgroup": "Sexual content",
+   "topic": "sex",
+   "subgroup": "Amount & variety",
    "kind": "count",
    "unit": "scenes",
-   "description": "Number of separate sex-dense stretches: 200-word windows with at least 6 sexual terms (30 per 1,000 words, about 1.75 times the median story's rate), slid in 50-word steps; overlapping windows count as one scene.",
+   "description": "Number of separate sex-dense stretches: 200-word windows with at least 6 sexual terms (30 per 1,000 words, about 1.75 times the median story’s rate), slid in 50-word steps; overlapping windows count as one scene.",
    "caveat": "Not measured under 400 words. Depends on story length like every count: compare with “Sex scenes per 10,000 words”. A dense stretch is usually sexual activity, but can be an essay-like passage or a conversation about sex (about 1 in 4 in a hand check).",
    "bins": {
     "type": "ranges",
@@ -3221,13 +3506,14 @@
    },
    "noun": "sex scenes",
    "n": 8985,
+   "syn": "explicit",
    "more": "Stories with more sex scenes"
   },
   {
    "id": "sex_scenes_per_10k",
    "label": "Sex scenes per 10,000 words",
-   "group": "Sexual content",
-   "subgroup": "Sexual content",
+   "topic": "sex",
+   "subgroup": "Amount & variety",
    "kind": "continuous",
    "unit": "per 10,000 words",
    "description": "Sex scenes (see “Sex scenes”) per 10,000 words: how often the story returns to a sex scene.",
@@ -3245,13 +3531,14 @@
    },
    "noun": "sex scenes per 10,000 words",
    "n": 8994,
+   "syn": "explicit",
    "more": "Stories with more sex scenes for their length"
   },
   {
    "id": "sex_first_scene_position",
    "label": "Where the first sex scene starts",
-   "group": "Sexual content",
-   "subgroup": "Sexual content",
+   "topic": "sex",
+   "subgroup": "Amount & variety",
    "kind": "share",
    "unit": "position (0 = start, 1 = end)",
    "description": "Start of the first sex-dense stretch as a fraction of the story: the build-up before the first real scene, which a passing early mention does not trigger.",
@@ -3269,17 +3556,18 @@
    },
    "noun": "where the first sex scene starts",
    "n": 7272,
+   "syn": "explicit",
    "more": "Stories whose first sex scene starts later"
   },
   {
    "id": "emo_overall_per_1k",
    "label": "Emotional words (all)",
-   "group": "Language",
+   "topic": "emotion",
    "subgroup": "Emotion",
    "kind": "continuous",
    "unit": "per 1,000 words",
    "description": "Words from any emotion list per 1,000 words.",
-   "caveat": "Keyword counts: negation ('not happy') and sarcasm are not understood.",
+   "caveat": "Keyword counts: negation (‘not happy’) and sarcasm are not understood.",
    "bins": {
     "type": "ranges",
     "labels": [
@@ -3291,19 +3579,20 @@
     ],
     "ordered": true
    },
-   "noun": "emotional words (all)",
+   "noun": "emotional words",
    "n": 8996,
-   "more": "Stories with more emotional words (all)"
+   "syn": "feelings mood sentiment",
+   "more": "Stories with more emotional words"
   },
   {
    "id": "emo_positive_per_1k",
    "label": "Positive emotion",
-   "group": "Language",
+   "topic": "emotion",
    "subgroup": "Emotion",
    "kind": "continuous",
    "unit": "per 1,000 words",
    "description": "Positive-emotion and affection words per 1,000 words.",
-   "caveat": "Keyword counts: negation ('not happy') and sarcasm are not understood.",
+   "caveat": "Keyword counts: negation (‘not happy’) and sarcasm are not understood.",
    "bins": {
     "type": "ranges",
     "labels": [
@@ -3317,17 +3606,18 @@
    },
    "noun": "positive emotion",
    "n": 8996,
+   "syn": "feelings mood sentiment",
    "more": "Stories with more positive emotion"
   },
   {
    "id": "emo_negative_per_1k",
    "label": "Negative emotion",
-   "group": "Language",
+   "topic": "emotion",
    "subgroup": "Emotion",
    "kind": "continuous",
    "unit": "per 1,000 words",
    "description": "Negative-emotion, anxiety, anger, sadness, shame and jealousy words per 1,000 words.",
-   "caveat": "Keyword counts: negation ('not happy') and sarcasm are not understood.",
+   "caveat": "Keyword counts: negation (‘not happy’) and sarcasm are not understood.",
    "bins": {
     "type": "ranges",
     "labels": [
@@ -3341,17 +3631,18 @@
    },
    "noun": "negative emotion",
    "n": 8996,
+   "syn": "feelings mood sentiment",
    "more": "Stories with more negative emotion"
   },
   {
    "id": "emo_affection_per_1k",
    "label": "Affection & love",
-   "group": "Language",
+   "topic": "emotion",
    "subgroup": "Emotion",
    "kind": "continuous",
    "unit": "per 1,000 words",
    "description": "Words of love and fondness per 1,000 words.",
-   "caveat": "Keyword counts: negation ('not happy') and sarcasm are not understood.",
+   "caveat": "Keyword counts: negation (‘not happy’) and sarcasm are not understood.",
    "bins": {
     "type": "ranges",
     "labels": [
@@ -3363,19 +3654,20 @@
     ],
     "ordered": true
    },
-   "noun": "affection & love",
+   "noun": "affection and love",
    "n": 8996,
-   "more": "Stories with more affection & love"
+   "syn": "feelings mood sentiment",
+   "more": "Stories with more affection and love"
   },
   {
    "id": "emo_anxiety_per_1k",
    "label": "Anxiety & fear",
-   "group": "Language",
+   "topic": "emotion",
    "subgroup": "Emotion",
    "kind": "continuous",
    "unit": "per 1,000 words",
    "description": "Words of fear, worry and nervousness per 1,000 words.",
-   "caveat": "Keyword counts: negation ('not happy') and sarcasm are not understood. One story's value rests on only a few instances and is noisy; summaries of groups, as shown here, are steadier.",
+   "caveat": "Keyword counts: negation (‘not happy’) and sarcasm are not understood. One story’s value rests on only a few instances and is noisy; summaries of groups, as shown here, are steadier.",
    "bins": {
     "type": "ranges",
     "labels": [
@@ -3387,19 +3679,20 @@
     ],
     "ordered": true
    },
-   "noun": "anxiety & fear",
+   "noun": "anxiety and fear",
    "n": 8996,
-   "more": "Stories with more anxiety & fear"
+   "syn": "feelings mood sentiment",
+   "more": "Stories with more anxiety and fear"
   },
   {
    "id": "emo_anger_per_1k",
    "label": "Anger",
-   "group": "Language",
+   "topic": "emotion",
    "subgroup": "Emotion",
    "kind": "continuous",
    "unit": "per 1,000 words",
    "description": "Words of anger and irritation per 1,000 words.",
-   "caveat": "Keyword counts: negation ('not happy') and sarcasm are not understood. One story's value rests on only a few instances and is noisy; summaries of groups, as shown here, are steadier.",
+   "caveat": "Keyword counts: negation (‘not happy’) and sarcasm are not understood. One story’s value rests on only a few instances and is noisy; summaries of groups, as shown here, are steadier.",
    "bins": {
     "type": "ranges",
     "labels": [
@@ -3413,17 +3706,18 @@
    },
    "noun": "anger",
    "n": 8996,
+   "syn": "feelings mood sentiment",
    "more": "Stories with more anger"
   },
   {
    "id": "emo_sadness_per_1k",
    "label": "Sadness",
-   "group": "Language",
+   "topic": "emotion",
    "subgroup": "Emotion",
    "kind": "continuous",
    "unit": "per 1,000 words",
    "description": "Words of sadness, crying and loneliness per 1,000 words.",
-   "caveat": "Keyword counts: negation ('not happy') and sarcasm are not understood.",
+   "caveat": "Keyword counts: negation (‘not happy’) and sarcasm are not understood.",
    "bins": {
     "type": "ranges",
     "labels": [
@@ -3436,17 +3730,18 @@
    },
    "noun": "sadness",
    "n": 8996,
+   "syn": "feelings mood sentiment",
    "more": "Stories with more sadness"
   },
   {
    "id": "emo_arousal_per_1k",
    "label": "Excitement & arousal",
-   "group": "Language",
+   "topic": "emotion",
    "subgroup": "Emotion",
    "kind": "continuous",
    "unit": "per 1,000 words",
    "description": "Words of excitement, desire and arousal per 1,000 words.",
-   "caveat": "Keyword counts: negation ('not happy') and sarcasm are not understood.",
+   "caveat": "Keyword counts: negation (‘not happy’) and sarcasm are not understood.",
    "bins": {
     "type": "ranges",
     "labels": [
@@ -3458,19 +3753,20 @@
     ],
     "ordered": true
    },
-   "noun": "excitement & arousal",
+   "noun": "excitement and arousal",
    "n": 8996,
-   "more": "Stories with more excitement & arousal"
+   "syn": "feelings mood sentiment",
+   "more": "Stories with more excitement and arousal"
   },
   {
    "id": "emo_shame_per_1k",
    "label": "Shame & embarrassment",
-   "group": "Language",
+   "topic": "emotion",
    "subgroup": "Emotion",
    "kind": "continuous",
    "unit": "per 1,000 words",
    "description": "Words of shame, embarrassment, guilt and shyness per 1,000 words.",
-   "caveat": "Keyword counts: negation ('not happy') and sarcasm are not understood.",
+   "caveat": "Keyword counts: negation (‘not happy’) and sarcasm are not understood.",
    "bins": {
     "type": "ranges",
     "labels": [
@@ -3482,19 +3778,20 @@
     ],
     "ordered": true
    },
-   "noun": "shame & embarrassment",
+   "noun": "shame and embarrassment",
    "n": 8996,
-   "more": "Stories with more shame & embarrassment"
+   "syn": "feelings mood sentiment",
+   "more": "Stories with more shame and embarrassment"
   },
   {
    "id": "emo_jealousy_per_1k",
    "label": "Jealousy & envy",
-   "group": "Language",
+   "topic": "emotion",
    "subgroup": "Emotion",
    "kind": "continuous",
    "unit": "per 1,000 words",
    "description": "Words of jealousy and envy per 1,000 words.",
-   "caveat": "Keyword counts: negation ('not happy') and sarcasm are not understood. One story's value rests on only a few instances and is noisy; summaries of groups, as shown here, are steadier.",
+   "caveat": "Keyword counts: negation (‘not happy’) and sarcasm are not understood. One story’s value rests on only a few instances and is noisy; summaries of groups, as shown here, are steadier.",
    "bins": {
     "type": "ranges",
     "labels": [
@@ -3504,19 +3801,20 @@
     ],
     "ordered": true
    },
-   "noun": "jealousy & envy",
+   "noun": "jealousy and envy",
    "n": 8996,
-   "more": "Stories with more jealousy & envy"
+   "syn": "feelings mood sentiment",
+   "more": "Stories with more jealousy and envy"
   },
   {
    "id": "emo_balance",
    "label": "Emotional tone",
-   "group": "Language",
+   "topic": "emotion",
    "subgroup": "Emotion",
    "kind": "continuous",
    "unit": "−1 (all negative) to +1 (all positive)",
    "description": "(positive − negative) ÷ (positive + negative) emotion words.",
-   "caveat": "Keyword counts: negation ('not happy') and sarcasm are not understood.",
+   "caveat": "Keyword counts: negation (‘not happy’) and sarcasm are not understood.",
    "bins": {
     "type": "ranges",
     "labels": [
@@ -3530,17 +3828,18 @@
    },
    "noun": "emotional tone",
    "n": 8985,
+   "syn": "feelings mood sentiment",
    "more": "Stories with a more positive emotional tone"
   },
   {
    "id": "humor_per_1k",
-   "label": "Humour and laughter",
-   "group": "Language",
+   "label": "Humor and laughter",
+   "topic": "emotion",
    "subgroup": "Emotion",
    "kind": "continuous",
    "unit": "per 1,000 words",
-   "description": "Laughing and joking (laugh, giggle, chuckle, joke, funny, 'lol') per 1,000 words.",
-   "caveat": "Keyword counts: negation ('not happy') and sarcasm are not understood.",
+   "description": "Laughing and joking (laugh, giggle, chuckle, joke, funny, ‘lol’) per 1,000 words.",
+   "caveat": "Keyword counts: negation (‘not happy’) and sarcasm are not understood.",
    "bins": {
     "type": "ranges",
     "labels": [
@@ -3552,18 +3851,18 @@
     ],
     "ordered": true
    },
-   "noun": "humour and laughter",
+   "noun": "humor and laughter",
    "n": 8996,
-   "more": "Stories with more humour and laughter"
+   "more": "Stories with more humor and laughter"
   },
   {
    "id": "psy_mental_verbs_per_1k",
    "label": "Thinking verbs",
-   "group": "Language",
+   "topic": "style",
    "subgroup": "Distancing & immediacy",
    "kind": "continuous",
    "unit": "per 1,000 words",
-   "description": "Mental-state verbs (think, know, realise, wonder…) per 1,000 words.",
+   "description": "Mental-state verbs (think, know, realize, wonder…) per 1,000 words.",
    "caveat": "",
    "bins": {
     "type": "ranges",
@@ -3583,7 +3882,7 @@
   {
    "id": "psy_perception_verbs_per_1k",
    "label": "Perception verbs",
-   "group": "Language",
+   "topic": "style",
    "subgroup": "Distancing & immediacy",
    "kind": "continuous",
    "unit": "per 1,000 words",
@@ -3606,12 +3905,12 @@
   },
   {
    "id": "psy_filter_words_per_1k",
-   "label": "'Filter' words",
-   "group": "Language",
+   "label": "‘Filter’ words",
+   "topic": "style",
    "subgroup": "Distancing & immediacy",
    "kind": "continuous",
    "unit": "per 1,000 words",
-   "description": "Thinking plus perception verbs per 1,000 words: the 'she noticed / he felt' words writing guides call filters.",
+   "description": "Thinking plus perception verbs per 1,000 words: the ‘she noticed / he felt’ words writing guides call filters.",
    "caveat": "",
    "bins": {
     "type": "ranges",
@@ -3624,19 +3923,19 @@
     ],
     "ordered": true
    },
-   "noun": "'Filter' words",
+   "noun": "‘filter’ words",
    "n": 8996,
-   "more": "Stories with more 'Filter' words"
+   "more": "Stories with more ‘filter’ words"
   },
   {
    "id": "psy_distancing_per_1k",
    "label": "Distancing phrases",
-   "group": "Language",
+   "topic": "style",
    "subgroup": "Distancing & immediacy",
    "kind": "continuous",
    "unit": "per 1,000 words",
-   "description": "Phrases like 'it seemed', 'as if', 'felt like' per 1,000 words.",
-   "caveat": "One story's value rests on only a few instances and is noisy; summaries of groups, as shown here, are steadier.",
+   "description": "Phrases like ‘it seemed’, ‘as if’, ‘felt like’ per 1,000 words.",
+   "caveat": "One story’s value rests on only a few instances and is noisy; summaries of groups, as shown here, are steadier.",
    "bins": {
     "type": "ranges",
     "labels": [
@@ -3655,7 +3954,7 @@
   {
    "id": "psy_immediacy_per_1k",
    "label": "Immediacy words",
-   "group": "Language",
+   "topic": "style",
    "subgroup": "Distancing & immediacy",
    "kind": "continuous",
    "unit": "per 1,000 words",
@@ -3679,7 +3978,7 @@
   {
    "id": "hedge_per_1k",
    "label": "Hedging",
-   "group": "Language",
+   "topic": "style",
    "subgroup": "Hedging & certainty",
    "kind": "continuous",
    "unit": "per 1,000 words",
@@ -3703,7 +4002,7 @@
   {
    "id": "hedge_modal_per_1k",
    "label": "Modal verbs",
-   "group": "Language",
+   "topic": "style",
    "subgroup": "Hedging & certainty",
    "kind": "continuous",
    "unit": "per 1,000 words",
@@ -3727,12 +4026,12 @@
   {
    "id": "hedge_uncertainty_per_1k",
    "label": "Uncertainty",
-   "group": "Language",
+   "topic": "style",
    "subgroup": "Hedging & certainty",
    "kind": "continuous",
    "unit": "per 1,000 words",
-   "description": "Words of doubt and not knowing (unsure, confused, 'no idea'…) per 1,000 words.",
-   "caveat": "One story's value rests on only a few instances and is noisy; summaries of groups, as shown here, are steadier.",
+   "description": "Words of doubt and not knowing (unsure, confused, ‘no idea’…) per 1,000 words.",
+   "caveat": "One story’s value rests on only a few instances and is noisy; summaries of groups, as shown here, are steadier.",
    "bins": {
     "type": "ranges",
     "labels": [
@@ -3751,7 +4050,7 @@
   {
    "id": "hedge_certainty_per_1k",
    "label": "Certainty",
-   "group": "Language",
+   "topic": "style",
    "subgroup": "Hedging & certainty",
    "kind": "continuous",
    "unit": "per 1,000 words",
@@ -3775,12 +4074,12 @@
   {
    "id": "hedge_certainty_balance",
    "label": "Hedging ↔ certainty",
-   "group": "Language",
+   "topic": "style",
    "subgroup": "Hedging & certainty",
    "kind": "continuous",
    "unit": "−1 (all hedging) to +1 (all certainty)",
    "description": "(certainty − hedges) ÷ (certainty + hedges).",
-   "caveat": "One story's value rests on only a few instances and is noisy; summaries of groups, as shown here, are steadier.",
+   "caveat": "One story’s value rests on only a few instances and is noisy; summaries of groups, as shown here, are steadier.",
    "bins": {
     "type": "ranges",
     "labels": [
@@ -3799,7 +4098,7 @@
   {
    "id": "sense_touch_per_1k",
    "label": "Touch words",
-   "group": "Language",
+   "topic": "style",
    "subgroup": "Sensory language",
    "kind": "continuous",
    "unit": "per 1,000 words",
@@ -3823,7 +4122,7 @@
   {
    "id": "sense_sight_per_1k",
    "label": "Sight words",
-   "group": "Language",
+   "topic": "style",
    "subgroup": "Sensory language",
    "kind": "continuous",
    "unit": "per 1,000 words",
@@ -3847,7 +4146,7 @@
   {
    "id": "sense_sound_per_1k",
    "label": "Sound words",
-   "group": "Language",
+   "topic": "style",
    "subgroup": "Sensory language",
    "kind": "continuous",
    "unit": "per 1,000 words",
@@ -3871,7 +4170,7 @@
   {
    "id": "sense_smell_per_1k",
    "label": "Smell words",
-   "group": "Language",
+   "topic": "style",
    "subgroup": "Sensory language",
    "kind": "continuous",
    "unit": "per 1,000 words",
@@ -3895,7 +4194,7 @@
   {
    "id": "sense_taste_per_1k",
    "label": "Taste words",
-   "group": "Language",
+   "topic": "style",
    "subgroup": "Sensory language",
    "kind": "continuous",
    "unit": "per 1,000 words",
@@ -3919,7 +4218,7 @@
   {
    "id": "sense_body_per_1k",
    "label": "Physical sensation words",
-   "group": "Language",
+   "topic": "style",
    "subgroup": "Sensory language",
    "kind": "continuous",
    "unit": "per 1,000 words",
@@ -3943,7 +4242,7 @@
   {
    "id": "sense_total_per_1k",
    "label": "Sensory language (all senses)",
-   "group": "Language",
+   "topic": "style",
    "subgroup": "Sensory language",
    "kind": "continuous",
    "unit": "per 1,000 words",
@@ -3960,14 +4259,14 @@
     ],
     "ordered": true
    },
-   "noun": "sensory language (all senses)",
+   "noun": "sensory language",
    "n": 8996,
-   "more": "Stories with more sensory language (all senses)"
+   "more": "Stories with more sensory language"
   },
   {
    "id": "rel_romance_per_1k",
-   "label": "Romance",
-   "group": "Language",
+   "label": "Romance language",
+   "topic": "emotion",
    "subgroup": "Intimacy & relationships",
    "kind": "continuous",
    "unit": "per 1,000 words",
@@ -3983,14 +4282,15 @@
     ],
     "ordered": true
    },
-   "noun": "romance",
+   "noun": "romance language",
    "n": 8996,
-   "more": "Stories with more romance"
+   "syn": "love",
+   "more": "Stories with more romance language"
   },
   {
    "id": "rel_intimacy_per_1k",
    "label": "Intimacy",
-   "group": "Language",
+   "topic": "emotion",
    "subgroup": "Intimacy & relationships",
    "kind": "continuous",
    "unit": "per 1,000 words",
@@ -4014,7 +4314,7 @@
   {
    "id": "rel_terms_per_1k",
    "label": "Relationship language",
-   "group": "Language",
+   "topic": "emotion",
    "subgroup": "Intimacy & relationships",
    "kind": "continuous",
    "unit": "per 1,000 words",
@@ -4038,11 +4338,11 @@
   {
    "id": "rel_disclosure_per_1k",
    "label": "Emotional disclosure",
-   "group": "Language",
+   "topic": "emotion",
    "subgroup": "Intimacy & relationships",
    "kind": "continuous",
    "unit": "per 1,000 words",
-   "description": "First-person feeling statements ('I feel', 'I'm scared') per 1,000 words.",
+   "description": "First-person feeling statements (‘I feel’, ‘I’m scared’) per 1,000 words.",
    "caveat": "",
    "bins": {
     "type": "ranges",
@@ -4062,7 +4362,7 @@
   {
    "id": "rel_familiarity_per_1k",
    "label": "Familiarity",
-   "group": "Language",
+   "topic": "emotion",
    "subgroup": "Intimacy & relationships",
    "kind": "continuous",
    "unit": "per 1,000 words",
@@ -4079,14 +4379,14 @@
     ],
     "ordered": true
    },
-   "noun": "familiarity",
+   "noun": "familiarity language",
    "n": 8996,
-   "more": "Stories with more familiarity"
+   "more": "Stories with more familiarity language"
   },
   {
    "id": "rel_closeness_per_1k",
    "label": "Interpersonal closeness",
-   "group": "Language",
+   "topic": "emotion",
    "subgroup": "Intimacy & relationships",
    "kind": "continuous",
    "unit": "per 1,000 words",
@@ -4110,7 +4410,7 @@
   {
    "id": "setting_home_per_1k",
    "label": "Home settings",
-   "group": "Story",
+   "topic": "pacing",
    "subgroup": "Settings",
    "kind": "continuous",
    "unit": "per 1,000 words",
@@ -4134,11 +4434,11 @@
   {
    "id": "setting_public_per_1k",
    "label": "Public settings",
-   "group": "Story",
+   "topic": "pacing",
    "subgroup": "Settings",
    "kind": "continuous",
    "unit": "per 1,000 words",
-   "description": "Public and commercial places (office, hotel, store, restaurant, gym, 'at the bar', 'in public') per 1,000 words.",
+   "description": "Public and commercial places (office, hotel, store, restaurant, gym, ‘at the bar’, ‘in public’) per 1,000 words.",
    "caveat": "Counts mentions of places, not where the story mainly happens.",
    "bins": {
     "type": "ranges",
@@ -4158,11 +4458,11 @@
   {
    "id": "setting_outdoors_per_1k",
    "label": "Outdoor settings",
-   "group": "Story",
+   "topic": "pacing",
    "subgroup": "Settings",
    "kind": "continuous",
    "unit": "per 1,000 words",
-   "description": "Nature and the outdoors (beach, forest, lake, trail, tent, 'in the park') per 1,000 words.",
+   "description": "Nature and the outdoors (beach, forest, lake, trail, tent, ‘in the park’) per 1,000 words.",
    "caveat": "Counts mentions of places, not where the story mainly happens.",
    "bins": {
     "type": "ranges",
@@ -4181,12 +4481,12 @@
   {
    "id": "agency_passive_per_1k",
    "label": "Passive constructions",
-   "group": "Language",
+   "topic": "emotion",
    "subgroup": "Agency & control",
    "kind": "continuous",
    "unit": "per 1,000 words",
-   "description": "'be/get + past participle' constructions ('was taken', 'got tied') per 1,000 words.",
-   "caveat": "A rule-based estimate (about 9 in 10 counted matches were passives in a hand check): common participles that describe a state or feeling ('was dressed in', 'was accustomed to', 'was fascinated by') are left out; rarer ones ('was unrequited') still count.",
+   "description": "‘be/get + past participle’ constructions (‘was taken’, ‘got tied’) per 1,000 words.",
+   "caveat": "A rule-based estimate (about 9 in 10 counted matches were passives in a hand check): common participles that describe a state or feeling (‘was dressed in’, ‘was accustomed to’, ‘was fascinated by’) are left out; rarer ones (‘was unrequited’) still count.",
    "bins": {
     "type": "ranges",
     "labels": [
@@ -4205,7 +4505,7 @@
   {
    "id": "agency_passive_sentence_share",
    "label": "Passive sentences",
-   "group": "Language",
+   "topic": "emotion",
    "subgroup": "Agency & control",
    "kind": "share",
    "unit": "share (0–1)",
@@ -4229,12 +4529,12 @@
   {
    "id": "agency_volition_per_1k",
    "label": "Agency (deciding & trying)",
-   "group": "Language",
+   "topic": "emotion",
    "subgroup": "Agency & control",
    "kind": "continuous",
    "unit": "per 1,000 words",
    "description": "Words for deciding, choosing, planning and trying per 1,000 words.",
-   "caveat": "Describes the language of the text, not the psychology of its author. One story's value rests on only a few instances and is noisy; summaries of groups, as shown here, are steadier.",
+   "caveat": "Describes the language of the text, not the psychology of its author. One story’s value rests on only a few instances and is noisy; summaries of groups, as shown here, are steadier.",
    "bins": {
     "type": "ranges",
     "labels": [
@@ -4246,14 +4546,14 @@
     ],
     "ordered": true
    },
-   "noun": "agency (deciding & trying)",
+   "noun": "words for deciding and trying",
    "n": 8996,
-   "more": "Stories with more agency (deciding & trying)"
+   "more": "Stories with more words for deciding and trying"
   },
   {
    "id": "agency_control_per_1k",
    "label": "Control & restraint",
-   "group": "Language",
+   "topic": "emotion",
    "subgroup": "Agency & control",
    "kind": "continuous",
    "unit": "per 1,000 words",
@@ -4270,14 +4570,14 @@
     ],
     "ordered": true
    },
-   "noun": "control & restraint",
+   "noun": "control and restraint",
    "n": 8996,
-   "more": "Stories with more control & restraint"
+   "more": "Stories with more control and restraint"
   },
   {
    "id": "agency_dominance_per_1k",
    "label": "Dominance language",
-   "group": "Language",
+   "topic": "emotion",
    "subgroup": "Agency & control",
    "kind": "continuous",
    "unit": "per 1,000 words",
@@ -4301,7 +4601,7 @@
   {
    "id": "agency_submission_per_1k",
    "label": "Submission language",
-   "group": "Language",
+   "topic": "emotion",
    "subgroup": "Agency & control",
    "kind": "continuous",
    "unit": "per 1,000 words",
@@ -4325,12 +4625,12 @@
   {
    "id": "agency_commands_per_1k",
    "label": "Spoken commands",
-   "group": "Language",
+   "topic": "emotion",
    "subgroup": "Agency & control",
    "kind": "continuous",
    "unit": "per 1,000 words",
-   "description": "Quoted passages containing a command, i.e. a sentence that starts with a command verb, possibly after 'please', 'now' or a name ('Come here.', 'Kneel.', 'Sarah, don't stop.'), per 1,000 words.",
-   "caveat": "A rule-based estimate: question sentences, 'Do you…', 'Look, …' / 'Listen, …' as fillers and 'fuck' as an expletive are left out; commands whose verb is not on the list are missed.",
+   "description": "Quoted passages containing a command, i.e. a sentence that starts with a command verb, possibly after ‘please’, ‘now’ or a name (‘Come here.’, ‘Kneel.’, ‘Sarah, don’t stop.’), per 1,000 words.",
+   "caveat": "A rule-based estimate: question sentences, ‘Do you…’, ‘Look, …’ / ‘Listen, …’ as fillers and ‘fuck’ as an expletive are left out; commands whose verb is not on the list are missed.",
    "bins": {
     "type": "ranges",
     "labels": [
@@ -4349,12 +4649,12 @@
   {
    "id": "agency_command_share_of_speech",
    "label": "Commands among speech",
-   "group": "Language",
+   "topic": "emotion",
    "subgroup": "Agency & control",
    "kind": "share",
    "unit": "share (0–1)",
    "description": "Share of quoted passages that contain a command (see “Spoken commands”).",
-   "caveat": "One story's value rests on only a few instances and is noisy; summaries of groups, as shown here, are steadier.",
+   "caveat": "One story’s value rests on only a few instances and is noisy; summaries of groups, as shown here, are steadier.",
    "bins": {
     "type": "ranges",
     "labels": [
@@ -4366,19 +4666,19 @@
     ],
     "ordered": true
    },
-   "noun": "commands among speech",
+   "noun": "the share of speech that is commands",
    "n": 8473,
    "more": "Stories in which more of the speech is commands"
   },
   {
    "id": "rel_consent_per_1k",
    "label": "Consent and check-in language",
-   "group": "Language",
+   "topic": "emotion",
    "subgroup": "Agency & control",
    "kind": "continuous",
    "unit": "per 1,000 words",
-   "description": "Consent words, check-ins and safewords ('consent', 'is this okay?', 'do you want me to stop?', 'safe word') per 1,000 words.",
-   "caveat": "Counts language, not depicted consent: a check-in can be ignored in the story, and refusals are not counted. Essays that discuss consent score high. Describes the language of the text, not the psychology of its author. One story's value rests on only a few instances and is noisy; summaries of groups, as shown here, are steadier.",
+   "description": "Consent words, check-ins and safewords (‘consent’, ‘is this okay?’, ‘do you want me to stop?’, ‘safe word’) per 1,000 words.",
+   "caveat": "Counts language, not depicted consent: a check-in can be ignored in the story, and refusals are not counted. Essays that discuss consent score high. Describes the language of the text, not the psychology of its author. One story’s value rests on only a few instances and is noisy; summaries of groups, as shown here, are steadier.",
    "bins": {
     "type": "ranges",
     "labels": [
@@ -4394,7 +4694,7 @@
   {
    "id": "pace_sex_early",
    "label": "Sexual language in the first fifth",
-   "group": "Sexual content",
+   "topic": "sex",
    "subgroup": "Pacing",
    "kind": "continuous",
    "unit": "per 1,000 words",
@@ -4418,7 +4718,7 @@
   {
    "id": "pace_sex_late",
    "label": "Sexual language in the last fifth",
-   "group": "Sexual content",
+   "topic": "sex",
    "subgroup": "Pacing",
    "kind": "continuous",
    "unit": "per 1,000 words",
@@ -4442,11 +4742,11 @@
   {
    "id": "pace_sex_shift",
    "label": "Build-up of sexual language",
-   "group": "Sexual content",
+   "topic": "sex",
    "subgroup": "Pacing",
    "kind": "continuous",
    "unit": "per 1,000 words",
-   "description": "Last fifth minus first fifth: positive means sexual language increases towards the end.",
+   "description": "Last fifth minus first fifth: positive means sexual language increases toward the end.",
    "caveat": "Story split into 5 equal parts by word count; needs at least 1,000 words.",
    "bins": {
     "type": "ranges",
@@ -4466,7 +4766,7 @@
   {
    "id": "pace_sex_peak_position",
    "label": "Where sexual language peaks",
-   "group": "Sexual content",
+   "topic": "sex",
    "subgroup": "Pacing",
    "kind": "share",
    "unit": "position (0.1 … 0.9)",
@@ -4490,7 +4790,7 @@
   {
    "id": "pace_emotion_early",
    "label": "Emotional language in the first fifth",
-   "group": "Story",
+   "topic": "pacing",
    "subgroup": "Pacing",
    "kind": "continuous",
    "unit": "per 1,000 words",
@@ -4514,7 +4814,7 @@
   {
    "id": "pace_emotion_late",
    "label": "Emotional language in the last fifth",
-   "group": "Story",
+   "topic": "pacing",
    "subgroup": "Pacing",
    "kind": "continuous",
    "unit": "per 1,000 words",
@@ -4538,11 +4838,11 @@
   {
    "id": "pace_emotion_shift",
    "label": "Build-up of emotional language",
-   "group": "Story",
+   "topic": "pacing",
    "subgroup": "Pacing",
    "kind": "continuous",
    "unit": "per 1,000 words",
-   "description": "Last fifth minus first fifth: positive means emotional language increases towards the end.",
+   "description": "Last fifth minus first fifth: positive means emotional language increases toward the end.",
    "caveat": "Story split into 5 equal parts by word count; needs at least 1,000 words.",
    "bins": {
     "type": "ranges",
@@ -4562,7 +4862,7 @@
   {
    "id": "pace_emotion_peak_position",
    "label": "Where emotional language peaks",
-   "group": "Story",
+   "topic": "pacing",
    "subgroup": "Pacing",
    "kind": "share",
    "unit": "position (0.1 … 0.9)",
@@ -4586,7 +4886,7 @@
   {
    "id": "pace_dialogue_early",
    "label": "Dialogue in the first fifth",
-   "group": "Story",
+   "topic": "pacing",
    "subgroup": "Pacing",
    "kind": "continuous",
    "unit": "share (0–1)",
@@ -4610,7 +4910,7 @@
   {
    "id": "pace_dialogue_late",
    "label": "Dialogue in the last fifth",
-   "group": "Story",
+   "topic": "pacing",
    "subgroup": "Pacing",
    "kind": "continuous",
    "unit": "share (0–1)",
@@ -4634,11 +4934,11 @@
   {
    "id": "pace_dialogue_shift",
    "label": "Build-up of dialogue",
-   "group": "Story",
+   "topic": "pacing",
    "subgroup": "Pacing",
    "kind": "continuous",
    "unit": "share (0–1)",
-   "description": "Last fifth minus first fifth: positive means dialogue increases towards the end.",
+   "description": "Last fifth minus first fifth: positive means dialogue increases toward the end.",
    "caveat": "Story split into 5 equal parts by word count; needs at least 1,000 words.",
    "bins": {
     "type": "ranges",
@@ -4658,7 +4958,7 @@
   {
    "id": "pace_dialogue_peak_position",
    "label": "Where dialogue peaks",
-   "group": "Story",
+   "topic": "pacing",
    "subgroup": "Pacing",
    "kind": "share",
    "unit": "position (0.1 … 0.9)",
@@ -4682,7 +4982,7 @@
   {
    "id": "pace_action_early",
    "label": "Action verbs in the first fifth",
-   "group": "Story",
+   "topic": "pacing",
    "subgroup": "Pacing",
    "kind": "continuous",
    "unit": "per 1,000 words",
@@ -4706,7 +5006,7 @@
   {
    "id": "pace_action_late",
    "label": "Action verbs in the last fifth",
-   "group": "Story",
+   "topic": "pacing",
    "subgroup": "Pacing",
    "kind": "continuous",
    "unit": "per 1,000 words",
@@ -4730,11 +5030,11 @@
   {
    "id": "pace_action_shift",
    "label": "Build-up of action verbs",
-   "group": "Story",
+   "topic": "pacing",
    "subgroup": "Pacing",
    "kind": "continuous",
    "unit": "per 1,000 words",
-   "description": "Last fifth minus first fifth: positive means action verbs increases towards the end.",
+   "description": "Last fifth minus first fifth: positive means action verbs increase toward the end.",
    "caveat": "Story split into 5 equal parts by word count; needs at least 1,000 words.",
    "bins": {
     "type": "ranges",
@@ -4749,12 +5049,12 @@
    },
    "noun": "the build-up of action verbs",
    "n": 8275,
-   "more": "Stories in which action verbs builds up more"
+   "more": "Stories in which action verbs build up more"
   },
   {
    "id": "pace_action_peak_position",
-   "label": "Where action verbs peaks",
-   "group": "Story",
+   "label": "Where action verbs peak",
+   "topic": "pacing",
    "subgroup": "Pacing",
    "kind": "share",
    "unit": "position (0.1 … 0.9)",
@@ -4771,14 +5071,14 @@
     ],
     "ordered": true
    },
-   "noun": "where action verbs peaks",
+   "noun": "where action verbs peak",
    "n": 8269,
-   "more": "Stories in which action verbs peaks later"
+   "more": "Stories in which action verbs peak later"
   },
   {
    "id": "pace_descriptive_early",
    "label": "Descriptive & sensory language in the first fifth",
-   "group": "Story",
+   "topic": "pacing",
    "subgroup": "Pacing",
    "kind": "continuous",
    "unit": "per 1,000 words",
@@ -4802,7 +5102,7 @@
   {
    "id": "pace_descriptive_late",
    "label": "Descriptive & sensory language in the last fifth",
-   "group": "Story",
+   "topic": "pacing",
    "subgroup": "Pacing",
    "kind": "continuous",
    "unit": "per 1,000 words",
@@ -4826,11 +5126,11 @@
   {
    "id": "pace_descriptive_shift",
    "label": "Build-up of descriptive & sensory language",
-   "group": "Story",
+   "topic": "pacing",
    "subgroup": "Pacing",
    "kind": "continuous",
    "unit": "per 1,000 words",
-   "description": "Last fifth minus first fifth: positive means descriptive & sensory language increases towards the end.",
+   "description": "Last fifth minus first fifth: positive means descriptive & sensory language increases toward the end.",
    "caveat": "Story split into 5 equal parts by word count; needs at least 1,000 words.",
    "bins": {
     "type": "ranges",
@@ -4850,7 +5150,7 @@
   {
    "id": "pace_descriptive_peak_position",
    "label": "Where descriptive & sensory language peaks",
-   "group": "Story",
+   "topic": "pacing",
    "subgroup": "Pacing",
    "kind": "share",
    "unit": "position (0.1 … 0.9)",
@@ -4874,12 +5174,12 @@
   {
    "id": "time_jump_per_1k",
    "label": "Time jumps",
-   "group": "Story",
+   "topic": "pacing",
    "subgroup": "Pacing",
    "kind": "continuous",
    "unit": "per 1,000 words",
-   "description": "Phrases that skip ahead in story time ('the next morning', 'hours later', 'weeks later') per 1,000 words.",
-   "caveat": "One story's value rests on only a few instances and is noisy; summaries of groups, as shown here, are steadier.",
+   "description": "Phrases that skip ahead in story time (‘the next morning’, ‘hours later’, ‘weeks later’) per 1,000 words.",
+   "caveat": "One story’s value rests on only a few instances and is noisy; summaries of groups, as shown here, are steadier.",
    "bins": {
     "type": "ranges",
     "labels": [
@@ -4897,23 +5197,23 @@
  ],
  "featured": [
   {
-   "question": "Do first-person stories get more favorites?",
+   "question": "Do readers favorite first-person stories more often?",
    "var": "pov_is_first_person",
    "metric": "pop_fav_per_1k_views"
   },
   {
-   "question": "Does story length relate to views in Romance?",
+   "question": "Do longer Romance stories get more views per month?",
    "var": "story_words",
    "metric": "pop_views_per_month",
    "genre": "adult-romance"
   },
   {
-   "question": "Is more dialogue linked to more comments?",
+   "question": "Do stories with more dialogue get more comments per 1,000 views?",
    "var": "dlg_word_share",
    "metric": "pop_comments_per_1k_views"
   },
   {
-   "question": "How does sexual language relate to favorites?",
+   "question": "Is more sexual language linked to more favorites per 1,000 views?",
    "var": "sex_terms_per_1k",
    "metric": "pop_fav_per_1k_views"
   },

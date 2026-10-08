@@ -35,7 +35,7 @@ async function renderApp(hash = "") {
   if (hash) window.history.replaceState(null, "", `/${hash}`);
   const user = userEvent.setup();
   render(<App />);
-  await screen.findByText(/Typical story \(median\)/);
+  await waitFor(() => expect(document.querySelector(".chart-panel[aria-busy='false']")).toBeTruthy());
   return user;
 }
 
@@ -89,21 +89,38 @@ describe("the explorer", () => {
     expect(within(rows[rows.length - 1]).getAllByRole("cell")[0].textContent).toBe(data.o[0].toLocaleString("en-US"));
   });
 
-  it("compares genres side by side and opens a genre from the table", async () => {
+  it("compares genres as small charts, alphabetical, and opens a genre from its card", async () => {
     const user = await renderApp();
     await user.click(screen.getByRole("button", { name: /Compare all 3 genres/ }));
-    const table = await screen.findByRole("table");
-    expect(chartTitle().textContent).toMatch(/genre by genre$/);
-    const names = within(table).getAllByRole("rowheader").map((th) => th.textContent);
-    expect(names).toEqual(fixtureMeta.genres.map((g) => g.name));
-    const tiny = within(table).getAllByRole("row").find((r) => r.textContent.startsWith("Tiny Genre"));
-    expect(within(tiny).getAllByRole("cell").filter((c) => c.textContent === "·").length).toBeGreaterThan(0);
+    await waitFor(() => expect(document.title).toMatch(/genre by genre$/));
+    // the answer is the count of verdicts (dialogue share is a clear pattern in the synthetic data)
+    expect(chartTitle().textContent).toMatch(/^Tends higher in .* of 3 genres, tends lower in .*, no clear pattern in .*\.$/);
+    const cards = screen.getAllByRole("button", { name: /Open its chart\.$/ });
+    expect(cards.map((c) => c.querySelector(".genre-name").textContent)).toEqual(fixtureMeta.genres.map((g) => g.name));
+    const tiny = cards.find((c) => c.textContent.startsWith("Tiny Genre"));
+    expect(tiny.getAttribute("aria-label")).toMatch(/fewer than 10 stories/);
+    expect(tiny.textContent).toMatch(/too few stories to judge/);
     expect(screen.queryByLabelText("Genre")).toBeNull();
     expect(screen.getByText(/Genre by genre/)).toBeTruthy();
+    expect(screen.getByText(/alphabetical order, not ranked/)).toBeTruthy();
 
-    await user.click(within(table).getByRole("button", { name: "Romance" }));
+    await user.click(screen.getByRole("button", { name: "Show the numbers" }));
+    const table = screen.getByRole("table");
+    expect(within(table).getAllByRole("rowheader").map((th) => th.textContent)).toEqual(fixtureMeta.genres.map((g) => g.name));
+    const cell = within(table).getAllByRole("cell").find((c) => c.className.includes("cell") && !c.className.includes("empty"));
+    await user.click(cell);
+    expect(screen.getByText(/typical story .* stories\), against .* stories shown\./)).toBeTruthy();
+    expect(document.querySelector("[title*='median']")).toBeNull(); // no hover-only tooltips
+
+    await user.click(cards.find((c) => c.textContent.startsWith("Romance")));
     await waitFor(() => expect(screen.getByLabelText("Genre").value).toBe("romance"));
     expect(window.location.hash).toMatch(/mode=one/);
+  });
+
+  it("returns from comparing to the last genre used", async () => {
+    const user = await renderApp("#/explore?mode=compare&genre=fetish&var=dlg_word_share");
+    await user.click(screen.getByRole("button", { name: /Back to one genre/ }));
+    await waitFor(() => expect(screen.getByLabelText("Genre").value).toBe("fetish"));
   });
 
   it("opens an example question", async () => {

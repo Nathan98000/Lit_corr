@@ -15,6 +15,8 @@ import {
 import { toHash } from "../lib/urlState.js";
 import AgeCheck from "./AgeCheck.jsx";
 import ChartNotes from "./ChartNotes.jsx";
+import { compareRows, compareSummary } from "../lib/compare.js";
+import CompareGrid from "./CompareGrid.jsx";
 import CompareTable from "./CompareTable.jsx";
 import Controls from "./Controls.jsx";
 import CopyLink from "./CopyLink.jsx";
@@ -75,7 +77,10 @@ export function describeView(meta, view, data) {
   const pNote = patternNote({ variable, direction, effect, compare, shown: shownCount });
   const ageWarnings = ageNotes({ metric, ends: !compare && readable ? endGroups(rows) : null });
   const valueText = chartValueText(rows, overall, metric.format);
-  const answer = compare ? title : answerHeading({ variable, metric, genre, direction, effect, shown: shownCount });
+  const cRows = compare ? compareRows({ meta, variable, varData: data, k, smallN: meta.small_n }) : null;
+  const answer = compare
+    ? (readable && compareSummary(cRows)) || "Each group on its own"
+    : answerHeading({ variable, metric, genre, direction, effect, shown: shownCount });
   const takeaway = compare || shownCount < 2 ? null : takeawaySegments({ variable, rows, valueText });
   const oneGroup = !compare && shownCount === 1 ? shownRows[0] : null;
   return {
@@ -93,6 +98,7 @@ export function describeView(meta, view, data) {
     title,
     sub,
     ageNotes: ageWarnings,
+    compareRows: cRows,
     readable,
     pNote,
     answer,
@@ -183,23 +189,64 @@ export default function Explorer({ meta, state, onChange }) {
           </header>
           {d.compare ? (
             <>
-              <CompareTable
-                meta={meta}
+              <p className="compare-caption">
+                Each small chart is one genre. A dot is a group’s typical story compared with that genre’s own typical
+                story (the dashed line); the shaded band runs from 0.67× to 1.5×. Hollow dots: fewer than{" "}
+                {meta.small_n} stories; a dash: fewer than {meta.min_n}. Genres are in alphabetical order, not ranked.
+                Select a genre for its full chart.
+              </p>
+              <p className="compare-axis" aria-hidden="true">
+                Left to right: {d.variable.bins.labels[0]} → {d.variable.bins.labels[d.variable.bins.labels.length - 1]}
+              </p>
+              <CompareGrid
+                rows={d.compareRows}
                 variable={d.variable}
-                varData={data}
-                k={d.k}
-                metric={d.metric}
-                smallN={meta.small_n}
                 minN={meta.min_n}
                 onPickGenre={(id) => onChange({ ...state, mode: "one", genre: id })}
               />
-              <div className="notes">
-                <p>{d.pNote}</p>
+              <div className="compare-notes">
+                {d.ageNotes
+                  .filter((n) => n.kind === "total")
+                  .map((n) => (
+                    <div className="agebox" key={n.kind}>
+                      <p>
+                        <b>{n.lead}</b> {n.text}
+                      </p>
+                      {RATE_FOR[d.metric.id] && (
+                        <button
+                          type="button"
+                          className="link-button"
+                          onClick={() => onChange({ ...state, metric: RATE_FOR[d.metric.id] })}
+                        >
+                          Switch to {meta.metrics.find((m) => m.id === RATE_FOR[d.metric.id])?.label.toLowerCase()}
+                        </button>
+                      )}
+                    </div>
+                  ))}
                 <p className="association">{ASSOCIATION_NOTE}</p>
               </div>
               <div className="chart-actions">
+                <button
+                  type="button"
+                  className="btn"
+                  aria-expanded={showNumbers}
+                  aria-controls={numbersId}
+                  onClick={() => setShowNumbers((x) => !x)}
+                >
+                  {showNumbers ? "Hide the numbers" : "Show the numbers"}
+                </button>
                 <CopyLink />
               </div>
+              {showNumbers && (
+                <CompareTable
+                  id={numbersId}
+                  rows={d.compareRows}
+                  variable={d.variable}
+                  metric={d.metric}
+                  smallN={meta.small_n}
+                  minN={meta.min_n}
+                />
+              )}
             </>
           ) : (
             <div className={`answer-grid${wide ? " wide" : ""}`}>

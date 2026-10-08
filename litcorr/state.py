@@ -324,8 +324,10 @@ class State:
         self.conn.execute(f"UPDATE stories SET {sets} WHERE story_slug=?", [*fields.values(), slug])
 
     def next_open_stories(self, limit: int = 50) -> list[dict[str, Any]]:
+        """Open stories in sample order, except that stories with failed attempts come after all the others, so
+        a few pages the site keeps failing on cannot hold up the rest of the queue at the start of every session."""
         rows = self.conn.execute(
-            "SELECT * FROM stories WHERE status IN (?, ?) ORDER BY sample_rank, story_slug LIMIT ?",
+            "SELECT * FROM stories WHERE status IN (?, ?) ORDER BY attempts > 0, sample_rank, story_slug LIMIT ?",
             (*OPEN_STATUSES, limit),
         ).fetchall()
         return [dict(r) for r in rows]

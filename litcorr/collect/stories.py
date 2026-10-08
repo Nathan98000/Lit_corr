@@ -9,6 +9,8 @@ does that later from the cache, which keeps parsing fixable without new requests
 A story that fails is not retried again in the same session (it waits for a
 later session, up to ``max_attempts_per_url`` attempts), and a request the
 server refuses as invalid (4xx other than 404/410/429) is not retried at all.
+Stories that failed before are tried after all the others, so a few pages the
+site keeps failing on cannot stop every session at the front of the queue.
 
 If a downloaded page 1 cannot be read by the parser (an unexpected page format),
 the story stays queued and the error is logged; the next run reads the saved

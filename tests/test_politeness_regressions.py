@@ -7,12 +7,13 @@ import pytest
 
 from litcorr.collect.discover import collect_listings, discover_categories
 from litcorr.collect.sample import build_queue
-from litcorr.collect.session import AlreadyRunning, collector_session
+from litcorr.collect.session import AlreadyRunning, collector_session, stop_file_path
 from litcorr.collect.stories import collect_stories
 from litcorr.demo import CHALLENGE
-from litcorr.net.fetcher import GONE_STREAK_LIMIT, CooldownActive
+from litcorr.net.fetcher import GONE_STREAK_LIMIT, BudgetExhausted, CooldownActive, StopRequested
 from litcorr.paths import DataPaths
-from litcorr.state import GONE, QUEUED, State
+from litcorr.site.urls import normalize_url
+from litcorr.state import FAILED, GONE, PARTIAL, QUEUED, State
 
 
 def _ok_slugs(site, n):
@@ -265,3 +266,55 @@ def test_config_cannot_disable_safety(tmp_path, snippet):
     cfg.write_text(snippet)
     with pytest.raises(ConfigError):
         load_settings(cfg)
+
+
+# 12. stories whose page keeps failing with a server error do not hold up the rest of the queue
+def test_pages_that_keep_failing_do_not_stall_the_queue(server, make_settings, factory):
+    site, base = server
+    s = make_settings(base)  # the default retries (3) and error streak (5)
+    with collector_session(s, "test", fetcher_factory=factory) as ctx:
+        collect_listings(ctx, discover_categories(ctx))
+        build_queue(ctx)
+        broken = [r["story_slug"] for r in ctx.state.next_open_stories(2)]
+        for slug in broken:  # as an earlier session left them: 1 try + 3 retries, all HTTP 500
+            ctx.state.upsert_page(normalize_url(f"{base}/s/{slug}", base), "story", "error", http_status=500,
+                                  attempts=1, last_error="HTTP 500")
+            ctx.state.update_story(slug, attempts=1, last_error="failed")
+            site.faults[f"/s/{slug}"] = [500] * 50
+    for still_open, status in ((set(broken), QUEUED), (set(), FAILED)):
+        start = len(site.hits)
+        with collector_session(s, "test", fetcher_factory=factory) as ctx:
+            session_id = ctx.session_id
+            collect_stories(ctx)
+        story_hits = [h for h in site.hits[start:] if h.startswith("/s/")]
+        st = _state(s)
+        try:
+            run = next(r for r in st.runs() if r["session_id"] == session_id)
+            assert run["stop_reason"] == "completed" and st.get_cooldown() is None
+            assert {r["story_slug"] for r in st.stories([QUEUED, PARTIAL])} == still_open
+            assert sorted(story_hits[-2:]) == sorted(f"/s/{slug}" for slug in broken)  # after every other story
+            for slug in broken:
+                assert story_hits.count(f"/s/{slug}") == 1  # one try per session, no back-to-back retries
+                assert st.get_story(slug)["status"] == status
+        finally:
+            st.close()
+
+
+# 13. a session that stops before a request is sent (STOP file, session cap) does not count an attempt
+@pytest.mark.parametrize("how", ["stop_file", "session_cap"])
+def test_no_attempt_is_counted_when_nothing_was_sent(server, make_settings, factory, how):
+    site, base = server
+    s = make_settings(base)
+    a, b = _ok_slugs(site, 2)
+    url_b = normalize_url(f"{base}/s/{b}", base)
+    with collector_session(s, "test", fetcher_factory=factory) as ctx:
+        assert ctx.fetcher.fetch(f"{base}/s/{a}", "story").ok  # robots.txt and one page
+        ctx.state.upsert_page(url_b, "story", "error", http_status=500, attempts=2, last_error="HTTP 500")
+        if how == "stop_file":
+            stop_file_path(s).write_text("")
+        else:
+            s.politeness.max_requests_per_session = ctx.fetcher.session_requests
+        with pytest.raises((StopRequested, BudgetExhausted)):
+            ctx.fetcher.fetch(f"{base}/s/{b}", "story")
+        assert ctx.state.get_page(url_b)["attempts"] == 2  # a third counted attempt would give up on the page
+    assert f"/s/{b}" not in site.hits

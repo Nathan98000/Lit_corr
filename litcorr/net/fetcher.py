@@ -12,7 +12,9 @@ For every URL it, in order:
      each hop is checked and paced, and classifies the answer.
 
 Retries happen only for timeouts, dropped connections and HTTP 500/502/503/504,
-with exponential backoff. A 429 slows everything down and pauses for a long
+with exponential backoff. A page whose 5xx error outlasted all its retries is
+probably broken on the site, so in later sessions it gets a single try (until
+``max_attempts_per_url``). A 429 slows everything down and pauses for a long
 time (the pause is recorded first, so a restart also waits) or ends the
 session. A 403/451, a challenge/CAPTCHA page (with any status), an age gate, a
 redirect to a login/verification page or off-site, a server that refuses
@@ -273,7 +275,8 @@ class PoliteFetcher:
             self.state.upsert_page(url, kind, why)
             log.info("SKIP %s (%s)", url, why.replace("_", " "))
             return FetchResult(url, kind, why)
-        return self._fetch_network(url, kind)
+        broken = bool(page and page["status"] == "error" and page["http_status"] in TRANSIENT_STATUSES)
+        return self._fetch_network(url, kind, server_error_retries=0 if broken else self.p.max_retries)
 
     def cached_body(self, url: str) -> str | None:
         """Body of an already-cached page, or None. Never touches the network."""
@@ -520,15 +523,20 @@ class PoliteFetcher:
         self.error_log.write(session=self.session_id, url=url, kind=kind, error=message)
         raise SiteBlocked(message, self.p.cooldown_after_block_hours)
 
-    def _fetch_network(self, url: str, kind: str) -> FetchResult:
+    def _fetch_network(self, url: str, kind: str, server_error_retries: int) -> FetchResult:
         self.state.bump_page_attempts(url, kind)
+        sent_before = self.session_requests
         try:
-            return self._fetch_attempts(url, kind)
+            return self._fetch_attempts(url, kind, server_error_retries)
         except Offline:
             self.state.unbump_page_attempts(url)  # it never reached the site: don't count it against the page
             raise
+        except (StopCollection, KeyboardInterrupt):
+            if self.session_requests == sent_before:  # stopped (a cap, STOP file, Ctrl-C) before anything was sent
+                self.state.unbump_page_attempts(url)
+            raise
 
-    def _fetch_attempts(self, url: str, kind: str) -> FetchResult:
+    def _fetch_attempts(self, url: str, kind: str, server_error_retries: int) -> FetchResult:
         p = self.p
         current, hops, attempt = url, 0, 0
         while True:
@@ -631,9 +639,11 @@ class PoliteFetcher:
 
             if status in TRANSIENT_STATUSES:
                 self._note_error(current, kind, f"HTTP {status}")
-                if attempt <= p.max_retries:
+                if attempt <= server_error_retries:
                     self._backoff(attempt, f"HTTP {status}", minimum=_retry_after_seconds(resp, self.clock()) or 0)
                     continue
+                if not server_error_retries:
+                    log.info("%s also failed in an earlier session: not retried before the next session.", current)
                 self.state.upsert_page(url, kind, "error", http_status=status, last_error=f"HTTP {status}")
                 return FetchResult(url, kind, "failed", status)
 

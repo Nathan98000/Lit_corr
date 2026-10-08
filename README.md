@@ -169,6 +169,10 @@ any 24 hours); when the limit is used up, `collect` says when it can continue.
   far. The offline commands only ever read `state.sqlite3` (from an in-memory
   copy), so they cannot disturb the collector.
 * If a run says a **cooldown** is active, wait until the time it gives.
+* **A few stories keep failing with HTTP 500?** That is the site failing on
+  those particular pages, not a block. Such a story is tried again in later
+  runs, after all the other stories and with a single request per run, and is
+  given up (`failed` in `status`) after `max_attempts_per_url` runs.
 
 ## 5. Process (offline)
 

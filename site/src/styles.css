@@ -2084,3 +2084,107 @@ table.numbers {
 .notes p {
   margin: 0 0 10px;
 }
+
+/* --------------------------------------------- forced colors (Windows high contrast, F48) */
+/* The charts draw with system colors only, so they read in light and dark contrast themes alike. */
+@media (forced-colors: active) {
+  .range-chart svg,
+  .spark,
+  .range-chart .key {
+    forced-color-adjust: none;
+  }
+
+  .range-chart .glabel,
+  .range-chart .gn,
+  .range-chart .gval,
+  .range-chart .gnone,
+  .range-chart .reflab,
+  .range-chart .tick,
+  .spark-label {
+    fill: CanvasText;
+    stroke: Canvas;
+  }
+
+  .range-chart .grid {
+    stroke: GrayText;
+  }
+
+  .range-chart .ref line {
+    stroke: CanvasText;
+  }
+
+  .range-chart .iqr {
+    fill: Canvas;
+    stroke: CanvasText;
+  }
+
+  .range-chart .median {
+    fill: Highlight;
+    stroke: Canvas;
+  }
+
+  .range-chart .row.small .iqr {
+    stroke-dasharray: 3 2;
+  }
+
+  .range-chart .row.small .median {
+    fill: Canvas;
+    stroke: Highlight;
+  }
+
+  .range-chart .row-hit,
+  .range-chart .row:hover .row-hit,
+  .range-chart .row.active .row-hit {
+    fill: transparent;
+  }
+
+  .range-chart .row:focus-visible .row-hit {
+    fill: transparent;
+    stroke: Highlight;
+  }
+
+  .spark-band {
+    fill: Canvas;
+    stroke: GrayText;
+  }
+
+  .spark-one {
+    stroke: CanvasText;
+  }
+
+  .spark-line {
+    stroke: GrayText;
+  }
+
+  .spark-dot {
+    fill: Highlight;
+    stroke: Canvas;
+  }
+
+  .spark-dot.hollow {
+    fill: Canvas;
+    stroke: Highlight;
+  }
+
+  .spark-dash {
+    stroke: CanvasText;
+  }
+
+  .range-chart .key-median {
+    background: Highlight;
+  }
+
+  .range-chart .key-iqr {
+    background: Canvas;
+    border: 1px solid CanvasText;
+  }
+
+  .range-chart .key-small {
+    background: Canvas;
+    border: 1px dashed CanvasText;
+  }
+
+  .range-chart .key-ref {
+    border-left-color: CanvasText;
+  }
+}

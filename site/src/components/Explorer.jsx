@@ -9,7 +9,7 @@ import {
   chartTitle,
   oneGroupNote,
   patternNote,
-  subtitle,
+  subtitleParts,
   takeawaySegments,
 } from "../lib/wording.js";
 import { toHash } from "../lib/urlState.js";
@@ -91,11 +91,11 @@ export function describeView(meta, view, data) {
   const overall = cellStats(gd?.o, k);
   const [direction, effect] = pattern(gd, k);
   const title = chartTitle({ variable, metric, genre, direction, compare });
-  const sub = subtitle({ genre, subset, n: gd?.n, compare, genreCount: meta.genres.length - 1 });
+  const sub = subtitleParts({ genre, subset, n: gd?.n, compare, genreCount: meta.genres.length - 1 });
   const readable = variable.bins.ordered || Boolean(variable.yes_subject);
   const shownRows = rows.filter((r) => r.stats && !r.stats.suppressed);
   const shownCount = shownRows.length;
-  const pNote = patternNote({ variable, direction, effect, compare, shown: shownCount });
+  const pNote = patternNote({ variable, direction, effect, compare, shown: shownCount, smallN: meta.small_n });
   const ageWarnings = ageNotes({ metric, ends: !compare && readable ? endGroups(rows) : null });
   const valueText = chartValueText(rows, overall, metric.format);
   const cRows = compare ? compareRows({ meta, variable, varData: data, k, smallN: meta.small_n }) : null;
@@ -129,17 +129,34 @@ export function describeView(meta, view, data) {
   };
 }
 
-/** The takeaway line: plain text with the numbers in bold, then how clear the pattern is. */
+const TEND_TO = toHash("methodology", { section: "tend-to" });
+
+/**
+ * The takeaway line: plain text with the numbers in bold, then how clear the pattern is; the strength word links to
+ * what weak, moderate and strong mean (F44).
+ */
 function Takeaway({ segments, note, why }) {
   return (
     <p className="takeaway">
       {segments &&
         segments.map((seg, i) => (typeof seg === "string" ? seg : <strong key={i}>{seg.strong}</strong>))}{" "}
-      {note && <span className="takeaway-note">{note}</span>}
+      {note && (
+        <span className="takeaway-note">
+          {note.map((seg, i) =>
+            typeof seg === "string" ? (
+              seg
+            ) : (
+              <a key={i} href={TEND_TO}>
+                {seg.strength}
+              </a>
+            ),
+          )}
+        </span>
+      )}
       {why && (
         <>
           {" "}
-          <a className="why" href={toHash("methodology", { section: "tend-to" })}>
+          <a className="why" href={TEND_TO}>
             Why no clear pattern?
           </a>
         </>
@@ -266,7 +283,15 @@ export default function Explorer({ meta, state, onChange }) {
         <article className={`chart-panel${busy ? " is-busy" : ""}`} aria-busy={busy}>
           <header className="chart-head">
             <h2 className="chart-title">{d.answer}</h2>
-            <p className="chart-sub">{d.sub}</p>
+            <p className="chart-sub">
+              {d.sub.lead}
+              {d.sub.count && (
+                <>
+                  {" · "}
+                  <a href={toHash("methodology", { section: "missing-data" })}>{d.sub.count}</a>
+                </>
+              )}
+            </p>
           </header>
           {d.compare ? (
             <>
@@ -322,7 +347,8 @@ export default function Explorer({ meta, state, onChange }) {
                     {wayOut}
                   </div>
                 ) : (
-                  d.shownCount > 0 && (
+                  d.shownCount > 0 &&
+                  (d.takeaway || d.pNote) && (
                     <Takeaway
                       segments={d.takeaway}
                       note={d.pNote}

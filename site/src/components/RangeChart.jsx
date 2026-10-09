@@ -166,6 +166,7 @@ export default function RangeChart({
       {!compact && (
         <p className="axis-title" aria-hidden="true">
           {metric.label}
+          {layout.lo > 0 ? ` (the axis starts at ${Number(layout.lo.toFixed(2)).toLocaleString("en-US")})` : ""}
         </p>
       )}
       <div className="chart-frame" ref={frame}>

@@ -4,8 +4,8 @@ import { PartBoundary, lazyPart } from "./components/lazyPart.jsx";
 import LoadError from "./components/LoadError.jsx";
 import { clearCache, loadMeta } from "./lib/data.js";
 import { scrollBehavior } from "./lib/motion.js";
-import { formatCount } from "./lib/format.js";
 import { parseHash, sanitize, toHash } from "./lib/urlState.js";
+import { aboutCount } from "./lib/wording.js";
 
 // How it works and the Patterns page load their code when first visited, or ahead of time when a link to them is
 // hovered or focused (F49).
@@ -18,13 +18,16 @@ export const SITE_NAME = "Story Patterns"; // the masthead name: change it here
 const PAGE_TITLES = { methodology: `How it works · ${TITLE}`, patterns: `Patterns · ${TITLE}` };
 const DEFAULT_QUESTION = "In All genres, how do favorites per 1,000 views vary with story length?";
 
-/** The headline as a kicker, with the story and genre counts (filled in when the data arrives). */
+/**
+ * The headline as a kicker, with the story and genre counts (filled in when the data arrives; the placeholder says
+ * the same). The story count is rounded, so it never contradicts a chart's exact count (F55).
+ */
 function Kicker({ meta }) {
   return (
     <h1 className="kicker">
       {TITLE}{" "}
       <span className="kicker-counts">
-        · {meta ? formatCount(meta.counts.included) : "8,996"} stories · {meta ? meta.genres.length - 1 : 30} genres
+        · {meta ? aboutCount(meta.counts.included) : "about 9,000"} stories · {meta ? meta.genres.length - 1 : 30} genres
       </span>
     </h1>
   );

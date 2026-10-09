@@ -268,6 +268,11 @@ export default function Methodology({ meta, section }) {
           either end has fewer than {meta.small_n} stories). “No clear pattern” is an answer too: the groups differ only a
           little, or not consistently. Even a clear pattern describes the typical story; individual stories vary widely.
         </p>
+        <p>
+          Weak, moderate and strong describe how consistently popularity rises or falls across the groups, on a rank
+          correlation from 0 (no consistent order) to 1 (a perfectly consistent one): weak below 0.2, moderate from 0.2
+          to 0.4, strong 0.4 or more. Even a strong pattern leaves individual stories varying widely.
+        </p>
 
         <h2 id="missing-data" tabIndex={-1}>
           Missing data and excluded stories

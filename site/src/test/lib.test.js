@@ -12,7 +12,7 @@ import {
   stepDecimals,
 } from "../lib/format.js";
 import { DEFAULT_STATE, parseHash, sanitize, toHash } from "../lib/urlState.js";
-import { ageNotes, chartTitle, patternNote, strengthWord } from "../lib/wording.js";
+import { aboutCount, ageNotes, chartTitle, howToRead, patternNote, segmentsText, strengthWord } from "../lib/wording.js";
 import { fixtureMeta, realMeta } from "./fixtures.js";
 
 describe("formatting", () => {
@@ -157,14 +157,36 @@ describe("chart titles", () => {
     }
   });
 
-  it("describes how clear a pattern is", () => {
+  it("describes how clear a pattern is, in one short sentence (F40)", () => {
     expect(strengthWord(0.12)).toBe("weak");
     expect(strengthWord(-0.3)).toBe("moderate");
     expect(strengthWord(0.55)).toBe("strong");
-    expect(patternNote({ variable: v("dlg_word_share"), direction: 1, effect: 0.3 })).toMatch(/moderate pattern/);
-    expect(patternNote({ variable: v("dlg_word_share"), direction: 0, effect: 0.05 })).toMatch(/^No clear pattern/);
-    expect(patternNote({ variable: v("pov_class"), direction: 0, effect: null })).toMatch(/does not sum them up/);
-    expect(patternNote({ variable: v("dlg_word_share"), direction: 0, effect: 0.1, shown: 1 })).toMatch(/nothing to compare/);
+    const text = (args) => segmentsText(patternNote(args));
+    const clear = patternNote({ variable: v("dlg_word_share"), direction: 1, effect: 0.3 });
+    expect(segmentsText(clear)).toBe("A moderate pattern; individual stories vary a lot within every group.");
+    expect(clear).toContainEqual({ strength: "moderate" }); // the page links the strength word to its definition
+    expect(text({ variable: v("dlg_has_dialogue"), direction: -1, effect: -0.5 })).toBe(
+      "A strong pattern; individual stories vary a lot within every group.",
+    );
+    expect(text({ variable: v("dlg_word_share"), direction: 0, effect: 0.05 })).toBe(
+      "The groups differ only a little, or not consistently.",
+    );
+    expect(text({ variable: v("dlg_word_share"), direction: 0, effect: null, smallN: 30 })).toBe(
+      "A pattern is judged only when the groups at both ends have at least 30 stories.",
+    );
+    // no note for groups without an order: the heading says it, and How to read explains it
+    expect(patternNote({ variable: v("pov_class"), direction: 0, effect: null })).toBeNull();
+    expect(howToRead({ smallN: 30, unordered: true })).toMatch(
+      / Groups without an order, such as months, are shown side by side and not summed up as one trend\.$/,
+    );
+    expect(howToRead({ smallN: 30 })).not.toMatch(/without an order/);
+    expect(text({ variable: v("dlg_word_share"), direction: 0, effect: 0.1, shown: 1 })).toMatch(/nothing to compare/);
+  });
+
+  it("rounds the story count in the kicker (F55)", () => {
+    expect(aboutCount(8996)).toBe("about 9,000");
+    expect(aboutCount(9499)).toBe("about 9,000");
+    expect(aboutCount(278)).toBe("278");
   });
 
   it("warns about story age for totals and when groups differ in age", () => {

@@ -54,7 +54,11 @@ export default function ChartNotes({ meta, d, view, wide, onChange, ageCheckOpen
     </>
   );
   const sections = [
-    { id: "read", title: "How to read this chart", body: howToRead({ smallN: meta.small_n }) },
+    {
+      id: "read",
+      title: "How to read this chart",
+      body: howToRead({ smallN: meta.small_n, unordered: !variable.bins.ordered && !variable.yes_subject }),
+    },
     { id: "char", title: `What “${variable.label}” measures`, body: measured },
     { id: "measure", title: `What “${metric.label}” means`, body: metric.help },
   ];

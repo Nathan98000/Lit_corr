@@ -44,9 +44,16 @@ export function valueDomain(rows, overall, format, count = 6) {
   if (format === "rating") {
     lo = Math.max(1, Math.floor((Math.min(...vals) - 0.15) * 10) / 10);
     hi = Math.min(5, Math.ceil((Math.max(...vals) + 0.1) * 10) / 10);
-    const { step } = niceTicks(lo, hi, count);
-    lo = Math.floor(lo / step + 1e-9) * step;
-    hi = Math.ceil(hi / step - 1e-9) * step;
+    // round the domain out to whole steps of the ticks it ends up with, so the axis starts and ends on a labeled
+    // tick (the axis title names where it starts)
+    for (let i = 0; i < 4; i += 1) {
+      const { step } = niceTicks(lo, hi, count);
+      const lo2 = Number((Math.floor(lo / step + 1e-9) * step).toFixed(10));
+      const hi2 = Number((Math.ceil(hi / step - 1e-9) * step).toFixed(10));
+      if (lo2 === lo && hi2 === hi) break;
+      lo = lo2;
+      hi = hi2;
+    }
   } else {
     lo = 0;
     hi = Math.max(...vals) * 1.06 || 1;

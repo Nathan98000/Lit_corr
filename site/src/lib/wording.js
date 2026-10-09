@@ -54,23 +54,25 @@ export function chartTitle({ variable, metric, genre, direction, compare = false
   return `How ${metric.noun} ${verb} with ${variable.noun}${where(genre)}`;
 }
 
-/** One or two sentences on how clear the pattern is. `shown` is the number of groups with enough stories. */
-export function patternNote({ variable, direction, effect, compare = false, shown = null }) {
+/**
+ * The sentence after the takeaway's medians on how clear the pattern is (F40), as segments: plain strings and
+ * { strength } for the strength word (the page links it to its definition). Null for characteristics without an
+ * order, whose heading already says that each group stands on its own. `shown` is the number of groups with enough
+ * stories; `smallN` the size both end groups need before a pattern is judged.
+ */
+export function patternNote({ variable, direction, effect, compare = false, shown = null, smallN = 30 }) {
   if (!compare && shown != null && shown < 2) {
-    return "Only one group has enough stories for this selection, so there is nothing to compare. Try “All stories” or All genres.";
+    return ["Only one group has enough stories for this selection, so there is nothing to compare. Try “All stories” or All genres."];
   }
-  if (!variable.bins.ordered && !variable.yes_subject) {
-    return "Each group is shown on its own; this view does not sum them up as one trend.";
-  }
+  if (!variable.bins.ordered && !variable.yes_subject) return null;
   if (compare) {
-    return "Arrows mark the genres where the pattern is clear enough to describe; a dash means no clear pattern.";
+    return ["Arrows mark the genres where the pattern is clear enough to describe; a dash means no clear pattern."];
   }
-  if (effect == null) return "There are too few stories here to judge whether there is a pattern.";
+  if (effect == null) return [`A pattern is judged only when the groups at both ends have at least ${smallN} stories.`];
   if (direction) {
-    return `This is a ${strengthWord(effect)} pattern: the typical story differs between the groups, but ` +
-      "individual stories vary a lot within every group.";
+    return ["A ", { strength: strengthWord(effect) }, " pattern; individual stories vary a lot within every group."];
   }
-  return "No clear pattern: the groups differ only a little, or not consistently enough to sum up in a sentence.";
+  return ["The groups differ only a little, or not consistently."];
 }
 
 // Totals and the measure that makes old and new stories easier to compare.
@@ -123,13 +125,19 @@ export function methodSection(variable) {
   return "measures";
 }
 
-/** One short paragraph on how to read the one-genre chart. */
-export function howToRead({ smallN }) {
+/**
+ * One short paragraph on how to read the one-genre chart; for characteristics without an order (months, narrative
+ * perspective) it also says that their groups are not summed up as one trend (F40).
+ */
+export function howToRead({ smallN, unordered = false }) {
   return (
     "Each row is a group of stories. The dot is the typical story (the median: half the stories score higher, " +
     "half lower) and its value is printed beside it; the bar spans the middle half of stories. The dashed line " +
     `is the typical story among all stories shown. Hatched bars with hollow dots hold fewer than ${smallN} ` +
-    "stories and deserve less trust."
+    "stories and deserve less trust." +
+    (unordered
+      ? " Groups without an order, such as months, are shown side by side and not summed up as one trend."
+      : "")
   );
 }
 
@@ -138,12 +146,24 @@ function fmtYears(y) {
   return v < 1 ? "under a year" : `${v} year${v === 1 ? "" : "s"}`;
 }
 
-/** The line under the title: genre, which stories, and how many. */
-export function subtitle({ genre, subset, n, compare = false, genreCount = 0 }) {
+/**
+ * The line under the title: genre, which stories, and how many, as { lead, count } (the page links the count to
+ * "Missing data and excluded stories", F55). `subtitle` gives the whole line as text.
+ */
+export function subtitleParts({ genre, subset, n, compare = false, genreCount = 0 }) {
   const parts = [compare ? `All ${genreCount} genres, side by side` : genre.name];
   if (subset && subset.id !== "all") parts.push(subset.label);
-  if (n != null && !compare) parts.push(`${n.toLocaleString("en-US")} stories`);
-  return parts.join(" · ");
+  return { lead: parts.join(" · "), count: n != null && !compare ? `${n.toLocaleString("en-US")} stories` : null };
+}
+
+export function subtitle(args) {
+  const { lead, count } = subtitleParts(args);
+  return count ? `${lead} · ${count}` : lead;
+}
+
+/** The story count in the kicker: "about 9,000" (to the nearest thousand), so it never reads as exact (F55). */
+export function aboutCount(n) {
+  return n >= 1000 ? `about ${(Math.round(n / 1000) * 1000).toLocaleString("en-US")}` : n.toLocaleString("en-US");
 }
 
 const readsAsTrend = (variable) => variable.bins.ordered || Boolean(variable.yes_subject);
@@ -199,7 +219,8 @@ export function takeawaySegments({ variable, rows, valueText }) {
   return segs;
 }
 
-export const segmentsText = (segs) => (segs || []).map((s) => (typeof s === "string" ? s : s.strong)).join("");
+export const segmentsText = (segs) =>
+  (segs || []).map((s) => (typeof s === "string" ? s : s.strong ?? s.strength)).join("");
 
 /** When only one group has enough stories: name it and its size. */
 export function oneGroupNote(row) {

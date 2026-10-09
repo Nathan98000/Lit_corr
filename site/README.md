@@ -6,7 +6,7 @@ genres], how do [favorites per 1,000 views] vary with [story length]?" For each 
 typical story (median, with its value printed) and the middle half of stories, with the number of stories behind
 every figure; the mean is in each group's details and in "Show the numbers". "Compare all 30 genres" shows the same
 relationship for every genre as small charts, and the Patterns page lists every clear pattern for a genre and a
-measure.
+measure, topic by topic.
 
 The site shows **descriptive associations only**, never causes, and it ships **only precomputed summaries of
 groups of stories**: no story text, titles, authors, addresses or story-by-story records.
@@ -36,8 +36,31 @@ every genre and measure, one character per characteristic giving the direction a
 moderate, strong) of the existing effect. No medians, no counts; about 11 KB gzipped.
 
 The aggregates are about 66 MB uncompressed (1,685 small files; git and web hosts compress them to roughly a
-third). A chart loads one file of about 15–20 KB. The first page load (HTML, JS, CSS, the heading font, `meta.json`
-and the first chart file) is about 155 KB gzipped.
+third). A chart loads one file of about 15–20 KB.
+
+## First-load budget and lazy parts
+
+The **first load** is the HTML, the main script, the CSS, the heading font, `meta.json` and the first chart file:
+**148.6 KiB of gzip response bodies in 6 requests** (October 2026). The budget is **155 KiB of gzip response
+bodies** for that set, measured on the built site served with gzip (the design review's `firstload.mjs` with
+`serve.mjs`; response headers are not counted).
+
+Parts that the first chart does not need load their code when first used (`React.lazy` through
+`src/components/lazyPart.jsx`), each a small chunk of about 1–6 KiB gzipped:
+
+| Part | Chunk | Fetched ahead of time |
+|---|---|---|
+| Characteristic picker (and the search code) | `CharacteristicPicker-*.js`, `search-*.js` | when the browser is idle after the first chart; when its word is hovered or focused |
+| Measure menu | `MetricMenu-*.js` | the same |
+| Genre cards and the compare table | `CompareGrid-*.js`, `CompareTable-*.js` | when "Compare all 30 genres" is hovered or focused |
+| Stories of similar age (its charts) | `AgeCheckCharts-*.js` | when "Check stories of similar age" is hovered or focused |
+| Patterns page | `PatternBrowser-*.js` | when a link to it is hovered or focused |
+| How it works | `Methodology-*.js` (shares `search-*.js`) | when a link to it is hovered or focused |
+
+The sheet or popover of the picker and the menu (title, Close) opens at once and keeps its size while its body
+arrives; the pages hold one screen with a placeholder. If a part's code cannot be loaded, it shows the usual "We
+couldn't load the data" message, and Try again fetches it anew. `vite.config.js` has one code-splitting group that
+keeps React and everything else in the main chunk, so the first load is a single script.
 
 ## Local development
 
@@ -76,22 +99,31 @@ The built site is plain static files with relative paths and hash-based addresse
 
 ```
 src/
-  App.jsx                 page shell: masthead, routes, the headline, example questions, footer
+  App.jsx                 page shell: masthead, routes, the headline (kicker), footer
   components/
-    Explorer.jsx          the explorer: keeps the shown chart until the next one loads, answer heading, takeaway
-    Controls.jsx          the question sentence and "Only include"
-    CharacteristicPicker.jsx  search-first picker (combobox with listbox): Popular, eight topics, search
-    MetricMenu.jsx        the popularity-measure menu
-    Overlay.jsx           bottom sheet on phones, anchored popover on wider screens
-    InlineSelect.jsx      a native select shown as a word of the sentence
-    RangeChart.jsx        one genre: one row per group (median dot with value, middle-half capsule)
-    ChartNotes.jsx        story-age warnings and the three explanations
-    AgeCheck.jsx          the same chart within 2000–2009, 2010–2019 and 2020+
+    Explorer.jsx          the explorer: keeps the shown chart until the next one loads, answer heading, takeaway,
+                          the compare view, "Keep exploring"
+    Controls.jsx          the question sentence, "Only include", the sheets of the picker and the measure menu, and
+                          the question bar on phones
+    CharacteristicPicker.jsx  (lazy) search-first picker body (combobox with listbox): Popular, eight topics, search,
+                          a measure typed by mistake
+    MetricMenu.jsx        (lazy) the popularity-measure menu's body
+    Overlay.jsx           bottom sheet on phones, anchored popover on wider screens (title and Close)
+    InlineSelect.jsx      a native select shown as a word of the sentence; SlotWords keeps a slot's last word
+                          and its caret together
+    RangeChart.jsx        one genre: one row per group (median dot with value, middle-half capsule); one tab stop
+                          with arrow keys; details as a card, or a line under the chart in the phone layout; the
+                          genre-change glide on one scale
+    ChartNotes.jsx        story-age warnings and the three explanations (disclosures at every width)
+    AgeCheck.jsx          "Stories of similar age": the panel, its heading and Close
+    AgeCheckCharts.jsx    (lazy) the same chart within 2000–2009, 2010–2019 and 2020+
     NumbersTable.jsx      the chart's numbers (always in the page; cards on phones)
-    CompareGrid.jsx       every genre as a small chart, alphabetical
-    CompareTable.jsx      the numbers behind the genre cards
-    PatternBrowser.jsx    the Patterns page
-    Methodology.jsx       How it works
+    CompareGrid.jsx       (lazy) every genre as a small chart, alphabetical
+    CompareTable.jsx      (lazy) the numbers behind the genre cards
+    PatternBrowser.jsx    (lazy) the Patterns page: topics folded with their counts, one row per pattern
+    Methodology.jsx       (lazy) How it works, with the sticky section bar below 1,000 px
+    lazyPart.jsx          lazy parts with preload, their error boundary, and whenIdle
+    pages.js              the two lazy pages, shared by App and Explorer
     CopyLink.jsx, LoadError.jsx, useWidth.js, useMediaQuery.js, useGlide.js
   lib/
     data.js               loading and reading the aggregates
@@ -102,15 +134,17 @@ src/
     format.js             number formats (one number of decimals per axis and column)
     motion.js             reduced-motion checks
     urlState.js           settings in the address, so views can be shared
-  styles.css              all styling; colors are CSS variables at the top (ready for a dark theme later)
+  styles.css              all styling; colors are CSS variables at the top (ready for a dark theme later), and a
+                          forced-colors block that draws the charts with system colors
 public/
   fonts/                  Source Serif 4, weight 600, Latin subset (headings only), and its licence (OFL.txt)
   favicon.svg             the chart's own mark: a capsule with a dot
 ```
 
 Wording that comes with the data (measure names, labels, topics, the Popular list, search synonyms, "only include"
-options, example questions, US spelling) lives in `litcorr/stage2/wording.py`; rebuild the aggregates after editing it.
-The masthead name is the `SITE_NAME` constant in `App.jsx`.
+options, the example questions under "Keep exploring", US spelling) lives in `litcorr/stage2/wording.py`; rebuild the
+aggregates after editing it. Search synonyms are search-only text: they keep the spellings people type ("humour") and
+are left out of the US-spelling conversion and checks. The masthead name is the `SITE_NAME` constant in `App.jsx`.
 
 ## Font
 
@@ -130,4 +164,11 @@ License 1.1 (`public/fonts/OFL.txt`, taken from `@fontsource/source-serif-4` 5.3
   group shows its typical age, groups that differ in age get a warning and a one-tap check within three periods.
 - Genres are always listed alphabetically, never ranked; the Patterns page is grouped by topic and alphabetical,
   never sorted by strength, and always gives the count of characteristics without a clear pattern.
-- Motion (gliding marks, cross-fades, smooth scrolling) is switched off under "reduce motion".
+- Motion is switched off under "reduce motion": another genre glides the marks and the axis together (one scale
+  in every frame; the printed values fade in at the end), another measure or characteristic cross-fades, and
+  scrolling is smooth.
+- Keyboard: each chart is one tab stop (arrow keys, Home and End move between rows; Escape hides the details).
+  Windows contrast themes get system colors on the charts (`@media (forced-colors: active)`).
+- Nothing on the site reminds visitors that correlation is not causation (an owner's decision of October 2026);
+  nothing on it claims a cause either: the titles say "tend to" only through the pattern rule, and the tests scan
+  every visible string for causal words and UK spellings.

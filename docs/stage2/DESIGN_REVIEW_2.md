@@ -1,8 +1,12 @@
 # Stage 2 design review, round 2
 
-*Phases 0–3 of `STAGE2_DESIGN_REVIEW_2_PROMPT.md`, October 8, 2026, on branch `design-review` at `8ad75e1` (round 1,
-not yet merged into `main`). **Status: waiting for your approval.** Nothing in `site/`, `litcorr/` or `tests/` has
-changed.*
+*Phases 0–3 of `STAGE2_DESIGN_REVIEW_2_PROMPT.md`, October 8, 2026, on branch `design-review` at `8ad75e1` (round 1).
+**Status: approved and implemented** on branch `design-review-2` (October 8–9, 2026), following
+`STAGE2_DESIGN_IMPLEMENTATION_2_PROMPT.md`, with the owner's decisions: no reminders that correlation is not causation
+anywhere on the site (the disclaimer, the association note and their echoes go; no causal language stays the rule);
+code splitting; concepts N1, G2, H3 (not H1), J2 and K1 (not K2); idea I8 only (no I6, no I7); everything else as
+recommended, with Open Graph tags but no share image, no dark mode and no second font weight this round. Sections
+1–9 are the review as written; what changed, with before and after numbers, is in section 10.*
 
 - Round 1 is [`DESIGN_REVIEW.md`](DESIGN_REVIEW.md); this document links to it rather than repeating it.
 - **Screenshots** are in [`design-review-2/`](design-review-2/): `b…` the site as it is now, `m…` mock-ups.
@@ -681,3 +685,254 @@ strength or direction. **Recommendation: G2.**
 9. **Ideas** I6, I7, I8: which, if any?
 10. **Git.** As in round 1, git needs to delete its lock files when it commits, so before the first commit on
     `design-review-2` I'll ask you to allow deletion in the project folder.
+
+---
+
+## 10. Before and after
+
+Implemented on branch `design-review-2` (16 commits after the review's own, not pushed). All three checks pass at every
+commit: `npm test` (124 tests in 15 files, was 64 in 7), `npm run build`, `python -m pytest
+tests/test_stage2_site_data.py` (19 tests, was 18).
+
+**How it was measured.** The review's scripts (`Claude outputs/design-review-2-tools/`), run from a scratch folder
+with Playwright 1.56 and axe-core 4.10.3, against the built site served with gzip by `serve.mjs`, in the headless
+Chromium cached on the owner's Mac. Its `system-ui` is San Francisco, not the review's Inter, so the review's own
+numbers (Linux) and this Mac's differ a little for the same build. The tables therefore give three columns where it
+matters: the review's number, **round 1's build (`8ad75e1`) measured again on this Mac** with the same scripts, and
+round 2. The label check's wide font is Verdana, as DejaVu Sans is not installed on this Mac.
+
+### 10.1 Headline numbers
+
+| Measure | Review (Linux) | Round 1 on this Mac | Round 2 |
+|---|---|---|---|
+| Top of the page to the plot, 320 × 568 | 599 px; first row ends at 685 | 575; row ends 661 | 560; row ends 646 (still below the first screen) |
+| Top of the page to the plot, 375 × 667 | 556; row ends 642 | 532; row ends 618 | 536; **first row on the first screen** (ends 622) |
+| Top of the page to the plot, 768 × 1024 | 499 | 499 | 474 |
+| 1440 × 900 | plot 533 | plot 533 | plot 508; whole default chart on screen |
+| First load (HTML, JS, CSS, font, `meta.json`, first chart), gzip bodies | 154.5 KiB (155.6 with headers) | 154.5 KiB, 6 requests | **148.6 KiB, 6 requests**; then 4.3 KiB of picker and menu code fetched when the browser is idle after the first chart |
+| First chart: local / fast 4G / slow 4G / 3G | 0.21 / 0.92 / 2.23 / 5.01 s | 0.06 / 0.90 / 2.02 / 4.68 s | 0.06 / 0.87 / 2.00 / 4.67 s |
+| Largest contentful paint, same profiles | 0.15 / 0.53 / 1.98 / 4.99 s (the takeaway) | 0.06 / 0.29 / 1.02 / 3.16 s | 0.05 / 0.26 / 0.99 / 3.04 s |
+| Largest paint's element (375, slow 4G) | the five-line takeaway | the sentence's placeholder | the sentence's placeholder (with San Francisco the takeaway was never the largest) |
+| Cumulative layout shift, first load / after changes | 0.000 / 0.002 | 0.000 / 0.002 | 0.000 / 0.002 |
+| Layout shift on a direct visit to How it works or Patterns (slow 4G) | not measured | 0.061 (a placeholder's margin collapsing through `main`) | 0.000 |
+| New characteristic: local / fast 4G / slow 4G / 3G | 0.03 / 0.10 / 0.35 / 0.75 s | 0.03 / 0.10 / 0.27 / 0.69 s | 0.02 / 0.10 / 0.27 / 0.66 s |
+| Sentence tap areas at 320 and 375 (`taps.mjs`) | worst: "per 1,000 views" owns 70% of its box, 24 px tall | the same | every word owns **93–100%**, 32–36 px tall |
+| Caret (or "?") alone on a line (`caret.mjs`, 374 sentences) | 19 / 12 / 9 / 9 at 320 / 375 / 768 / 1440 | | **0 / 0 / 0 / 0**, also checking "?" and the genre's comma |
+| Overlapping chart labels, real glyphs (`labels.mjs`, 11,220 charts per font) | 0 (Inter, Liberation Sans, DejaVu Sans) | | **0 problems** with the site's font (San Francisco). With Verdana (in place of DejaVu Sans): 0 text on text, 0 text on marks; in 995 charts "All stories shown: …" starts 1–3 px left of the chart, drawn into the page margin, not clipped (round 1's placement, which gave DejaVu Sans 1 px) |
+| axe-core (WCAG 2.0–2.2 A/AA and best practice) | `region`, `link-in-text-block`, `landmark-complementary-is-top-level`, `page-has-heading-one` | | **none**, in 29 pages and states at 375 and 1440 px (58 runs; the review's 20 states plus the new ones) |
+| Forced colors, dark theme | chart text unreadable | | readable: system colors throughout ([a11](design-review-2/a11-forced-colors-dark-375.png)) |
+| Tab stops through the default view / the month chart / compare (`tabs.mjs`) | | 22 / 28 / 43 | 20 / 18 / 43: one stop per chart (was one per row); two new links before the chart (the story count and the strength word) |
+| "Check stories of similar age", 375 × 667 | page stays at 597; panel at 709 (off screen); focus on the page | the same | panel's heading scrolled to 52 px, under the question bar; **focus on the heading** |
+| The same at 1440 × 900 | panel at 1,177 | the same | the page scrolls as far as it can (604); panel 181–505 on screen; focus on the heading |
+| Compare mode, views: where the totals box is (375 / 1440) | 2,412 / 1,331 px, after the 31 cards | the same | **401 / 379**, above the cards |
+| Explore page height, default view (375 / 1440) | 2,174 / | 2,127 / 1,854 | **1,867 / 1,272** |
+| The same with a total (two age boxes) | | 2,270 / 1,934 | 1,943 / 1,240 |
+| Desktop margin column, default / a total | 789 / 857 px, 204 words, a 279 px hole | | **336 / 469 px**, 54 words, no hole |
+| Patterns page (375 / 1440) | 8,183 / 5,914 | 7,892 / 5,866 | **1,328 / 1,092** with every topic closed; 1,480 / 1,196 with one open |
+| How it works: where its heading starts at 375 × 667 | 690 px (below the first screen) | 690 | **114** (a sticky section bar instead of 13 rows of contents) |
+| Picker sheet while typing (375 × 667) | results from 235 px, 100–120 px each: 1.5 above a keyboard | | from 187 px, 42 px each: about 4.5 above a 290 px keyboard |
+| Footer at 375 | 81 words, 320 px | the same | 30 words, 158 px |
+| Frame times (`perf2.mjs`, 375 px, 1× / 4× / 6× CPU) | | worst frame 17–21 ms, no long tasks | worst frame 17 ms, no long tasks; picker open 19 / 29 / 44 ms (13 / 19 / 29) |
+| 400% zoom (320 × 256 CSS px) | no sideways scroll; sheets usable | | no sideways scroll on any page; the picker sheet (with Close in the search row), the question bar and How it works' contents fit and scroll ([a16](design-review-2/a16-zoom-400.png)) |
+| Smallest text | 11.5 px (genre-card labels) | | 11.5 px (unchanged) |
+
+**First load after each commit** (KiB of gzip bodies, each commit built on its own; always one script): 154.5 before
+round 2 → 154.1 (no reminders) → 154.3 (forced colors) → 154.5 (tap areas, polish) → **155.5** (results in view,
+keyboard, glide: 0.5 over the budget for one commit) → **147.4** (code splitting) → 147.7 (words) → 147.8 (search) →
+147.7 (desktop notes) → 147.9 (details line) → 147.7 (Keep exploring) → 148.2 (question bar) → 148.4 (Patterns) →
+148.5 (How it works) → 148.6 (picker while typing) → 148.6.
+
+### 10.2 The eight tasks again
+
+1. **First-time visitor on a phone.** The first screen holds the kicker ("about 9,000 stories"), the question, the
+   answer, a three-line takeaway (was four) and the first chart row. Each word of the sentence opens its own menu (93–100% of
+   its area). A tapped row's numbers appear in a line under the chart, not over it. After the chart: the notes as
+   three one-line disclosures, the buttons and four "Keep exploring" links; the page is 1,867 px tall (was 2,127).
+2. **Writer in Romance.** The same four taps. "Check stories of similar age" now scrolls the three periods into view
+   and moves focus to their heading, which lands below the question bar ([a04](design-review-2/a04-age-check-tap-375-1440.png)).
+3. **Comparing genres.** For views, the "Totals grow with time online" box with "Switch to views per month" sits
+   above the cards ([a06](design-review-2/a06-compare-views-age-box-375.png)); one tap gives the per-month answer.
+4. **Skeptic.** "moderate" in the takeaway links to the new definition of weak, moderate and strong; the chart's
+   story count ("8,987 stories") links to "Missing data and excluded stories", and the kicker no longer gives a
+   competing exact number; a rating axis says where it starts.
+5. **Keyboard and screen reader.** One tab stop per chart; arrows, Home and End move between rows, each read with
+   all its numbers; the live region says the whole title, so two charts without a pattern no longer sound alike;
+   focus never lands under the question bar or How it works' section bar; axe finds nothing.
+6. **Fifteen-minute explorer.** Patterns is one screen of topics with their counts ("Length & structure · 20 of 27
+   clear"); a topic opens to compact rows, alphabetical, with the direction and strength in their own columns.
+   Search finds "length", "age", "humour", "kissing", "1st person", and says that "rating" is a measure.
+7. **Sharing.** Link previews get a title, a description and a type (no image); the tab keeps the full chart title.
+8. **Slow phone.** First chart at 2.00 s on slow 4G (2.02 before) with 6 KiB less to load; the picker's code arrives
+   while the visitor reads the first chart, and on a cold cache its sheet opens at once and fills in without moving.
+
+### 10.3 Every finding, concept and idea
+
+| ID | What changed | Commit | Before → after |
+|---|---|---|---|
+| Decision 1 | The disclaimer (footer and How it works), the association note (charts and compare mode), "…not why" and "Descriptive only" are gone; the meta description drops "Descriptive patterns only."; the Patterns note ends with the rule. Banned-word and spelling scans kept; tests check that no page holds a reminder and every page says the site is independent | 2b34ee3 | in the footer, under every chart, in compare mode and three times in How it works → none |
+| F37 | Similar-age check scrolls its heading to the top and focuses it; Close returns focus to the button; not from an address | bb1c76d | off screen, focus lost → in view, focused |
+| F38 | Sentence at line-height 1.45 below 560 px; no invisible 44 px boxes; the sentence's selects exactly their words (Patterns too) | f308e97 | 70% / 24 px → ≥ 93% / ≥ 32 px |
+| F39 | Compare mode's totals box between the subtitle and the caption | bb1c76d | 2,412 px → 401 px (375) |
+| F40 | Takeaway: medians, then "A moderate pattern; individual stories vary a lot within every group." / "The groups differ only a little, or not consistently." / "A pattern is judged only when …"; no note for groups without an order (How to read explains) | ad6524e | 30 → 20 words; 100 → 76 px at 375 |
+| F41 | Concept N1: the margin keeps the age boxes open; the three explanations are 44 px disclosures | ea05e67 | 789 px, 204 words → 336 px, 54 words; no hole |
+| F42 | Concept G2: topics folded with "{n} of {m} clear", compact rows (name, ↗/↘, strength), key line, Open/Close all; the toggle adds the others, muted | c38fab0 | 7,892 → 1,328 px (375, closed) |
+| F43 | Concept K1: details line under the chart in the phone layout; no floating card there; also in the age check's small charts | c2b6127 | card over three rows → a line under the chart |
+| F44 | Definition of weak, moderate and strong in "When a title says “tend to”"; the takeaway's strength word links there; Patterns' key line links there | ad6524e, c38fab0 | undefined → defined |
+| F45 | Nouns ranked like labels; word beginnings only; synonyms (humour, 1st person, first person, kiss, kissing, orgasm, climax); a typed measure says so, with a button that switches to it; `site-data` re-run (only the synonyms changed) | 023bfc0 | "length", "age" → Word count 1st, Years online 2nd; "rating" → explained |
+| F46 | Concept H3: a sticky section bar with "How it works › {section}" and a Contents panel below 1,000 px; current section marked in the desktop sidebar too; 6 px link padding; 56 px heading scroll margin | d47a8a7 | heading at 690 → 114 px (375) |
+| F47 | Live region: the full title, then the answer when it differs | bb1c76d | "No clear pattern" twice → two different sentences |
+| F48 | Forced-colors rules for the charts, compact charts, cards and legend keys | c74ff38 | unreadable in dark contrast themes → readable |
+| F49 | Code splitting: How it works, Patterns, picker, measure menu, age-check charts, compare cards and table; idle and hover prefetch; shells that open at once; one script on first load | 148822a | 154.5 → 148.6 KiB (bodies) |
+| F50 | Concept J2: "Next questions" and "Try another question" replaced by one "Keep exploring" list (Patterns link + three example questions that differ from the view and from the age box's switch) | 768cb4d | two lists, 258 px at 375 (one example cut off sideways) → one list of four, 279 px, nothing repeated |
+| F51 | Measure changes cross-fade; genre changes glide scale, marks, dashed line, grid and ticks together; values fade in at the end; ticks with the same value merge | bb1c76d, 5e00f40 | dots disagreed with their axis for 250 ms → one scale per frame ([a13](design-review-2/a13-glide-on-genre-change-375.png)) |
+| F52 | Empty state offers All genres / All stories; the error page keeps the kicker h1 | bb1c76d | no way out, no h1 → both |
+| F53 | Compare-table cell details after the table, sticky at the bottom of the screen | bb1c76d | off screen → always in view |
+| F54 | One tab stop per chart (roving tabindex), arrows/Home/End, Escape; Enter and Space no longer pin; compact charts too | bb1c76d | 5–12 stops → 1 |
+| F55 | Kicker "about 9,000 stories"; the chart's count links to Missing data | ad6524e | 8,996 vs 8,987 → no contradiction |
+| F56 | "Average rating (the axis starts at 3.5)"; rating axes start on a labeled tick | ad6524e | unlabeled zoom → stated |
+| F57 | While typing in the phone sheet: one-line results, Close in the search row; html and body locked | 70f518c | 1.5 → about 4.5 results above a keyboard |
+| F58 | Footer: one 14 px paragraph (independence statement, what the site holds, How it works) | 2b34ee3 | 81 → 30 words |
+| F59 | Caret kept with the last word; "?" and "," joined; two-line genre names; "+"/"–" not read; picker options named by label; Patterns links underlined; skip link in the header; og/twitter tags; Patterns count line | f308e97, c38fab0 | 19 caret orphans → 0; axe `region`, `link-in-text-block` → none |
+| I6, I7 | Not built (owner: no) | | |
+| I8 | Question bar on phones once the sentence has scrolled away; one button back to it; hidden while a sheet is open; scroll padding so nothing focused ends under it | ff0cb94 | new ([a10](design-review-2/a10-question-bar-375.png)) |
+
+### 10.4 After screenshots
+
+Phones at full size; 768 and 1440 px at half size. Palette-compressed.
+
+| View | Screenshot |
+|---|---|
+| First screens at 320, 375, 768, 1440 | [a01](design-review-2/a01-first-screens-320-375-768-1440.png) |
+| The default chart (N1 on desktop) | [a02](design-review-2/a02-default-375-1440.png) |
+| A total with both age boxes | [a03](design-review-2/a03-total-two-age-boxes-375-1440.png) |
+| Stories of similar age after the tap | [a04](design-review-2/a04-age-check-tap-375-1440.png) |
+| Compare genres; compare views with the age box first | [a05](design-review-2/a05-compare-375-1440.png), [a06](design-review-2/a06-compare-views-age-box-375.png) |
+| Patterns, closed and with one topic open | [a07](design-review-2/a07-patterns-375-1440.png) |
+| How it works: top, section bar, Contents open, desktop sidebar | [a08](design-review-2/a08-how-it-works-375-768-1440.png) |
+| A row's details line on a phone | [a09](design-review-2/a09-details-line-375.png) |
+| The question bar | [a10](design-review-2/a10-question-bar-375.png) |
+| Forced colors, dark | [a11](design-review-2/a11-forced-colors-dark-375.png) |
+| The picker while typing; a measure typed | [a12](design-review-2/a12-picker-typing-375.png) |
+| A genre change mid-glide | [a13](design-review-2/a13-glide-on-genre-change-375.png) |
+| Keep exploring; the empty state; the error page | [a14](design-review-2/a14-keep-exploring-empty-error-375.png) |
+| A long sentence; the rating axis | [a15](design-review-2/a15-sentence-and-rating-axis.png) |
+| 400% zoom | [a16](design-review-2/a16-zoom-400.png) |
+
+![First screens after round 2](design-review-2/a01-first-screens-320-375-768-1440.png)
+
+![Patterns after round 2](design-review-2/a07-patterns-375-1440.png)
+
+### 10.5 Judgment calls
+
+Decisions the implementation prompt left open, with one line of reasoning each.
+
+1. **Phase 0's commit** already existed (`1c07991`, made before this session); it was kept as the branch's first commit.
+2. **Footer** is the same on every page and no longer waits for the data, so the independence statement is there
+   before the data arrives and on the error page.
+3. **Live region**: the title alone when the answer is the title (a clear pattern); otherwise "{title}. {answer}." with
+   the answer's own final period.
+4. **F37**: the panel takes focus only when its button opened it (remembered in the explorer); an address with
+   `check=age` leaves both scroll and focus alone.
+5. **F38**: "Only include" keeps its 44 px tall select, as specified; at 768 px one word still owns 89% of its box (the
+   1.45 line height is for phones only, as specified).
+6. **Caret and "?"**: a word joiner (U+2060) before "?" and before the genre's comma keeps them on the caret's line;
+   the caret check was extended to test both.
+7. **Genre cards**: two-line names, and the small chart sits at each card's bottom (flex column) so the charts of a row
+   stay aligned when one name wraps.
+8. **Link previews**: exactly the four tags asked for; Twitter reads `og:title` and `og:description`.
+9. **F51 ticks** cross-fade on the frame's own scale (old ones fade out, new ones in), rather than being recomputed per
+   frame (which would make their steps jump); a value in both sets is one tick with the new label.
+10. **F51 values**: the printed values and the "All stories shown" label are hidden during the 250 ms glide and fade in
+    over 150 ms; a genre change in which a group appears or disappears still redraws, as before.
+11. **F51 measure change**: the chart is keyed by the measure, so a new measure gets the existing 150 ms fade-in.
+12. **F53**: sticky `bottom: 0` only works for an element at the end of its container, so the detail line moved after
+    the table; cells get a 72 px scroll margin so keyboard focus never sits behind it.
+13. **F54**: a click or tap still keeps a row's details on wider charts (pointer behavior unchanged); only Enter and
+    Space no longer pin.
+14. **F48**: the compare table's stepped fills are left to the system in forced colors; each cell prints its ratio.
+15. **Code splitting**: a small `lazyPart` helper (`React.lazy` plus `preload`; once loaded, a part renders without
+    suspending); a failed chunk shows the friendly error, and Try again fetches it anew.
+16. **Chunks**: Vite 8 bundles with Rolldown, whose `output.codeSplitting.groups` replaces `manualChunks`; one group
+    keeps everything but the lazy parts in the main chunk (Rolldown had split React and `format.js` into two extra
+    first-load requests).
+17. **Prefetch**, beyond what was asked: the compare chunks when "Compare all 30 genres" is hovered or focused, the
+    age-check chunk when its button is; the sentence's words also prefetch the picker and the menu.
+18. **Placeholders**: a sheet's or popover's body placeholder is as tall as the panel can be, so the panel never
+    changes size; the compare grid's placeholder is computed from the grid's own rows; pages hold one screen.
+19. **The page placeholder's top margin** was removed: it collapsed through `main`, which then jumped 44 px when How it
+    works or Patterns arrived (a 0.061 layout shift that was already there).
+20. **F40**: "Groups without an order …" is added to How to read only for characteristics without an order, where it
+    replaces their note; their empty takeaway box is not drawn.
+21. **F55**: "about" and the nearest thousand from 1,000 stories up (the synthetic test data has 278).
+22. **F56**: rating axes now round their domain to the step of their final ticks, so the axis starts on a labeled
+    tick and the title names it (some charts started at 3.6 with the first tick at 3.75); presentation only, checked
+    for all 23,184 rating charts.
+23. **F45 "kiss kissing"**: on Intimacy only. Affection & love's word list says that physical affection, kisses
+    included, is counted as intimacy, so pointing "kissing" there would mislead (the specification turned out wrong in
+    practice).
+24. **F45 "1st person", "first person"**: on all the `pov_` characteristics (perspective, first-person narration, the
+    pronoun counts), like "pov".
+25. **F45 typed measures**: a measure is named when its label or noun equals the query or holds all its words (a plural
+    counts), at least one of those words belongs to the measures only, and no other measure fits as well; the message
+    uses the label ("Show ratings (number of)").
+26. **F45 message placement**: between the search box and the list, in a polite live region, so the listbox keeps only
+    options; highlights now prefer a match at the start of a word.
+27. **N1**: the disclosures are the same component at every width, so there is one layout of notes.
+28. **K1**: the phone layout is the chart's own (narrower than 560 px), so the age check's small charts use the line even
+    on desktop; mouse hover shows nothing there (a line appearing would move the page under the pointer).
+29. **K1**: "Tap again to close." only after a tap; a keyboard-focused row shows the line without announcing it, since
+    its name already says the same.
+30. **J2**: in compare mode the Patterns link is for all genres; compare views count as the same whatever genre is
+    remembered; example questions keep their history entry and the scroll back to the question.
+31. **J2**: "Keep exploring" is an `h3` in a navigation landmark of that name, inside the chart panel.
+32. **I8**: the bar shows the characteristic's label ("Word count"), as in Copy; it hides with `visibility` after its
+    fade, and with `aria-hidden` and `tabindex="-1"`.
+33. **I8 scroll padding**: `scroll-padding-top: 52px` on the explore page only (`html[data-page]`); no extra
+    `scroll-margin-top` on rows and headings, which would add up to 104 px. Checked in Chromium: a row focused under
+    the bar lands at 53 px, the sentence and the age check at 52 px.
+34. **G2**: a topic with no clear pattern ("0 of 11 clear") shows its count without a disclosure until the toggle gives
+    it rows to list; topics with no characteristic that can show a trend are left out (none in the real data, one in
+    the test data).
+35. **G2**: the key line sits right above the topics, under the two buttons; "Open all topics" opens the topics that
+    have something to list; the strength link is the key line's "What weak, moderate and strong mean" rather than 71
+    identical links.
+36. **H3**: the bar is outside the page's grid, so that it can stick for the whole page; the panel is the only
+    "Contents" landmark below 1,000 px and exists in the accessibility tree only when open.
+37. **H3**: a tap outside gives focus back to the button only if it did not land on another control; heading scroll
+    margins are 56 px at every width; desktop contents links are about 31 px tall with the specified 6 px padding.
+38. **F57** is not in the work plan's phases but is one of F37–F59, so it was built as the review proposed.
+39. **Budget along the way**: the quick-win commits measured 155.5 KiB (0.5 over) until code splitting, the next commit,
+    brought it to 147.4; the last phases' CSS and code end at 148.6.
+
+### 10.6 Still open
+
+- **Dark mode**: not in this round, as decided. Every color is a variable, and the forced-colors rules cover the
+  people who need high contrast most.
+- **A share image**: decided against; link previews carry the title and the description only.
+- **Real devices and screen readers**: everything was checked in headless Chromium (touch emulation, emulated forced
+  colors, 400% zoom) and with Testing Library; not on an iPhone or Android phone, not with VoiceOver, TalkBack or NVDA,
+  and not in Windows itself. The review's question 8 (the keyboard over the picker, the page behind the sheet, the
+  lower edge of "per 1,000 views") still needs the owner's phone.
+- **The first chart row at 320 × 568** is still below the first screen (it ends at 646 px). The kicker now takes three
+  lines on phones ("· about 9,000 stories · 30 genres" no longer fits after "in common?"), which costs 19 px.
+- **Two new tab stops before the chart** (the story count and the strength word are links now); the chart itself went
+  from 5–12 stops to 1.
+- **The compare table's colored steps** are not drawn in forced colors (the ratios are printed).
+- **Retrying a lazy part after a failed download**: some browsers keep a failed module download until the page
+  reloads; the retry then shows the error again.
+- **"All stories shown: …" in wide fonts**: its position uses estimated text widths, so in Verdana it can start 1–3 px
+  left of the chart (995 of 11,220 charts; nothing clipped). A first Verdana run also flagged labels touching dots and
+  bars: Chromium's `getBBox()` returned stale geometry for the marks right after a chart remounts, so the check was
+  rerun reading the marks' positions from their attributes (0 overlaps).
+- **`generated_at`** in `meta.json` changed when `site-data` was re-run for the synonyms (How it works now says the
+  aggregates were generated on October 9, 2026, UTC); nothing else in the 1,685 files changed.
+
+### 10.7 Not done, on purpose
+
+- I6 (a hint under the sentence) and I7 ("Surprise me"): the owner's no.
+- H1 and K2: replaced by H3 and K1, the owner's choices.
+- No `scroll-margin-top` on chart rows and headings on the explore page (the page's scroll padding covers them; both
+  would double the offset).
+- No `twitter:title` or `twitter:description` (Twitter falls back to the Open Graph tags).
+- "kiss" and "kissing" do not point to Affection & love (10.5, item 23).
+- No second font weight; no share image; nothing on Patterns or the genre cards ordered by a result.

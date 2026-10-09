@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { formatAge, formatCount, formatFixed, formatRange, columnDecimals } from "../lib/format.js";
-import { capsule, rangeLayout, scaleX } from "../lib/rangeLayout.js";
+import { PHONE, capsule, rangeLayout, scaleX } from "../lib/rangeLayout.js";
 import { chartSummary } from "../lib/wording.js";
 import useGlide from "./useGlide.js";
 import useWidth from "./useWidth.js";
@@ -38,7 +38,9 @@ const tickKey = (t) => `${t.v}|${t.text}`;
  * all stories shown.
  *
  * The chart is one tab stop (F54): the arrow keys, Home and End move between rows, and the focused row shows its
- * details; Escape hides them. Hover shows them too, and a tap or click keeps them until the next tap.
+ * details; Escape hides them. Hover shows them too, and a tap or click keeps them until the next tap. On wider
+ * charts the details are a card by the row; in the phone layout (narrower than 560 px) they are a line under the
+ * chart, so nothing covers the rows (concept K1).
  *
  * Another genre glides the marks (F51): the scale's domain glides with them, so the dots, the bars, the dashed line,
  * the grid and the ticks are drawn from the same scale in every frame; the old ticks fade out as the new ones fade
@@ -110,9 +112,25 @@ export default function RangeChart({
     );
   }
 
+  const phone = layout.width < PHONE;
   const active = shown == null ? null : shown.i;
   const activeRow = active == null ? null : layout.rows.find((r) => r.index === active);
   const activeDetails = activeRow ? rowDetails(rows[activeRow.index], metric.format, minN) : null;
+  // the phone's details line: the same numbers as the row's name, in one line
+  const detailsLine = activeRow && (
+    <>
+      <b>{activeRow.label}</b>{" "}
+      {activeDetails.median ? (
+        <>
+          typical story {activeDetails.median} · middle half {activeDetails.range} · mean {activeDetails.mean} ·{" "}
+          {activeDetails.stories} stories · typical age {activeDetails.age}.
+          {shown.by === "tap" && <span className="muted"> Tap again to close.</span>}
+        </>
+      ) : (
+        <>fewer than {minN} stories, so this group is not shown.</>
+      )}
+    </>
+  );
   const tabRow = Math.min(focusIdx, layout.rows.length - 1);
 
   const onRowKey = (e, ri) => {
@@ -231,7 +249,8 @@ export default function RangeChart({
                 tabIndex={ri === tabRow ? 0 : -1}
                 aria-label={details.label}
                 onPointerEnter={(e) => {
-                  if (e.pointerType === "mouse" && shown?.by !== "tap") setShown({ i: r.index, by: "hover" });
+                  // no details on hover in the phone layout: a line appearing under the chart would move the page
+                  if (e.pointerType === "mouse" && !phone && shown?.by !== "tap") setShown({ i: r.index, by: "hover" });
                 }}
                 onPointerLeave={(e) => {
                   if (e.pointerType === "mouse") setShown((s) => (s?.by === "hover" ? null : s));
@@ -276,7 +295,18 @@ export default function RangeChart({
             );
           })}
         </svg>
-        {activeRow && (
+        {phone && (
+          <>
+            {/* a tap's details are announced; a focused row's name already says the same, so its line is not */}
+            <p className="row-details" aria-live="polite">
+              {shown?.by === "tap" ? detailsLine : null}
+            </p>
+            <p className="row-details" aria-hidden="true">
+              {shown && shown.by !== "tap" ? detailsLine : null}
+            </p>
+          </>
+        )}
+        {activeRow && !phone && (
           <div
             className={`chart-tip${shown.by === "tap" ? " pinned" : ""}`}
             aria-hidden="true"

@@ -1,13 +1,14 @@
-// Round 2's quick wins (section 6 of DESIGN_REVIEW_2.md).
-import { render, screen, waitFor, within } from "@testing-library/react";
+// Round 2's quick wins (section 6 of DESIGN_REVIEW_2.md): F37, F39, F47, F52, F53, F54 and F59.
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "../App.jsx";
+import RangeChart from "../components/RangeChart.jsx";
 import { clearCache } from "../lib/data.js";
-import { fixtureFetch } from "./fixtures.js";
+import { fixtureFetch, fixtureMeta } from "./fixtures.js";
 
 beforeEach(() => {
   clearCache();
@@ -26,6 +27,191 @@ async function renderApp(hash = "") {
   await waitFor(() => expect(document.querySelector(".chart-panel[aria-busy='false']")).toBeTruthy());
   return user;
 }
+
+/** The fixtures, with the end groups of dialogue share made 15 and 3 years old (so the age box offers the check). */
+function agedFetch() {
+  const serve = fixtureFetch();
+  const fn = async (url) => {
+    const res = await serve(url);
+    if (!String(url).includes("v/dlg_word_share/")) return res;
+    const body = await res.json();
+    for (const gd of Object.values(body.g)) {
+      const cells = gd.b.filter(Boolean);
+      if (cells.length >= 2) {
+        cells[0][1] = 15;
+        cells[cells.length - 1][1] = 3;
+      }
+    }
+    return { ok: true, status: 200, json: async () => body };
+  };
+  fn.calls = serve.calls;
+  return fn;
+}
+
+describe("F37: checking stories of similar age", () => {
+  it("scrolls the panel's heading into view and focuses it; Close gives focus back to the button", async () => {
+    vi.stubGlobal("fetch", agedFetch());
+    const scroll = vi.spyOn(Element.prototype, "scrollIntoView");
+    const user = await renderApp("#/explore?var=dlg_word_share");
+    await user.click(screen.getByRole("button", { name: "Check stories of similar age" }));
+    const heading = await screen.findByRole("heading", { name: "Stories of similar age" });
+    await waitFor(() => expect(document.activeElement).toBe(heading));
+    expect(scroll.mock.contexts).toContain(heading);
+    expect(scroll.mock.calls[scroll.mock.contexts.indexOf(heading)][0]).toMatchObject({ block: "start" });
+    await user.click(screen.getByRole("button", { name: "Close" }));
+    await waitFor(() => expect(document.activeElement).toBe(screen.getByRole("button", { name: "Check stories of similar age" })));
+  });
+
+  it("leaves the scroll alone when the address already asks for the check", async () => {
+    vi.stubGlobal("fetch", agedFetch());
+    const scroll = vi.spyOn(Element.prototype, "scrollIntoView");
+    await renderApp("#/explore?var=dlg_word_share&check=age");
+    const heading = await screen.findByRole("heading", { name: "Stories of similar age" });
+    expect(scroll.mock.contexts).not.toContain(heading);
+    expect(document.activeElement).not.toBe(heading);
+  });
+});
+
+describe("F39: comparing a total", () => {
+  it("puts the story-age box with its switch above the genre cards", async () => {
+    const user = await renderApp("#/explore?mode=compare&metric=pop_views&var=dlg_word_share");
+    const box = screen.getByText("Totals grow with time online.").closest(".agebox");
+    const caption = document.querySelector(".compare-caption");
+    const grid = document.querySelector(".compare-grid");
+    expect(box.compareDocumentPosition(caption) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(caption.compareDocumentPosition(grid) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(document.querySelector(".chart-sub").compareDocumentPosition(box) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    await user.click(within(box).getByRole("button", { name: "Switch to views per month" }));
+    await waitFor(() => expect(window.location.hash).toMatch(/metric=pop_views_per_month/));
+  });
+});
+
+describe("F47: what screen readers hear", () => {
+  it("announces the full title and the answer, so two charts without a pattern sound different", async () => {
+    const user = await renderApp("#/explore?genre=romance&var=dlg_word_share");
+    const live = document.querySelector("[aria-live='polite']");
+    expect(live.textContent).toBe("How favorites per 1,000 views vary with dialogue share in Romance. No clear pattern.");
+    await user.click(screen.getByRole("button", { name: /^Popularity measure:/ }));
+    const dialog = await screen.findByRole("dialog", { name: "Popularity measure" });
+    await user.click(within(dialog).getAllByRole("option").find((o) => o.textContent.startsWith("Views per month")));
+    await waitFor(() => expect(live.textContent).toBe("How views per month vary with dialogue share in Romance. No clear pattern."));
+    expect(document.querySelector(".chart-title").textContent).toBe("No clear pattern");
+  });
+
+  it("announces a clear pattern once, as its title", async () => {
+    await renderApp("#/explore?var=dlg_word_share");
+    expect(document.querySelector("[aria-live='polite']").textContent).toBe(
+      "Stories with more dialogue tend to get more favorites per 1,000 views",
+    );
+  });
+});
+
+describe("F52: ways out and headings", () => {
+  it("offers All genres when no group has enough stories", async () => {
+    const user = await renderApp("#/explore?genre=tiny&var=dlg_word_share");
+    expect(screen.getByText("No group has enough stories in this selection to show a chart.")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "All stories" })).toBeNull(); // it would change nothing
+    await user.click(screen.getByRole("button", { name: "All genres" }));
+    await waitFor(() => expect(window.location.hash).toMatch(/genre=all/));
+  });
+
+  it("keeps a level-one heading above the error when nothing could load", async () => {
+    vi.stubGlobal("fetch", async () => ({ ok: false, status: 503, json: async () => ({}) }));
+    render(<App />);
+    await screen.findByText(/We couldn’t load the data/);
+    expect(screen.getByRole("heading", { level: 1 }).textContent).toMatch(/^What do popular Literotica stories have in common\?/);
+  });
+});
+
+describe("F53: the compare table's cell details", () => {
+  it("come after the table, where the line can stay at the bottom of the screen", async () => {
+    const user = await renderApp("#/explore?mode=compare&var=dlg_word_share");
+    await user.click(await screen.findByRole("button", { name: "Show the numbers" }));
+    const table = await screen.findByRole("table");
+    const detail = document.querySelector(".cell-detail");
+    expect(table.compareDocumentPosition(detail) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(detail.getAttribute("aria-live")).toBe("polite");
+    const cell = within(table).getAllByRole("cell").find((c) => c.className.includes("cell") && !c.className.includes("empty"));
+    await user.click(cell);
+    expect(detail.textContent).toMatch(/typical story .* stories\), against .* stories shown\./);
+  });
+});
+
+describe("F54: the keyboard in the chart", () => {
+  const metric = fixtureMeta.metrics.find((m) => m.id === "pop_fav_per_1k_views");
+  const variable = fixtureMeta.variables.find((v) => v.id === "dlg_word_share");
+  const stats = (median) => ({ n: 100, age: 6, median, p25: median * 0.6, p75: median * 1.4, mean: median * 1.2 });
+  const rows = ["Under 10%", "10–20%", "20–25%", "25%+"].map((label, index) => ({ index, label, stats: stats(0.3 + index / 10) }));
+  const draw = () =>
+    render(
+      <>
+        <button type="button">Before</button>
+        <RangeChart rows={rows} overall={stats(0.45)} metric={metric} variable={variable} smallN={30} minN={10} title="T" n={400} />
+        <button type="button">After</button>
+      </>,
+    );
+  const card = () => document.querySelector(".chart-tip");
+
+  it("is a single tab stop", async () => {
+    const user = userEvent.setup();
+    draw();
+    const rowEls = screen.getAllByRole("img");
+    expect(rowEls.map((r) => r.getAttribute("tabindex"))).toEqual(["0", "-1", "-1", "-1"]);
+    screen.getByRole("button", { name: "Before" }).focus();
+    await user.tab();
+    expect(document.activeElement).toBe(rowEls[0]);
+    await user.tab();
+    expect(document.activeElement).toBe(screen.getByRole("button", { name: "After" }));
+  });
+
+  it("moves between rows with the arrows, Home and End, shows the focused row's details, hides them on Escape", async () => {
+    const user = userEvent.setup();
+    draw();
+    const rowEls = screen.getAllByRole("img");
+    screen.getByRole("button", { name: "Before" }).focus();
+    await user.tab();
+    expect(card().querySelector("strong").textContent).toBe("Under 10%");
+    await user.keyboard("{ArrowDown}");
+    expect(document.activeElement).toBe(rowEls[1]);
+    expect(card().querySelector("strong").textContent).toBe("10–20%");
+    expect(rowEls.map((r) => r.getAttribute("tabindex"))).toEqual(["-1", "0", "-1", "-1"]); // the stop moves along
+    await user.keyboard("{End}");
+    expect(document.activeElement).toBe(rowEls[3]);
+    await user.keyboard("{ArrowDown}"); // stays at the end
+    expect(document.activeElement).toBe(rowEls[3]);
+    await user.keyboard("{Home}");
+    expect(document.activeElement).toBe(rowEls[0]);
+    await user.keyboard("{ArrowUp}");
+    expect(document.activeElement).toBe(rowEls[0]);
+    await user.keyboard("{Escape}");
+    expect(card()).toBeNull();
+    // the row names keep every number
+    expect(rowEls[1].getAttribute("aria-label")).toMatch(/^10–20%: typical story 0\.40, middle half 0\.24–0\.56, mean 0\.48, 100 stories/);
+  });
+
+  it("no longer pins the details with Enter or Space", async () => {
+    const user = userEvent.setup();
+    draw();
+    screen.getByRole("button", { name: "Before" }).focus();
+    await user.tab();
+    await user.keyboard("{Enter}");
+    await user.keyboard(" ");
+    expect(card().className).not.toMatch(/pinned/);
+    await user.tab(); // leaving the chart hides them
+    expect(card()).toBeNull();
+  });
+
+  it("keeps a tap's details until the same row is tapped again", () => {
+    draw();
+    const row = screen.getAllByRole("img")[2];
+    fireEvent.click(row);
+    expect(card().className).toMatch(/pinned/);
+    fireEvent.blur(row);
+    expect(card()).toBeTruthy();
+    fireEvent.click(row);
+    expect(card()).toBeNull();
+  });
+});
 
 describe("F59: polish", () => {
   it("keeps each slot's last word with its caret, and the question mark on the caret's line", async () => {

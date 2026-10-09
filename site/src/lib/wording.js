@@ -160,6 +160,15 @@ export function answerHeading({ variable, metric, genre, direction, effect, show
   return "No clear pattern";
 }
 
+/**
+ * What screen readers hear when a chart has loaded (F47): the full chart title, then the answer when it says
+ * something else ("How views vary with story length across all genres. No clear pattern.").
+ */
+export function announcement(title, answer) {
+  if (!answer || answer === title) return title;
+  return `${title}. ${/[.!?]$/.test(answer) ? answer : `${answer}.`}`;
+}
+
 const quoted = (label) => `“${label}”`;
 
 /**

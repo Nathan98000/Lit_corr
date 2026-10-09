@@ -18,14 +18,14 @@ function AgeBox({ note, action }) {
  * boxes with an action; then how to read the chart, what the characteristic measures and what the measure means
  * (one-line disclosures on narrow screens, plain text in the margin on wide ones).
  */
-export default function ChartNotes({ meta, d, view, wide, onChange, ageCheckOpen }) {
+export default function ChartNotes({ meta, d, view, wide, onChange, ageCheckOpen, onCheckAge, ageButton }) {
   const { variable, metric } = d;
   const rate = RATE_FOR[metric.id] && meta.metrics.find((m) => m.id === RATE_FOR[metric.id]);
   const boxes = d.ageNotes.map((note) => {
     let action = null;
     if (note.kind === "groups" && view.sub === "all" && !ageCheckOpen) {
       action = (
-        <button type="button" className="link-button" onClick={() => onChange({ ...view, check: "age" })}>
+        <button type="button" className="link-button" ref={ageButton} onClick={onCheckAge}>
           Check stories of similar age
         </button>
       );

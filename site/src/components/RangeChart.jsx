@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { formatAge, formatCount, formatFixed, formatRange, columnDecimals } from "../lib/format.js";
-import { rangeLayout } from "../lib/rangeLayout.js";
+import { capsule, rangeLayout, scaleX } from "../lib/rangeLayout.js";
 import { chartSummary } from "../lib/wording.js";
 import useGlide from "./useGlide.js";
 import useWidth from "./useWidth.js";
@@ -29,10 +29,21 @@ function rowDetails(row, format, minN) {
   };
 }
 
+const KEYS = ["ArrowDown", "ArrowUp", "Home", "End"];
+const tickKey = (t) => `${t.v}|${t.text}`;
+
 /**
  * Popularity across the groups of one characteristic, in one genre (concept C2): one row per group, the middle
  * half of stories as a capsule, the typical story (median) as a dot with its value printed, and a dashed line for
- * all stories shown. Rows are focusable; hover, focus or a tap shows the details (a tap pins them).
+ * all stories shown.
+ *
+ * The chart is one tab stop (F54): the arrow keys, Home and End move between rows, and the focused row shows its
+ * details; Escape hides them. Hover shows them too, and a tap or click keeps them until the next tap.
+ *
+ * Another genre glides the marks (F51): the scale's domain glides with them, so the dots, the bars, the dashed line,
+ * the grid and the ticks are drawn from the same scale in every frame; the old ticks fade out as the new ones fade
+ * in, and the printed values fade in at their final places once the marks have arrived. Another characteristic,
+ * measure or width redraws the chart.
  */
 export default function RangeChart({
   rows,
@@ -45,38 +56,42 @@ export default function RangeChart({
   n,
   compact = false,
   domainRows = null,
+  emptyActions = null,
 }) {
   const [ref, width] = useWidth(720);
-  const [active, setActive] = useState(null); // index of the row whose details are shown
-  const [pinned, setPinned] = useState(false);
+  const [shown, setShown] = useState(null); // the row whose details are shown: { i, by: "hover" | "focus" | "tap" }
+  const [focusIdx, setFocusIdx] = useState(0); // the row that holds the chart's tab stop
   const frame = useRef(null);
+  const rowEls = useRef([]);
   const ids = useId();
   const titleId = `${ids}-title`;
   const descId = `${ids}-desc`;
   const hatchId = `${ids}-hatch`.replace(/:/g, "");
 
   const layout = rangeLayout({ rows, overall, format: metric.format, width, smallN, minN, domainRows });
-  // genre or measure changes glide the marks to their new places; another characteristic or width redraws them
   const glide = useGlide(
-    layout.rows.map((r) => (r.ok ? [r.bar.x, r.bar.width, r.dotX, r.value.x] : null)),
-    `${variable.id}|${rows.map((r) => r.label).join("|")}|${layout.width}|${layout.mode}`,
+    [
+      [layout.lo, layout.hi, layout.left, layout.plotW, layout.ref ? overall.median : 0],
+      ...layout.rows.map((r) => {
+        const s = rows[r.index].stats;
+        return r.ok ? [s.p25, s.p75, s.median] : null;
+      }),
+    ],
+    `${variable.id}|${metric.id}|${rows.map((r) => r.label).join("|")}|${layout.width}|${layout.mode}|${Boolean(layout.ref)}`,
+    layout.ticks,
   );
+  const [scale, ...marks] = glide.values;
+  const x = scaleX({ lo: scale[0], hi: scale[1], left: scale[2], plotW: scale[3] });
   const anySmall = layout.rows.some((r) => r.small);
   const shownCount = layout.rows.filter((r) => r.ok).length;
 
   useEffect(() => {
-    if (active == null) return undefined;
+    if (shown == null) return undefined;
     const away = (e) => {
-      if (!frame.current?.contains(e.target)) {
-        setActive(null);
-        setPinned(false);
-      }
+      if (!frame.current?.contains(e.target)) setShown(null);
     };
     const esc = (e) => {
-      if (e.key === "Escape") {
-        setActive(null);
-        setPinned(false);
-      }
+      if (e.key === "Escape") setShown(null);
     };
     document.addEventListener("pointerdown", away);
     document.addEventListener("keydown", esc);
@@ -84,27 +99,47 @@ export default function RangeChart({
       document.removeEventListener("pointerdown", away);
       document.removeEventListener("keydown", esc);
     };
-  }, [active]);
+  }, [shown]);
 
   if (!shownCount) {
     return (
       <div ref={ref} className="chart-empty">
-        No group has enough stories in this selection to show a chart.
+        <p>No group has enough stories in this selection to show a chart.</p>
+        {emptyActions}
       </div>
     );
   }
 
+  const active = shown == null ? null : shown.i;
   const activeRow = active == null ? null : layout.rows.find((r) => r.index === active);
   const activeDetails = activeRow ? rowDetails(rows[activeRow.index], metric.format, minN) : null;
-  const toggle = (i) => {
-    if (pinned && active === i) {
-      setPinned(false);
-      setActive(null);
-    } else {
-      setActive(i);
-      setPinned(true);
-    }
+  const tabRow = Math.min(focusIdx, layout.rows.length - 1);
+
+  const onRowKey = (e, ri) => {
+    if (!KEYS.includes(e.key)) return;
+    e.preventDefault();
+    const last = layout.rows.length - 1;
+    const next = { ArrowDown: Math.min(last, ri + 1), ArrowUp: Math.max(0, ri - 1), Home: 0, End: last }[e.key];
+    setShown({ i: layout.rows[next].index, by: "focus" });
+    setFocusIdx(next);
+    rowEls.current[next]?.focus();
   };
+
+  // During a glide every tick sits on the frame's scale: the old ticks fade out as the new ones fade in.
+  const ticks =
+    glide.gliding && glide.from
+      ? [
+          ...glide.from.map((t) => ({
+            ...t,
+            fade: layout.ticks.some((u) => tickKey(u) === tickKey(t)) ? 1 : 1 - glide.progress,
+          })),
+          ...layout.ticks
+            .filter((t) => !glide.from.some((u) => tickKey(u) === tickKey(t)))
+            .map((t) => ({ ...t, fade: glide.progress })),
+        ]
+      : layout.ticks.map((t) => ({ ...t, fade: 1 }));
+  const inDomain = (v) => v >= scale[0] - 1e-9 && v <= scale[1] + 1e-9;
+  const svgClass = [active != null && "has-active", glide.gliding && "gliding"].filter(Boolean).join(" ");
 
   return (
     <div ref={ref} className={`range-chart mode-${layout.mode}${compact ? " compact" : ""}`}>
@@ -144,7 +179,7 @@ export default function RangeChart({
           width={layout.width}
           height={layout.height}
           role="group"
-          className={active != null ? "has-active" : undefined}
+          className={svgClass || undefined}
           aria-labelledby={titleId}
           aria-describedby={descId}
         >
@@ -155,17 +190,25 @@ export default function RangeChart({
             </pattern>
           </defs>
           <g aria-hidden="true">
-            {layout.ticks.map((t) => (
-              <g key={t.v}>
-                <line className="grid" x1={t.x} x2={t.x} y1={layout.top - 4} y2={layout.height - (layout.ref ? 22 : 6)} />
-                <text className="tick" x={t.x} y={layout.top - 10} textAnchor="middle">
-                  {t.text}
-                </text>
-              </g>
-            ))}
+            {ticks
+              .filter((t) => inDomain(t.v))
+              .map((t) => (
+                <g key={tickKey(t)} className="tick-mark" data-v={t.v} opacity={t.fade < 1 ? t.fade : undefined}>
+                  <line
+                    className="grid"
+                    x1={x(t.v)}
+                    x2={x(t.v)}
+                    y1={layout.top - 4}
+                    y2={layout.height - (layout.ref ? 22 : 6)}
+                  />
+                  <text className="tick" x={x(t.v)} y={layout.top - 10} textAnchor="middle">
+                    {t.text}
+                  </text>
+                </g>
+              ))}
             {layout.ref && (
               <g className="ref">
-                <line x1={layout.ref.x} x2={layout.ref.x} y1={layout.top - 4} y2={layout.height - 22} />
+                <line x1={x(scale[4])} x2={x(scale[4])} y1={layout.top - 4} y2={layout.height - 22} />
                 <text className="reflab" x={layout.ref.labelX} y={layout.ref.labelY} textAnchor="middle">
                   All stories shown: <tspan className="reflab-value">{layout.ref.value}</tspan>
                 </text>
@@ -173,27 +216,32 @@ export default function RangeChart({
             )}
           </g>
           {layout.rows.map((r, ri) => {
-            const g = glide[ri] || (r.ok ? [r.bar.x, r.bar.width, r.dotX, r.value.x] : null);
+            const m = marks[ri];
             const details = rowDetails(rows[r.index], metric.format, minN);
-            const on = active === r.index;
+            const bar = m ? capsule(x(m[0]), x(m[1])) : null;
             return (
               <g
                 key={r.index}
-                className={`row${r.small ? " small" : ""}${r.ok ? "" : " hidden-group"}${on ? " active" : ""}`}
-                role="img"
-                tabIndex={0}
-                aria-label={details.label}
-                onPointerEnter={(e) => e.pointerType === "mouse" && !pinned && setActive(r.index)}
-                onPointerLeave={(e) => e.pointerType === "mouse" && !pinned && setActive(null)}
-                onFocus={() => !pinned && setActive(r.index)}
-                onBlur={() => !pinned && setActive(null)}
-                onClick={() => toggle(r.index)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    toggle(r.index);
-                  }
+                ref={(el) => {
+                  rowEls.current[ri] = el;
                 }}
+                className={`row${r.small ? " small" : ""}${r.ok ? "" : " hidden-group"}${active === r.index ? " active" : ""}`}
+                role="img"
+                tabIndex={ri === tabRow ? 0 : -1}
+                aria-label={details.label}
+                onPointerEnter={(e) => {
+                  if (e.pointerType === "mouse" && shown?.by !== "tap") setShown({ i: r.index, by: "hover" });
+                }}
+                onPointerLeave={(e) => {
+                  if (e.pointerType === "mouse") setShown((s) => (s?.by === "hover" ? null : s));
+                }}
+                onFocus={() => {
+                  setFocusIdx(ri);
+                  setShown((s) => (s?.by === "tap" ? s : { i: r.index, by: "focus" }));
+                }}
+                onBlur={() => setShown((s) => (s?.by === "focus" && s.i === r.index ? null : s))}
+                onClick={() => setShown((s) => (s?.by === "tap" && s.i === r.index ? null : { i: r.index, by: "tap" }))}
+                onKeyDown={(e) => onRowKey(e, ri)}
               >
                 <rect className="row-hit" x={0} y={r.y0} width={layout.width} height={r.y1 - r.y0} />
                 <text className="glabel" x={r.labelPos.x} y={r.labelPos.y} textAnchor={r.labelPos.anchor}>
@@ -206,15 +254,15 @@ export default function RangeChart({
                   <>
                     <rect
                       className="iqr"
-                      x={g[0]}
+                      x={bar.x}
                       y={r.cy - 6}
-                      width={g[1]}
+                      width={bar.width}
                       height={12}
                       rx={6}
                       fill={r.small ? `url(#${hatchId})` : undefined}
                     />
-                    <circle className="median" cx={g[2]} cy={r.cy} r={7} />
-                    <text className="gval" x={g[3]} y={r.value.y}>
+                    <circle className="median" cx={x(m[2])} cy={r.cy} r={7} />
+                    <text className="gval" x={r.value.x} y={r.value.y}>
                       {r.value.text}
                     </text>
                   </>
@@ -229,7 +277,7 @@ export default function RangeChart({
         </svg>
         {activeRow && (
           <div
-            className={`chart-tip${pinned ? " pinned" : ""}`}
+            className={`chart-tip${shown.by === "tap" ? " pinned" : ""}`}
             aria-hidden="true"
             style={{
               left: Math.min(Math.max(activeRow.dotX ?? layout.left + 80, 100), layout.width - 100),

@@ -25,9 +25,6 @@ export default function CompareTable({ rows, variable, metric, smallN, minN, id 
 
   return (
     <div className="compare-numbers" id={id}>
-      <p className="cell-detail" aria-live="polite">
-        {detail || "Tap or focus a cell for its numbers."}
-      </p>
       <div className="compare-scroll">
         <table className="compare-table">
           <caption className="visually-hidden">
@@ -82,6 +79,10 @@ export default function CompareTable({ rows, variable, metric, smallN, minN, id 
           </tbody>
         </table>
       </div>
+      {/* after the table and sticky at the bottom of the screen, so a tapped cell's numbers are always in view (F53) */}
+      <p className="cell-detail" aria-live="polite">
+        {detail || "Tap or focus a cell for its numbers."}
+      </p>
       <ul className="step-legend" aria-label="Colors">
         {STEPS.map(([color, text]) => (
           <li key={text}>

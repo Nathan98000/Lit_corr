@@ -629,8 +629,8 @@ table.numbers {
   font-size: 11.5px;
 }
 
-.compare-notes {
-  margin-top: 18px;
+.agebox.compare-age {
+  margin: 14px 0 4px;
   max-width: 62ch;
 }
 
@@ -638,11 +638,22 @@ table.numbers {
   margin-top: 16px;
 }
 
+/* the tapped cell's numbers stay at the bottom of the screen while the table is on it (F53) */
 .cell-detail {
-  min-height: 2.6em;
-  margin: 0 0 8px;
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  min-height: calc(2.6em + 16px);
+  margin: 0;
+  padding: 8px 0;
+  border-top: 1px solid var(--rule);
+  background: var(--paper);
   font-size: 14px;
   color: var(--ink-2);
+}
+
+.compare-table td.cell {
+  scroll-margin-bottom: 72px; /* keyboard focus never ends up under the sticky line */
 }
 
 .compare-scroll {
@@ -2063,6 +2074,18 @@ table.numbers {
   }
 }
 
+/* while the marks glide to another genre, the printed values wait at their final places and fade in at the end */
+.range-chart .gval,
+.range-chart .reflab {
+  transition: opacity 150ms ease-out;
+}
+
+.range-chart svg.gliding .gval,
+.range-chart svg.gliding .reflab {
+  opacity: 0;
+  transition: none;
+}
+
 /* hovering or focusing a row emphasizes it and quiets the others */
 .range-chart .row {
   transition: opacity 120ms ease-out;
@@ -2079,10 +2102,16 @@ table.numbers {
 .chart-empty {
   min-height: 200px;
   display: grid;
-  place-items: center;
+  place-content: center;
+  justify-items: center;
+  gap: 4px;
   color: var(--ink-3);
   text-align: center;
   padding: 24px;
+}
+
+.chart-empty p {
+  margin: 0;
 }
 
 .notes p {

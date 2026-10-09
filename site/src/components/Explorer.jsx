@@ -1,9 +1,10 @@
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { cellStats, endGroups, groupRows, loadVariable, pattern } from "../lib/data.js";
 import { chartValueText } from "../lib/rangeLayout.js";
 import {
   RATE_FOR,
   ageNotes,
+  announcement,
   answerHeading,
   chartTitle,
   oneGroupNote,
@@ -151,6 +152,25 @@ export function nextQuestions(meta, view) {
   return out;
 }
 
+/** The story-age box for totals in compare mode, with its one-tap switch to the per-month or per-1,000-views measure. */
+function TotalsBox({ meta, d, onSwitch }) {
+  const note = d.ageNotes.find((n) => n.kind === "total");
+  if (!note) return null;
+  const rate = RATE_FOR[d.metric.id] && meta.metrics.find((m) => m.id === RATE_FOR[d.metric.id]);
+  return (
+    <div className="agebox compare-age">
+      <p>
+        <b>{note.lead}</b> {note.text}
+      </p>
+      {rate && (
+        <button type="button" className="link-button" onClick={() => onSwitch(rate.id)}>
+          Switch to {rate.label.toLowerCase()}
+        </button>
+      )}
+    </div>
+  );
+}
+
 export default function Explorer({ meta, state, onChange }) {
   const { view, data, busy, error, retry } = useShownData(state);
   const d = view ? describeView(meta, view, data) : null;
@@ -158,21 +178,58 @@ export default function Explorer({ meta, state, onChange }) {
   const numbersId = useId();
   const wide = useMediaQuery("(min-width: 900px)");
   const genreCount = meta.genres.length - 1;
+  // "Check stories of similar age": the panel takes focus when the button opened it (not when the address did), and
+  // "Close" gives focus back to the button
+  const [ageCheckAsked, setAgeCheckAsked] = useState(false);
+  const ageButton = useRef(null);
+  const focusAgeButton = useRef(false);
 
   useEffect(() => {
     if (d && !busy) document.title = d.title;
   }, [d?.title, busy]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  useEffect(() => {
+    if (focusAgeButton.current && ageButton.current) {
+      focusAgeButton.current = false;
+      ageButton.current.focus();
+    }
+  });
+
   const ageCheckOpen = Boolean(
     d && !d.compare && view.check === "age" && view.sub === "all" && d.ageNotes.some((n) => n.kind === "groups"),
   );
   const next = view && !d?.compare ? nextQuestions(meta, view) : [];
+  const checkAge = () => {
+    setAgeCheckAsked(true);
+    onChange({ ...view, check: "age" });
+  };
+  const closeAgeCheck = () => {
+    setAgeCheckAsked(false);
+    focusAgeButton.current = true;
+    onChange({ ...state, check: undefined });
+  };
+  // ways out of a selection that leaves one group or none: back to All genres or All stories (only those that change
+  // something)
+  const wayOut = view && (view.genre !== "all" || view.sub !== "all") && (
+    <p className="inline-actions">
+      {view.genre !== "all" && (
+        <button type="button" className="btn" onClick={() => onChange({ ...state, genre: "all" })}>
+          All genres
+        </button>
+      )}
+      {view.sub !== "all" && (
+        <button type="button" className="btn" onClick={() => onChange({ ...state, sub: "all" })}>
+          All stories
+        </button>
+      )}
+    </p>
+  );
 
   return (
     <section className="explorer" id="explore" aria-label="Explorer">
       <Controls meta={meta} state={state} onChange={onChange} />
       <p className="visually-hidden" aria-live="polite">
-        {!busy && d ? d.answer : ""}
+        {!busy && d ? announcement(d.title, d.answer) : ""}
       </p>
       {error ? (
         <article className="chart-panel">
@@ -188,6 +245,7 @@ export default function Explorer({ meta, state, onChange }) {
           </header>
           {d.compare ? (
             <>
+              <TotalsBox meta={meta} d={d} onSwitch={(metric) => onChange({ ...state, metric })} />
               <p className="compare-caption">
                 Each small chart is one genre. A dot is a group’s typical story compared with that genre’s own typical
                 story (the dashed line); the shaded band runs from 0.67× to 1.5×. Hollow dots: fewer than{" "}
@@ -203,28 +261,6 @@ export default function Explorer({ meta, state, onChange }) {
                 minN={meta.min_n}
                 onPickGenre={(id) => onChange({ ...state, mode: "one", genre: id })}
               />
-              {d.ageNotes.some((n) => n.kind === "total") && (
-              <div className="compare-notes">
-                {d.ageNotes
-                  .filter((n) => n.kind === "total")
-                  .map((n) => (
-                    <div className="agebox" key={n.kind}>
-                      <p>
-                        <b>{n.lead}</b> {n.text}
-                      </p>
-                      {RATE_FOR[d.metric.id] && (
-                        <button
-                          type="button"
-                          className="link-button"
-                          onClick={() => onChange({ ...state, metric: RATE_FOR[d.metric.id] })}
-                        >
-                          Switch to {meta.metrics.find((m) => m.id === RATE_FOR[d.metric.id])?.label.toLowerCase()}
-                        </button>
-                      )}
-                    </div>
-                  ))}
-              </div>
-              )}
               <div className="chart-actions">
                 <button
                   type="button"
@@ -254,20 +290,7 @@ export default function Explorer({ meta, state, onChange }) {
                 {d.oneGroup ? (
                   <div className="takeaway one-group">
                     <p>{oneGroupNote(d.oneGroup)}</p>
-                    {(view.genre !== "all" || view.sub !== "all") && (
-                      <p className="inline-actions">
-                        {view.genre !== "all" && (
-                          <button type="button" className="btn" onClick={() => onChange({ ...state, genre: "all" })}>
-                            All genres
-                          </button>
-                        )}
-                        {view.sub !== "all" && (
-                          <button type="button" className="btn" onClick={() => onChange({ ...state, sub: "all" })}>
-                            All stories
-                          </button>
-                        )}
-                      </p>
-                    )}
+                    {wayOut}
                   </div>
                 ) : (
                   d.shownCount > 0 && (
@@ -279,7 +302,7 @@ export default function Explorer({ meta, state, onChange }) {
                   )
                 )}
                 <RangeChart
-                  key={`${d.variable.id}/${view.sub}`}
+                  key={`${d.variable.id}/${view.sub}/${view.metric}`}
                   rows={d.rows}
                   overall={d.overall}
                   metric={d.metric}
@@ -288,6 +311,7 @@ export default function Explorer({ meta, state, onChange }) {
                   minN={meta.min_n}
                   title={d.title}
                   n={d.gd?.n}
+                  emptyActions={wayOut}
                 />
                 <NumbersTable
                   id={numbersId}
@@ -306,6 +330,8 @@ export default function Explorer({ meta, state, onChange }) {
                 wide={wide}
                 onChange={onChange}
                 ageCheckOpen={ageCheckOpen}
+                onCheckAge={checkAge}
+                ageButton={ageButton}
               />
               <div className="chart-actions">
                 <button
@@ -324,7 +350,16 @@ export default function Explorer({ meta, state, onChange }) {
               </div>
             </div>
           )}
-          {ageCheckOpen && <AgeCheck meta={meta} view={view} d={d} onClose={() => onChange({ ...state, check: undefined })} />}
+          {ageCheckOpen && (
+            <AgeCheck
+              meta={meta}
+              view={view}
+              d={d}
+              takeFocus={ageCheckAsked}
+              onFocused={() => setAgeCheckAsked(false)}
+              onClose={closeAgeCheck}
+            />
+          )}
           {next.length > 0 && (
             <nav className="next-questions" aria-label="Next questions">
               <h3>Next questions</h3>

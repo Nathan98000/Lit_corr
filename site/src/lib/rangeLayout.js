@@ -57,6 +57,18 @@ export function valueDomain(rows, overall, format, count = 6) {
 
 const isShown = (s) => s && !s.suppressed;
 
+/** The value scale: x for a value, clamped to the domain [lo, hi] of a plot that starts at `left`. */
+export function scaleX({ lo, hi, left, plotW }) {
+  return (v) => left + ((Math.min(Math.max(v, lo), hi) - lo) / (hi - lo || 1)) * plotW;
+}
+
+/** The middle-half capsule between two x positions: never narrower than 12 px, centered on the span. */
+export function capsule(x1, x2) {
+  const mid = (x1 + x2) / 2;
+  const width = Math.max(12, x2 - x1);
+  return { x: Math.min(x1, mid - width / 2), width };
+}
+
 /** How the chart prints its medians: one number of decimals for every group and the "all stories" line. */
 export function chartValueText(rows, overall, format) {
   const meds = rows.filter((r) => isShown(r.stats)).map((r) => r.stats.median);
@@ -124,7 +136,7 @@ export function rangeLayout({ rows, overall, format, width, smallN = 30, minN = 
     return mode === "side" ? `${formatCount(s.n)} stories${star}` : `n = ${formatCount(s.n)}${star}`;
   };
   const top = 30;
-  const x = (v) => left + ((Math.min(Math.max(v, lo), hi) - lo) / (hi - lo || 1)) * plotW;
+  const x = scaleX({ lo, hi, left, plotW });
 
   const hasRef = isShown(overall);
   const rowsTop = top;
@@ -172,11 +184,7 @@ export function rangeLayout({ rows, overall, format, width, smallN = 30, minN = 
       ],
     };
     if (ok) {
-      const x1 = x(s.p25);
-      const x2 = x(s.p75);
-      const mid = (x1 + x2) / 2;
-      const barW = Math.max(12, x2 - x1);
-      out.bar = { x: Math.min(x1, mid - barW / 2), width: barW };
+      out.bar = capsule(x(s.p25), x(s.p75));
       out.dotX = x(s.median);
       const vx = Math.max(out.bar.x + out.bar.width, out.dotX + 7) + 8;
       out.value = { x: vx, y: cy + 4.5, text: valueText(s.median) };

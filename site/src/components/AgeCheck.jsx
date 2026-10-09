@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { cellStats, groupRows, loadVariable, pattern } from "../lib/data.js";
 import { formatCount } from "../lib/format.js";
+import { scrollBehavior } from "../lib/motion.js";
 import { chartTitle } from "../lib/wording.js";
 import RangeChart from "./RangeChart.jsx";
 
@@ -17,11 +18,20 @@ export function verdictWords(variable, [direction, effect]) {
 
 /**
  * "Check stories of similar age" (idea I1): the same chart within three publication periods, side by side on wide
- * screens and stacked on phones, on one shared scale. Loads the three existing files on demand.
+ * screens and stacked on phones, on one shared scale. Loads the three existing files on demand. Opened with its
+ * button (`takeFocus`), it scrolls its heading to the top of the screen and takes focus (F37); opened from an address
+ * that already asks for it, it stays where the page put it.
  */
-export default function AgeCheck({ meta, view, d, onClose }) {
+export default function AgeCheck({ meta, view, d, onClose, takeFocus = false, onFocused }) {
   const [files, setFiles] = useState(null);
   const [failed, setFailed] = useState(false);
+  const heading = useRef(null);
+  useEffect(() => {
+    if (!takeFocus || !heading.current) return;
+    heading.current.scrollIntoView?.({ behavior: scrollBehavior(), block: "start" });
+    heading.current.focus({ preventScroll: true });
+    onFocused?.();
+  }, [takeFocus]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     let live = true;
     Promise.all(PERIODS.map((p) => loadVariable(view.v, p))).then(
@@ -53,7 +63,9 @@ export default function AgeCheck({ meta, view, d, onClose }) {
   return (
     <section className="age-check" aria-labelledby="age-check-title">
       <div className="age-check-head">
-        <h3 id="age-check-title">Stories of similar age</h3>
+        <h3 id="age-check-title" ref={heading} tabIndex={-1}>
+          Stories of similar age
+        </h3>
         <button type="button" className="btn" onClick={onClose}>
           Close
         </button>

@@ -139,7 +139,12 @@ export default function App() {
 
       <main id="main" ref={mainRef} tabIndex={-1} className="wrap">
         {error ? (
-          <LoadError onRetry={retry} detail={error} />
+          <>
+            <div className="intro">
+              <Kicker meta={null} />
+            </div>
+            <LoadError onRetry={retry} detail={error} />
+          </>
         ) : route.page === "methodology" ? (
           meta ? <Methodology meta={meta} section={route.section} /> : <div className="page-placeholder" aria-busy="true" />
         ) : route.page === "patterns" ? (

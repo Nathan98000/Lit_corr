@@ -230,7 +230,9 @@ describe("loading", () => {
     release();
     await waitFor(() => expect(fullTitle()).toMatch(/anger/i));
     expect(document.querySelector(".chart-panel").getAttribute("aria-busy")).toBe("false");
-    expect(live.textContent).toBe(chartTitle().textContent);
+    // the full title, then the short answer when it says something else (F47)
+    expect(chartTitle().textContent).toBe("No clear pattern");
+    expect(live.textContent).toBe(`${fullTitle()}. No clear pattern.`);
   });
 
   it("draws the page frame before the data arrives", async () => {

@@ -694,3 +694,12 @@
     border-left-color: CanvasText;
   }
 }
+
+/* a characteristic with many groups makes a wide table: it scrolls in its own box, never the page */
+.genre-numbers:not(.visually-hidden) {
+  overflow-x: auto;
+}
+
+.genre-numbers table.numbers {
+  max-width: none;
+}

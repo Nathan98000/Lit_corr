@@ -6,7 +6,7 @@
 import { formatCount, stepDecimals, formatFixed } from "./format.js";
 import { PHONE, niceTicks, textWidth, wrapLabel } from "./rangeLayout.js";
 
-export const SPLIT_SIDE = 760; // from this width the mostly-zero chart's two plots sit side by side
+export const SPLIT_SIDE = 728; // the mostly-zero chart's plots sit side by side from a 760 px screen (less its margins)
 const ROW = 31;
 const PHONE_LABEL = 116;
 const LABEL_SIZE = 14;

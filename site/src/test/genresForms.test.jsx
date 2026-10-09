@@ -9,7 +9,7 @@ import App from "../App.jsx";
 import { splitRows } from "../components/GenreSplit.jsx";
 import { mixRows } from "../components/GenreMix.jsx";
 import { clearCache } from "../lib/data.js";
-import { bandColors, inkOn, layoutProblems, mixColors, mixLayout, splitLayout } from "../lib/genreLayout.js";
+import { SPLIT_SIDE, bandColors, inkOn, layoutProblems, mixColors, mixLayout, splitLayout } from "../lib/genreLayout.js";
 import { allGenresLine, bandQuartiles, chartDomain, formatNumber, genreRows, rowDetails, tickFormatFor } from "../lib/genres.js";
 import { fixtureFetch, fixtureMeta, realMeta } from "./fixtures.js";
 
@@ -175,8 +175,8 @@ describe("ordered bands: 100% bars from light to dark", () => {
 });
 
 describe("mostly zero: the split chart (D6)", () => {
-  it("stacks the two halves below 760 px: the share above 0 first, then the range under its heading", async () => {
-    await openGenres("#/genres?var=emo_anger_per_1k", 600);
+  it("stacks the two halves below a 760 px screen: the share above 0 first, then the range under its heading", async () => {
+    await openGenres("#/genres?var=emo_anger_per_1k", 727);
     const halves = [...document.querySelectorAll(".genre-split .split-plot")];
     expect(halves.map((h) => h.className.match(/half-(\w+)/)[1])).toEqual(["share", "range"]);
     expect([...document.querySelectorAll(".split-head")].map((p) => p.textContent)).toEqual([
@@ -202,8 +202,8 @@ describe("mostly zero: the split chart (D6)", () => {
     ]);
   });
 
-  it("puts the two plots side by side from 760 px, one row per genre", async () => {
-    await openGenres("#/genres?var=emo_anger_per_1k", 1000);
+  it("puts the two plots side by side from a 760 px screen (a 728 px chart), one row per genre", async () => {
+    await openGenres("#/genres?var=emo_anger_per_1k", 728);
     const plots = document.querySelectorAll(".genre-split .split-plot");
     expect(plots).toHaveLength(1);
     expect(document.querySelector(".split-heads").textContent).toBe("Stories above 0Among stories above 0 (per 1,000 words)");
@@ -249,13 +249,13 @@ describe("the forms on the real data", () => {
         if (!["grp", "band", "zero"].includes(entry.k)) continue;
         const variable = real.variables.find((x) => x.id === id);
         const rows = genreRows(real, file, id);
-        for (const width of [288, 343, 600, 736, 1032]) {
+        for (const width of [288, 343, 600, 727, 728, 736, 1032]) {
           let layouts;
           if (entry.k === "zero") {
             const sRows = splitRows(rows, variable, real.min_n);
             const domain = chartDomain(sRows.map((r) => ({ stats: r.above })), "num");
             const args = { rows: sRows, width, domain, printed: (v) => formatNumber(v, entry.fmt), tickFormat: tickFormatFor("zero", entry.fmt) };
-            layouts = width >= 760 ? [splitLayout(args)] : [splitLayout({ ...args, half: "share" }), splitLayout({ ...args, half: "range" })];
+            layouts = width >= SPLIT_SIDE ? [splitLayout(args)] : [splitLayout({ ...args, half: "share" }), splitLayout({ ...args, half: "range" })];
           } else {
             layouts = [mixLayout({ rows: mixRows(rows, variable, entry.k, real.min_n), width })];
           }

@@ -35,8 +35,8 @@ export function splitHeadings(variable, fmt) {
  * A mostly-zero characteristic in every genre (D6): where most stories score 0, a plain median would read 0 in most
  * genres, so the chart answers two questions: how many of a genre's stories are above 0 (a bar from 0 to 100%, its
  * share printed, with ▲ ▼ when the genre clearly differs), and how much among those stories (interquartile range and
- * median on its own scale). From 760 px the two plots sit side by side, below they are stacked, the share first, then
- * the range under its heading, a genre per row in both. All genres is each plot's dashed line.
+ * median on its own scale). On screens from 760 px wide the two plots sit side by side, below they are stacked, the
+ * share first, then the range under its heading, a genre per row in both. All genres is each plot's dashed line.
  */
 export default function GenreSplit({ meta, variable, entry, rows, highlight, sub, title, onNavigate }) {
   const [ref, width] = useWidth(720, "genres");

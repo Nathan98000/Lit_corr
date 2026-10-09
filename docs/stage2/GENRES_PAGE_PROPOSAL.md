@@ -1,6 +1,6 @@
 # Genres page: proposal for architecture and design
 
-Status: proposal only. Nothing in `site/` or `litcorr/` has been changed.
+Status: proposal, approved with the owner's decisions in `STAGE2_GENRES_PAGE_PROMPT.md` and built on 2026-10-09 (section 13).
 Date: 2026-10-09. Data: handoff `litcorr_stage2_handoff_20261008.zip` (read-only), 8,996 included stories in 30 genres.
 
 Every number and chart in this proposal is real. The per-genre summaries were computed from the handoff on your laptop
@@ -605,3 +605,231 @@ Examples of the largest differences:
   sex scene starts +0.35 (0.44 vs 0.20 of the way in); words before the first explicit term +0.30 (309 vs 137).
 * **Erotic Horror:** emotional tone −0.36; anxiety & fear +0.36; sound words +0.35; sensory language +0.31.
 * **Anal:** anatomical terms +0.53; sexual language +0.52 (34.4 vs 19.3); profanity +0.38; dialogue share −0.28.
+
+---
+
+## 13. As built
+
+Built on 2026-10-09 on branch `genres-page` (from `main` at `a5118ce`), one commit per step of the work plan in
+`STAGE2_GENRES_PAGE_PROMPT.md` (committed with this section, as the earlier prompts are), then two fixes from the final
+checks. Nothing is pushed. At every commit `npm test`, `npm run build` and `python -m pytest
+tests/test_stage2_site_data.py` pass; at the end there are **226 Vitest tests in 27 files** (161 in 20 before) and **30
+pytest tests** (20 before).
+
+Measured as in sections 11–12 of `DESIGN_REVIEW_2.md`: this Mac, the cached headless Chromium with Playwright 1.56, a
+frozen copy of the final build served with gzip by `serve.mjs`. The new scripts are in `Claude outputs/design-review-2-tools/`
+(its README lists them), outside git.
+
+### 13.1 Commits
+
+| Commit | Step |
+|---|---|
+| `943d7bf` | The proposal and g01–g08, as they were |
+| `43ccc7f` | Data: `genres/<included>.json`, the rule, the meta additions and the Python tests (D1, D2, D5, D10) |
+| `dc22cfb` | Shell: addresses and their sanitizing, the masthead, the lazy page, loading and errors (D4, D8, D9) |
+| `38b70ac` | View 1 for numbers and yes/no: heading, lists, age note, order, details, table; `rangeLayout`'s options (D3, D10) |
+| `a0dd40c` | View 1 for named groups, ordered bands and mostly-zero characteristics (D6) |
+| `25af251` | View 2 |
+| `7326739` | Explore (D7 and Keep exploring), How it works, the READMEs |
+| `e6ba8a6` | Fix: the split chart sits side by side from a 760 px screen; wide tables scroll in their own box |
+| `e73e666` | Fix: fewer layout shifts when the option changes |
+| this commit | Section 13, screenshots b01–b10, the prompt |
+
+### 13.2 The checkpoint: the size of the files (the owner's decision)
+
+Built exactly to §1.2 of the prompt, the nine files were **61.6–67.4 KB gzipped**, over the 60 KB cap. The proposal's
+"about 47 KB" came from a prototype that had the above-0 numbers for 3 characteristics, not 45. The owner chose to leave
+out what the page does not use or can work out:
+
+* a mostly-zero characteristic's `q` holds only each genre's number of stories: nothing on the page used its plain
+  quartiles (the split chart, its table and View 2 all use the stories above 0);
+* in `z`, a genre's share above 0 is left out, and the page works it out as stories above 0 ÷ stories. All genres keeps
+  its weighted share.
+
+The files are now **53.0–56.7 KB gzipped** (177–189 KB raw; `all.json` is 53,022 bytes, 51.8 KiB as served).
+Everything else follows §1 of the prompt:
+
+* 185 characteristics, each with its kind from `make_bins`;
+* the `subsetConflict` combinations left out;
+* quartiles to 3 significant digits, and whole years for `pub_year`;
+* shares to 3 decimals, r and the total variation distance to 2, ages to 1.
+
+`meta.json` gains `genre_rule` and `more_word`/`less_word` on the 20 D10 characteristics. Neither the `v/` files nor
+`patterns.json` changed: they were compared byte for byte with the build before.
+
+### 13.3 The acceptance numbers, as built
+
+| Number (§1.6) | Expected | Built |
+|---|---|---|
+| Characteristics by kind | 185: num 117, zero 45, bin 13, band 6, grp 4 | The same |
+| Pairs with n ≥ 30; pairs that clearly differ | 5,547; 922 | 5,547; 922 |
+| Per genre: min, median, max | 0, 22, 116 | 0, 22, 116 (the 16th of 30, as `gp_rule.py` takes it; the two middle values are 19 and 22) |
+| Romance | 28: 18 lower, 10 higher | 28: 18 lower, 10 higher, no different mix |
+| Romance's largest | sexual language, sentences with sexual language, sexual-action terms | sexual language, the share of sentences with sexual language, **anatomical terms** (below) |
+| Fetish, How To, Reviews & Essays, Erotic Couplings, Anal | 0, 116, 115, 10, 28 | The same |
+| Story length in words | 8 genres; lower: Reviews & Essays, How To, Letters & Transcripts, Toys & Masturbation, Humor & Satire, Crossdressing, Anal; higher: Novels and Novellas | 8 genres; lower: the same five, then **Anal, Crossdressing**; higher: Novels and Novellas |
+| First-person narration; narrative perspective; romance language | 9; 9; only Romance | The same |
+| Characteristics that no genre clearly differs on | 25 | 25 |
+
+**Two differences, with one cause.** The file keeps r to 2 decimals (§1.2), and the lists are ordered by |r| as stored:
+
+* sexual-action terms (−0.433) and anatomical terms (−0.432) are both stored as −0.43;
+* Anal (−0.208) and Crossdressing (−0.213) are both stored as −0.21.
+
+Ties keep the topics' order for characteristics (View 2) and A–Z for genres (View 1). So anatomical terms comes third,
+and Anal comes before Crossdressing. The counts and the flags are unchanged.
+
+Rounding also shows in two of the copy's examples:
+
+* Novels and Novellas' median story length is exactly 5,055 words, which `sig(…, 3)` writes as **5,060**. The copy and
+  g01 say 5,050, which came from the prototype's data.
+* First Time's 3,195 words is written as 3,200 (g01: 3,190).
+
+### 13.4 Measurements
+
+| Measure | Result |
+|---|---|
+| First load (`firstbodies.mjs`, gzip bodies) | **152.3 KiB in 6 requests** (149.8 on `main`, budget 155). The script is 86.5 KiB (+2.2: the masthead's link, the addresses and their sanitizing, the Genres sentences Explore uses, `rangeLayout`'s options, `useRowDetails`); the CSS 7.5 (+0.2); `meta.json` 19.0 (+0.2) |
+| The Genres page's own parts | `GenresPage-*.js` 14.9 KiB, `GenresPage-*.css` 2.2 KiB, `genres/all.json` 51.8 KiB. A visit that starts on `#/genres` loads 203.6 KiB in 8 requests |
+| The genres files | 53.0–56.7 KB gzipped each (cap 60 KB; a pytest checks the real files) |
+| axe-core (WCAG 2.0–2.2 A/AA and best practice, `axegenres.mjs`) | **None**, in 32 runs: 16 states at 375 and 1440 px. They cover every form, the numbers shown for three forms, a tapped genre, the picker, View 2 with a topic open and all rows shown, nothing standing out, too few stories, and the error |
+| Real glyph boxes (`labelsgenres.mjs`) | **0 problems** in 2,613 charts. That is every characteristic with All stories, 2020 or later and Under 2,000 words, at 320, 375, 768 and 1440 px, checking text on text, text outside its chart and anything wider than the page. It also checked "One genre" rows for five genres with every topic open |
+| The masthead (`masthead.mjs`) | Nothing wraps, clips or scrolls at 320, 360, 375, 390, 400, 414, 430, 480, 559, 560, 768 and 1440 px, nor at any width from 320 to 1440. Links are 52 px tall, text 14.5 px or more. Below 560 px How it works leaves; below 420 px the links tighten (14.5 px, 6 px padding); Explore shows from 360 px, with 24 px to spare there |
+| Tap areas (`tapsgenres.mjs`) | Every control owns 90–100% of its box; the misses are the switch's rounded ends and a 2 px seam between its halves. Heights: the switches 44–46 px, "Only include" and Highlight 44 px, the masthead's links 52 px. On phones the question's word is 34 px and View 2's genre select 36 px, as the sentence's words are on Explore |
+| Page movement (`snapgenres.mjs`) | **0 px in 64 of 64 cases**: the picker opened, typed in, browsed, closed and picked from; "Only include", Highlight, the order and View 2's genre changed; at 375, 768, 1280 and 1440 px, from the top and from 300 px down |
+| Forced colors (`forcedgenres.mjs`, light and dark) | The marks, the outlines, the dots, the shares and the highlighted row's outline all stay readable |
+| Layout shift, slow 4G (`clsgenres.mjs`) | 0.000 for a visit starting on either view and for the view switch; 0.001 arriving from Explore. A scripted change to "Published 2020 or later": 0.091 at 375 px and 0.011 at 1440 px. The shift comes when the new file arrives: the story-age note goes and the lists grow. Browsers do not count a visitor's own choice for 500 ms |
+| Page heights | View 1, story length: 2,502 px at 375 and 1,803 at 1440, with the first chart row at 881 and 659 px. The split chart at 375: 3,933. View 2, topics closed: Romance 2,194 and 1,838; How To 2,566 and 2,191; Fetish 1,109 and 1,046 |
+
+### 13.5 Screenshots
+
+Palette-compressed; 1440 px at half size.
+
+| View | Screenshot |
+|---|---|
+| Story length in words, Romance highlighted, 1440 px | [b01](genres-page/b01-one-characteristic-numbers-1440.png) |
+| First-person narration, 1440 px | [b02](genres-page/b02-one-characteristic-yes-no-1440.png) |
+| Narrative perspective, Romance highlighted, 1440 px | [b03](genres-page/b03-one-characteristic-named-groups-1440.png) |
+| Romance language: the split chart, 1440 px | [b04](genres-page/b04-one-characteristic-mostly-zero-1440.png) |
+| Story length at 375 px: the first screen, and the whole page with Romance tapped | [b05](genres-page/b05-one-characteristic-375.png) |
+| Sexual language, 2020 or later, by median, 1440 px | [b06](genres-page/b06-one-characteristic-by-median-1440.png) |
+| One genre: Romance with Sexual content open, and Fetish, 1440 px | [b07](genres-page/b07-one-genre-1440.png) |
+| One genre: Romance, 375 px | [b08](genres-page/b08-one-genre-375.png) |
+| The masthead at 320, 375, 560 and 768 px | [b09](genres-page/b09-masthead-320-375-560-768.png) |
+| Explore's new Keep exploring item (375 and 1440 px) and a genre's details card | [b10](genres-page/b10-explore-keep-exploring-and-details-card.png) |
+
+![One characteristic, every genre, 1440 px](genres-page/b01-one-characteristic-numbers-1440.png)
+
+![One genre, 1440 px](genres-page/b07-one-genre-1440.png)
+
+### 13.6 Judgment calls
+
+Details the prompt left open, with one line of reasoning each.
+
+**Data**
+
+1. `fmt` is written only for num and zero entries: the other forms print shares or band labels.
+2. Shares of named groups and bands are rounded by largest remainders, so a row adds up to exactly 1 (the 100% bars
+   close); whole shares are written 0 and 1.
+3. A genre's median age is null when it has fewer than MIN_N stories in the option: it would be a summary of fewer than
+   10 stories.
+4. Publication years are rounded half up to whole years; r is never written "−0.0".
+5. The chi-square test leaves out groups that no story of the option has (never with All stories); the rule is otherwise
+   `gp_rule.py`'s.
+6. The Python tests use an extended synthetic handoff (`extended=True`: publication year, story length, age, month, the
+   author's number of stories, and three characteristics that differ between genres on purpose). The website's
+   fixtures come from the unchanged default, so only their `meta.json` and `genres/` files changed.
+
+**Addresses, masthead, shell**
+
+7. View 1 writes `var`, `include`, `genre`, `sort`; View 2 writes `view`, `genre`, `include` (the prompt's examples).
+   View 2 keeps the characteristic in memory, not in the address, for the way back.
+8. Option conflicts apply to View 1 only: View 2 shows every characteristic its option's file holds.
+9. D8's "chose" counts Explore's genre (when not All genres), the Highlight and View 2's genre, from an address too.
+10. The masthead tightens below 420 px rather than 400, and hides Explore below 360 px rather than 400: measured, it fits
+    from 360 px.
+11. The Genres link prefetches the option of the last Genres address (`genres/all.json` on a first visit).
+12. The kicker is drawn by the page shell (the main chunk), so the h1 is there while the page's code loads.
+13. The view switch and the order are native radios in a `radiogroup`, labeled "Compare" and "Order" (the mock-up's
+    label); like any radios, the arrow keys switch at once.
+14. A link between the views (a details link, a View 2 row) moves focus to the new question; the view switch keeps
+    focus on itself.
+15. The live region says the heading and the takeaway again when only the order changes (cleared, then set).
+16. The page's styles are a lazy stylesheet (`genres.css`), so the first load's CSS grew by only the masthead's and the
+    switches' rules.
+
+**One characteristic, every genre**
+
+17. `rangeLayout` gains a value column with marks, a Stories column, a phone label column (two-line names), a fixed
+    domain, tick labels, the dashed line's label and the "too few" words. On phones each row is as tall as it needs:
+    44 px, or 57 px when a two-line name also carries a count. A fingerprint of 15,152 Explore layouts guards that
+    Explore is unchanged.
+18. A num chart's axis runs from the lowest quartile to the highest (4% to spare), from 0 when the lowest is within
+    half the span. Years and percentages get their own tick labels.
+19. Numbers are printed with the file's 3 significant digits, not one number of decimals per column as on Explore.
+    Percentages are whole numbers, with one decimal under 1% ("0.1%"). Ages have one decimal ("10.7 years"), as the
+    copy shows.
+20. Units come after a number only for plurals and rates, so "part" and "US school grade" (a scale) get none. Exactly
+    one is singular ("1 page").
+21. Yes/no characteristics read "All genres: first-person stories make up 57% of stories", and a genre's details read
+    "72% first-person stories". View 2's takeaway uses that subject ("first-person stories (more common)"), since yes/no
+    nouns such as "has dialogue" do not read in a list.
+22. Band labels are lower-cased mid-sentence ("median middle"), and a range of them reads "1 story to 6–20", since the
+    labels hold dashes. A band's details give its median band, then every share.
+23. Named groups are "a clearly different mix from all genres" in a row's name, and "A clearly different mix" in the card
+    and the table, with ≠.
+24. A genre with fewer than 30 stories is "too few stories to compare" in its details and the table (Explore's
+    phrase). The legend adds Explore's "Fewer than 30 stories" key when one is drawn.
+25. The details always give the comparison, "no clear difference" included, in the phone's line too. The card says
+    "Compared with all genres: Clearly shorter" on one line.
+26. Near the chart's end, the card opens above its row. A tap keeps it and makes its link clickable; Tab moves from the
+    row to the link, and Escape goes back to the row. All genres has no link.
+27. Named groups take a rank palette: #2b63c6 for the largest across all genres, then #c9c3b8, #d98a52, #8fb4f4 and
+    #efece6. Bands go from light blues to dark blues, skipping the middle, where neither ink reaches 4.5:1. The text on a
+    segment is white or ink, by contrast.
+28. A small genre's 100% bar gets a white hatch over its colors and a dashed outline.
+29. The split chart sits side by side from a 728 px chart, which is a 760 px screen less its margins. Both plots carry
+    All genres as a dashed line, labeled like the other forms. The range half's heading names a unit only when it is a
+    plain one, and its genres with too few stories above 0 say "Fewer than 10 stories" under that heading.
+30. "Open in Explore →" keeps the reader's last Explore measure.
+31. The age note's "Compare stories published 2020 or later" replaces the address, as a control does (like Explore's
+    "Switch to …").
+32. On phones "Only include" has a line of its own, and while another option loads the answer keeps describing the file
+    on screen, its option included (layout shift, 13.4).
+
+**One genre**
+
+33. The legend is g03's ("Romance: median · Romance: interquartile range · All genres: interquartile range, | median"):
+    the copy has none for View 2.
+34. Rows with the same |r| keep the topics' order. In a topic's list the stand-outs carry ▲ ▼ ≠ before their values.
+    Each list sizes its own values column, and so its plots.
+35. Yes/no and mostly-zero rows run from 0 to 100%. Band rows sit on an evenly spaced band axis. Num rows run from all
+    genres' p10 to p90, widened to the genre's interquartile range, from 0 when the lowest is within 40% of the span
+    (the mock-up's rule).
+36. The story-age note shows with All stories only, as in View 1. "Biggest difference" is singular for one; counts read
+    "1 characteristic".
+37. With too few stories the sentence is the panel's heading, with "Show all stories", and no topics. View 2 has no
+    actions (the prompt lists none).
+
+**Explore and How it works**
+
+38. Keep exploring's new item keeps the option. It is left out for publication month and weekday, which the Genres page
+    does not show; in compare mode it asks the View 1 question.
+39. "Comparing genres" takes its numbers from `meta.genre_rule` (60 in 100, 0.2, 20 points, 20%, 99.9%, 30) and the
+    genres' sample (300); the 99% of "tend to" stays as written, since it is not in `meta`.
+
+### 13.7 Still open
+
+- **Real devices and screen readers**: everything was checked in headless Chromium and with Testing Library; not on a
+  phone, and not with VoiceOver, TalkBack or NVDA.
+- **The first chart row at 375 × 667** starts at 881 px, below the first screen: the takeaway, the story-age note and the
+  legend come first, as in g02.
+- **Ties at two decimals** order a few lists differently from the unrounded r (13.3). Keeping r to 3 decimals would add
+  about 1 KB per file.
+- **Layout shift after an option change** is 0.091 at 375 px on slow 4G in a scripted run, under 0.1 but close; it comes
+  from the new file's longer lists and the story-age note leaving.
+- **The page's chunk** is 14.9 KiB gzipped, more than the proposal's 6–9 KB estimate: four forms, View 2 and their
+  details.
+- **The split chart on phones** is long (3,933 px at 375) because its two halves are stacked, as specified.
+- **Forced colors**: named groups keep their own colors on the system background, since they are told apart by color
+  and printed shares.

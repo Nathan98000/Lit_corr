@@ -1,0 +1,214 @@
+/* The Genres page's own styles. They load with the page's code (GenresPage.jsx imports them), so the first load of
+   the site stays the same; the masthead, the controls row and the switches are in styles.css. Colors are the
+   variables of styles.css. */
+
+/* ------------------------------------------------------------------ takeaway and notes */
+.genre-takeaway p {
+  margin: 0 0 3px;
+}
+
+.genre-takeaway .all-line {
+  margin: 6px 0 0;
+}
+
+.genre-takeaway b {
+  font-weight: 650;
+}
+
+.genre-age {
+  max-width: 62ch;
+  margin: 12px 0 4px;
+}
+
+.genre-legend a {
+  white-space: nowrap;
+}
+
+.genre-legend .key-median {
+  width: 12px;
+  height: 12px;
+  background: var(--accent-ink);
+}
+
+.genre-legend .key-iqr {
+  width: 22px;
+  height: 10px;
+  border-radius: 5px;
+  background: var(--accent-bar);
+  border: 1px solid var(--accent);
+}
+
+.genre-legend .key-ref {
+  width: 0;
+  height: 14px;
+  border-top: 0;
+  border-left: 1.5px dashed var(--ink-2);
+}
+
+/* a bar from 0 with a dot at its end: the share of stories */
+.genre-legend .key-share {
+  width: 24px;
+  height: 12px;
+  border-radius: 6px;
+  background:
+    radial-gradient(circle at calc(100% - 6px) 50%, var(--accent-ink) 0 5px, transparent 5.5px),
+    linear-gradient(var(--accent-bar), var(--accent-bar)) 0 1px / calc(100% - 4px) 10px no-repeat;
+}
+
+/* ---------------------------------------------------------------- one characteristic, every genre */
+.genre-chart {
+  margin-top: 8px;
+}
+
+.genre-chart .band-all {
+  fill: var(--band);
+}
+
+.genre-chart .band-highlight {
+  fill: var(--accent-wash);
+}
+
+.genre-chart .all-rule {
+  stroke: var(--rule-2);
+}
+
+.genre-chart .row.all .glabel,
+.genre-chart .row.highlight .glabel {
+  font-weight: 600;
+}
+
+.genre-chart .share-bar {
+  fill: var(--accent-bar);
+}
+
+.genre-chart .row.small .share-bar {
+  stroke: var(--accent);
+  stroke-dasharray: 3 2;
+}
+
+.genre-chart .gn {
+  font-size: 12.5px;
+}
+
+.genre-chart.mode-side .row .gn {
+  font-size: 12px;
+}
+
+/* the labels' halo is the row's own background on the shaded rows */
+.genre-chart .row.all .glabel,
+.genre-chart .row.all .gn,
+.genre-chart .row.all .gval {
+  stroke: var(--band);
+}
+
+.genre-chart .row.highlight .glabel,
+.genre-chart .row.highlight .gn,
+.genre-chart .row.highlight .gval {
+  stroke: var(--accent-wash);
+}
+
+.genre-chart .stories-head {
+  font-size: 12px;
+}
+
+/* the details card holds a link: once a tap keeps it, it takes the pointer */
+.genre-tip {
+  width: 264px;
+  pointer-events: none;
+}
+
+.genre-tip.pinned {
+  pointer-events: auto;
+}
+
+.genre-tip .tip-item {
+  display: contents;
+}
+
+.genre-tip .stands-out {
+  display: block;
+  margin-top: 8px;
+  padding-top: 6px;
+  border-top: 1px solid var(--rule);
+  font-size: 13.5px;
+  line-height: 1.35;
+}
+
+.row-details.genre-line.empty {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.genre-line .stands-out {
+  white-space: normal;
+}
+
+/* ---------------------------------------------------------------------- forced colors */
+@media (forced-colors: active) {
+  .genre-chart .band-all {
+    fill: Canvas;
+    stroke: GrayText;
+  }
+
+  .genre-chart .band-highlight {
+    fill: Canvas;
+    stroke: Highlight;
+    stroke-width: 2px;
+  }
+
+  .genre-chart .all-rule {
+    stroke: GrayText;
+  }
+
+  .genre-chart .share-bar {
+    fill: Canvas;
+    stroke: CanvasText;
+  }
+
+  .genre-chart .row.all .glabel,
+  .genre-chart .row.all .gn,
+  .genre-chart .row.all .gval,
+  .genre-chart .row.highlight .glabel,
+  .genre-chart .row.highlight .gn,
+  .genre-chart .row.highlight .gval {
+    stroke: Canvas;
+  }
+
+  .genre-legend .key {
+    forced-color-adjust: none;
+  }
+
+  .genre-legend .key-median {
+    background: Highlight;
+  }
+
+  .genre-legend .key-iqr {
+    background: Canvas;
+    border-color: CanvasText;
+  }
+
+  .genre-legend .key-ref {
+    border-left-color: CanvasText;
+  }
+
+  .genre-legend .key-share {
+    background: Canvas;
+    border: 1px solid CanvasText;
+  }
+}
+
+/* near the chart's end, the card opens above its row */
+.range-chart .genre-tip.above {
+  transform: translate(-50%, -100%);
+}
+
+.genre-tip .tip-compare {
+  margin: 6px 0 0;
+  color: var(--ink-2);
+}
+
+.genre-tip .tip-compare b {
+  font-weight: 600;
+  color: var(--ink);
+}

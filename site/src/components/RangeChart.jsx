@@ -1,8 +1,9 @@
-import { useEffect, useId, useRef, useState } from "react";
+import { useId, useRef } from "react";
 import { formatAge, formatCount, formatFixed, formatRange, columnDecimals } from "../lib/format.js";
 import { PHONE, capsule, rangeLayout, scaleX } from "../lib/rangeLayout.js";
 import { chartSummary, groupedBy } from "../lib/wording.js";
 import useGlide from "./useGlide.js";
+import useRowDetails from "./useRowDetails.js";
 import useWidth from "./useWidth.js";
 
 /** The full description of one group, for its accessible name and its tooltip. */
@@ -33,7 +34,6 @@ function GroupedBy({ variable }) {
   );
 }
 
-const KEYS = ["ArrowDown", "ArrowUp", "Home", "End"];
 const sameTick = (a, b) => Math.abs(a.v - b.v) < 1e-9;
 
 /**
@@ -69,10 +69,7 @@ export default function RangeChart({
   emptyActions = null,
 }) {
   const [ref, width] = useWidth(720, "chart");
-  const [shown, setShown] = useState(null); // the row whose details are shown: { i, by: "hover" | "focus" | "tap" }
-  const [focusIdx, setFocusIdx] = useState(0); // the row that holds the chart's tab stop
   const frame = useRef(null);
-  const rowEls = useRef([]);
   const ids = useId();
   const titleId = `${ids}-title`;
   const descId = `${ids}-desc`;
@@ -94,22 +91,9 @@ export default function RangeChart({
   const x = scaleX({ lo: scale[0], hi: scale[1], left: scale[2], plotW: scale[3] });
   const anySmall = layout.rows.some((r) => r.small);
   const shownCount = layout.rows.filter((r) => r.ok).length;
-
-  useEffect(() => {
-    if (shown == null) return undefined;
-    const away = (e) => {
-      if (!frame.current?.contains(e.target)) setShown(null);
-    };
-    const esc = (e) => {
-      if (e.key === "Escape") setShown(null);
-    };
-    document.addEventListener("pointerdown", away);
-    document.addEventListener("keydown", esc);
-    return () => {
-      document.removeEventListener("pointerdown", away);
-      document.removeEventListener("keydown", esc);
-    };
-  }, [shown]);
+  const phone = layout.width < PHONE;
+  // the row whose details are shown ({ i, by: "hover" | "focus" | "tap" }) and the rows' keyboard and pointer handlers
+  const { shown, rowProps } = useRowDetails({ ids: layout.rows.map((r) => r.index), frame, phone });
 
   if (!shownCount) {
     return (
@@ -120,7 +104,6 @@ export default function RangeChart({
     );
   }
 
-  const phone = layout.width < PHONE;
   const active = shown == null ? null : shown.i;
   const activeRow = active == null ? null : layout.rows.find((r) => r.index === active);
   const activeDetails = activeRow ? rowDetails(rows[activeRow.index], metric.format, minN) : null;
@@ -139,17 +122,6 @@ export default function RangeChart({
       )}
     </>
   );
-  const tabRow = Math.min(focusIdx, layout.rows.length - 1);
-
-  const onRowKey = (e, ri) => {
-    if (!KEYS.includes(e.key)) return;
-    e.preventDefault();
-    const last = layout.rows.length - 1;
-    const next = { ArrowDown: Math.min(last, ri + 1), ArrowUp: Math.max(0, ri - 1), Home: 0, End: last }[e.key];
-    setShown({ i: layout.rows[next].index, by: "focus" });
-    setFocusIdx(next);
-    rowEls.current[next]?.focus();
-  };
 
   // During a glide every tick sits on the frame's scale: the old ticks fade out as the new ones fade in. A value in
   // both sets is one tick, with its new label ("0.0" and "0" never sit on top of each other).
@@ -246,27 +218,10 @@ export default function RangeChart({
             return (
               <g
                 key={r.index}
-                ref={(el) => {
-                  rowEls.current[ri] = el;
-                }}
+                {...rowProps(ri, r.index)}
                 className={`row${r.small ? " small" : ""}${r.ok ? "" : " hidden-group"}${active === r.index ? " active" : ""}`}
                 role="img"
-                tabIndex={ri === tabRow ? 0 : -1}
                 aria-label={details.label}
-                onPointerEnter={(e) => {
-                  // no details on hover in the phone layout: a line appearing under the chart would move the page
-                  if (e.pointerType === "mouse" && !phone && shown?.by !== "tap") setShown({ i: r.index, by: "hover" });
-                }}
-                onPointerLeave={(e) => {
-                  if (e.pointerType === "mouse") setShown((s) => (s?.by === "hover" ? null : s));
-                }}
-                onFocus={() => {
-                  setFocusIdx(ri);
-                  setShown((s) => (s?.by === "tap" ? s : { i: r.index, by: "focus" }));
-                }}
-                onBlur={() => setShown((s) => (s?.by === "focus" && s.i === r.index ? null : s))}
-                onClick={() => setShown((s) => (s?.by === "tap" && s.i === r.index ? null : { i: r.index, by: "tap" }))}
-                onKeyDown={(e) => onRowKey(e, ri)}
               >
                 <rect className="row-hit" x={0} y={r.y0} width={layout.width} height={r.y1 - r.y0} />
                 <text className="glabel" x={r.labelPos.x} y={r.labelPos.y} textAnchor={r.labelPos.anchor}>

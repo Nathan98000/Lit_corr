@@ -20,6 +20,25 @@ export function textWidth(text, size = 14, weight = 400) {
   return units * size * (weight >= 600 ? 1.06 : 1);
 }
 
+/**
+ * A label in a column `maxW` wide, wrapped to at most two lines: at spaces, else after a slash or a hyphen, else
+ * with a hyphen ("Reluctance/" "NonConsent"). Returns the lines.
+ */
+export function wrapLabel(text, maxW, size = 14) {
+  const fits = (t) => textWidth(t, size) <= maxW;
+  if (fits(text)) return [text];
+  const words = text.split(" ");
+  for (let k = words.length - 1; k > 0; k -= 1) {
+    const first = words.slice(0, k).join(" ");
+    if (fits(first)) return [first, words.slice(k).join(" ")];
+  }
+  const cut = text.search(/[/-](?=\S)/);
+  if (cut > 0 && fits(text.slice(0, cut + 1))) return [text.slice(0, cut + 1), text.slice(cut + 1)];
+  let n = text.length - 1;
+  while (n > 1 && !fits(`${text.slice(0, n)}-`)) n -= 1;
+  return [`${text.slice(0, n)}-`, text.slice(n)];
+}
+
 /** "Nice" ticks (1, 2, 2.5 or 5 times a power of ten) from lo to hi: at most `count` intervals. */
 export function niceTicks(lo, hi, count) {
   const span = hi - lo || 1;
@@ -86,27 +105,69 @@ export function chartValueText(rows, overall, format) {
 /**
  * Everything needed to draw the chart at a given width. Text positions come with estimated boxes
  * ({x0, x1, y0, y1}) so that tests can check that nothing overlaps.
+ *
+ * The Genres page draws one row per genre with these options; absent (the explorer), the layout is unchanged:
+ * `domain` ([lo, hi] of the value axis), `tickFormat(v, step)` (the axis labels), `printed(stats)` (a row's value),
+ * `valueColumn` (values right-aligned in a column at the right, each after its row's `mark`, ▲ or ▼), `storiesColumn`
+ * (the stories in a muted column at the right; in the phone layout under the label, below `storiesBelow` stories),
+ * `phoneLabelW` (in the phone layout, the labels in a column this wide, wrapped to two lines, instead of above the
+ * bars), `rowHeight` (of rows beside their labels), `refText(value)` (the dashed line's label) and `noneText` (a row
+ * with too few stories).
  */
-export function rangeLayout({ rows, overall, format, width, smallN = 30, minN = 10 }) {
+export function rangeLayout({
+  rows,
+  overall,
+  format,
+  width,
+  smallN = 30,
+  minN = 10,
+  domain = null,
+  tickFormat = null,
+  printed = null,
+  valueColumn = false,
+  storiesColumn = false,
+  storiesBelow = 250,
+  phoneLabelW = 0,
+  rowHeight = null,
+  refText = null,
+  noneText = "Too few stories to show",
+}) {
   const phone = width < PHONE;
   const longest = Math.max(0, ...rows.map((r) => r.label.length));
-  const mode = !phone ? "side" : longest <= SHORT_LABEL ? "inline" : "stacked";
+  const genreRows = Boolean(valueColumn || storiesColumn || phoneLabelW);
+  const mode = !phone || phoneLabelW ? "side" : longest <= SHORT_LABEL ? "inline" : "stacked";
   const shown = rows.filter((r) => isShown(r.stats));
 
   // value axis and its labels: 4 ticks on phones (never more than 5), 6 wider; fewer if their labels would touch
   const labelSize = 14;
   const nSize = 12.5;
-  const rowH = mode === "stacked" ? 56 : 44;
   const longestLabelW = Math.max(0, ...rows.map((r) => textWidth(r.label, labelSize)));
   const labelW =
-    mode === "side"
-      ? Math.round(Math.min(220, Math.max(110, width * 0.25, longestLabelW + 4)))
-      : mode === "inline"
-        ? 64
-        : 0;
+    mode === "side" && phone
+      ? phoneLabelW
+      : mode === "side"
+        ? Math.round(Math.min(220, Math.max(110, width * 0.25, longestLabelW + 4)))
+        : mode === "inline"
+          ? 64
+          : 0;
+  // labels wrapped into the phone's label column; stories under them, below storiesBelow
+  const lines = rows.map((r) => (phone && phoneLabelW ? wrapLabel(r.label, phoneLabelW - 2, labelSize) : [r.label]));
+  const countBelow = (r) => phone && storiesColumn && isShown(r.stats) && r.stats.n < storiesBelow;
+  const rowH = genreRows ? rowHeight || 44 : mode === "stacked" ? 56 : 44;
+  // a genre's row on a phone is as tall as its name and its stories need, and at least 44 px (a tap target)
+  const heights = rows.map((r, i) =>
+    genreRows && phone ? Math.max(44, 12 + 16 * lines[i].length + (countBelow(r) ? 13 : 0)) : rowH,
+  );
+  const tops = heights.map((_, i) => heights.slice(0, i).reduce((a, b) => a + b, 0));
   const valueText = chartValueText(rows, overall, format);
-  const valueW = Math.max(30, ...shown.map((r) => textWidth(valueText(r.stats.median), 13, 600)));
-  const right = Math.ceil(valueW + 16);
+  const shownValue = (r) => `${r.mark ? `${r.mark} ` : ""}${printed ? printed(r.stats) : valueText(r.stats.median)}`;
+  const valueW = Math.max(30, ...shown.map((r) => textWidth(shownValue(r), 13, 600)));
+  // the stories column (wider screens): its heading and the longest count
+  const storiesW =
+    storiesColumn && !phone
+      ? Math.ceil(Math.max(textWidth("Stories", 12), ...shown.map((r) => textWidth(formatCount(r.stats.n), nSize))) + 18)
+      : 0;
+  const right = Math.ceil(valueW + 16) + storiesW;
   let count = phone ? 4 : 6;
   let lo;
   let hi;
@@ -118,7 +179,13 @@ export function rangeLayout({ rows, overall, format, width, smallN = 30, minN = 
   let left;
   let plotW;
   for (;;) {
-    [lo, hi, ticks, step] = valueDomain(rows, overall, format, count);
+    if (domain) {
+      [lo, hi] = domain;
+      ({ step, ticks } = niceTicks(lo, hi, count));
+      ticks = ticks.filter((t) => t >= lo - 1e-9 && t <= hi + 1e-9);
+    } else {
+      [lo, hi, ticks, step] = valueDomain(rows, overall, format, count);
+    }
     if (phone && ticks.length > 5) {
       ticks = ticks.filter((_, i) => i % 2 === 0);
       step *= 2;
@@ -126,7 +193,8 @@ export function rangeLayout({ rows, overall, format, width, smallN = 30, minN = 
     compact = phone && hi >= 10000;
     tickD = stepDecimals(step);
     const d = tickD;
-    tickText = (v) => (compact ? formatCompact(v, d) : formatFixed(v, d));
+    const st = step;
+    tickText = tickFormat ? (v) => tickFormat(v, st) : (v) => (compact ? formatCompact(v, d) : formatFixed(v, d));
     const firstTickW = textWidth(tickText(ticks[0] ?? lo), 12);
     left = mode === "stacked" ? Math.max(4, Math.ceil(firstTickW / 2) + 2) : labelW + 14;
     plotW = Math.max(40, width - left - right);
@@ -147,7 +215,7 @@ export function rangeLayout({ rows, overall, format, width, smallN = 30, minN = 
 
   const hasRef = isShown(overall);
   const rowsTop = top;
-  const height = rowsTop + rows.length * rowH + (hasRef ? 30 : 10);
+  const height = rowsTop + heights.reduce((a, b) => a + b, 0) + (hasRef ? 30 : 10);
 
   const box = (cx, y, text, size, weight, anchor = "start") => {
     const w = textWidth(text, size, weight);
@@ -156,11 +224,12 @@ export function rangeLayout({ rows, overall, format, width, smallN = 30, minN = 
   };
 
   const laidOut = rows.map((r, i) => {
-    const y0 = rowsTop + i * rowH;
+    const y0 = rowsTop + tops[i];
     const s = r.stats;
     const ok = isShown(s);
     const small = ok && s.n < smallN;
-    const cy = mode === "stacked" ? y0 + 38 : y0 + rowH / 2 + 2;
+    const cy = mode === "stacked" ? y0 + 38 : y0 + heights[i] / 2 + 2;
+    if (genreRows) return genreRow(r, i, { y0, cy, ok, small, s });
     let label;
     let n;
     if (mode === "stacked") {
@@ -203,17 +272,62 @@ export function rangeLayout({ rows, overall, format, width, smallN = 30, minN = 
     return out;
   });
 
+  /** A genre's row: the label (wrapped on phones), its stories, the plot and the value in its column. */
+  function genreRow(r, i, { y0, cy, ok, small, s }) {
+    const ls = lines[i];
+    const below = countBelow(r);
+    const block = ls.length * 16 + (below ? 13 : 0);
+    const first = phone ? cy - block / 2 + 12 : cy + 5;
+    const labelLines = ls.map((text, k) => ({ text, x: labelW, y: first + 16 * k, anchor: "end" }));
+    const out = {
+      index: r.index,
+      label: r.label,
+      y0,
+      y1: y0 + heights[i],
+      cy,
+      ok,
+      small,
+      labelPos: labelLines[0],
+      labelLines,
+      mark: r.mark || "",
+      boxes: labelLines.map((l) => ({ kind: "label", ...box(l.x, l.y, l.text, labelSize, 400, "end") })),
+    };
+    let nPos = null;
+    let nT = "";
+    if (ok && storiesColumn && !phone) {
+      nPos = { x: width, y: cy + 4.5, anchor: "end" };
+      nT = formatCount(s.n);
+    } else if (below) {
+      nPos = { x: labelW, y: first + 16 * (ls.length - 1) + 14, anchor: "end" };
+      nT = `${formatCount(s.n)} stories`;
+    }
+    out.nPos = nPos;
+    out.nText = nT;
+    if (nPos) out.boxes.push({ kind: "n", ...box(nPos.x, nPos.y, nT, phone ? 12 : nSize, 400, "end") });
+    if (ok) {
+      out.bar = capsule(x(s.p25), x(s.p75));
+      out.dotX = x(s.median);
+      const vx = width - storiesW;
+      out.value = { x: vx, y: cy + 4.5, text: shownValue(r), anchor: "end" };
+      out.boxes.push({ kind: "value", ...box(vx, cy + 4.5, out.value.text, 13, 600, "end") });
+    } else {
+      out.none = { x: left + 2, y: cy + 4, text: noneText };
+      out.boxes.push({ kind: "none", ...box(left + 2, cy + 4, noneText, 12.5, 400) });
+    }
+    return out;
+  }
+
   let ref = null;
   if (hasRef) {
     const rx = x(overall.median);
-    const text = `All stories shown: ${valueText(overall.median)}`;
+    const text = refText ? refText(printed ? printed(overall) : valueText(overall.median)) : `All stories shown: ${valueText(overall.median)}`;
     const w = textWidth(text, 12, 400) + textWidth(" ", 12) * 0;
     const cx = Math.min(Math.max(rx, w / 2 + 2), width - w / 2 - 2);
-    ref = { x: rx, labelX: cx, labelY: height - 8, text, value: valueText(overall.median) };
+    ref = { x: rx, labelX: cx, labelY: height - 8, text, value: printed ? printed(overall) : valueText(overall.median) };
     ref.box = box(cx, height - 8, text, 12, 400, "middle");
   }
 
-  return {
+  const out = {
     mode,
     width,
     height,
@@ -232,6 +346,8 @@ export function rangeLayout({ rows, overall, format, width, smallN = 30, minN = 
     valueText,
     valueDecimals: valueD,
   };
+  if (storiesW) out.storiesHead = { x: width, y: top - 10, text: "Stories" };
+  return out;
 }
 
 /** Estimated text boxes that overlap each other (for tests): pairs of [a, b]. */

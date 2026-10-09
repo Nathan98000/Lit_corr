@@ -2,7 +2,7 @@
 // sentence the page says. A genre "clearly differs" only through the file's flags (`f`, the rule in meta.genre_rule);
 // nothing here ranks genres, except the "By median" order the reader asks for (D3).
 
-import { formatCount, formatFixed } from "./format.js";
+import { formatCount, formatFixed, stepDecimals } from "./format.js";
 import { chartQuestion, chartQuestionText, lowerFirst, standsOutQuestion } from "./wording.js";
 
 export { chartQuestion, chartQuestionText, standsOutQuestion };
@@ -284,8 +284,9 @@ export function genreAgeNote(file, i, genre, gap = 3) {
 // ----------------------------------------------------------------------------------------------------- details
 /**
  * A genre's numbers for its details card, details line, row name and table: `items` ([label, value] pairs: the
- * numbers, then Stories and Median age), `comparison` (see comparison()), `name` (the row's accessible name) and
- * `line` (the phone's details line, without the genre's name).
+ * numbers, then Stories and Median age), `comparison` (see comparison(); the card says "Compared with all genres:"
+ * and its `short` words), `name` (the row's accessible name) and `line` (the phone's details line, without the
+ * genre's name).
  */
 export function rowDetails(row, variable, entry, minN) {
   const kind = entry.k;
@@ -310,7 +311,7 @@ export function rowDetails(row, variable, entry, minN) {
     }
   } else if (kind === "bin") {
     numbers.push(["Share", formatPercent(s.share)]);
-    said.push(`${lowerFirst(variable.yes_subject)} ${formatPercent(s.share)}`);
+    said.push(`${formatPercent(s.share)} ${lowerFirst(variable.yes_subject)}`);
   } else {
     variable.bins.labels.forEach((label, b) => {
       numbers.push([label, formatPercent(s.shares[b])]);
@@ -321,7 +322,6 @@ export function rowDetails(row, variable, entry, minN) {
   const age = formatYears(row.age);
   const items = [...numbers, ["Stories", formatCount(s.n)], ["Median age", age]];
   const cmp = comparison(row, variable, kind, minN);
-  if (cmp) items.push(["Compared with all genres", cmp.short]);
   const parts = [...said, stories, `median age ${age}`, ...(cmp ? [cmp.long] : [])];
   return { items, comparison: cmp, name: `${name}: ${parts.join(", ")}`, line: `${parts.join(" · ")}.` };
 }
@@ -455,4 +455,58 @@ export function profileRowName(item, genre, small) {
     `${variable.label}: ${genre.name} ${describe(g)}; all genres ${describe(a)}; ${profileComparison(item, small)}. ` +
     "Opens every genre’s numbers."
   );
+}
+
+// -------------------------------------------------------------------------------------------- the range chart
+/**
+ * The rows of the range chart (num) or the share chart (bin) for rangeLayout(): a genre's interquartile range and
+ * median, or a bar from 0 to its share; the mark of a genre that clearly differs.
+ */
+export function chartRows(rows, variable, kind) {
+  return rows.map((row) => {
+    const s = row.stats;
+    let stats = null;
+    if (s) stats = kind === "bin" ? { n: s.n, p25: 0, median: s.share, p75: s.share } : { n: s.n, p25: s.p25, median: s.median, p75: s.p75 };
+    return { index: row.i, label: row.genre.name, stats, mark: comparison(row, variable, kind)?.mark || "" };
+  });
+}
+
+/**
+ * The value axis of the range chart: from the lowest quartile to the highest (with 4% to spare), starting at 0 when
+ * the lowest is near it (within half the span); shares run from 0 to 100%.
+ */
+export function chartDomain(rows, kind) {
+  if (kind === "bin") return [0, 1];
+  const vals = rows.filter((r) => r.stats).flatMap((r) => [r.stats.p25, r.stats.median, r.stats.p75]);
+  if (!vals.length) return [0, 1];
+  let lo = Math.min(...vals);
+  let hi = Math.max(...vals);
+  const pad = (hi - lo) * 0.04 || Math.abs(hi) * 0.04 || 1;
+  lo = lo >= 0 && lo <= (hi - lo) / 2 ? 0 : lo - pad;
+  return [lo, hi + pad];
+}
+
+/** Axis labels for percentages ("25%") and years ("2010"); null keeps the chart's own. */
+export function tickFormatFor(kind, fmt) {
+  if (kind === "bin" || fmt === "percent") {
+    return (v, step) => `${formatFixed(v * 100, stepDecimals(step * 100))}%`;
+  }
+  if (fmt === "year") return (v) => (Number.isInteger(Math.round(v * 1e6) / 1e6) ? String(Math.round(v)) : "");
+  return null;
+}
+
+/** The value printed in a row's column: the median, or the share. */
+export const printedFor = (kind, fmt) => (stats) => (kind === "bin" ? formatPercent(stats.median) : formatNumber(stats.median, fmt));
+
+/** What screen readers hear for one characteristic: the heading, then the takeaway's lists and All genres line. */
+export function chartAnnouncement(meta, file, variable) {
+  const entry = file.c[variable.id];
+  if (!entry) return "";
+  const rows = genreRows(meta, file, variable.id);
+  const heading = chartHeading(rows.filter((r) => !r.all && r.f).length, meta.genres.length - 1);
+  const lists = takeawayLists(rows, variable, entry.k).map(listText);
+  const all = allGenresLine(rows, variable, entry);
+  return [`${heading}.`, ...lists, all ? all.map((s) => (typeof s === "string" ? s : s.strong)).join("") : ""]
+    .filter(Boolean)
+    .join(" ");
 }

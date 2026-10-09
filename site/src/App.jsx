@@ -110,10 +110,15 @@ export default function App() {
     window.history.replaceState(null, "", toHash("genres", next));
     setRoute({ page: "genres", state: next });
   }, []);
-  const goGenres = useCallback((next) => {
+  // a link to another view (from a chart's details or a row) also moves focus to the new question
+  const goGenres = useCallback((next, { focus = false } = {}) => {
     window.history.pushState(null, "", toHash("genres", next));
     setRoute({ page: "genres", state: next });
     window.scrollTo?.(0, 0);
+    if (focus) {
+      const later = window.requestAnimationFrame || ((f) => setTimeout(f, 0));
+      later(() => document.getElementById("question")?.focus({ preventScroll: true }));
+    }
   }, []);
   const genresLink = lastGenres.current ? toHash("genres", lastGenres.current) : "#/genres";
   const preloadGenres = () => {

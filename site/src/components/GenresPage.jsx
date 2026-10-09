@@ -1,20 +1,15 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { loadGenres } from "../lib/data.js";
-import {
-  chartHeading,
-  chartQuestion,
-  genreProfile,
-  genreRows,
-  orderLabel,
-  profileHeading,
-} from "../lib/genres.js";
+import { chartAnnouncement, chartQuestion, genreProfile, orderLabel, profileHeading } from "../lib/genres.js";
 import { GENRE_PAGE_EXCLUDED, defaultGenre, onGenresPage, sortable, subsetConflict } from "../lib/urlState.js";
 import { BodyPlaceholder, CharacteristicPicker, SlotButton } from "./Controls.jsx";
 import { ChartPlaceholder } from "./Explorer.jsx";
+import GenreAnswer from "./GenreAnswer.jsx";
 import InlineSelect, { SlotWords } from "./InlineSelect.jsx";
 import { PartBoundary } from "./lazyPart.jsx";
 import LoadError from "./LoadError.jsx";
 import Overlay from "./Overlay.jsx";
+import "../genres.css";
 
 /**
  * Keeps the file on screen until the next one has loaded (another "Only include" option), like the explorer: while
@@ -42,6 +37,27 @@ function useShownGenres(sub) {
     error,
     retry: () => setAttempt((a) => a + 1),
   };
+}
+
+/**
+ * What the polite live region says: `text` once the file is on screen, said again when `key` changes even if the words
+ * are the same (another order of the genres keeps the heading and the takeaway).
+ */
+function useAnnouncement(text, key) {
+  const [said, setSaid] = useState("");
+  const lastKey = useRef(null);
+  useEffect(() => {
+    if (!text) return undefined;
+    if (lastKey.current === key) {
+      setSaid(text);
+      return undefined;
+    }
+    lastKey.current = key;
+    setSaid("");
+    const t = setTimeout(() => setSaid(text), 60);
+    return () => clearTimeout(t);
+  }, [text, key]);
+  return said;
 }
 
 /** A two-option segmented control: a radio group (the view switch, the order). */
@@ -113,8 +129,8 @@ function IncludeSelect({ meta, value, variable, onChange }) {
  * genre's stories (View 2), each genre compared with all genres by the rule in meta.genre_rule (D2). Controls change
  * the address in place; the view switch and the links between the views add a history entry, so Back returns.
  */
-export default function GenresPage({ meta, state, onChange, onNavigate, onHoldScroll, chosenGenre, lastChart }) {
-  const { file, sub: fileSub, busy, error, retry } = useShownGenres(state.sub);
+export default function GenresPage({ meta, state, onChange, onNavigate, onHoldScroll, chosenGenre, lastChart, lastExplore }) {
+  const { file, busy, error, retry } = useShownGenres(state.sub);
   const profile = state.view === "genre";
   const variable = meta.variables.find((v) => v.id === state.v);
   const genre = profile ? meta.genres.find((g) => g.id === state.genre) : null;
@@ -128,6 +144,19 @@ export default function GenresPage({ meta, state, onChange, onNavigate, onHoldSc
     onHoldScroll?.();
     onChange(next);
   };
+  // while another option's file loads, the answer on screen keeps describing its own file
+  const shownV = useRef(state.v);
+  if (file?.c[state.v]) shownV.current = state.v;
+  const view = file ? { ...state, v: file.c[state.v] ? state.v : shownV.current } : state;
+  const shownVariable = meta.variables.find((v) => v.id === view.v);
+  const announcement = useAnnouncement(
+    !file || busy || error
+      ? ""
+      : profile
+        ? profileAnnouncement(meta, file, state)
+        : chartAnnouncement(meta, file, shownVariable),
+    profile ? `genre|${state.genre}|${state.sub}` : `${view.v}|${state.sub}|${state.sort || ""}`,
+  );
 
   // the view switch carries the genre across: the highlighted genre becomes "one genre", and back (D8 when none)
   const switchView = (to) => {
@@ -281,35 +310,46 @@ export default function GenresPage({ meta, state, onChange, onNavigate, onHoldSc
           </PartBoundary>
         </Overlay>
       )}
+      <p className="visually-hidden" aria-live="polite">
+        {announcement}
+      </p>
       {error ? (
         <article className="chart-panel">
           <LoadError onRetry={retry} detail={error} />
         </article>
       ) : !file ? (
         <ChartPlaceholder />
+      ) : profile ? (
+        <ProfileStub meta={meta} state={state} file={file} busy={busy} />
       ) : (
-        <Answer meta={meta} state={state} file={file} fileSub={fileSub} busy={busy} />
+        <GenreAnswer
+          meta={meta}
+          state={view}
+          file={file}
+          busy={busy}
+          onChange={keepPlace}
+          onNavigate={onNavigate}
+          lastExplore={lastExplore}
+        />
       )}
     </section>
   );
 }
 
-/** The answer panel for the file on screen. */
-function Answer({ meta, state, file, busy }) {
-  const total = meta.genres.length - 1;
-  let heading;
-  if (state.view === "genre") {
-    const gi = file.genres.indexOf(state.genre);
-    const p = genreProfile(meta, file, gi);
-    heading = profileHeading(p.flagged.length, meta.genres.find((g) => g.id === state.genre));
-  } else {
-    const rows = genreRows(meta, file, state.v);
-    heading = rows ? chartHeading(rows.filter((r) => !r.all && r.f).length, total) : "";
-  }
+function profileAnnouncement(meta, file, state) {
+  const gi = file.genres.indexOf(state.genre);
+  const p = genreProfile(meta, file, gi);
+  return `${profileHeading(p.flagged.length, meta.genres.find((g) => g.id === state.genre))}.`;
+}
+
+/** One genre (View 2): its heading. */
+function ProfileStub({ meta, state, file, busy }) {
+  const gi = file.genres.indexOf(state.genre);
+  const p = genreProfile(meta, file, gi);
   return (
     <article className={`chart-panel${busy ? " is-busy" : ""}`} aria-busy={busy}>
       <header className="chart-head">
-        <h2 className="chart-title">{heading}</h2>
+        <h2 className="chart-title">{profileHeading(p.flagged.length, meta.genres.find((g) => g.id === state.genre))}</h2>
       </header>
     </article>
   );

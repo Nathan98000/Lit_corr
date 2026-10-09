@@ -60,12 +60,13 @@ describe("F40, F44: the takeaway", () => {
     expect(takeaway().textContent).toMatch(/\. A pattern is judged only when the groups at both ends have at least 30 stories\.$/);
   });
 
-  it("has no note for groups without an order; How to read explains them", async () => {
+  it("has no note for groups without an order; the heading says it, and How to read is the usual paragraph", async () => {
     await renderApp("#/explore?var=pov_class");
     expect(document.querySelector(".chart-title").textContent).toBe("Each group on its own");
     expect(takeaway()).toBeNull();
     const howTo = screen.getByText("How to read this chart", { selector: "summary" }).parentElement;
-    expect(howTo.textContent).toMatch(/Groups without an order, such as months, are shown side by side and not summed up as one trend\.$/);
+    expect(howTo.textContent).toMatch(/deserve less trust\.$/);
+    expect(howTo.textContent).not.toMatch(/without an order|summed up|one trend/); // the owner's follow-up
   });
 
   it("defines weak, moderate and strong in How it works", async () => {

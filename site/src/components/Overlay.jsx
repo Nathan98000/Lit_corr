@@ -39,13 +39,15 @@ export default function Overlay({ open, onClose, anchor, title, titleId, childre
     return () => trigger?.focus({ preventScroll: true });
   }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // scroll lock for the sheet
+  // scroll lock for the sheet (on html as well as body: iOS scrolls the page behind otherwise, F57)
   useEffect(() => {
     if (!open || !phone) return undefined;
-    const prev = document.body.style.overflow;
+    const root = document.documentElement;
+    const prev = [root.style.overflow, document.body.style.overflow];
+    root.style.overflow = "hidden";
     document.body.style.overflow = "hidden";
     return () => {
-      document.body.style.overflow = prev;
+      [root.style.overflow, document.body.style.overflow] = prev;
     };
   }, [open, phone]);
 

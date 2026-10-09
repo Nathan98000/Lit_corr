@@ -277,6 +277,7 @@ export default function Controls({ meta, state, onChange }) {
             value={state.v}
             sub={state.sub}
             focusRef={pickerFocus}
+            onClose={close}
             onPickMetric={(id) => {
               setMenu(null);
               set({ metric: id });

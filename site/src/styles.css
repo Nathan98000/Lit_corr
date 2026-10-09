@@ -1909,6 +1909,60 @@ table.numbers {
   color: var(--ink-3);
 }
 
+.search-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.search-row .search {
+  flex: 1;
+  min-width: 0;
+}
+
+.search-close {
+  flex: none;
+  min-height: var(--target);
+  font-size: 15px;
+}
+
+/* the popover keeps Close in its title row */
+.popover .search-close {
+  display: none;
+}
+
+/*
+ * While a query is typed in the phone's sheet (F57): Close moves into the search row, the title row folds away (the
+ * dialog keeps its name from the hidden title), and each result is one line, the label then the topic, so that
+ * about four results stay above the on-screen keyboard.
+ */
+.sheet:has(.pick-typing) .overlay-title-row {
+  display: none;
+}
+
+.sheet:has(.pick-typing) .grabber {
+  margin-bottom: 4px;
+}
+
+.sheet .pick-typing .pick {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 8px;
+  padding: 8px;
+}
+
+.sheet .pick-typing .pick-topic {
+  order: 1;
+  font-weight: 400;
+  letter-spacing: 0;
+  color: var(--ink-3);
+}
+
+.sheet .pick-typing .pick-desc {
+  display: none; /* still the option's description for screen readers */
+}
+
 .search input {
   flex: 1;
   min-width: 0;

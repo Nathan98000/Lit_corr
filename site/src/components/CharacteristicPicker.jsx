@@ -23,10 +23,13 @@ function Marked({ label, query }) {
  * A query that names a popularity measure ("rating") says so above any results, with a button that switches the
  * measure instead (F45).
  *
+ * While a query is typed in the phone's sheet, results are one line each (the label, then the topic) and Close moves
+ * into the search row, so that more results stay above the on-screen keyboard (F57; styles.css does the folding).
+ *
  * This is the body of the "Story characteristic" sheet or popover; it loads with its own code (F49), so it takes
  * focus itself when it arrives. `focusRef` is the search box.
  */
-export default function CharacteristicPicker({ meta, value, sub, onPick, onPickMetric, focusRef }) {
+export default function CharacteristicPicker({ meta, value, sub, onPick, onPickMetric, onClose, focusRef }) {
   const [query, setQuery] = useState("");
   const [topicId, setTopicId] = useState(null);
   const [active, setActive] = useState(0);
@@ -229,8 +232,10 @@ export default function CharacteristicPicker({ meta, value, sub, onPick, onPickM
     );
   }
 
+  const typing = Boolean(query.trim());
   return (
-    <>
+    <div className={typing ? "pick-body pick-typing" : "pick-body"}>
+      <div className="search-row">
       <div className="search">
         <svg width="18" height="18" aria-hidden="true">
           <circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" strokeWidth="2" />
@@ -256,6 +261,12 @@ export default function CharacteristicPicker({ meta, value, sub, onPick, onPickM
           onKeyDown={onKeyDown}
         />
       </div>
+      {typing && onClose && (
+        <button type="button" className="link-button search-close" onClick={onClose}>
+          Close
+        </button>
+      )}
+      </div>
       <div className="pick-measure-note" aria-live="polite">
         {named && (
           <p className="pick-measure">
@@ -269,6 +280,6 @@ export default function CharacteristicPicker({ meta, value, sub, onPick, onPickM
       <div id={`${base}-list`} role="listbox" aria-label="Story characteristics" className="pick-list">
         {content}
       </div>
-    </>
+    </div>
   );
 }

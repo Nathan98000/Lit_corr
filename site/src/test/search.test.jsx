@@ -67,3 +67,28 @@ describe("F45: search", () => {
     expect(screen.queryByRole("dialog")).toBeNull();
   });
 });
+
+describe("F57: the picker on a phone, with the on-screen keyboard", () => {
+  const original = window.matchMedia;
+
+  it("puts Close in the search row while a query is typed, and locks the page behind the sheet", async () => {
+    window.matchMedia = (q) => ({ matches: q === "(max-width: 699px)", addEventListener() {}, removeEventListener() {} });
+    try {
+      const user = await renderApp();
+      const trigger = screen.getByRole("button", { name: /^Story characteristic:/ });
+      await user.click(trigger);
+      expect(document.documentElement.style.overflow).toBe("hidden");
+      expect(document.body.style.overflow).toBe("hidden");
+      const search = await screen.findByRole("combobox", { name: /^Search/ });
+      expect(document.querySelector(".search-row .search-close")).toBeNull(); // nothing typed: Close stays in the title row
+      await user.type(search, "dialog");
+      expect(document.querySelector(".pick-typing")).toBeTruthy(); // the sheet folds its title row (styles.css)
+      await user.click(document.querySelector(".search-row .search-close"));
+      expect(screen.queryByRole("dialog")).toBeNull();
+      expect(document.activeElement).toBe(trigger);
+      expect(document.documentElement.style.overflow).toBe("");
+    } finally {
+      window.matchMedia = original;
+    }
+  });
+});

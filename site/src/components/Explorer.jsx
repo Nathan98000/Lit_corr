@@ -40,7 +40,7 @@ const preloadCompare = () => {
  * (108 px and a 10 px gap each; on two-column phones a few long genre names take a second line).
  */
 function CompareGridPlaceholder({ genres }) {
-  const [ref, width] = useWidth(960);
+  const [ref, width] = useWidth(960, "compare");
   const cols = gridColumns(width);
   const rows = Math.ceil(genres / cols);
   const height = (cols > 2 ? 111 : 91) + rows * 118 + (cols > 2 ? 0 : 25);
@@ -244,7 +244,7 @@ function TotalsBox({ meta, d, onSwitch }) {
   );
 }
 
-export default function Explorer({ meta, state, onChange, onAsk }) {
+export default function Explorer({ meta, state, onChange, onAsk, onHoldScroll }) {
   const { view, data, busy, error, retry } = useShownData(state);
   const d = view ? describeView(meta, view, data) : null;
   const [showNumbers, setShowNumbers] = useState(false);
@@ -279,6 +279,12 @@ export default function Explorer({ meta, state, onChange, onAsk }) {
     setAgeCheckAsked(true);
     onChange({ ...view, check: "age" });
   };
+  // a new measure or characteristic, from the sentence or an age box's "Switch to …", keeps the scroll position even
+  // when the new chart is shorter (round 3)
+  const keepPlace = (next) => {
+    onHoldScroll?.();
+    onChange(next);
+  };
   const closeAgeCheck = () => {
     setAgeCheckAsked(false);
     focusAgeButton.current = true;
@@ -303,7 +309,7 @@ export default function Explorer({ meta, state, onChange, onAsk }) {
 
   return (
     <section className="explorer" id="explore" aria-label="Explorer">
-      <Controls meta={meta} state={state} onChange={onChange} />
+      <Controls meta={meta} state={state} onChange={keepPlace} />
       <p className="visually-hidden" aria-live="polite">
         {!busy && d ? announcement(d.title, d.answer) : ""}
       </p>
@@ -329,7 +335,7 @@ export default function Explorer({ meta, state, onChange, onAsk }) {
           </header>
           {d.compare ? (
             <>
-              <TotalsBox meta={meta} d={d} onSwitch={(metric) => onChange({ ...state, metric })} />
+              <TotalsBox meta={meta} d={d} onSwitch={(metric) => keepPlace({ ...state, metric })} />
               <p className="compare-caption">
                 Each small chart is one genre. A dot is a group’s typical story compared with that genre’s own typical
                 story (the dashed line); the shaded band runs from 0.67× to 1.5×. Hollow dots: fewer than{" "}
@@ -417,7 +423,7 @@ export default function Explorer({ meta, state, onChange, onAsk }) {
                 d={d}
                 view={view}
                 wide={wide}
-                onChange={onChange}
+                onChange={keepPlace}
                 ageCheckOpen={ageCheckOpen}
                 onCheckAge={checkAge}
                 onAgeCheckHint={preloadAgeCheck}

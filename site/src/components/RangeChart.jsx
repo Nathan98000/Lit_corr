@@ -60,7 +60,7 @@ export default function RangeChart({
   domainRows = null,
   emptyActions = null,
 }) {
-  const [ref, width] = useWidth(720);
+  const [ref, width] = useWidth(720, compact ? "compact" : "chart");
   const [shown, setShown] = useState(null); // the row whose details are shown: { i, by: "hover" | "focus" | "tap" }
   const [focusIdx, setFocusIdx] = useState(0); // the row that holds the chart's tab stop
   const frame = useRef(null);

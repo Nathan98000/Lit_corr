@@ -129,6 +129,8 @@ export default function Controls({ meta, state, onChange }) {
   const varBtn = useRef(null);
   const menuFocus = useRef(null);
   const pickerFocus = useRef(null);
+  const menuBody = useRef(null); // the boxes that scroll the sheets' content
+  const pickerBody = useRef(null);
   const ids = useId();
   const close = useCallback(() => setMenu(null), []);
   const subsetGroups = groupBy(meta.subsets, "group");
@@ -247,6 +249,7 @@ export default function Controls({ meta, state, onChange }) {
         title="Popularity measure"
         titleId={`${ids}-metric-title`}
         initialFocus={menuFocus}
+        bodyRef={menuBody}
         className="metric-menu"
       >
         <PartBoundary fallback={<BodyPlaceholder />}>
@@ -254,6 +257,7 @@ export default function Controls({ meta, state, onChange }) {
             meta={meta}
             value={state.metric}
             focusRef={menuFocus}
+            scrollRef={menuBody}
             labelledBy={`${ids}-metric-title`}
             onPick={(id) => {
               setMenu(null);
@@ -269,6 +273,7 @@ export default function Controls({ meta, state, onChange }) {
         title="Story characteristic"
         titleId={`${ids}-picker-title`}
         initialFocus={pickerFocus}
+        bodyRef={pickerBody}
         className="picker"
       >
         <PartBoundary fallback={<BodyPlaceholder search={`Search ${meta.variables.length} characteristics`} />}>
@@ -277,6 +282,7 @@ export default function Controls({ meta, state, onChange }) {
             value={state.v}
             sub={state.sub}
             focusRef={pickerFocus}
+            scrollRef={pickerBody}
             onClose={close}
             onPickMetric={(id) => {
               setMenu(null);

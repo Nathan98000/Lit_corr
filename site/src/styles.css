@@ -1813,6 +1813,14 @@ table.numbers {
   }
 }
 
+/* A new question keeps the page's scroll position: the browser does not shift the page to follow what moved above
+   the screen (scroll anchoring; switched off on both, as the browser reads it from the body, or from html while a
+   sheet locks the page), and a spacer after main keeps the page tall enough (useScrollFloor.js). */
+html[data-page="explore"],
+html[data-page="explore"] body {
+  overflow-anchor: none;
+}
+
 @media (min-width: 700px) {
   .question-bar {
     display: none;

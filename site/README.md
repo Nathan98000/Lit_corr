@@ -108,7 +108,8 @@ src/
     CharacteristicPicker.jsx  (lazy) search-first picker body (combobox with listbox): Popular, eight topics, search,
                           a measure typed by mistake
     MetricMenu.jsx        (lazy) the popularity-measure menu's body
-    Overlay.jsx           bottom sheet on phones, anchored popover on wider screens (title and Close)
+    Overlay.jsx           bottom sheet on phones; on wider screens a popover under (or over) its word that always
+                          fits on the screen (title and Close)
     InlineSelect.jsx      a native select shown as a word of the sentence; SlotWords keeps a slot's last word
                           and its caret together
     RangeChart.jsx        one genre: one row per group (median dot with value, middle-half capsule); one tab stop
@@ -124,6 +125,7 @@ src/
     Methodology.jsx       (lazy) How it works, with the sticky section bar below 1,000 px
     lazyPart.jsx          lazy parts with preload, their error boundary, and whenIdle
     pages.js              the two lazy pages, shared by App and Explorer
+    useScrollFloor.js     keeps the scroll position when a new question makes the page shorter
     CopyLink.jsx, LoadError.jsx, useWidth.js, useMediaQuery.js, useGlide.js
   lib/
     data.js               loading and reading the aggregates
@@ -132,6 +134,7 @@ src/
     search.js             characteristic search (picker and glossary)
     wording.js            titles, answer headings, takeaway, notes, the question sentence (no causal language)
     format.js             number formats (one number of decimals per axis and column)
+    listScroll.js         keeps a menu's active option in view by scrolling the menu, never the page
     motion.js             reduced-motion checks
     urlState.js           settings in the address, so views can be shared
   styles.css              all styling; colors are CSS variables at the top (ready for a dark theme later), and a
@@ -167,6 +170,8 @@ License 1.1 (`public/fonts/OFL.txt`, taken from `@fontsource/source-serif-4` 5.3
 - Motion is switched off under "reduce motion": another genre glides the marks and the axis together (one scale
   in every frame; the printed values fade in at the end), another measure or characteristic cross-fades, and
   scrolling is smooth.
+- Opening a menu, moving through it or choosing from it never moves the page: the menus scroll inside themselves,
+  every focus change prevents scrolling, and a shorter chart keeps the scroll position.
 - Keyboard: each chart is one tab stop (arrow keys, Home and End move between rows; Escape hides the details).
   Windows contrast themes get system colors on the charts (`@media (forced-colors: active)`).
 - Nothing on the site reminds visitors that correlation is not causation (an owner's decision of October 2026);

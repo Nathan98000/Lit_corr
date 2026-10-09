@@ -1,4 +1,5 @@
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useLayoutEffect, useState } from "react";
+import { keepInView } from "../lib/listScroll.js";
 
 export const MEASURE_NOTE =
   "Totals keep growing while a story is online; per-month and per-1,000-views measures make old and new stories " +
@@ -9,9 +10,10 @@ export const MEASURE_NOTE =
  * month online / Totals so far / Rating", each option with its one-line help. Arrows, Home/End, Enter; Escape closes.
  *
  * This is the body of the "Popularity measure" sheet or popover; it loads with its own code (F49), so it takes focus
- * itself when it arrives. `focusRef` is the listbox. `labelledBy` is the id of the sheet's title.
+ * itself when it arrives. `focusRef` is the listbox. `labelledBy` is the id of the sheet's title. `scrollRef` is the
+ * box that scrolls the sheet's content: the active option is kept in view by scrolling it, never the page.
  */
-export default function MetricMenu({ meta, value, onPick, focusRef, labelledBy }) {
+export default function MetricMenu({ meta, value, onPick, focusRef, scrollRef, labelledBy }) {
   const base = useId().replace(/:/g, "");
   const listRef = focusRef;
   const ordered = meta.metric_groups.flatMap((g) => meta.metrics.filter((m) => m.group === g));
@@ -21,9 +23,9 @@ export default function MetricMenu({ meta, value, onPick, focusRef, labelledBy }
     listRef.current?.focus({ preventScroll: true });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => {
-    document.getElementById(`${base}-m-${active}`)?.scrollIntoView?.({ block: "nearest" });
-  }, [active, base]);
+  useLayoutEffect(() => {
+    keepInView(scrollRef?.current, document.getElementById(`${base}-m-${active}`));
+  }, [active, base, scrollRef]);
 
   const onKeyDown = (e) => {
     const last = ordered.length - 1;

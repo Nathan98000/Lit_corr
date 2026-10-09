@@ -35,7 +35,7 @@ function Spark({ row, width, ordered, showLabels }) {
  * opens that genre's chart; its accessible name gives the verdict and every group's ratio.
  */
 export default function CompareGrid({ rows, variable, minN, onPickGenre }) {
-  const [ref, width] = useWidth(960);
+  const [ref, width] = useWidth(960, "compare");
   const cols = gridColumns(width);
   const gap = 10;
   const cardW = Math.floor((width - gap * (cols - 1)) / cols);

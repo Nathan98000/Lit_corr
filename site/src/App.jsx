@@ -3,6 +3,7 @@ import Explorer, { ChartPlaceholder } from "./components/Explorer.jsx";
 import { PartBoundary } from "./components/lazyPart.jsx";
 import LoadError from "./components/LoadError.jsx";
 import { Methodology, PatternBrowser } from "./components/pages.js";
+import useScrollFloor from "./components/useScrollFloor.js";
 import { clearCache, loadMeta } from "./lib/data.js";
 import { scrollBehavior } from "./lib/motion.js";
 import { parseHash, sanitize, toHash } from "./lib/urlState.js";
@@ -36,6 +37,7 @@ export default function App() {
   const [route, setRoute] = useState(() => parseHash(window.location.hash));
   const lastExplore = useRef(route.page === "explore" ? route.state : {});
   const mainRef = useRef(null);
+  const [floorRef, holdScroll] = useScrollFloor();
 
   const [attempt, setAttempt] = useState(0);
   useEffect(() => {
@@ -162,7 +164,7 @@ export default function App() {
               <Kicker meta={meta} />
             </div>
             {meta ? (
-              <Explorer meta={meta} state={state} onChange={update} onAsk={ask} />
+              <Explorer meta={meta} state={state} onChange={update} onAsk={ask} onHoldScroll={holdScroll} />
             ) : (
               <div className="explorer" aria-busy="true">
                 <div className="controls">
@@ -179,6 +181,8 @@ export default function App() {
           </>
         )}
       </main>
+      {/* keeps the scroll position when the sentence's new question makes the page shorter (useScrollFloor.js) */}
+      {route.page === "explore" && <div ref={floorRef} className="scroll-floor" aria-hidden="true" />}
 
       <footer className="site-footer">
         <div className="wrap">

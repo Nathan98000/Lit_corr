@@ -1,5 +1,6 @@
-import { useEffect, useId, useMemo, useState } from "react";
+import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { prefetchVariable } from "../lib/data.js";
+import { keepInView } from "../lib/listScroll.js";
 import { highlight, measureNamed, oneLine, searchCharacteristics } from "../lib/search.js";
 
 /** A label with the matched part marked. */
@@ -27,9 +28,11 @@ function Marked({ label, query }) {
  * into the search row, so that more results stay above the on-screen keyboard (F57; styles.css does the folding).
  *
  * This is the body of the "Story characteristic" sheet or popover; it loads with its own code (F49), so it takes
- * focus itself when it arrives. `focusRef` is the search box.
+ * focus itself when it arrives. `focusRef` is the search box. `scrollRef` is the box that scrolls the sheet's
+ * content: the active option is kept in view by scrolling it, never the page, and another list (a topic, the results
+ * of a new query) starts at its top.
  */
-export default function CharacteristicPicker({ meta, value, sub, onPick, onPickMetric, onClose, focusRef }) {
+export default function CharacteristicPicker({ meta, value, sub, onPick, onPickMetric, onClose, focusRef, scrollRef }) {
   const [query, setQuery] = useState("");
   const [topicId, setTopicId] = useState(null);
   const [active, setActive] = useState(0);
@@ -64,12 +67,20 @@ export default function CharacteristicPicker({ meta, value, sub, onPick, onPickM
   }
   const current = Math.min(active, options.length - 1);
   const optionId = (i) => `${base}-opt-${i}`;
+  const listKey = `${mode}|${topicId}|${query}`;
+  const shownList = useRef(listKey);
 
   useEffect(() => {
     const opt = options[current];
     if (opt?.kind === "var") prefetchVariable(opt.id, sub);
-    document.getElementById(optionId(current))?.scrollIntoView?.({ block: "nearest" });
-  }, [current, mode, topicId, query]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [current, listKey]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useLayoutEffect(() => {
+    const box = scrollRef?.current;
+    if (box && shownList.current !== listKey) box.scrollTop = 0;
+    shownList.current = listKey;
+    keepInView(box, document.getElementById(optionId(current)));
+  }, [current, listKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const activate = (opt) => {
     if (!opt) return;
@@ -78,12 +89,12 @@ export default function CharacteristicPicker({ meta, value, sub, onPick, onPickM
       setQuery("");
       setTopicId(opt.id);
       setActive(1);
-      input.current?.focus();
+      input.current?.focus({ preventScroll: true });
     } else {
       const from = topicId;
       setTopicId(null);
       setActive(Math.max(0, meta.popular.length + meta.topics.findIndex((t) => t.id === from)));
-      input.current?.focus();
+      input.current?.focus({ preventScroll: true });
     }
   };
 

@@ -2441,6 +2441,12 @@ html[data-page="genres"] body {
     gap: 6px 16px;
     margin-top: 8px;
   }
+
+  /* "Only include" on a line of its own: a longer option ("Published 2020 or later") never re-wraps the controls
+     after it, so nothing below moves when it is chosen */
+  .genres-controls .include-row {
+    flex-basis: 100%;
+  }
 }
 
 /* ------------------------------------------------------------- patterns (I4) */

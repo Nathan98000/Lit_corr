@@ -96,7 +96,7 @@ function IncludeSelect({ meta, value, variable, onChange }) {
   };
   const subset = meta.subsets.find((s) => s.id === value);
   return (
-    <span className="include">
+    <span className="include include-row">
       <span className="include-label">Only include:</span>{" "}
       <InlineSelect
         id={`${ids}-include`}
@@ -145,10 +145,11 @@ export default function GenresPage({ meta, state, onChange, onNavigate, onHoldSc
     onHoldScroll?.();
     onChange(next);
   };
-  // while another option's file loads, the answer on screen keeps describing its own file
+  // while another option's file loads, the answer on screen keeps describing its own file (its option, and a
+  // characteristic it has)
   const shownV = useRef(state.v);
   if (file?.c[state.v]) shownV.current = state.v;
-  const view = file ? { ...state, v: file.c[state.v] ? state.v : shownV.current } : state;
+  const view = file ? { ...state, sub: file.s, v: file.c[state.v] ? state.v : shownV.current } : state;
   const shownVariable = meta.variables.find((v) => v.id === view.v);
   const announcement = useAnnouncement(
     !file || busy || error
@@ -321,7 +322,7 @@ export default function GenresPage({ meta, state, onChange, onNavigate, onHoldSc
       ) : !file ? (
         <ChartPlaceholder />
       ) : profile ? (
-        <GenreProfile meta={meta} state={state} file={file} busy={busy} onChange={keepPlace} onNavigate={onNavigate} />
+        <GenreProfile meta={meta} state={view} file={file} busy={busy} onChange={keepPlace} onNavigate={onNavigate} />
       ) : (
         <GenreAnswer
           meta={meta}

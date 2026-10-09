@@ -134,10 +134,6 @@ export default function PatternBrowser({ meta, state, onChange }) {
             <strong>{s.clear}</strong> of {s.trend} characteristics have a clear pattern with {theMeasure(metric)} {where}. The
             other {s.trend - s.clear} show no clear pattern.
           </p>
-          <p className="pattern-note">
-            With this many characteristics, some differences appear by chance; the rule behind “tend to” allows for
-            that. <a href={TEND_TO}>When a title says “tend to”</a>
-          </p>
           <div className="pattern-buttons">
             <button type="button" className="btn" aria-pressed={showAll} onClick={() => setShowAll((x) => !x)}>
               Show the ones with no clear pattern too

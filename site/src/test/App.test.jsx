@@ -175,13 +175,12 @@ describe("no causation reminders (decision 1 of round 2)", () => {
     );
   });
 
-  it("ends the Patterns page's note on chance with the rule", async () => {
+  it("leaves the note on chance to How it works (the owner's follow-up, 2)", async () => {
     window.history.replaceState(null, "", "/#/patterns?genre=all&metric=pop_fav_per_1k_views");
     render(<App />);
-    const note = await screen.findByText(/some differences appear by chance/);
-    expect(note.textContent).toBe(
-      "With this many characteristics, some differences appear by chance; the rule behind “tend to” allows for that. When a title says “tend to”",
-    );
+    await screen.findByText(/characteristics have a clear pattern/);
+    expect(document.body.textContent).not.toMatch(/appear by chance|allows for that/);
+    expect(screen.queryByRole("link", { name: /When a title says/ })).toBeNull();
   });
 });
 
@@ -346,7 +345,6 @@ describe("the pattern browser (concept G2)", () => {
     expect(within(key).getByRole("link", { name: "What weak, moderate and strong mean" }).getAttribute("href")).toBe(
       "#/methodology/tend-to",
     );
-    expect(screen.getByRole("link", { name: /When a title says/ }).getAttribute("href")).toBe("#/methodology/tend-to");
 
     // the topics in the topics' order (those with something that can show a trend), each with its count, closed
     expect([...document.querySelectorAll(".pattern-topic-head")].map((h) => h.textContent)).toEqual([

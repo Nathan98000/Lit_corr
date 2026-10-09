@@ -2380,14 +2380,8 @@ html[data-page="explore"] body {
 }
 
 .pattern-count {
-  margin: 0 0 8px;
+  margin: 0 0 16px;
   font-size: 17px;
-}
-
-.pattern-note {
-  margin: 12px 0 16px;
-  font-size: 14px;
-  color: var(--ink-2);
 }
 
 .pattern-buttons {

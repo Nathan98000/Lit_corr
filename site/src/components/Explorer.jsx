@@ -6,14 +6,16 @@ import {
   ageNotes,
   announcement,
   answerHeading,
+  chartQuestionText,
   chartTitle,
   oneGroupNote,
   patternNote,
+  standsOutQuestion,
   subtitleParts,
   takeawaySegments,
   theMeasure,
 } from "../lib/wording.js";
-import { sanitize, toHash } from "../lib/urlState.js";
+import { onGenresPage, sanitize, toHash } from "../lib/urlState.js";
 import AgeCheck, { preloadAgeCheck } from "./AgeCheck.jsx";
 import ChartNotes from "./ChartNotes.jsx";
 import { compareRows, compareSummary, gridColumns } from "../lib/compare.js";
@@ -22,13 +24,13 @@ import CopyLink from "./CopyLink.jsx";
 import { PartBoundary, lazyPart, whenIdle } from "./lazyPart.jsx";
 import LoadError from "./LoadError.jsx";
 import NumbersTable from "./NumbersTable.jsx";
-import { PatternBrowser } from "./pages.js";
+import { GenresPage, PatternBrowser } from "./pages.js";
 import RangeChart from "./RangeChart.jsx";
 import useMediaQuery from "./useMediaQuery.js";
 import useWidth from "./useWidth.js";
 
-// Comparing genres loads its code when first needed (F49), or ahead of time when "Compare all … genres" is hovered
-// or focused.
+// Comparing genres loads its code when first needed (F49), or ahead of time when "See this pattern in every genre" is
+// hovered or focused.
 const CompareGrid = lazyPart(() => import("./CompareGrid.jsx"));
 const CompareTable = lazyPart(() => import("./CompareTable.jsx"));
 const preloadCompare = () => {
@@ -188,10 +190,28 @@ export function keepExploring(meta, view) {
     .slice(0, 3);
 }
 
-/** One list after the chart: every clear pattern with this measure, then three example questions. */
+/**
+ * The Genres page's question for this view: what stands out about the chosen genre's stories (one genre), or with All
+ * genres how the genres differ in this characteristic (none for those the page leaves out). { text, hash } or null.
+ */
+export function genresQuestion(meta, view, d) {
+  const genre = d.compare ? meta.genres[0] : d.genre;
+  if (genre.id !== "all") {
+    return { text: standsOutQuestion(genre), hash: toHash("genres", { view: "genre", genre: genre.id, sub: view.sub }) };
+  }
+  if (!onGenresPage(d.variable)) return null;
+  return { text: chartQuestionText(d.variable), hash: toHash("genres", { v: d.variable.id, sub: view.sub }) };
+}
+
+/**
+ * One list after the chart: every clear pattern with this measure, the Genres page's question for this view, then
+ * three example questions.
+ */
 function KeepExploring({ meta, view, d, onAsk }) {
   const headingId = useId();
   const genre = d.compare ? meta.genres[0] : d.genre;
+  const genres = genresQuestion(meta, view, d);
+  const preloadGenres = () => GenresPage.preload();
   const plainClick = (e) => !(e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey);
   return (
     <nav className="keep-exploring" aria-labelledby={headingId}>
@@ -207,6 +227,13 @@ function KeepExploring({ meta, view, d, onAsk }) {
             {genre.id === "all" ? " across all genres" : ` in ${genre.name}`} →
           </a>
         </li>
+        {genres && (
+          <li>
+            <a href={genres.hash} onPointerEnter={preloadGenres} onFocus={preloadGenres}>
+              {genres.text} →
+            </a>
+          </li>
+        )}
         {keepExploring(meta, view).map(({ question, state }) => (
           <li key={question}>
             <a
@@ -448,7 +475,7 @@ export default function Explorer({ meta, state, onChange, onAsk, onHoldScroll })
                   onFocus={preloadCompare}
                   onClick={() => onChange({ ...state, mode: "compare", check: undefined })}
                 >
-                  Compare all {genreCount} genres →
+                  See this pattern in every genre →
                 </button>
               </div>
             </div>

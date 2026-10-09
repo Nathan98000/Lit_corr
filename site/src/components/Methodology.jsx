@@ -3,6 +3,7 @@ import { formatCount, formatDate } from "../lib/format.js";
 import { scrollBehavior } from "../lib/motion.js";
 import { searchCharacteristics } from "../lib/search.js";
 import { defaultMetric, toHash } from "../lib/urlState.js";
+import { typicalSample } from "../lib/wording.js";
 import useMediaQuery from "./useMediaQuery.js";
 
 const REASONS = {
@@ -24,6 +25,7 @@ export const SECTIONS = [
   ["emotion", "Emotion and psychological language", true],
   ["charts", "How the charts summarize stories"],
   ["tend-to", "When a title says “tend to”"],
+  ["genres", "Comparing genres"],
   ["missing-data", "Missing data and excluded stories"],
   ["limits", "Limitations"],
   ["privacy", "What this site does not contain"],
@@ -52,6 +54,44 @@ function InShort({ meta }) {
         </li>
       </ul>
     </aside>
+  );
+}
+
+const pct = (share) => `${Math.round(share * 1000) / 10}%`;
+
+/**
+ * "Comparing genres": the Genres page's rule (meta.genre_rule) in plain words. The numbers come from the data: the
+ * genres' typical sample, the rule's thresholds and level, and the stories a genre needs.
+ */
+function ComparingGenres({ meta }) {
+  const rule = meta.genre_rule || { min_r: 0.2, level: 0.999, min_tvd: 0.2, min_n: meta.small_n };
+  const times = Math.round(50 * (1 + rule.min_r));
+  return (
+    <>
+      <h2 id="genres" tabIndex={-1}>
+        Comparing genres
+      </h2>
+      <p>
+        The Genres page compares each genre’s stories with the stories of all genres. All genres counts each genre by
+        its size on Literotica, as everywhere on this site. Each genre is a random sample of about{" "}
+        {formatCount(typicalSample(meta))} stories.
+      </p>
+      <p>
+        A genre clearly differs on a characteristic when, picking one of its stories and one story from all genres at
+        random, its story is the higher one at least {times} times in 100, or the lower one at least {times} times in
+        100 (ties count as half; this is a rank-biserial correlation of at least {rule.min_r}). For yes/no
+        characteristics this means a gap of at least {Math.round(rule.min_r * 100)} percentage points. For
+        characteristics with named groups, such as narrative perspective, at least {Math.round(rule.min_tvd * 100)}% of
+        the genre’s stories would have to change group to match the mix of all genres. The page makes thousands of
+        such comparisons, so a difference must also be clear at the {pct(rule.level)} level, stricter than the 99% used
+        for “tend to”, and the genre needs at least {rule.min_n} stories with the characteristic.
+      </p>
+      <p>
+        When most stories score 0 on a characteristic, the page shows how many stories are above 0, and the median and
+        interquartile range among them. Publication month and weekday are left out: their twelve and seven groups
+        can’t be compared genre by genre in one chart.
+      </p>
+    </>
   );
 }
 
@@ -127,7 +167,7 @@ function useCurrentSection() {
   return current;
 }
 
-/** The thirteen sections as links; the one being read is marked. */
+/** The sections as links; the one being read is marked. */
 function ContentsList({ current, onPick }) {
   return (
     <ol>
@@ -385,6 +425,8 @@ export default function Methodology({ meta, section }) {
           correlation from 0 (no consistent order) to 1 (a perfectly consistent one): weak below 0.2, moderate from 0.2
           to 0.4, strong 0.4 or more. Even a strong pattern leaves individual stories varying widely.
         </p>
+
+        <ComparingGenres meta={meta} />
 
         <h2 id="missing-data" tabIndex={-1}>
           Missing data and excluded stories

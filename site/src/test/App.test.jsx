@@ -91,7 +91,7 @@ describe("the explorer", () => {
 
   it("compares genres as small charts, alphabetical, and opens a genre from its card", async () => {
     const user = await renderApp();
-    await user.click(screen.getByRole("button", { name: /Compare all 3 genres/ }));
+    await user.click(screen.getByRole("button", { name: "See this pattern in every genre →" }));
     await waitFor(() => expect(document.title).toMatch(/genre by genre$/));
     // the answer is the count of verdicts (dialogue share is a clear pattern in the synthetic data)
     expect(chartTitle().textContent).toMatch(/^Tends higher in .* of 3 genres, tends lower in .*, no clear pattern in .*\.$/);
@@ -316,7 +316,7 @@ describe("notes and the age check", () => {
 
   it("switches to comparing all genres", async () => {
     const user = await renderApp();
-    await user.click(screen.getByRole("button", { name: /Compare all 3 genres/ }));
+    await user.click(screen.getByRole("button", { name: "See this pattern in every genre →" }));
     await waitFor(() => expect(window.location.hash).toMatch(/mode=compare/));
   });
 });

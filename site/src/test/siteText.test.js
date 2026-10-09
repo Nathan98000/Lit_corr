@@ -3,14 +3,10 @@ import { readdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
+import { CAUSAL, UK_SPELLINGS } from "./scans.js";
 
 const SRC = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const HTML = path.join(SRC, "..", "index.html");
-
-export const UK_SPELLINGS =
-  /\b(humour\w*|neighbour\w*|favourit\w*|colour\w*|behaviour\w*|centre|labelled|labelling|signalled|travelled|modelling|\w+isation\w*|organis\w*|recognis\w*|realis\w*|summaris\w*|capitalis\w*|italicis\w*|unrecognis\w*|analys(e|ed|ing)|emphasis(e|ed)|apologis\w*|categoris\w*|criticis\w*|grey|towards)\b|\bat the weekend/i;
-export const CAUSAL =
-  /\b(cause[sd]?|causing|drives?|driven|driving|makes? readers|leads? to|led to|boosts?|because|effect of|impacts?|results? in)\b/i;
 
 function sources(dir) {
   return readdirSync(dir).flatMap((name) => {

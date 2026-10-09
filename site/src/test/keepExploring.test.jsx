@@ -39,18 +39,20 @@ const items = () => within(screen.getByRole("navigation", { name: "Keep explorin
 const view = (v) => ({ mode: "one", genre: "all", metric: "pop_fav_per_1k_views", v: "dlg_word_share", sub: "all", ...v });
 
 describe("keep exploring", () => {
-  it("lists the Patterns page, then the first three example questions that open another view, in their order", async () => {
+  it("lists the Patterns page, the Genres page's question, then the first three example questions that open another view", async () => {
     await renderApp("#/explore?var=dlg_word_share&metric=pop_fav_per_1k_views");
     const links = items();
-    expect(links.length).toBeLessThanOrEqual(4);
+    expect(links.length).toBeLessThanOrEqual(5);
     expect(links.map((a) => a.textContent)).toEqual([
       "Every clear pattern with favorites per 1,000 views across all genres →",
+      "How do genres differ in dialogue share? →", // the Genres page, for All genres
       "Q2: dialogue share in Romance, views per month? →", // Q1 is the chart shown
       "Q3: anger, views? →",
       "Q4: perspective, favorites? →",
     ]);
     expect(links[0].getAttribute("href")).toBe("#/patterns?genre=all&metric=pop_fav_per_1k_views");
-    expect(links[1].getAttribute("href")).toBe(
+    expect(links[1].getAttribute("href")).toBe("#/genres?var=dlg_word_share&include=all");
+    expect(links[2].getAttribute("href")).toBe(
       "#/explore?mode=one&genre=romance&metric=pop_views_per_month&var=dlg_word_share&include=all",
     );
     for (const a of links) expect(a.getAttribute("href")).not.toBe(window.location.hash); // none opens this view
@@ -61,7 +63,8 @@ describe("keep exploring", () => {
     expect(screen.getByRole("button", { name: "Switch to views per month" })).toBeTruthy();
     const texts = items().map((a) => a.textContent);
     expect(texts[0]).toBe("Every clear pattern with views in Romance →");
-    expect(texts.slice(1)).toEqual(["Q1: dialogue share, favorites? →", "Q3: anger, views? →", "Q4: perspective, favorites? →"]);
+    expect(texts[1]).toBe("What stands out about stories in Romance? →"); // the Genres page, for the genre chosen
+    expect(texts.slice(2)).toEqual(["Q1: dialogue share, favorites? →", "Q3: anger, views? →", "Q4: perspective, favorites? →"]);
   });
 
   it("chooses by view only, never by a result", () => {

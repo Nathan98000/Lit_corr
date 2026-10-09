@@ -207,7 +207,7 @@ describe("a shorter chart keeps the scroll position", () => {
     expect([hold.mock.calls.length, onChange.mock.calls.length]).toEqual([1, 1]);
     await user.click(screen.getByRole("button", { name: "Switch to views per month" }));
     expect([hold.mock.calls.length, onChange.mock.calls.length]).toEqual([2, 2]);
-    await user.click(screen.getByRole("button", { name: /Compare all 3 genres/ }));
+    await user.click(screen.getByRole("button", { name: "See this pattern in every genre →" }));
     expect([hold.mock.calls.length, onChange.mock.calls.length]).toEqual([2, 3]);
   });
 });

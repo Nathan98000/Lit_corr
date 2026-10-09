@@ -131,8 +131,8 @@ export default function PatternBrowser({ meta, state, onChange }) {
       ) : (
         <>
           <p className="pattern-count">
-            <strong>{s.clear}</strong> of {s.trend} characteristics that can show a trend have a clear pattern with{" "}
-            {metric.noun} {where}. The other {s.trend - s.clear} show no clear pattern; that is a finding too.
+            <strong>{s.clear}</strong> of {s.trend} characteristics have a clear pattern with {metric.noun} {where}. The
+            other {s.trend - s.clear} show no clear pattern.
           </p>
           <p className="pattern-count muted">
             {s.unordered} characteristics have no order (such as month) and are not summed up as a trend.

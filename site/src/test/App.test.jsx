@@ -157,7 +157,7 @@ describe("no causation reminders (decision 1 of round 2)", () => {
       "#/explore?mode=compare&var=dlg_word_share",
       () => screen.findAllByRole("button", { name: /Open its chart\.$/ }),
     ],
-    ["Patterns", "#/patterns?genre=all&metric=pop_fav_per_1k_views", () => screen.findByText(/characteristics that can show a trend/)],
+    ["Patterns", "#/patterns?genre=all&metric=pop_fav_per_1k_views", () => screen.findByText(/characteristics have a clear pattern/)],
     ["How it works", "#/methodology", () => screen.findByRole("heading", { level: 1, name: "How it works" })],
   ];
   it.each(pages)("%s has none, and says that the site is independent", async (_, hash, ready) => {
@@ -330,11 +330,13 @@ describe("the pattern browser (concept G2)", () => {
     await screen.findByRole("heading", { level: 1, name: "Patterns" });
     expect(document.title).toBe("Patterns · What do popular Literotica stories have in common?");
     // fixture: 3 characteristics read as a trend (dialogue share, has dialogue, anger), 1 without order
-    const count = await screen.findByText(/characteristics that can show a trend/);
+    const count = await screen.findByText(/characteristics have a clear pattern/);
     expect(count.textContent).toBe(
-      "2 of 3 characteristics that can show a trend have a clear pattern with favorites per 1,000 views across all genres. The other 1 show no clear pattern; that is a finding too.",
+      "2 of 3 characteristics have a clear pattern with favorites per 1,000 views across all genres. The other 1 show no clear pattern.",
     );
-    expect(screen.getByText(/1 characteristics have no order/)).toBeTruthy();
+    expect(count.querySelector("strong").textContent).toBe("2");
+    // the next line says why the count is of 3 and not of all 4 characteristics
+    expect(count.nextElementSibling.textContent).toBe("1 characteristics have no order (such as month) and are not summed up as a trend.");
     const key = document.querySelector(".pattern-key");
     expect(key.textContent).toBe(
       "↗ tends higher: the more of the characteristic a group of stories has (or, for yes/no ones, the group that has " +

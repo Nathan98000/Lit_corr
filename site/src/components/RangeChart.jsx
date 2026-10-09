@@ -30,7 +30,7 @@ function rowDetails(row, format, minN) {
 }
 
 const KEYS = ["ArrowDown", "ArrowUp", "Home", "End"];
-const tickKey = (t) => `${t.v}|${t.text}`;
+const sameTick = (a, b) => Math.abs(a.v - b.v) < 1e-9;
 
 /**
  * Popularity across the groups of one characteristic, in one genre (concept C2): one row per group, the middle
@@ -143,17 +143,15 @@ export default function RangeChart({
     rowEls.current[next]?.focus();
   };
 
-  // During a glide every tick sits on the frame's scale: the old ticks fade out as the new ones fade in.
+  // During a glide every tick sits on the frame's scale: the old ticks fade out as the new ones fade in. A value in
+  // both sets is one tick, with its new label ("0.0" and "0" never sit on top of each other).
   const ticks =
     glide.gliding && glide.from
       ? [
-          ...glide.from.map((t) => ({
-            ...t,
-            fade: layout.ticks.some((u) => tickKey(u) === tickKey(t)) ? 1 : 1 - glide.progress,
-          })),
-          ...layout.ticks
-            .filter((t) => !glide.from.some((u) => tickKey(u) === tickKey(t)))
-            .map((t) => ({ ...t, fade: glide.progress })),
+          ...glide.from
+            .filter((t) => !layout.ticks.some((u) => sameTick(u, t)))
+            .map((t) => ({ ...t, fade: 1 - glide.progress })),
+          ...layout.ticks.map((t) => ({ ...t, fade: glide.from.some((u) => sameTick(u, t)) ? 1 : glide.progress })),
         ]
       : layout.ticks.map((t) => ({ ...t, fade: 1 }));
   const inDomain = (v) => v >= scale[0] - 1e-9 && v <= scale[1] + 1e-9;
@@ -212,7 +210,7 @@ export default function RangeChart({
             {ticks
               .filter((t) => inDomain(t.v))
               .map((t) => (
-                <g key={tickKey(t)} className="tick-mark" data-v={t.v} opacity={t.fade < 1 ? t.fade : undefined}>
+                <g key={t.v} className="tick-mark" data-v={t.v} opacity={t.fade < 1 ? t.fade : undefined}>
                   <line
                     className="grid"
                     x1={x(t.v)}

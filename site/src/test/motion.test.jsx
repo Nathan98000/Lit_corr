@@ -107,8 +107,9 @@ describe("the chart in motion (F51)", () => {
     const svg = container.querySelector("svg");
     expect(svg.getAttribute("class")).toMatch(/gliding/);
     const { a, b, ticks } = tickScale(container);
-    // every tick, old or new, is drawn on this frame's scale
+    // every tick, old or new, is drawn on this frame's scale, and a value in both sets is drawn once
     for (const [v, tx] of ticks) expect(tx).toBeCloseTo(a + b * v, 6);
+    expect(new Set(ticks.map(([v]) => v)).size).toBe(ticks.length);
     // the dots and the dashed line have all covered the same share of the way, on that scale
     const value = (px) => (px - a) / b;
     const shares = dots(container).map((cx, i) => (value(cx) - A.rows[i].stats.median) / (B.rows[i].stats.median - A.rows[i].stats.median));

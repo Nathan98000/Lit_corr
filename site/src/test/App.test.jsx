@@ -339,8 +339,8 @@ describe("the pattern browser (concept G2)", () => {
     expect(document.body.textContent).not.toMatch(/have no order|not summed up as a trend/);
     const key = document.querySelector(".pattern-key");
     expect(key.textContent).toBe(
-      "↗ tends higher: the more of the characteristic a group of stories has (or, for yes/no ones, the group that has " +
-        "it), the higher its median favorites per 1,000 views; ↘ tends lower: the lower. What weak, moderate and strong mean",
+      "↗ tends higher: the more of the characteristic, the higher the median favorites per 1,000 views (for yes/no " +
+        "characteristics: higher in stories that have it). ↘ tends lower: the opposite. What weak, moderate and strong mean",
     );
     expect(within(key).getByRole("link", { name: "What weak, moderate and strong mean" }).getAttribute("href")).toBe(
       "#/methodology/tend-to",

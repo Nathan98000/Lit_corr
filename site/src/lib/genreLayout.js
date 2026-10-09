@@ -258,3 +258,59 @@ export function layoutProblems(layout, pad = 1) {
   }
   return problems;
 }
+
+/**
+ * A characteristic's row in "One genre": the genre against all genres on the row's own scale, without ticks.
+ * num: all genres' interquartile range as a gray band with its median as a tick, the genre's as a capsule and a dot,
+ * on a scale from all genres' 10th to 90th percentile widened to the genre's interquartile range (from 0 when that
+ * is near); bin and zero: all genres' share (above 0) as a gray bar from 0, the genre's as a dot, from 0 to 100%;
+ * band: the same as num on an evenly spaced band axis, quartiles taken from the cumulative shares; grp: two thin 100%
+ * bars, the genre over all genres. `bandAt(shares)` gives { p25, median, p75 } band indices for bands.
+ */
+export function profileShapes({ kind, stats, all, width, bandAt = null }) {
+  const pad = 7;
+  const inner = Math.max(10, width - 2 * pad);
+  if (kind === "grp") {
+    const bar = (shares) => {
+      let x = pad;
+      return shares.map((s, b) => {
+        const seg = { b, x, width: s * inner };
+        x += s * inner;
+        return seg;
+      });
+    };
+    return { kind, genre: stats ? bar(stats.shares) : null, all: bar(all.shares) };
+  }
+  if (kind === "bin" || kind === "zero") {
+    const x = (v) => pad + Math.min(Math.max(v, 0), 1) * inner;
+    return { kind, gray: { x: x(0), width: Math.max(1, x(all.share) - x(0)) }, dot: stats ? x(stats.share) : null };
+  }
+  let q;
+  let gq;
+  let x;
+  if (kind === "band") {
+    const count = all.shares.length;
+    x = (b) => pad + ((b + 0.5) / count) * inner;
+    q = bandAt(all.shares);
+    gq = stats ? bandAt(stats.shares) : null;
+  } else {
+    let lo = Math.min(all.p10, stats ? stats.p25 : all.p10);
+    const hi = Math.max(all.p90, stats ? stats.p75 : all.p90);
+    if (lo > 0 && lo < (hi - lo) * 0.4) lo = 0;
+    x = (v) => pad + ((Math.min(Math.max(v, lo), hi) - lo) / (hi - lo || 1)) * inner;
+    q = all;
+    gq = stats;
+  }
+  const span = (a, b, min) => {
+    const mid = (a + b) / 2;
+    const w = Math.max(min, b - a);
+    return { x: Math.min(a, mid - w / 2), width: w };
+  };
+  return {
+    kind,
+    gray: span(x(q.p25), x(q.p75), 6),
+    tick: x(q.median),
+    capsule: gq ? span(x(gq.p25), x(gq.p75), 10) : null,
+    dot: gq ? x(gq.median) : null,
+  };
+}

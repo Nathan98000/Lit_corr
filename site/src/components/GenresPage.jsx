@@ -1,10 +1,11 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { loadGenres } from "../lib/data.js";
-import { chartAnnouncement, chartQuestion, genreProfile, orderLabel, profileHeading } from "../lib/genres.js";
+import { chartAnnouncement, chartQuestion, orderLabel } from "../lib/genres.js";
 import { GENRE_PAGE_EXCLUDED, defaultGenre, onGenresPage, sortable, subsetConflict } from "../lib/urlState.js";
 import { BodyPlaceholder, CharacteristicPicker, SlotButton } from "./Controls.jsx";
 import { ChartPlaceholder } from "./Explorer.jsx";
 import GenreAnswer from "./GenreAnswer.jsx";
+import GenreProfile, { profileAnnouncement } from "./GenreProfile.jsx";
 import InlineSelect, { SlotWords } from "./InlineSelect.jsx";
 import { PartBoundary } from "./lazyPart.jsx";
 import LoadError from "./LoadError.jsx";
@@ -320,7 +321,7 @@ export default function GenresPage({ meta, state, onChange, onNavigate, onHoldSc
       ) : !file ? (
         <ChartPlaceholder />
       ) : profile ? (
-        <ProfileStub meta={meta} state={state} file={file} busy={busy} />
+        <GenreProfile meta={meta} state={state} file={file} busy={busy} onChange={keepPlace} onNavigate={onNavigate} />
       ) : (
         <GenreAnswer
           meta={meta}
@@ -336,21 +337,3 @@ export default function GenresPage({ meta, state, onChange, onNavigate, onHoldSc
   );
 }
 
-function profileAnnouncement(meta, file, state) {
-  const gi = file.genres.indexOf(state.genre);
-  const p = genreProfile(meta, file, gi);
-  return `${profileHeading(p.flagged.length, meta.genres.find((g) => g.id === state.genre))}.`;
-}
-
-/** One genre (View 2): its heading. */
-function ProfileStub({ meta, state, file, busy }) {
-  const gi = file.genres.indexOf(state.genre);
-  const p = genreProfile(meta, file, gi);
-  return (
-    <article className={`chart-panel${busy ? " is-busy" : ""}`} aria-busy={busy}>
-      <header className="chart-head">
-        <h2 className="chart-title">{profileHeading(p.flagged.length, meta.genres.find((g) => g.id === state.genre))}</h2>
-      </header>
-    </article>
-  );
-}

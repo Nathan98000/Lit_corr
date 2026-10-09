@@ -23,7 +23,7 @@ export function patternSummary(meta, patterns, genreId, metricId) {
       other: trend.filter((x) => x.variable.topic === t.id && !clear.includes(x)).sort(byLabel),
     }))
     .filter((t) => t.clear.length || t.other.length);
-  return { trend: trend.length, clear: clear.length, unordered: items.length - trend.length, topics };
+  return { trend: trend.length, clear: clear.length, topics };
 }
 
 /** One characteristic with a clear pattern: its name (linking to its chart), the direction and the strength. */
@@ -133,9 +133,6 @@ export default function PatternBrowser({ meta, state, onChange }) {
           <p className="pattern-count">
             <strong>{s.clear}</strong> of {s.trend} characteristics have a clear pattern with {theMeasure(metric)} {where}. The
             other {s.trend - s.clear} show no clear pattern.
-          </p>
-          <p className="pattern-count muted">
-            {s.unordered} characteristics have no order (such as month) and are not summed up as a trend.
           </p>
           <p className="pattern-note">
             With this many characteristics, some differences appear by chance; the rule behind “tend to” allows for

@@ -335,8 +335,9 @@ describe("the pattern browser (concept G2)", () => {
       "2 of 3 characteristics have a clear pattern with favorites per 1,000 views across all genres. The other 1 show no clear pattern.",
     );
     expect(count.querySelector("strong").textContent).toBe("2");
-    // the next line says why the count is of 3 and not of all 4 characteristics
-    expect(count.nextElementSibling.textContent).toBe("1 characteristics have no order (such as month) and are not summed up as a trend.");
+    // the count stands alone: no line about the characteristics without an order (the owner's follow-up, 1)
+    expect(document.querySelectorAll(".pattern-count")).toHaveLength(1);
+    expect(document.body.textContent).not.toMatch(/have no order|not summed up as a trend/);
     const key = document.querySelector(".pattern-key");
     expect(key.textContent).toBe(
       "↗ tends higher: the more of the characteristic a group of stories has (or, for yes/no ones, the group that has " +

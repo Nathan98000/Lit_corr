@@ -64,11 +64,9 @@ export default function RangeChart({
   minN,
   title,
   n,
-  compact = false,
-  domainRows = null,
   emptyActions = null,
 }) {
-  const [ref, width] = useWidth(720, compact ? "compact" : "chart");
+  const [ref, width] = useWidth(720, "chart");
   const [shown, setShown] = useState(null); // the row whose details are shown: { i, by: "hover" | "focus" | "tap" }
   const [focusIdx, setFocusIdx] = useState(0); // the row that holds the chart's tab stop
   const frame = useRef(null);
@@ -78,7 +76,7 @@ export default function RangeChart({
   const descId = `${ids}-desc`;
   const hatchId = `${ids}-hatch`.replace(/:/g, "");
 
-  const layout = rangeLayout({ rows, overall, format: metric.format, width, smallN, minN, domainRows });
+  const layout = rangeLayout({ rows, overall, format: metric.format, width, smallN, minN });
   const glide = useGlide(
     [
       [layout.lo, layout.hi, layout.left, layout.plotW, layout.ref ? overall.median : 0],
@@ -172,42 +170,39 @@ export default function RangeChart({
   const svgClass = [active != null && "has-active", glide.gliding && "gliding"].filter(Boolean).join(" ");
 
   return (
-    <div ref={ref} className={`range-chart mode-${layout.mode}${compact ? " compact" : ""}`}>
-      {!compact && (
-        <ul className="legend" aria-hidden="true">
+    <div ref={ref} className={`range-chart mode-${layout.mode}`}>
+      <ul className="legend" aria-hidden="true">
+        <li>
+          <span className="key key-median" /> Median
+        </li>
+        <li>
+          <span className="key key-iqr" /> Interquartile range
+        </li>
+        {anySmall && (
           <li>
-            <span className="key key-median" /> Median
+            <span className="key key-small" /> Fewer than {smallN} stories
           </li>
+        )}
+        {layout.ref && (
           <li>
-            <span className="key key-iqr" /> Interquartile range
+            <span className="key key-ref" /> Median of all stories shown
           </li>
-          {anySmall && (
-            <li>
-              <span className="key key-small" /> Fewer than {smallN} stories
-            </li>
-          )}
-          {layout.ref && (
-            <li>
-              <span className="key key-ref" /> Median of all stories shown
-            </li>
-          )}
-        </ul>
+        )}
+      </ul>
+      {layout.mode === "side" ? (
+        <div
+          className="chart-heads"
+          style={{ gridTemplateColumns: `${layout.labelW}px minmax(0, 1fr)`, columnGap: layout.left - layout.labelW }}
+        >
+          <GroupedBy variable={variable} />
+          {axisTitle}
+        </div>
+      ) : (
+        <>
+          {axisTitle}
+          <GroupedBy variable={variable} />
+        </>
       )}
-      {!compact &&
-        (layout.mode === "side" ? (
-          <div
-            className="chart-heads"
-            style={{ gridTemplateColumns: `${layout.labelW}px minmax(0, 1fr)`, columnGap: layout.left - layout.labelW }}
-          >
-            <GroupedBy variable={variable} />
-            {axisTitle}
-          </div>
-        ) : (
-          <>
-            {axisTitle}
-            <GroupedBy variable={variable} />
-          </>
-        ))}
       <div className="chart-frame" ref={frame}>
         <span id={titleId} hidden>
           {title}
@@ -356,7 +351,7 @@ export default function RangeChart({
           </div>
         )}
       </div>
-      {!compact && anySmall && <p className="axis-caption">* Fewer than {smallN} stories: worth less trust.</p>}
+      {anySmall && <p className="axis-caption">* Fewer than {smallN} stories: worth less trust.</p>}
     </div>
   );
 }

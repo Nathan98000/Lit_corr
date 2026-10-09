@@ -87,7 +87,7 @@ export function chartValueText(rows, overall, format) {
  * Everything needed to draw the chart at a given width. Text positions come with estimated boxes
  * ({x0, x1, y0, y1}) so that tests can check that nothing overlaps.
  */
-export function rangeLayout({ rows, overall, format, width, smallN = 30, minN = 10, domainRows = null }) {
+export function rangeLayout({ rows, overall, format, width, smallN = 30, minN = 10 }) {
   const phone = width < PHONE;
   const longest = Math.max(0, ...rows.map((r) => r.label.length));
   const mode = !phone ? "side" : longest <= SHORT_LABEL ? "inline" : "stacked";
@@ -118,7 +118,7 @@ export function rangeLayout({ rows, overall, format, width, smallN = 30, minN = 
   let left;
   let plotW;
   for (;;) {
-    [lo, hi, ticks, step] = valueDomain(domainRows ? [...rows, ...domainRows] : rows, overall, format, count);
+    [lo, hi, ticks, step] = valueDomain(rows, overall, format, count);
     if (phone && ticks.length > 5) {
       ticks = ticks.filter((_, i) => i % 2 === 0);
       step *= 2;

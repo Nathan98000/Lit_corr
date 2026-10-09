@@ -54,7 +54,7 @@ Parts that the first chart does not need load their code when first used (`React
 | Characteristic picker (and the search code) | `CharacteristicPicker-*.js`, `search-*.js` | when the browser is idle after the first chart; when its word is hovered or focused |
 | Measure menu | `MetricMenu-*.js` | the same |
 | Genre cards and the compare table | `CompareGrid-*.js`, `CompareTable-*.js` | when "Compare all 30 genres" is hovered or focused |
-| Stories of similar age (its charts) | `AgeCheckCharts-*.js` | when "Check stories of similar age" is hovered or focused |
+| Stories of similar age (its chart) | `AgeCheckCharts-*.js` | when "Check stories of similar age" is hovered or focused |
 | Patterns page | `PatternBrowser-*.js` | when a link to it is hovered or focused |
 | How it works | `Methodology-*.js` (shares `search-*.js`) | when a link to it is hovered or focused |
 
@@ -117,8 +117,11 @@ src/
                           tab stop with arrow keys; details as a card, or a line under the chart in the phone layout;
                           the genre-change glide on one scale
     ChartNotes.jsx        story-age warnings and the three explanations (disclosures at every width)
-    AgeCheck.jsx          "Stories of similar age": the panel, its heading and Close
-    AgeCheckCharts.jsx    (lazy) the same chart within 2000–2009, 2010–2019 and 2020+
+    AgeCheck.jsx          "Stories of similar age": the panel, its heading, Close, caption and one-line legend
+    AgeCheckCharts.jsx    (lazy) the same chart within 2000–2009, 2010–2019 and 2020 or later as one aligned chart:
+                          the group labels once, a column per period (heading with its stories and verdict) with a
+                          dot per group on one shared scale; details as on the main chart; a hidden table of the
+                          numbers for screen readers
     NumbersTable.jsx      the chart's numbers (always in the page; cards on phones)
     CompareGrid.jsx       (lazy) every genre as a small chart, alphabetical
     CompareTable.jsx      (lazy) the numbers behind the genre cards
@@ -136,6 +139,7 @@ src/
     wording.js            titles, answer headings, takeaway, notes, the question sentence (no causal language)
     format.js             number formats (one number of decimals per axis and column)
     listScroll.js         keeps a menu's active option in view by scrolling the menu, never the page
+    ageLayout.js          (lazy) the similar-age chart's geometry: columns side by side or stacked, the shared scale
     motion.js             reduced-motion checks
     urlState.js           settings in the address, so views can be shared
   styles.css              all styling; colors are CSS variables at the top (ready for a dark theme later), and a
@@ -166,7 +170,8 @@ License 1.1 (`public/fonts/OFL.txt`, taken from `@fontsource/source-serif-4` 5.3
   medians (0.1 stars for ratings). Otherwise it says "No clear pattern" (or "Too few stories to judge a pattern");
   characteristics without an order say "Each group on its own".
 - Story age is never hidden: totals carry a warning with a switch to a per-month or per-1,000-views measure, every
-  group shows its median age, groups that differ in age get a warning and a one-tap check within three periods.
+  group shows its median age, groups that differ in age get a warning and a one-tap check within three periods
+  (one chart, a column per period, its number of stories in each column's heading).
 - Genres are always listed alphabetically, never ranked; the Patterns page is grouped by topic and alphabetical,
   never sorted by strength, and always gives the count of characteristics without a clear pattern.
 - Motion is switched off under "reduce motion": another genre glides the marks and the axis together (one scale

@@ -2,7 +2,6 @@ import { useEffect, useId, useState } from "react";
 import { cellStats, endGroups, groupRows, loadVariable, pattern } from "../lib/data.js";
 import { chartValueText } from "../lib/rangeLayout.js";
 import {
-  ASSOCIATION_NOTE,
   RATE_FOR,
   ageNotes,
   answerHeading,
@@ -204,6 +203,7 @@ export default function Explorer({ meta, state, onChange }) {
                 minN={meta.min_n}
                 onPickGenre={(id) => onChange({ ...state, mode: "one", genre: id })}
               />
+              {d.ageNotes.some((n) => n.kind === "total") && (
               <div className="compare-notes">
                 {d.ageNotes
                   .filter((n) => n.kind === "total")
@@ -223,8 +223,8 @@ export default function Explorer({ meta, state, onChange }) {
                       )}
                     </div>
                   ))}
-                <p className="association">{ASSOCIATION_NOTE}</p>
               </div>
+              )}
               <div className="chart-actions">
                 <button
                   type="button"

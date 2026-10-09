@@ -40,7 +40,7 @@ async function renderApp(hash = "") {
 }
 
 describe("the explorer", () => {
-  it("opens with a plain-English title and the disclaimer", async () => {
+  it("opens with a plain-English title and the independence statement", async () => {
     await renderApp();
     expect(screen.getByRole("heading", { level: 1 }).textContent).toBe(
       "What do popular Literotica stories have in common? · 3 stories · 3 genres".replace("3 stories", `${fixtureMeta.counts.included} stories`),
@@ -48,7 +48,6 @@ describe("the explorer", () => {
     expect(screen.getByRole("link", { name: "Story Patterns" })).toBeTruthy();
     expect(screen.getByRole("group", { name: "Choose what to compare" })).toBeTruthy();
     expect(chartTitle().textContent).toBe("Stories with more dialogue tend to get more favorites per 1,000 views");
-    expect(screen.getAllByText(/do not establish causation/).length).toBeGreaterThan(0);
     expect(screen.getByText(/not affiliated with or endorsed by Literotica/)).toBeTruthy();
   });
 
@@ -130,13 +129,13 @@ describe("the explorer", () => {
     await waitFor(() => expect(window.location.hash).toMatch(/var=dlg_word_share/));
   });
 
-  it("has a methodology page with the required statement", async () => {
+  it("has a How it works page that keeps the limits of the sample", async () => {
     const user = await renderApp();
     await user.click(within(screen.getByRole("navigation", { name: "Pages" })).getByRole("link", { name: "How it works" }));
     expect(screen.getAllByRole("link", { name: "How it works" })).toHaveLength(2); // nav and footer agree
     await screen.findByRole("heading", { level: 1, name: "How it works" });
     expect(document.title).toBe("How it works · What do popular Literotica stories have in common?");
-    expect(screen.getAllByText(/should not be assumed to represent all erotic fiction, readers, or human sexuality/).length).toBe(2);
+    expect(screen.getByText(/do not stand for erotic fiction, readers or human sexuality in general/)).toBeTruthy();
     expect(screen.getByRole("heading", { level: 2, name: "What this site does not contain" })).toBeTruthy();
   });
 
@@ -144,6 +143,38 @@ describe("the explorer", () => {
     await renderApp("#/explore?genre=nope&metric=nope&var=nope&include=nope");
     expect(screen.getByLabelText("Genre").value).toBe("all");
     expect(screen.getByLabelText("Only include").value).toBe("all");
+  });
+});
+
+describe("no causation reminders (decision 1 of round 2)", () => {
+  const REMINDERS = /do not establish causation|do not show that a characteristic changes|\bnot why\b|Descriptive only/i;
+  const pages = [
+    ["the explorer, one genre", "#/explore", () => waitFor(() => expect(document.querySelector(".chart-panel[aria-busy='false']")).toBeTruthy())],
+    [
+      "the explorer, comparing genres",
+      "#/explore?mode=compare&var=dlg_word_share",
+      () => screen.findAllByRole("button", { name: /Open its chart\.$/ }),
+    ],
+    ["Patterns", "#/patterns?genre=all&metric=pop_fav_per_1k_views", () => screen.findByText(/characteristics that can show a trend/)],
+    ["How it works", "#/methodology", () => screen.findByRole("heading", { level: 1, name: "How it works" })],
+  ];
+  it.each(pages)("%s has none, and says that the site is independent", async (_, hash, ready) => {
+    window.history.replaceState(null, "", `/${hash}`);
+    render(<App />);
+    await ready();
+    expect(document.body.textContent).not.toMatch(REMINDERS);
+    expect(screen.getByRole("contentinfo").textContent).toMatch(
+      /^An independent project, not affiliated with or endorsed by Literotica\. This site holds summaries of groups of stories only: no story text, titles, authors or story-by-story records\. How it works$/,
+    );
+  });
+
+  it("ends the Patterns page's note on chance with the rule", async () => {
+    window.history.replaceState(null, "", "/#/patterns?genre=all&metric=pop_fav_per_1k_views");
+    render(<App />);
+    const note = await screen.findByText(/some differences appear by chance/);
+    expect(note.textContent).toBe(
+      "With this many characteristics, some differences appear by chance; the rule behind “tend to” allows for that. When a title says “tend to”",
+    );
   });
 });
 
@@ -256,7 +287,6 @@ describe("notes, age check and next questions", () => {
     expect(screen.getByText("What “Dialogue share” measures", { selector: "summary" })).toBeTruthy();
     expect(screen.getByText("What “Favorites per 1,000 views” means", { selector: "summary" })).toBeTruthy();
     expect(screen.getByRole("link", { name: "How was this measured?" }).getAttribute("href")).toBe("#/methodology/measures");
-    expect(screen.getByText(/do not show that a characteristic changes how popular/)).toBeTruthy();
   });
 
   it("checks stories of similar age in three periods, with the state in the address", async () => {
@@ -340,14 +370,13 @@ describe("How it works", () => {
     const heading = await screen.findByRole("heading", { level: 2, name: "When a title says “tend to”" });
     await waitFor(() => expect(document.activeElement).toBe(heading));
     const short = screen.getByRole("complementary", { name: "In short" });
-    expect(within(short).getAllByRole("listitem")).toHaveLength(5);
+    expect(within(short).getAllByRole("listitem")).toHaveLength(4);
     expect(short.textContent).toMatch(/collected October 1, 2026 to October 8, 2026/);
     const contents = screen.getByRole("navigation", { name: "Contents" });
     for (const id of ["point-of-view", "explicitness", "emotion", "charts", "tend-to", "missing-data"]) {
       expect(within(contents).getAllByRole("link").some((a) => a.getAttribute("href") === `#/methodology/${id}`)).toBe(true);
       expect(document.getElementById(id)).toBeTruthy();
     }
-    expect(screen.getAllByText(/do not establish causation/).length).toBe(2);
     // the glossary uses the topics and can be filtered
     expect(screen.getByText("Dialogue & characters", { selector: "summary" })).toBeTruthy();
     await user.type(screen.getByLabelText("Find a characteristic"), "anger");

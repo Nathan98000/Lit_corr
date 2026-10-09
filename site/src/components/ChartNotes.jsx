@@ -1,5 +1,5 @@
 import { toHash } from "../lib/urlState.js";
-import { ASSOCIATION_NOTE, RATE_FOR, howToRead, methodSection } from "../lib/wording.js";
+import { RATE_FOR, howToRead, methodSection } from "../lib/wording.js";
 
 /** A story-age warning as a visible box, with its one-tap action. */
 function AgeBox({ note, action }) {
@@ -16,7 +16,7 @@ function AgeBox({ note, action }) {
 /**
  * The notes beside (wide screens, E2) or under (narrow screens, E1) a one-genre chart: story-age warnings first, as
  * boxes with an action; then how to read the chart, what the characteristic measures and what the measure means
- * (one-line disclosures on narrow screens, plain text in the margin on wide ones); then the association note.
+ * (one-line disclosures on narrow screens, plain text in the margin on wide ones).
  */
 export default function ChartNotes({ meta, d, view, wide, onChange, ageCheckOpen }) {
   const { variable, metric } = d;
@@ -68,7 +68,6 @@ export default function ChartNotes({ meta, d, view, wide, onChange, ageCheckOpen
               <p>{s.body}</p>
             </details>
           ))}
-      <p className="association">{ASSOCIATION_NOTE}</p>
     </div>
   );
 }

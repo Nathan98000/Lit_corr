@@ -138,10 +138,6 @@ function fmtYears(y) {
   return v < 1 ? "under a year" : `${v} year${v === 1 ? "" : "s"}`;
 }
 
-export const ASSOCIATION_NOTE =
-  "Patterns describe stories on Literotica. They do not show that a characteristic changes how popular a " +
-  "story is: the groups can differ in other ways as well.";
-
 /** The line under the title: genre, which stories, and how many. */
 export function subtitle({ genre, subset, n, compare = false, genreCount = 0 }) {
   const parts = [compare ? `All ${genreCount} genres, side by side` : genre.name];

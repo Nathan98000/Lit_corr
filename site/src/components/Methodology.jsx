@@ -29,7 +29,7 @@ export const SECTIONS = [
   ["glossary", "Every characteristic"],
 ];
 
-/** Five bullets built from the data's own numbers. */
+/** Four bullets built from the data's own numbers. */
 function InShort({ meta }) {
   const { counts, source } = meta;
   const genres = meta.genres.length - 1;
@@ -49,7 +49,6 @@ function InShort({ meta }) {
           Each group of stories is summarized by its median (the typical story) and its middle half; groups of fewer
           than {meta.min_n} stories are hidden.
         </li>
-        <li>The patterns are descriptive: they show what goes together, not why.</li>
       </ul>
     </aside>
   );
@@ -133,12 +132,6 @@ export default function Methodology({ meta, section }) {
         </p>
 
         <InShort meta={meta} />
-
-        <aside className="callout">
-          The visualizations show descriptive associations in stories on Literotica. They do not establish causation,
-          and the stories and users represented on Literotica should not be assumed to represent all erotic fiction,
-          readers, or human sexuality.
-        </aside>
 
         <h2 id="data" tabIndex={-1}>Where the stories come from</h2>
         <p>
@@ -302,10 +295,6 @@ export default function Methodology({ meta, section }) {
 
         <h2 id="limits" tabIndex={-1}>Limitations</h2>
         <ul>
-          <li>
-            <strong>Descriptive only.</strong> A pattern can come from something else: the author’s experience, the
-            sub-genre, the year of publication, or how the site promotes stories.
-          </li>
           <li>
             <strong>A sample.</strong> 300 random stories per genre, not every story on the site. Small groups are
             uncertain, which is why sample sizes are always shown.

@@ -438,11 +438,6 @@ h3 {
   color: var(--ink-3);
 }
 
-.association {
-  font-style: italic;
-  color: var(--ink-3);
-}
-
 .chart-actions {
   display: flex;
   flex-wrap: wrap;
@@ -634,10 +629,6 @@ table.numbers {
 .compare-notes {
   margin-top: 18px;
   max-width: 62ch;
-}
-
-.compare-notes .association {
-  font-size: 13.5px;
 }
 
 .compare-numbers {
@@ -921,15 +912,6 @@ table.numbers {
 
 .prose li {
   margin-bottom: 6px;
-}
-
-.callout {
-  border-left: 3px solid var(--accent);
-  background: var(--accent-wash);
-  padding: 14px 18px;
-  border-radius: 0 var(--radius) var(--radius) 0;
-  color: var(--ink);
-  font-size: 16px;
 }
 
 .glossary-group {
@@ -1448,11 +1430,6 @@ table.numbers {
   margin: 0 0 14px;
   font-size: 15px;
   color: var(--ink-2);
-}
-
-.notes .association {
-  margin-top: 14px;
-  font-size: 13.5px;
 }
 
 .why {

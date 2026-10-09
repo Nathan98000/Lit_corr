@@ -5,7 +5,7 @@ import Methodology from "./components/Methodology.jsx";
 import PatternBrowser from "./components/PatternBrowser.jsx";
 import { clearCache, loadMeta } from "./lib/data.js";
 import { scrollBehavior } from "./lib/motion.js";
-import { formatCount, formatDate } from "./lib/format.js";
+import { formatCount } from "./lib/format.js";
 import { parseHash, sanitize, toHash } from "./lib/urlState.js";
 
 export const TITLE = "What do popular Literotica stories have in common?";
@@ -178,18 +178,10 @@ export default function App() {
       <footer className="site-footer">
         <div className="wrap">
           <p>
-            The visualizations show descriptive associations in stories on Literotica. They do not establish
-            causation, and the stories and users represented on Literotica should not be assumed to represent all
-            erotic fiction, readers, or human sexuality.
+            An independent project, not affiliated with or endorsed by Literotica. This site holds summaries of groups
+            of stories only: no story text, titles, authors or story-by-story records.{" "}
+            <a href="#/methodology">How it works</a>
           </p>
-          {meta && (
-            <p className="muted">
-              Based on a random sample of {formatCount(meta.counts.included)} stories collected{" "}
-              {formatDate(meta.source.collected_from)} – {formatDate(meta.source.collected_to)}. This site holds
-              summaries of groups of stories only: no story text, titles, authors or story-by-story records. An
-              independent project, not affiliated with or endorsed by Literotica. <a href="#/methodology">How it works</a>
-            </p>
-          )}
         </div>
       </footer>
     </div>

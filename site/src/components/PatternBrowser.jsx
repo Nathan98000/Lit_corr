@@ -103,7 +103,7 @@ export default function PatternBrowser({ meta, state, onChange }) {
           </p>
           <p className="pattern-note">
             With this many characteristics, some differences appear by chance; the rule behind “tend to” allows for
-            that, but a single pattern is still only a description.{" "}
+            that.{" "}
             <a href={toHash("methodology", { section: "tend-to" })}>When a title says “tend to”</a>
           </p>
           <button type="button" className="btn" aria-pressed={showAll} onClick={() => setShowAll((x) => !x)}>

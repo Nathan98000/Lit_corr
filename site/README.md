@@ -85,7 +85,7 @@ src/
     Overlay.jsx           bottom sheet on phones, anchored popover on wider screens
     InlineSelect.jsx      a native select shown as a word of the sentence
     RangeChart.jsx        one genre: one row per group (median dot with value, middle-half capsule)
-    ChartNotes.jsx        story-age warnings, the three explanations, the association note
+    ChartNotes.jsx        story-age warnings and the three explanations
     AgeCheck.jsx          the same chart within 2000–2009, 2010–2019 and 2020+
     NumbersTable.jsx      the chart's numbers (always in the page; cards on phones)
     CompareGrid.jsx       every genre as a small chart, alphabetical

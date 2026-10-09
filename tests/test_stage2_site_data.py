@@ -184,9 +184,10 @@ CAUSAL = re.compile(r"\b(cause[sd]?|causing|drives?|driven|driving|makes? reader
 
 
 def _visitor_strings(meta):
-    """Every string in meta.json that a visitor can read (not ids, dates or file names)."""
+    """Every string in meta.json that a visitor can read (not ids, dates or file names, and not the search-only
+    synonyms, which keep the spellings people type, such as "humour")."""
     skip = {"id", "generated_at", "source", "var", "metric", "genre", "mode", "kind", "unit", "ids", "topic",
-            "default_metric", "format", "excluded_reasons"}
+            "default_metric", "format", "excluded_reasons", "syn"}
     out = []
 
     def walk(x, key=None):
@@ -244,6 +245,20 @@ def test_us_english_and_generated_phrases():
     assert "with" not in W.noun_for("dlg_paragraph_share", "Paragraphs with dialogue")
     assert W.noun_for("emo_affection_per_1k", "Affection & love") == "affection and love"
     assert W.synonyms_for("pov_is_first_person").startswith("pov point of view")
+
+
+def test_search_synonyms_are_search_only_and_keep_their_spelling(built):
+    assert "1st person" in W.synonyms_for("pov_class") and "first person" in W.synonyms_for("pov_is_first_person")
+    assert W.synonyms_for("humor_per_1k") == "humour"
+    assert "kissing" in W.synonyms_for("rel_intimacy_per_1k") and "kiss" not in W.synonyms_for("emo_affection_per_1k")
+    assert W.synonyms_for("sex_action_per_1k") == "explicit orgasm climax"  # with the "sex_" prefix's word
+    assert "oral" not in " ".join(W.SYNONYMS.values()).split()  # not in any word list, so not offered
+    for meta in _metas(built):
+        syn = {v["id"]: v.get("syn", "") for v in meta["variables"]}
+        assert "1st person" in syn["pov_class"]
+        if "humor_per_1k" in syn:  # the real aggregates
+            assert syn["humor_per_1k"] == "humour"  # not turned into "humor" by us_english()
+            assert next(v for v in meta["variables"] if v["id"] == "humor_per_1k")["label"] == "Humor and laughter"
 
 
 # ---------------------------------------------------------------------------------------------- patterns.json

@@ -224,6 +224,10 @@ export default function Controls({ meta, state, onChange }) {
             value={state.v}
             sub={state.sub}
             focusRef={pickerFocus}
+            onPickMetric={(id) => {
+              setMenu(null);
+              set({ metric: id });
+            }}
             onPick={(id) => {
               setMenu(null);
               const next = { ...state, v: id, check: undefined };

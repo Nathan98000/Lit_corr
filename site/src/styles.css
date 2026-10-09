@@ -1794,6 +1794,22 @@ table.numbers {
   outline: none;
 }
 
+/* a measure typed into the characteristic search (F45) */
+.pick-measure {
+  margin: 12px 0 0;
+  padding: 8px 12px 0;
+  border-radius: var(--radius);
+  background: var(--accent-wash);
+  font-size: 14.5px;
+  color: var(--ink-2);
+}
+
+.pick-measure .link-button {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--target);
+}
+
 .pick-group {
   list-style: none;
   margin: 0;

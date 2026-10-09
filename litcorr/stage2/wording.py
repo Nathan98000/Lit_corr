@@ -110,7 +110,8 @@ POPULAR = ["story_words", "pov_is_first_person", "narr_is_present_tense", "dlg_w
            "sex_words_before_first", "emo_balance", "series_is_part", "story_has_author_note",
            "read_flesch_reading_ease", "reader_address_per_1k", "pub_year"]
 # Extra words the picker's search matches (people search for "POV", "explicit", "typos" ...), per topic and
-# per characteristic id or id prefix.
+# per characteristic id or id prefix. They are search-only text, never shown, so they keep the spellings people type
+# ("humour") and are left out of us_english() and of the US-spelling checks.
 TOPIC_SYNONYMS = {
     "length": "long short size words pages",
     "narration": "pov point of view person narrator tense voice",
@@ -123,7 +124,7 @@ TOPIC_SYNONYMS = {
 }
 SYNONYMS = {
     "story_words": "length long short size",
-    "pov_": "pov point of view person narrator",
+    "pov_": "pov point of view person narrator 1st person first person",
     "narr_": "tense present past",
     "reader_address_per_1k": "second person addressing the reader",
     "dlg_": "dialog speech talking conversation",
@@ -137,6 +138,9 @@ SYNONYMS = {
     "author_stories_count": "prolific writer author",
     "emo_": "feelings mood sentiment",
     "rel_romance_per_1k": "love",
+    "humor_per_1k": "humour",
+    "rel_intimacy_per_1k": "kiss kissing",  # not Affection & love: its list leaves physical affection to intimacy
+    "sex_action_per_1k": "orgasm climax",
 }
 EXCLUDED = {"age_days"}  # same information as age_years
 

@@ -1,6 +1,6 @@
 import { useEffect, useId, useMemo, useState } from "react";
 import { prefetchVariable } from "../lib/data.js";
-import { highlight, oneLine, searchCharacteristics } from "../lib/search.js";
+import { highlight, measureNamed, oneLine, searchCharacteristics } from "../lib/search.js";
 
 /** A label with the matched part marked. */
 function Marked({ label, query }) {
@@ -20,10 +20,13 @@ function Marked({ label, query }) {
  * combobox-with-listbox pattern. With the search box empty it shows a Popular set and the eight topics; a topic opens
  * its list (browsing never changes the chart); typing searches labels, descriptions, topics and synonyms.
  *
+ * A query that names a popularity measure ("rating") says so above any results, with a button that switches the
+ * measure instead (F45).
+ *
  * This is the body of the "Story characteristic" sheet or popover; it loads with its own code (F49), so it takes
  * focus itself when it arrives. `focusRef` is the search box.
  */
-export default function CharacteristicPicker({ meta, value, sub, onPick, focusRef }) {
+export default function CharacteristicPicker({ meta, value, sub, onPick, onPickMetric, focusRef }) {
   const [query, setQuery] = useState("");
   const [topicId, setTopicId] = useState(null);
   const [active, setActive] = useState(0);
@@ -37,6 +40,7 @@ export default function CharacteristicPicker({ meta, value, sub, onPick, focusRe
 
   // The options on screen, in order, as { kind: "var" | "topic" | "back", id, group }.
   const results = useMemo(() => searchCharacteristics(meta, query), [meta, query]);
+  const named = useMemo(() => measureNamed(meta, query), [meta, query]);
   const topic = topicId ? meta.topics.find((t) => t.id === topicId) : null;
   let options;
   let mode;
@@ -251,6 +255,16 @@ export default function CharacteristicPicker({ meta, value, sub, onPick, focusRe
           }}
           onKeyDown={onKeyDown}
         />
+      </div>
+      <div className="pick-measure-note" aria-live="polite">
+        {named && (
+          <p className="pick-measure">
+            “{named.label}” is a popularity measure, not a story characteristic.{" "}
+            <button type="button" className="link-button" onClick={() => onPickMetric(named.id)}>
+              Show {named.label.toLowerCase()}
+            </button>
+          </p>
+        )}
       </div>
       <div id={`${base}-list`} role="listbox" aria-label="Story characteristics" className="pick-list">
         {content}

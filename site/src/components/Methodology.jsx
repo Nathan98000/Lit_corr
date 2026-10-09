@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { formatCount, formatDate } from "../lib/format.js";
 import { scrollBehavior } from "../lib/motion.js";
 import { searchCharacteristics } from "../lib/search.js";
 import { toHash } from "../lib/urlState.js";
+import useMediaQuery from "./useMediaQuery.js";
 
 const REASONS = {
   no_text: "had no story text that could be collected",
@@ -97,34 +98,147 @@ function Glossary({ meta }) {
   );
 }
 
+/** Scroll a section's heading to the top (below the section bar, by its scroll margin) and move focus to it. */
+function jumpTo(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.scrollIntoView?.({ behavior: scrollBehavior(), block: "start" });
+  el.focus?.({ preventScroll: true });
+}
+
+/**
+ * The section being read: the last section heading that has crossed a line 60 px from the top of the screen (null
+ * above the first). An IntersectionObserver on the headings says when one crosses; their positions say which.
+ */
+function useCurrentSection() {
+  const [current, setCurrent] = useState(null);
+  useEffect(() => {
+    const headings = SECTIONS.map(([id]) => document.getElementById(id)).filter(Boolean);
+    if (!headings.length || typeof IntersectionObserver === "undefined") return undefined;
+    const update = () => {
+      let last = null;
+      for (const h of headings) if (h.getBoundingClientRect().top <= 60) last = h.id;
+      setCurrent(last);
+    };
+    const io = new IntersectionObserver(update, { rootMargin: "-60px 0px 0px 0px", threshold: [0, 1] });
+    headings.forEach((h) => io.observe(h));
+    return () => io.disconnect();
+  }, []);
+  return current;
+}
+
+/** The thirteen sections as links; the one being read is marked. */
+function ContentsList({ current, onPick }) {
+  return (
+    <ol>
+      {SECTIONS.map(([id, title, sub]) => {
+        const href = toHash("methodology", { section: id });
+        return (
+          <li key={id} className={sub ? "sub" : undefined}>
+            <a
+              href={href}
+              aria-current={current === id ? "location" : undefined}
+              onClick={(e) => {
+                onPick?.();
+                // the address already names this section: no hash change will come, so go there now
+                if (window.location.hash === href) {
+                  e.preventDefault();
+                  jumpTo(id);
+                }
+              }}
+            >
+              {title}
+            </a>
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
+/**
+ * How it works on narrow screens (concept H3 of the second review): a 44 px bar under the masthead that sticks to the
+ * top of the screen, naming the section being read, with a "Contents" button that opens the sections under it.
+ * Escape, the button again or a tap outside close the panel and give focus back to the button.
+ */
+function SectionBar({ current }) {
+  const [open, setOpen] = useState(false);
+  const bar = useRef(null);
+  const button = useRef(null);
+  const panelId = useId();
+  const title = SECTIONS.find(([id]) => id === current)?.[1] ?? "Contents";
+  useEffect(() => {
+    if (!open) return undefined;
+    const close = () => {
+      setOpen(false);
+      button.current?.focus();
+    };
+    const key = (e) => {
+      if (e.key === "Escape") close();
+    };
+    const away = (e) => {
+      if (bar.current?.contains(e.target)) return;
+      setOpen(false);
+      // after the tap has moved focus where it landed: back to the button, unless it landed on another control
+      setTimeout(() => {
+        const a = document.activeElement;
+        if (!a || a === document.body || a.id === "main") button.current?.focus();
+      }, 0);
+    };
+    document.addEventListener("keydown", key);
+    document.addEventListener("pointerdown", away);
+    return () => {
+      document.removeEventListener("keydown", key);
+      document.removeEventListener("pointerdown", away);
+    };
+  }, [open]);
+  return (
+    <div className="section-bar" ref={bar}>
+      <div className="section-bar-row">
+        <p className="section-bar-where">
+          How it works › <b>{title}</b>
+        </p>
+        <button
+          ref={button}
+          type="button"
+          className="link-button section-bar-button"
+          aria-expanded={open}
+          aria-controls={panelId}
+          onClick={() => setOpen((x) => !x)}
+        >
+          Contents
+        </button>
+      </div>
+      <nav id={panelId} className="section-panel" aria-label="Contents" hidden={!open}>
+        <ContentsList current={current} onPick={() => setOpen(false)} />
+      </nav>
+    </div>
+  );
+}
+
 export default function Methodology({ meta, section }) {
   const { counts, source } = meta;
+  const wide = useMediaQuery("(min-width: 1000px)");
+  const current = useCurrentSection();
   // #/methodology/<section>: scroll to the section and move focus to its heading
   useEffect(() => {
-    if (!section) return;
-    const el = document.getElementById(section);
-    if (!el) return;
-    el.scrollIntoView?.({ behavior: scrollBehavior(), block: "start" });
-    el.focus?.({ preventScroll: true });
+    if (section) jumpTo(section);
   }, [section]);
   const genres = meta.genres.filter((g) => g.id !== "all");
   const excluded = counts.sampled - counts.included;
   const reasons = Object.entries(counts.excluded_reasons || {});
   return (
-    <div className="methodology-layout">
-      <nav className="contents" aria-label="Contents">
-        <p className="contents-title">Contents</p>
-        <ol>
-          {SECTIONS.map(([id, title, sub]) => (
-            <li key={id} className={sub ? "sub" : undefined}>
-              <a href={toHash("methodology", { section: id })} aria-current={section === id ? "location" : undefined}>
-                {title}
-              </a>
-            </li>
-          ))}
-        </ol>
-      </nav>
-      <article className="prose methodology">
+    <>
+      {/* outside the grid, so that it can stick for the whole page */}
+      {!wide && <SectionBar current={current} />}
+      <div className="methodology-layout">
+        {wide && (
+          <nav className="contents" aria-label="Contents">
+            <p className="contents-title">Contents</p>
+            <ContentsList current={current} />
+          </nav>
+        )}
+        <article className="prose methodology">
         <h1>How it works</h1>
         <p className="lede">
           How the stories were chosen, what was measured, and how the charts summarize them. Written for curious
@@ -338,7 +452,8 @@ export default function Methodology({ meta, section }) {
           Data processed {formatDate(source.processed_at)} (text measures version {source.text_pipeline_version}).
           Aggregates generated {formatDate(meta.generated_at)}.
         </p>
-      </article>
-    </div>
+        </article>
+      </div>
+    </>
   );
 }

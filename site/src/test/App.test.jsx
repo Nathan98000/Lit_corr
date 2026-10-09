@@ -391,6 +391,7 @@ describe("How it works", () => {
     const short = screen.getByRole("complementary", { name: "In short" });
     expect(within(short).getAllByRole("listitem")).toHaveLength(4);
     expect(short.textContent).toMatch(/collected October 1, 2026 to October 8, 2026/);
+    await user.click(screen.getByRole("button", { name: "Contents" })); // narrow screens: the section bar's panel
     const contents = screen.getByRole("navigation", { name: "Contents" });
     for (const id of ["point-of-view", "explicitness", "emotion", "charts", "tend-to", "missing-data"]) {
       expect(within(contents).getAllByRole("link").some((a) => a.getAttribute("href") === `#/methodology/${id}`)).toBe(true);

@@ -2,7 +2,8 @@
 
     python -m litcorr.stage2.synthetic site/src/test/fixtures/aggregates
 
-writes the website test fixtures: the aggregates built from this synthetic handoff.
+writes the website test fixtures: the aggregates built from this synthetic handoff. The Python tests also use an
+extended version (`extended=True`) with more characteristics, three of which differ between genres on purpose.
 """
 
 from __future__ import annotations
@@ -34,12 +35,38 @@ DICTIONARY = {"variables": [
      "kind": "id", "unit": "", "description": "", "caveat": "", "explorer": False},
 ]}
 
+# The extended handoff's extra characteristics (for the Genres page's tests): publication year, story length and age
+# (which some "Only include" options leave out), publication month (left out of that page), the author's number of
+# stories (ordered bands), and three that differ between genres on purpose.
+EXTENDED = [
+    {"name": "pub_year", "label": "Publication year", "group": "Publication", "ui_group": "Publication",
+     "kind": "count", "unit": "year", "description": "Year of publication.", "caveat": "", "explorer": True},
+    {"name": "story_words", "label": "Word count", "group": "Story basics", "ui_group": "Story", "kind": "count",
+     "unit": "words", "description": "Number of words.", "caveat": "", "explorer": True},
+    {"name": "age_years", "label": "Years online", "group": "Publication", "ui_group": "Publication",
+     "kind": "continuous", "unit": "years", "description": "Years online.", "caveat": "", "explorer": True},
+    {"name": "pub_month", "label": "Publication month", "group": "Publication", "ui_group": "Publication",
+     "kind": "count", "unit": "month (1–12)", "description": "Month of publication.", "caveat": "",
+     "explorer": True},
+    {"name": "author_stories_count", "label": "Author's story count", "group": "Site metadata", "ui_group": "Story",
+     "kind": "count", "unit": "stories", "description": "Stories by the author.", "caveat": "", "explorer": True},
+    {"name": "sex_terms_per_1k", "label": "Sexual language", "group": "Sexual content",
+     "ui_group": "Sexual content", "kind": "continuous", "unit": "per 1,000 words",
+     "description": "Sexual terms per 1,000 words.", "caveat": "", "explorer": True},
+    {"name": "narr_tense_class", "label": "Narration tense", "group": "Narration", "ui_group": "Narration",
+     "kind": "categorical", "unit": "present / past / mixed / unknown", "description": "Tense.", "caveat": "",
+     "explorer": True},
+    {"name": "pov_is_first_person", "label": "First-person narration", "group": "Narration",
+     "ui_group": "Narration", "kind": "binary", "unit": "1 = first, 0 = third", "description": "First person.",
+     "caveat": "", "explorer": True},
+]
+
 MANIFEST = {"processed_at": "2026-10-08T17:00:26+00:00", "collection_first_session": "2026-10-01T13:54:49",
             "collection_last_session": "2026-10-08T16:44:12", "stats_observed_range": ["2026-10-01", "2026-10-08"],
             "text_pipeline_version": "1.3"}
 
 
-def synthetic_stories(seed: int = 7) -> pd.DataFrame:
+def synthetic_stories(seed: int = 7, extended: bool = False) -> pd.DataFrame:
     rng = np.random.default_rng(seed)
     rows = []
     for slug, _, n, size in GENRES:
@@ -63,11 +90,27 @@ def synthetic_stories(seed: int = 7) -> pd.DataFrame:
             })
     rows.append({**rows[0], "story_key": "kexcluded", "analysis_include": False, "has_text": False,
                  "exclusion_reasons": ["no_text"]})
-    return pd.DataFrame(rows)
+    df = pd.DataFrame(rows)
+    if extended:  # drawn after the stories above, so the default handoff stays the same
+        x = np.random.default_rng(seed + 1)
+        n = len(df)
+        rom = (df["queue_category_slug"] == "romance").to_numpy()
+        bands = np.array([1, 2, 6, 21, 51, 101, 201], dtype=float)
+        df["pub_month"] = x.integers(1, 13, n).astype(float)
+        # Romance: more prolific authors, less sexual language, more present-tense and first-person narration
+        df["author_stories_count"] = np.where(rom, x.choice(bands, n, p=[.05, .1, .15, .2, .2, .15, .15]),
+                                              x.choice(bands, n, p=[.3, .3, .2, .1, .05, .03, .02]))
+        df["sex_terms_per_1k"] = np.round(np.where(rom, x.lognormal(1.5, 0.5, n), x.lognormal(2.5, 0.5, n)), 2)
+        tenses = ["present", "past", "mixed"]
+        df["narr_tense_class"] = np.where(rom, x.choice(tenses, n, p=[.6, .3, .1]), x.choice(tenses, n, p=[.1, .85, .05]))
+        first = np.where(rom, x.uniform(size=n) < 0.85, x.uniform(size=n) < 0.4).astype(float)
+        first[x.uniform(size=n) < 0.1] = np.nan  # second person or mixed: neither
+        df["pov_is_first_person"] = first
+    return df
 
 
-def write_synthetic_handoff(folder: Path, seed: int = 7) -> tuple[Path, pd.DataFrame]:
-    df = synthetic_stories(seed)
+def write_synthetic_handoff(folder: Path, seed: int = 7, extended: bool = False) -> tuple[Path, pd.DataFrame]:
+    df = synthetic_stories(seed, extended)
     cats = pd.DataFrame([{"category_slug": s, "category_name": nm, "selected": True,
                           "estimated_stories_in_category": size} for s, nm, _, size in GENRES])
     path = folder / "litcorr_stage2_handoff_20261008.zip"
@@ -76,7 +119,8 @@ def write_synthetic_handoff(folder: Path, seed: int = 7) -> tuple[Path, pd.DataF
             buf = io.BytesIO()
             frame.to_parquet(buf, index=False)
             z.writestr(name, buf.getvalue())
-        z.writestr("data_dictionary.json", json.dumps(DICTIONARY))
+        z.writestr("data_dictionary.json",
+                   json.dumps({"variables": DICTIONARY["variables"] + EXTENDED} if extended else DICTIONARY))
         z.writestr("collection_manifest.json", json.dumps(MANIFEST))
     return path, df
 

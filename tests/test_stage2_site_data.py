@@ -312,3 +312,215 @@ def test_real_pattern_index_is_small_and_holds_nothing_else():
     raw = (out / "patterns.json").read_bytes()
     assert len(gzip.compress(raw, 9)) <= 40_000
     assert set(raw.decode()) <= set('{}[]":,abcdefghi.' + "".join({c for g in meta["genres"] for c in g["id"]}) + "keyg")
+
+
+# ------------------------------------------------------------------------------------------------ genres page
+SUBSET_IDS = {s[0] for s in W.SUBSETS}
+
+
+@pytest.fixture(scope="module")
+def built_genres(tmp_path_factory):
+    """The extended synthetic handoff (more characteristics, three of which differ between genres on purpose)."""
+    tmp = tmp_path_factory.mktemp("genres")
+    path, df = write_synthetic_handoff(tmp, extended=True)
+    out = tmp / "aggregates"
+    sd.build_site_data(path, out, workers=2)
+    meta = json.loads((out / "meta.json").read_text())
+    return path, meta, out, df[df.analysis_include].reset_index(drop=True)
+
+
+def _genres(out, subset="all"):
+    return json.loads((out / "genres" / f"{subset}.json").read_text())
+
+
+def test_one_genres_file_per_option_and_no_other_files(built, built_genres):
+    for _, meta, out, *_ in (built, built_genres):
+        assert {p.stem for p in (out / "genres").iterdir()} == {s["id"] for s in meta["subsets"]} == SUBSET_IDS
+        assert {p.name for p in out.iterdir()} == {"meta.json", "patterns.json", "v", "genres"}
+        assert all(p.suffix == ".json" for p in (out / "genres").iterdir())
+        assert all(p.is_dir() and all(f.suffix == ".json" for f in p.iterdir()) for p in (out / "v").iterdir())
+
+
+def test_genres_meta_has_the_rule_and_the_direction_words(built_genres):
+    _, meta, _, _ = built_genres
+    assert meta["genre_rule"] == {"min_r": 0.2, "level": 0.999, "min_tvd": 0.2, "min_n": 30}
+    words = {v["id"]: (v.get("more_word"), v.get("less_word")) for v in meta["variables"]}
+    assert words["story_words"] == ("Longer", "Shorter") and words["sex_terms_per_1k"] == ("More", "Less")
+    assert all((w == W.DIRECTION_WORDS[i]) if i in W.DIRECTION_WORDS else w == (None, None) for i, w in words.items())
+
+
+def test_genres_arrays_cells_and_shares(built_genres):
+    _, meta, out, _ = built_genres
+    genre_ids = [g["id"] for g in meta["genres"]]
+    for sid in SUBSET_IDS:
+        data = _genres(out, sid)
+        assert data["s"] == sid and data["genres"] == genre_ids
+        assert data["rule"] == {"min_r": 0.2, "z": 3.29, "min_tvd": 0.2, "min_n": 30}
+        assert len(data["n"]) == len(data["age"]) == len(genre_ids)
+        assert all((a is None) == (n < sd.MIN_N) for n, a in zip(data["n"], data["age"]))
+        for name, e in data["c"].items():
+            arrays = [e["q"], e["r"], e["f"]] + ([e["z"]] if e["k"] == "zero" else [])
+            assert all(len(a) == len(genre_ids) for a in arrays), name
+            for i, cell in enumerate(e["q"]):
+                if cell is None:
+                    assert e["r"][i] is None and e["f"][i] == 0
+                    continue
+                n = cell[0]
+                assert n >= sd.MIN_N and (e["r"][i] is None) == (i == 0 or n < sd.SMALL_N), (sid, name, i)
+                if e["k"] == "num":
+                    quart = cell[2:5] if i == 0 else cell[1:4]
+                    assert quart[0] <= quart[1] <= quart[2] and len(cell) == (6 if i == 0 else 4)
+                    if i == 0:
+                        assert cell[1] <= cell[2] and cell[4] <= cell[5]  # p10 and p90 around the quartiles
+                elif e["k"] == "zero":
+                    z = e["z"][i]
+                    assert cell == [n] and 0 <= z[0] <= n
+                    share, quart = (z[1], z[2:]) if i == 0 else (None, z[1:])
+                    assert share is None or 0 <= share <= 1
+                    assert (len(quart) == 3) == (z[0] >= sd.MIN_N) and (not quart or quart[0] <= quart[1] <= quart[2])
+                elif e["k"] == "bin":
+                    assert len(cell) == 2 and 0 <= cell[1] <= 1
+                else:
+                    assert all(0 <= s <= 1 for s in cell[1:]) and abs(sum(cell[1:]) - 1) <= 0.002, (sid, name, i)
+                assert e["f"][i] in ((0, 1) if e["k"] == "grp" else (-1, 0, 1))
+
+
+def _direct(df, name, kind, genre, subset_mask=None):
+    """The comparison of one genre with all genres, recomputed from scratch: (n, r, se) by counting pairs, or for
+    named groups (n, tvd, chi-square, degrees of freedom)."""
+    w = df["sampling_weight"].to_numpy()
+    keep = np.ones(len(df), bool) if subset_mask is None else subset_mask
+    if kind == "grp":
+        levels = [v for v, _ in W.LEVELS[name]]
+        x = df[name].to_numpy()
+        ok = keep & np.isin(x, levels)
+        g = ok & (df["queue_category_slug"] == genre).to_numpy()
+        pa = np.array([w[ok & (x == v)].sum() for v in levels]) / w[ok].sum()
+        pg = np.array([(x[g] == v).sum() for v in levels]) / g.sum()
+        small = pa < 0.01
+        pa2 = np.append(pa[~small], pa[small].sum()) if small.any() else pa
+        pg2 = np.append(pg[~small], pg[small].sum()) if small.any() else pg
+        live = pa2 > 0
+        return int(g.sum()), 0.5 * np.abs(pg - pa).sum(), g.sum() * (((pg2 - pa2)[live]) ** 2 / pa2[live]).sum(), \
+            int(live.sum()) - 1
+    x = pd.to_numeric(df[name], errors="coerce").astype(float).to_numpy()
+    ok = keep & np.isfinite(x)
+    g = ok & (df["queue_category_slug"] == genre).to_numpy()
+    xa, wa, xg = x[ok], w[ok], x[g]
+    wins = sum(wa[xa < v].sum() + 0.5 * wa[xa == v].sum() for v in xg)  # pairs a genre story wins, ties half
+    r = 2 * wins / (len(xg) * wa.sum()) - 1
+    n_eff = wa.sum() ** 2 / (wa ** 2).sum()
+    n = len(xg)
+    return n, r, np.sqrt((n + n_eff + 1) / (3 * n * n_eff))
+
+
+def test_genre_flags_match_a_direct_recomputation(built_genres):
+    _, meta, out, df = built_genres
+    genre_ids = [g["id"] for g in meta["genres"]]
+    recent = (df["pub_year"] >= 2020).to_numpy()
+    flagged = 0
+    for sid, mask in (("all", None), ("y2020", recent)):
+        data = _genres(out, sid)
+        for name in ("sex_terms_per_1k", "pov_is_first_person", "author_stories_count", "emo_anger_per_1k",
+                     "narr_tense_class", "pov_class"):
+            e = data["c"][name]
+            for i, gid in enumerate(genre_ids[1:], start=1):
+                if e["q"][i] is None or e["q"][i][0] < sd.SMALL_N:
+                    assert e["f"][i] == 0
+                    continue
+                if e["k"] == "grp":
+                    n, tvd, chi, dof = _direct(df, name, "grp", gid, mask)
+                    assert e["r"][i] == pytest.approx(round(tvd, 2), abs=1e-9)
+                    should = tvd >= 0.2 and dof >= 1 and chi > sd.GENRE_CHI2[dof]
+                    assert e["f"][i] == int(should), (sid, name, gid)
+                else:
+                    n, r, se = _direct(df, name, e["k"], gid, mask)
+                    assert e["q"][i][0] == n and e["r"][i] == pytest.approx(round(r, 2), abs=1e-9)
+                    should = abs(r) >= 0.2 and abs(r) / se >= 3.29
+                    assert e["f"][i] == (int(np.sign(r)) if should else 0), (sid, name, gid)
+                flagged += e["f"][i] != 0
+    assert flagged >= 4  # Romance differs on purpose: fewer sexual terms, present tense, first person, prolific authors
+
+
+def test_all_genres_quartiles_and_shares_match_a_weighted_computation(built_genres):
+    _, meta, out, df = built_genres
+    data = _genres(out)
+    w = df["sampling_weight"].to_numpy()
+    x = df["sex_terms_per_1k"].to_numpy()
+    assert data["c"]["sex_terms_per_1k"]["q"][0] == [len(df)] + [sig(v) for v in weighted_quantiles(x, w, [.1, .25, .5, .75, .9])]
+    a = df["emo_anger_per_1k"].to_numpy()
+    pos = a > 0
+    z = data["c"]["emo_anger_per_1k"]["z"][0]
+    assert z[:2] == [int(pos.sum()), round(w[pos].sum() / w.sum(), 3)]
+    assert z[2:] == [sig(v) for v in weighted_quantiles(a[pos], w[pos], [.25, .5, .75])]
+    rom = (df["queue_category_slug"] == "romance").to_numpy()
+    zr = data["c"]["emo_anger_per_1k"]["z"][meta["genres"].index(next(g for g in meta["genres"] if g["id"] == "romance"))]
+    assert zr == [int((pos & rom).sum())] + [sig(v) for v in np.quantile(a[pos & rom], [.25, .5, .75], method="hazen")]
+    first = df["pov_is_first_person"].to_numpy()
+    ok = np.isfinite(first)
+    assert data["c"]["pov_is_first_person"]["q"][0] == [int(ok.sum()), round(w[ok & (first == 1)].sum() / w[ok].sum(), 3)]
+    tense = df["narr_tense_class"].to_numpy()
+    shares = [w[tense == t].sum() / w.sum() for t in ("past", "present", "mixed")]
+    assert data["c"]["narr_tense_class"]["q"][0][1:] == pytest.approx(shares, abs=0.0011)
+    ages = df["age_years"].to_numpy()
+    assert data["age"][0] == round(weighted_quantiles(ages, w, [0.5])[0], 1)
+    assert data["n"] == [len(df)] + [int((df["queue_category_slug"] == g["id"]).sum()) for g in meta["genres"][1:]]
+
+
+def test_publication_years_are_whole_years(built_genres):
+    _, _, out, df = built_genres
+    q = _genres(out)["c"]["pub_year"]["q"]
+    years = [v for cell in q if cell for v in cell[1:]]
+    assert all(isinstance(v, int) and 2000 <= v <= 2026 for v in years)
+    assert any(v % 10 for v in years)  # not rounded to the decade, as sig(2013, 3) would
+    w = df["sampling_weight"].to_numpy()
+    assert q[0][3] == int(np.floor(weighted_quantiles(df["pub_year"].to_numpy(), w, [0.5])[0] + 0.5))
+
+
+def test_excluded_characteristics_and_conflicting_options_are_absent(built_genres):
+    _, meta, out, _ = built_genres
+    ids = [v["id"] for v in meta["variables"]]
+    assert "pub_month" in ids  # still on Explore
+    for sid in SUBSET_IDS:
+        c = _genres(out, sid)["c"]
+        group = next(s[2] for s in W.SUBSETS if s[0] == sid)
+        assert not set(c) & W.GENRE_PAGE_EXCLUDED
+        assert list(c) == [i for i in ids if i not in W.GENRE_PAGE_EXCLUDED and not sd.subset_conflict(group, i)]
+    assert "story_words" not in _genres(out, "short")["c"] and "story_words" in _genres(out, "y2000")["c"]
+    assert not {"pub_year", "age_years"} & set(_genres(out, "y2020")["c"]) and "pub_year" in _genres(out, "long")["c"]
+    kinds = {i: e["k"] for i, e in _genres(out)["c"].items()}
+    assert kinds == {"dlg_word_share": "num", "dlg_has_dialogue": "bin", "pov_class": "grp", "emo_anger_per_1k": "zero",
+                     "pub_year": "num", "story_words": "num", "age_years": "num", "author_stories_count": "band",
+                     "sex_terms_per_1k": "num", "narr_tense_class": "grp", "pov_is_first_person": "bin"}
+
+
+def test_genres_output_is_deterministic(built_genres, tmp_path):
+    path, _, out, _ = built_genres
+    again = tmp_path / "again"
+    sd.build_site_data(path, again, workers=1)
+    for f in (out / "genres").iterdir():
+        assert f.read_bytes() == (again / "genres" / f.name).read_bytes(), f.name
+
+
+def test_genres_builder_reads_only_the_characteristic_genre_weight_and_age(built_genres):
+    _, meta, _, df = built_genres
+    genre_ids = [g["id"] for g in meta["genres"]]
+    g = df["queue_category_slug"].map({gid: i for i, gid in enumerate(genre_ids)}).to_numpy()
+    w = df["sampling_weight"].to_numpy()
+    sd._init({"g": g, "w": w, "genre_ids": genre_ids, "subsets": {"all": np.ones(len(df), bool)}})  # no popularity
+    x = df["sex_terms_per_1k"].to_numpy()
+    codes = np.zeros(len(df), dtype=np.int16)
+    entry = sd._genre_task("sex_terms_per_1k", "num", "num", x, codes, 1, set())["all"]
+    assert set(entry) == {"k", "fmt", "q", "r", "f"}
+    payload = sd.genre_file("all", np.ones(len(df), bool), g, w, df["age_years"].to_numpy(), genre_ids, {"x": entry})
+    assert set(payload) == {"s", "rule", "genres", "n", "age", "c"}
+    text = json.dumps(payload)
+    assert "kromance" not in text and "story_key" not in text
+
+
+def test_real_genres_files_are_small():
+    if not (REAL_META.parent / "genres").exists():
+        pytest.skip("site aggregates not generated")
+    import gzip
+    for f in (REAL_META.parent / "genres").iterdir():
+        assert len(gzip.compress(f.read_bytes(), 9)) <= 60_000, f.name

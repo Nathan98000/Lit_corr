@@ -9,6 +9,13 @@ Output (default site/public/aggregates/):
                              for every genre (and "all"): per group of stories, the number of stories, their
                              median age, and per popularity measure the median, quartiles and mean; plus the
                              genre's overall figures and a pattern summary used to word the chart title
+  patterns.json              the pattern summaries of the v/ files ("All stories"), one character per
+                             characteristic, for the Patterns page
+  genres/<included>.json     the Genres page: for every characteristic (but publication month and weekday) and
+                             every genre, the number of stories and their quartiles or shares, with the rank-biserial
+                             correlation (or, for named groups, the total variation distance) against all genres and
+                             whether the genre clearly differs (GENRE_*); plus each genre's number of stories and
+                             median age
 
 Only summaries leave this step: groups with fewer than MIN_N stories are left out, and no minimum, maximum
 or per-story value is written. "All genres" weights each story by its category's sampling weight, so big
@@ -49,6 +56,10 @@ PATTERN_Z = 2.576           # ...it must be clear of zero at the 99% level (the 
 PATTERN_MIN_GAP = 0.10      # ...and the end groups' medians must differ by at least this share,
 RATING_MIN_GAP = 0.1        # ...or, for the average rating (a 1-5 scale), by at least this many stars
 ZERO_BIN_SHARE = 0.15       # a characteristic that is exactly 0 this often gets its own "None" group
+GENRE_MIN_R = 0.20          # Genres page: |rank-biserial r| a genre needs before it "clearly differs" from all genres
+GENRE_Z = 3.29              # ...it must be clear of zero at the 99.9% level (the page makes thousands of comparisons)
+GENRE_MIN_TVD = 0.20        # named groups: the total variation distance from the all-genres mix needed
+GENRE_CHI2 = {1: 10.828, 2: 13.816, 3: 16.266, 4: 18.467, 5: 20.515, 6: 22.458}  # ...and chi-square at 99.9%, by df
 DEFAULT_OUT = PROJECT_ROOT / "site" / "public" / "aggregates"
 
 
@@ -194,6 +205,13 @@ def _integer_groups(x: np.ndarray, w: np.ndarray, min_share: float = 0.05) -> li
     return [float(v) for v in starts[1:]]
 
 
+def value_style(name: str, kind: str, unit: str) -> str:
+    """How a characteristic's values are written: "percent" (shares and positions), "year" or "num"."""
+    if kind == "share" or unit.startswith(("share", "position")):
+        return "percent"
+    return "year" if name == "pub_year" else "num"
+
+
 def make_bins(name: str, kind: str, unit: str, values: pd.Series, w: np.ndarray) -> Bins | None:
     """Groups for one characteristic, decided once from all included stories (weighted)."""
     if name in W.LEVELS:
@@ -219,8 +237,7 @@ def make_bins(name: str, kind: str, unit: str, values: pd.Series, w: np.ndarray)
             return None
         return Bins("ranges", _range_labels(edges, float(xv.min()), float(xv.max()), "num", True),
                     ordered=True, edges=edges)
-    style = "percent" if (kind == "share" or unit.startswith(("share", "position"))) else (
-        "year" if name == "pub_year" else "num")
+    style = value_style(name, kind, unit)
     lo, hi = float(xv.min()), float(xv.max())
     signed = lo < 0
     zero_share = float(wv[xv == 0].sum() / wv.sum())
@@ -370,6 +387,133 @@ def _var_task(name: str, codes: np.ndarray, x: np.ndarray, kind: str, nbins: int
     return out
 
 
+# ------------------------------------------------------------------------------------------------ genres page
+def genre_kind(bins: Bins) -> str:
+    """The Genres page's form for a characteristic: "bin" (yes/no), "grp" (named groups), "band" (ordered levels),
+    "zero" (ranges with a "None" group, ZERO_BIN_SHARE) or "num"."""
+    if bins.binary:
+        return "bin"
+    if bins.type == "levels":
+        return "band" if bins.ordered else "grp"
+    return "zero" if bins.zero else "num"
+
+
+def subset_conflict(group: str, name: str) -> bool:
+    """Does an "Only include" option of this group leave the characteristic one group? (subsetConflict on the site)"""
+    return (group == "Length" and name == "story_words") or (group == "Published" and name in ("pub_year", "age_years"))
+
+
+def _genre_quantiles(x: np.ndarray, w: np.ndarray, qs: list[float], year: bool) -> list[Any]:
+    """Quantiles to 3 significant digits; publication years as whole years (sig() would make 2013 into 2010)."""
+    return [int(math.floor(float(v) + 0.5)) if year else sig(float(v)) for v in weighted_quantiles(x, w, qs)]
+
+
+def _genre_shares(counts: np.ndarray) -> list[float]:
+    """Shares to 3 decimals that add up to exactly 1 (the largest remainders are rounded up), so 100% bars close."""
+    units = counts / counts.sum() * 1000
+    whole = np.floor(units)
+    order = np.argsort(-(units - whole), kind="mergesort")
+    whole[order[: int(round(1000 - whole.sum()))]] += 1
+    return [int(u) // 1000 if u % 1000 == 0 else round(float(u) / 1000, 3) for u in whole]
+
+
+def _genre_entry(kind: str, fmt: str, x: np.ndarray, codes: np.ndarray, nbins: int, smask: np.ndarray) -> dict[str, Any]:
+    """One characteristic on the Genres page for one "Only include" option: per genre (all genres first), the
+    number of stories with it and their quartiles (or shares), and the comparison with all genres. All genres weights
+    each story by its sampling weight; within a genre every story weighs the same. A genre with fewer than MIN_N
+    stories gets null, and one with fewer than SMALL_N is never compared.
+
+    A mostly-zero characteristic ("zero") gives only each genre's number of stories in "q", and in "z" the stories
+    above 0: how many, then (all genres only, weighted) their share, then their quartiles when there are at least
+    MIN_N. The page uses nothing else, and works out a genre's share from its two counts (the owner's decision, which
+    keeps each file under 60 KB gzipped)."""
+    G, w, genre_ids = _S["g"], _S["w"], _S["genre_ids"]
+    year = fmt == "year"
+    ok = smask & (codes >= 0)
+    xa, wa = x[ok], w[ok]
+    n_eff = effective_n(wa)
+    pa = np.bincount(codes[ok], weights=wa, minlength=nbins) / wa.sum() if kind == "grp" and ok.any() else None
+    q, z, r, f = [], [], [], []
+    for gi, gid in enumerate(genre_ids):
+        m = ok if gid == "all" else ok & (G == gi)
+        n = int(m.sum())
+        if n < MIN_N:
+            q.append(None)
+            z.append(None)
+            r.append(None)
+            f.append(0)
+            continue
+        xg = x[m]
+        wg = w[m] if gid == "all" else np.ones(n)
+        if kind == "num":
+            q.append([n] + _genre_quantiles(xg, wg, [0.1, 0.25, 0.5, 0.75, 0.9] if gid == "all" else [0.25, 0.5, 0.75],
+                                            year))
+        elif kind == "zero":
+            pos = xg > 0
+            cell = [int(pos.sum())] + ([round(float(wg[pos].sum() / wg.sum()), 3)] if gid == "all" else [])
+            if pos.sum() >= MIN_N:
+                cell += _genre_quantiles(xg[pos], wg[pos], [0.25, 0.5, 0.75], year)
+            q.append([n])
+            z.append(cell)
+        elif kind == "bin":
+            q.append([n, round(float(wg[xg == 1].sum() / wg.sum()), 3)])
+        else:
+            q.append([n] + _genre_shares(np.bincount(codes[m], weights=wg, minlength=nbins)))
+        if gid == "all" or n < SMALL_N:
+            r.append(None)
+            f.append(0)
+        elif kind == "grp":
+            # total variation distance from the all-genres mix, and a chi-square test on the genre's own counts, with
+            # the groups under 1% of all genres pooled into one
+            pg = np.bincount(codes[m], minlength=nbins) / n
+            tvd = 0.5 * float(np.abs(pg - pa).sum())
+            small = pa < 0.01
+            pg2 = np.append(pg[~small], pg[small].sum()) if small.any() else pg
+            pa2 = np.append(pa[~small], pa[small].sum()) if small.any() else pa
+            keep = pa2 > 0
+            chi = n * float((((pg2 - pa2)[keep]) ** 2 / pa2[keep]).sum())
+            df = int(keep.sum()) - 1
+            r.append(round(tvd, 2) + 0.0)
+            f.append(int(df >= 1 and tvd >= GENRE_MIN_TVD and chi > GENRE_CHI2[df]))
+        else:
+            # rank-biserial correlation against all genres, on the raw values (for yes/no: the difference in shares),
+            # with the standard error the binary patterns use
+            rb = 2 * weighted_auc(xg, np.ones(n), xa, wa) - 1
+            clear = abs(rb) >= GENRE_MIN_R and abs(rb) / rank_biserial_se(n, n_eff) >= GENRE_Z
+            r.append(round(rb, 2) + 0.0)  # never "-0.0"
+            f.append(int(math.copysign(1, rb)) if clear else 0)
+    entry: dict[str, Any] = {"k": kind}
+    if kind in ("num", "zero"):
+        entry["fmt"] = fmt
+    entry["q"] = q
+    if kind == "zero":
+        entry["z"] = z
+    entry["r"] = r
+    entry["f"] = f
+    return entry
+
+
+def _genre_task(name: str, kind: str, fmt: str, x: np.ndarray, codes: np.ndarray, nbins: int,
+                skip: set[str]) -> dict[str, dict[str, Any]]:
+    """One characteristic for the Genres page, in every "Only include" option it goes with: {subset id: entry}."""
+    return {sid: _genre_entry(kind, fmt, x, codes, nbins, smask) for sid, smask in _S["subsets"].items() if sid not in skip}
+
+
+def genre_file(sid: str, smask: np.ndarray, g: np.ndarray, w: np.ndarray, age: np.ndarray, genre_ids: list[str],
+               entries: dict[str, dict[str, Any]]) -> dict[str, Any]:
+    """genres/<included>.json: the rule, the genres (meta.json's order), each genre's number of stories and median
+    age in this option (no age for fewer than MIN_N stories), and one entry per characteristic."""
+    ns, ages = [], []
+    for gi, gid in enumerate(genre_ids):
+        m = smask if gid == "all" else smask & (g == gi)
+        ok = m & np.isfinite(age)
+        wv = w[ok] if gid == "all" else np.ones(int(ok.sum()))
+        ns.append(int(m.sum()))
+        ages.append(round(float(weighted_quantiles(age[ok], wv, [0.5])[0]), 1) if ok.sum() >= MIN_N else None)
+    return {"s": sid, "rule": {"min_r": GENRE_MIN_R, "z": GENRE_Z, "min_tvd": GENRE_MIN_TVD, "min_n": SMALL_N},
+            "genres": genre_ids, "n": ns, "age": ages, "c": entries}
+
+
 # ------------------------------------------------------------------------------------------------- building
 def _subset_mask(df: pd.DataFrame, col: str | None, low: float | None, high: float | None) -> np.ndarray:
     if col is None:
@@ -452,7 +596,7 @@ def build_site_data(handoff: Path | None = None, out_dir: Path | None = None, wo
     subsets = {sid: _subset_mask(df, col, lo, hi) for sid, _, _, col, lo, hi in subset_defs}
 
     labels = {v["name"]: W.label_for(v["name"], v["label"]) for v in h.dictionary}
-    variables, tasks = [], []
+    variables, tasks, genre_tasks = [], [], []
     for v in h.dictionary:
         name = v["name"]
         if not v.get("explorer") or name in W.EXCLUDED or name not in df.columns or v["ui_group"] not in W.GROUPS:
@@ -481,8 +625,14 @@ def build_site_data(handoff: Path | None = None, out_dir: Path | None = None, wo
             entry.update(dict(zip(("yes", "no", "yes_subject", "no_subject"), map(W.us_english, W.BINARY[name]))))
         elif bins.ordered:
             entry["more"] = W.us_english(W.more_for(name, label))
+        if name in W.DIRECTION_WORDS:
+            entry["more_word"], entry["less_word"] = W.DIRECTION_WORDS[name]
         variables.append(entry)
         tasks.append((name, codes, x, kind, len(bins.labels)))
+        if name not in W.GENRE_PAGE_EXCLUDED:
+            skip = {sid for sid, _, grp, *_ in subset_defs if subset_conflict(grp, name)}
+            genre_tasks.append((name, genre_kind(bins), value_style(name, v["kind"], v.get("unit", "")), x, codes,
+                                len(bins.labels), skip))
 
     shared = {"g": g, "w": w, "Y": Y, "age": _numeric(df["age_years"]), "genre_ids": genre_ids, "subsets": subsets,
               "rating": [m["format"] == "rating" for m in metrics]}
@@ -492,11 +642,13 @@ def build_site_data(handoff: Path | None = None, out_dir: Path | None = None, wo
     n_workers = workers or max(1, min(8, os.cpu_count() or 1))
     with ProcessPoolExecutor(max_workers=n_workers, initializer=_init, initargs=(shared,)) as ex:
         futures = [ex.submit(_var_task, *t) for t in tasks]
+        genre_futures = [ex.submit(_genre_task, *t) for t in genre_tasks]
         for (name, *_), fut in zip(tasks, futures):
             vdir = out_dir / "v" / name
             vdir.mkdir()
             for sid, text in fut.result().items():
                 (vdir / f"{sid}.json").write_text(text, encoding="utf-8")
+        genre_entries = {t[0]: fut.result() for t, fut in zip(genre_tasks, genre_futures)}
 
     excluded = all_rows[~all_rows["analysis_include"].fillna(False).astype(bool)]
     reasons: dict[str, int] = {}
@@ -514,6 +666,7 @@ def build_site_data(handoff: Path | None = None, out_dir: Path | None = None, wo
         "counts": {"sampled": int(len(all_rows)), "with_text": int(all_rows["has_text"].fillna(False).sum()),
                    "included": int(len(df)), "excluded_reasons": reasons},
         "min_n": MIN_N, "small_n": SMALL_N,
+        "genre_rule": {"min_r": GENRE_MIN_R, "level": 0.999, "min_tvd": GENRE_MIN_TVD, "min_n": SMALL_N},
         "genres": [{"id": "all", "name": "All genres", "n": int(len(df))}] + [
             {"id": r.category_slug, "name": r.category_name, "n": int((genre_col == r.category_slug).sum()),
              "size": None if pd.isna(r.estimated_stories_in_category) else int(r.estimated_stories_in_category)}
@@ -529,6 +682,12 @@ def build_site_data(handoff: Path | None = None, out_dir: Path | None = None, wo
     (out_dir / "meta.json").write_text(json.dumps(meta, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     patterns = build_patterns(out_dir, [v["id"] for v in variables], genre_ids, len(metrics))
     (out_dir / "patterns.json").write_text(json.dumps(patterns, separators=(",", ":")), encoding="utf-8")
+    (out_dir / "genres").mkdir()
+    for sid, smask in subsets.items():
+        entries = {name: per[sid] for name, per in genre_entries.items() if sid in per}
+        payload = genre_file(sid, smask, g, w, shared["age"], genre_ids, entries)
+        (out_dir / "genres" / f"{sid}.json").write_text(json.dumps(payload, separators=(",", ":"), allow_nan=False),
+                                                       encoding="utf-8")
     size = sum(p.stat().st_size for p in out_dir.rglob("*.json"))
     files = sum(1 for _ in out_dir.rglob("*.json"))
     summary = {"variables": len(variables), "metrics": len(metrics), "genres": len(genre_ids) - 1,

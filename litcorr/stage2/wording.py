@@ -334,6 +334,34 @@ for _part, (_noun, _plural) in _PACE_NOUNS.items():
     MORE[f"pace_{_part}_shift"] = f"Stories in which {_noun} {_builds} up more"
     MORE[f"pace_{_part}_peak_position"] = f"Stories in which {_noun} {_peaks} later"
 
+# The Genres page compares each genre's stories with all genres. Publication month and weekday are left out: their
+# twelve and seven groups can't be compared genre by genre in one chart.
+GENRE_PAGE_EXCLUDED = {"pub_month", "pub_weekday"}
+# Words for a genre that clearly differs, higher then lower ("▲ Longer: …", "▼ Shorter: …"; "clearly shorter than all
+# genres"). Characteristics not listed say Higher / Lower (yes/no ones: More common / Less common).
+DIRECTION_WORDS = {
+    "story_words": ("Longer", "Shorter"),
+    "dlg_word_share": ("More dialogue", "Less dialogue"),
+    "sex_terms_per_1k": ("More", "Less"),
+    "sex_words_before_first": ("Later", "Sooner"),
+    "emo_balance": ("More positive", "Less positive"),
+    "read_flesch_reading_ease": ("Easier", "Harder"),
+    "reader_address_per_1k": ("More", "Less"),
+    "pub_year": ("Newer", "Older"),
+    "age_years": ("Older", "Newer"),
+    "pace_sex_shift": ("Builds up more", "Builds up less"),
+    "pace_sex_late": ("More", "Less"),
+    "sex_anatomy_per_1k": ("More", "Less"),
+    "sex_action_per_1k": ("More", "Less"),
+    "char_recurring_names": ("More", "Fewer"),
+    "sex_first_scene_position": ("Later", "Earlier"),
+    "sex_other_per_1k": ("More", "Less"),
+    "read_mean_word_chars": ("Longer words", "Shorter words"),
+    "sex_scenes_per_10k": ("More", "Fewer"),
+    "rel_romance_per_1k": ("More", "Less"),
+    "style_profanity_per_1k": ("More", "Less"),
+}
+
 FEATURED = [  # example questions under the chart: (question, settings). Each opens the measure it names; none
     # was chosen for its result.
     ("Do readers favorite first-person stories more often?", {"var": "pov_is_first_person",

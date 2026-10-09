@@ -39,6 +39,20 @@ export const clearCache = () => cache.clear();
 export const loadPatterns = () => getJson("patterns.json");
 
 /**
+ * genres/<included>.json, the Genres page's file for one "Only include" option: `genres` (meta.genres' order), each
+ * genre's stories `n` and median `age`, and per characteristic `c[id]`: its form `k` (num, zero, bin, grp, band),
+ * `fmt` for numbers (num, percent, year), per genre `q` (num: [n, p25, median, p75], all genres [n, p10, p25, median,
+ * p75, p90]; bin: [n, share]; grp and band: [n, share per group]; zero: [n]), for zero `z` (stories above 0, then for
+ * all genres their share, then their quartiles), `r` (rank-biserial r, or for grp the total variation distance,
+ * against all genres) and `f` (+1 clearly higher, -1 clearly lower, 1 a different mix, 0 neither). null: fewer than
+ * meta.min_n stories.
+ */
+export const loadGenres = (subset) => getJson(`genres/${subset}.json`);
+export function prefetchGenres(subset = "all") {
+  loadGenres(subset).catch(() => {});
+}
+
+/**
  * One characteristic's entry in patterns.json: { direction, strength } ("weak" | "moderate" | "strong"), or null
  * when the pattern was not computed. The file's key lists the codes in order: -1, 0, +1, each weak/moderate/strong.
  */

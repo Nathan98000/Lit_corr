@@ -292,3 +292,35 @@ export function questionText({ variable, metric, genre, compare = false }) {
   const lead = compare ? "Genre by genre," : `In ${genre.name},`;
   return `${lead} how ${p.aux} ${p.article}${p.measure} ${p.verb} ${p.characteristic}?`;
 }
+
+// ------------------------------------------------------------------------------------------------ the Genres page
+// (the sentences Explore and How it works use too; everything else is in genres.js, which loads with the page)
+
+/**
+ * The Genres page's question about one characteristic, in parts so that the characteristic can be a control: "How do
+ * genres differ in [story length in words]?"; for yes/no characteristics "How common are [first-person stories] in
+ * each genre?" (the genres, not the characteristic, are the subject: many nouns are plural).
+ */
+export function chartQuestion(variable) {
+  if (variable.yes_subject) return { before: "How common are ", slot: lowerFirst(variable.yes_subject), after: " in each genre" };
+  return { before: "How do genres differ in ", slot: variable.noun, after: "" };
+}
+
+export function chartQuestionText(variable) {
+  const q = chartQuestion(variable);
+  return `${q.before}${q.slot}${q.after}?`;
+}
+
+/** The question about one genre: "stories in {genre}", as genre names such as "Chain Stories" need. */
+export const standsOutQuestion = (genre) => `What stands out about stories in ${genre.name}?`;
+
+/** The median of the genres' story counts, to the nearest 10 ("each genre is a random sample of about 300 stories"). */
+export function typicalSample(meta) {
+  const ns = meta.genres
+    .filter((g) => g.id !== "all")
+    .map((g) => g.n)
+    .sort((a, b) => a - b);
+  if (!ns.length) return 0;
+  const mid = ns.length % 2 ? ns[(ns.length - 1) / 2] : (ns[ns.length / 2 - 1] + ns[ns.length / 2]) / 2;
+  return Math.round(mid / 10) * 10;
+}

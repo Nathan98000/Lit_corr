@@ -1,5 +1,4 @@
 import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { prefetchVariable } from "../lib/data.js";
 import { keepInView } from "../lib/listScroll.js";
 import { highlight, measureNamed, oneLine, searchCharacteristics } from "../lib/search.js";
 
@@ -16,13 +15,25 @@ function Marked({ label, query }) {
   );
 }
 
+/** The data without the characteristics a page leaves out: in Popular, the topics and search alike. */
+function withoutExcluded(meta, exclude) {
+  if (!exclude?.length) return meta;
+  const keep = (id) => !exclude.includes(id);
+  return {
+    ...meta,
+    variables: meta.variables.filter((v) => keep(v.id)),
+    popular: meta.popular.filter(keep),
+    topics: meta.topics.map((t) => ({ ...t, ids: t.ids.filter(keep) })).filter((t) => t.ids.length),
+  };
+}
+
 /**
  * The characteristic picker (concept 2A): a search box over a listbox, following the WAI-ARIA 1.2
  * combobox-with-listbox pattern. With the search box empty it shows a Popular set and the eight topics; a topic opens
  * its list (browsing never changes the chart); typing searches labels, descriptions, topics and synonyms.
  *
  * A query that names a popularity measure ("rating") says so above any results, with a button that switches the
- * measure instead (F45).
+ * measure instead (F45), where the page has measures (`onPickMetric`).
  *
  * While a query is typed in the phone's sheet, results are one line each (the label, then the topic) and Close moves
  * into the search row, so that more results stay above the on-screen keyboard (F57; styles.css does the folding).
@@ -31,13 +42,27 @@ function Marked({ label, query }) {
  * focus itself when it arrives. `focusRef` is the search box. `scrollRef` is the box that scrolls the sheet's
  * content: the active option is kept in view by scrolling it, never the page, and another list (a topic, the results
  * of a new query) starts at its top.
+ *
+ * `exclude` lists characteristics a page does not offer (the Genres page leaves out publication month and weekday);
+ * `onPreview(id)` is told which characteristic is active or hovered, so the page can fetch its file ahead of time.
  */
-export default function CharacteristicPicker({ meta, value, sub, onPick, onPickMetric, onClose, focusRef, scrollRef }) {
+export default function CharacteristicPicker({
+  meta: fullMeta,
+  value,
+  onPick,
+  onPickMetric,
+  onPreview,
+  onClose,
+  focusRef,
+  scrollRef,
+  exclude = null,
+}) {
   const [query, setQuery] = useState("");
   const [topicId, setTopicId] = useState(null);
   const [active, setActive] = useState(0);
   const input = focusRef;
   const base = useId().replace(/:/g, "");
+  const meta = useMemo(() => withoutExcluded(fullMeta, exclude), [fullMeta, exclude]);
   const byId = useMemo(() => new Map(meta.variables.map((v) => [v.id, v])), [meta]);
 
   useEffect(() => {
@@ -46,7 +71,7 @@ export default function CharacteristicPicker({ meta, value, sub, onPick, onPickM
 
   // The options on screen, in order, as { kind: "var" | "topic" | "back", id, group }.
   const results = useMemo(() => searchCharacteristics(meta, query), [meta, query]);
-  const named = useMemo(() => measureNamed(meta, query), [meta, query]);
+  const named = useMemo(() => (onPickMetric ? measureNamed(meta, query) : null), [meta, query, onPickMetric]);
   const topic = topicId ? meta.topics.find((t) => t.id === topicId) : null;
   let options;
   let mode;
@@ -72,7 +97,7 @@ export default function CharacteristicPicker({ meta, value, sub, onPick, onPickM
 
   useEffect(() => {
     const opt = options[current];
-    if (opt?.kind === "var") prefetchVariable(opt.id, sub);
+    if (opt?.kind === "var") onPreview?.(opt.id);
   }, [current, listKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useLayoutEffect(() => {
@@ -115,7 +140,7 @@ export default function CharacteristicPicker({ meta, value, sub, onPick, onPickM
     "aria-selected": i === current,
     onMouseEnter: () => {
       setActive(i);
-      if (opt.kind === "var") prefetchVariable(opt.id, sub);
+      if (opt.kind === "var") onPreview?.(opt.id);
     },
     onMouseDown: (e) => e.preventDefault(), // keep focus in the search box
     onClick: () => activate(opt),

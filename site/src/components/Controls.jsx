@@ -1,4 +1,5 @@
 import { forwardRef, useCallback, useEffect, useId, useRef, useState } from "react";
+import { prefetchVariable } from "../lib/data.js";
 import { scrollBehavior } from "../lib/motion.js";
 import { subsetConflict } from "../lib/urlState.js";
 import { questionParts, questionText } from "../lib/wording.js";
@@ -9,7 +10,7 @@ import useMediaQuery from "./useMediaQuery.js";
 
 // The picker and the measure menu load their code when first needed; the explorer fetches it once the first chart is
 // on screen and the browser is idle, and the words fetch it when hovered or focused.
-const CharacteristicPicker = lazyPart(() => import("./CharacteristicPicker.jsx"));
+export const CharacteristicPicker = lazyPart(() => import("./CharacteristicPicker.jsx"));
 const MetricMenu = lazyPart(() => import("./MetricMenu.jsx"));
 export function preloadMenus() {
   CharacteristicPicker.preload();
@@ -17,7 +18,7 @@ export function preloadMenus() {
 }
 
 /** What a sheet or popover shows until its body's code has arrived: the same size, so nothing moves. */
-function BodyPlaceholder({ search = null }) {
+export function BodyPlaceholder({ search = null }) {
   return (
     <div className="overlay-placeholder" aria-busy="true">
       {search && (
@@ -87,7 +88,7 @@ function QuestionBar({ text, question, sheetOpen }) {
  * A word of the sentence that opens a menu. A real <button> cannot wrap like text, so this is an inline span with
  * the button role and the keyboard behavior of a button.
  */
-const SlotButton = forwardRef(function SlotButton({ expanded, onPress, children }, ref) {
+export const SlotButton = forwardRef(function SlotButton({ expanded, onPress, children, onHint = preloadMenus }, ref) {
   return (
     <span
       ref={ref}
@@ -96,8 +97,8 @@ const SlotButton = forwardRef(function SlotButton({ expanded, onPress, children 
       className="slot slot-button"
       aria-haspopup="dialog"
       aria-expanded={expanded}
-      onPointerEnter={preloadMenus}
-      onFocus={preloadMenus}
+      onPointerEnter={onHint}
+      onFocus={onHint}
       onClick={onPress}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
@@ -280,7 +281,7 @@ export default function Controls({ meta, state, onChange }) {
           <CharacteristicPicker
             meta={meta}
             value={state.v}
-            sub={state.sub}
+            onPreview={(id) => prefetchVariable(id, state.sub)}
             focusRef={pickerFocus}
             scrollRef={pickerBody}
             onClose={close}

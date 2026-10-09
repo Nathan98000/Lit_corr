@@ -2,32 +2,53 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Explorer, { ChartPlaceholder } from "./components/Explorer.jsx";
 import { PartBoundary } from "./components/lazyPart.jsx";
 import LoadError from "./components/LoadError.jsx";
-import { Methodology, PatternBrowser } from "./components/pages.js";
+import { GenresPage, Methodology, PatternBrowser } from "./components/pages.js";
 import useScrollFloor from "./components/useScrollFloor.js";
-import { clearCache, loadMeta } from "./lib/data.js";
+import { clearCache, loadMeta, prefetchGenres } from "./lib/data.js";
 import { scrollBehavior } from "./lib/motion.js";
-import { parseHash, sanitize, toHash } from "./lib/urlState.js";
+import { parseHash, sanitize, sanitizeGenres, toHash } from "./lib/urlState.js";
 import { aboutCount } from "./lib/wording.js";
 
 const PAGE_PLACEHOLDER = <div className="page-placeholder" aria-busy="true" />;
 
 export const TITLE = "What do popular Literotica stories have in common?";
+export const GENRES_TITLE = "How do the genres’ stories differ?";
 export const SITE_NAME = "Story Patterns"; // the masthead name: change it here
-const PAGE_TITLES = { methodology: `How it works · ${TITLE}`, patterns: `Patterns · ${TITLE}` };
+const PAGE_TITLES = {
+  methodology: `How it works · ${TITLE}`,
+  patterns: `Patterns · ${TITLE}`,
+  genres: `Genres · ${TITLE}`,
+};
 const DEFAULT_QUESTION = "In All genres, how does the average rating vary with story length in words?";
 
 /**
  * The headline as a kicker, with the story and genre counts (filled in when the data arrives; the placeholder says
- * the same). The story count is rounded, so it never contradicts a chart's exact count (F55).
+ * the same). The story count is rounded, so it never contradicts a chart's exact count (F55). The Genres page asks
+ * its own question.
  */
-function Kicker({ meta }) {
+function Kicker({ meta, title = TITLE }) {
   return (
     <h1 className="kicker">
-      {TITLE}{" "}
+      {title}{" "}
       <span className="kicker-counts">
         · {meta ? aboutCount(meta.counts.included) : "about 9,000"} stories · {meta ? meta.genres.length - 1 : 30} genres
       </span>
     </h1>
+  );
+}
+
+/** The Genres page's place while its code or its file is on its way: the question, then a chart-sized frame. */
+export function GenresPlaceholder() {
+  return (
+    <div className="genres-page" aria-busy="true">
+      <div className="controls">
+        <p className="sentence sentence-placeholder" aria-hidden="true">
+          {"\u00a0"}
+        </p>
+        <div className="genres-controls" aria-hidden="true" />
+      </div>
+      <ChartPlaceholder />
+    </div>
   );
 }
 
@@ -36,6 +57,9 @@ export default function App() {
   const [error, setError] = useState(null);
   const [route, setRoute] = useState(() => parseHash(window.location.hash));
   const lastExplore = useRef(route.page === "explore" ? route.state : {});
+  const lastGenres = useRef(null); // the last Genres address of this visit (the masthead's link goes back to it)
+  const lastChart = useRef({}); // the Genres page's last characteristic and order, for the way back from one genre
+  const chosenGenre = useRef(null); // the last genre the reader chose in this visit, on any page (D8)
   const mainRef = useRef(null);
   const [floorRef, holdScroll] = useScrollFloor();
 
@@ -63,8 +87,39 @@ export default function App() {
 
   const state = useMemo(() => (meta ? sanitize(route.state, meta) : null), [meta, route.state]);
   useEffect(() => {
-    if (route.page === "explore" && state) lastExplore.current = state;
+    if (route.page === "explore" && state) {
+      lastExplore.current = state;
+      if (state.genre !== "all") chosenGenre.current = state.genre;
+    }
   }, [route.page, state]);
+
+  // the Genres page: one genre keeps the characteristic it came from, for the way back
+  const genresState = useMemo(() => {
+    if (!meta || route.page !== "genres") return null;
+    const raw = route.state.view === "genre" ? { ...lastChart.current, ...route.state } : route.state;
+    return sanitizeGenres(raw, meta, chosenGenre.current);
+  }, [meta, route.page, route.state]);
+  useEffect(() => {
+    if (!genresState) return;
+    lastGenres.current = genresState;
+    if (genresState.genre) chosenGenre.current = genresState.genre;
+    if (genresState.view !== "genre") lastChart.current = { v: genresState.v, sort: genresState.sort };
+  }, [genresState]);
+  // a control (characteristic, option, highlight, order) replaces the address; another view adds one, so Back returns
+  const updateGenres = useCallback((next) => {
+    window.history.replaceState(null, "", toHash("genres", next));
+    setRoute({ page: "genres", state: next });
+  }, []);
+  const goGenres = useCallback((next) => {
+    window.history.pushState(null, "", toHash("genres", next));
+    setRoute({ page: "genres", state: next });
+    window.scrollTo?.(0, 0);
+  }, []);
+  const genresLink = lastGenres.current ? toHash("genres", lastGenres.current) : "#/genres";
+  const preloadGenres = () => {
+    GenresPage.preload();
+    prefetchGenres(lastGenres.current?.sub || "all");
+  };
 
   const updatePatterns = useCallback((next) => {
     window.history.replaceState(null, "", toHash("patterns", next));
@@ -91,7 +146,8 @@ export default function App() {
   // The skip link goes to the question sentence (or to the page's content elsewhere).
   const skip = (e) => {
     e.preventDefault();
-    const target = (route.page === "explore" && document.getElementById("question")) || mainRef.current;
+    const asks = route.page === "explore" || route.page === "genres";
+    const target = (asks && document.getElementById("question")) || mainRef.current;
     target?.focus();
     target?.scrollIntoView?.({ block: "start" });
   };
@@ -115,6 +171,14 @@ export default function App() {
               Explore
             </a>
             <a
+              href={genresLink}
+              aria-current={route.page === "genres" ? "page" : undefined}
+              onPointerEnter={preloadGenres}
+              onFocus={preloadGenres}
+            >
+              Genres
+            </a>
+            <a
               href={toHash("patterns", { genre: lastExplore.current.genre, metric: lastExplore.current.metric })}
               aria-current={route.page === "patterns" ? "page" : undefined}
               onPointerEnter={PatternBrowser.preload}
@@ -123,6 +187,7 @@ export default function App() {
               Patterns
             </a>
             <a
+              className="nav-how"
               href="#/methodology"
               aria-current={route.page === "methodology" ? "page" : undefined}
               onPointerEnter={Methodology.preload}
@@ -150,6 +215,28 @@ export default function App() {
           ) : (
             PAGE_PLACEHOLDER
           )
+        ) : route.page === "genres" ? (
+          <>
+            <div className="intro">
+              <Kicker meta={meta} title={GENRES_TITLE} />
+            </div>
+            {meta ? (
+              <PartBoundary fallback={<GenresPlaceholder />}>
+                <GenresPage
+                  meta={meta}
+                  state={genresState}
+                  onChange={updateGenres}
+                  onNavigate={goGenres}
+                  onHoldScroll={holdScroll}
+                  chosenGenre={chosenGenre}
+                  lastChart={lastChart}
+                  lastExplore={lastExplore.current}
+                />
+              </PartBoundary>
+            ) : (
+              <GenresPlaceholder />
+            )}
+          </>
         ) : route.page === "patterns" ? (
           meta ? (
             <PartBoundary fallback={PAGE_PLACEHOLDER}>
@@ -182,7 +269,9 @@ export default function App() {
         )}
       </main>
       {/* keeps the scroll position when the sentence's new question makes the page shorter (useScrollFloor.js) */}
-      {route.page === "explore" && <div ref={floorRef} className="scroll-floor" aria-hidden="true" />}
+      {(route.page === "explore" || route.page === "genres") && (
+        <div ref={floorRef} className="scroll-floor" aria-hidden="true" />
+      )}
 
       <footer className="site-footer">
         <div className="wrap">

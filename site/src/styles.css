@@ -2339,7 +2339,15 @@ html[data-page="explore"] body {
   }
 }
 
-@media (max-width: 399px) {
+/* Phones (D4): How it works leaves the masthead (the footer keeps its link); Genres and Patterns always show, and
+   Explore as long as it fits (the name links to the explorer too). The breakpoints come from measured widths. */
+@media (max-width: 559px) {
+  .masthead nav a.nav-how {
+    display: none;
+  }
+}
+
+@media (max-width: 419px) {
   .brand {
     font-size: 17px;
   }
@@ -2352,9 +2360,86 @@ html[data-page="explore"] body {
   .masthead nav a {
     padding: 0 6px;
   }
+}
 
+@media (max-width: 359px) {
   .masthead nav a.nav-explore {
-    display: none; /* the name links to the explorer too */
+    display: none;
+  }
+}
+
+/* ---------------------------------------------------------------------- the Genres page */
+.genres-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 18px;
+  margin-top: 12px;
+  font-size: 15px;
+  color: var(--ink-2);
+}
+
+/* a two-option switch (the view, the order): a radio group drawn as one pill */
+.segmented {
+  display: inline-flex;
+  flex: none;
+  border: 1px solid var(--control);
+  border-radius: 999px;
+  background: var(--paper);
+  overflow: hidden;
+}
+
+.segmented label {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--target);
+  padding: 0 14px;
+  font-size: 14.5px;
+  line-height: 1.2;
+  color: var(--ink-2);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.segmented label + label {
+  border-left: 1px solid var(--control);
+}
+
+.segmented label:hover {
+  color: var(--accent-ink);
+}
+
+.segmented label.on {
+  background: var(--accent-ink);
+  color: #fff;
+}
+
+.segmented input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.segmented:has(input:focus-visible) {
+  outline: 2px solid var(--accent-ink);
+  outline-offset: 2px;
+}
+
+/* the page keeps its place when a new question makes it shorter (as on the explorer) */
+html[data-page="genres"],
+html[data-page="genres"] body {
+  overflow-anchor: none;
+}
+
+@media (max-width: 559px) {
+  .genres-controls {
+    gap: 6px 16px;
+    margin-top: 8px;
   }
 }
 
@@ -2725,5 +2810,11 @@ summary.pattern-topic-head::after {
   .age-cell:focus-visible .age-hit {
     fill: transparent;
     stroke: Highlight;
+  }
+
+  .segmented label.on {
+    forced-color-adjust: none;
+    background: Highlight;
+    color: HighlightText;
   }
 }

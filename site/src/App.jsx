@@ -55,6 +55,7 @@ export default function App() {
 
   useEffect(() => {
     document.title = PAGE_TITLES[route.page] || TITLE;
+    document.documentElement.dataset.page = route.page; // page-specific scroll padding (styles.css)
     if (!route.section) window.scrollTo?.(0, 0);
   }, [route.page]); // eslint-disable-line react-hooks/exhaustive-deps
 

@@ -1668,6 +1668,69 @@ table.numbers {
   color: var(--ink-3);
 }
 
+/* --------------------------------------------------- the question bar on phones (I8) */
+.question-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: var(--target);
+  padding: 0 16px;
+  border: 0;
+  border-bottom: 1px solid var(--rule);
+  background: var(--paper);
+  color: var(--ink-2);
+  font: 14px/1.2 var(--sans);
+  text-align: left;
+  cursor: pointer;
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 150ms ease-out,
+    visibility 0s linear 150ms;
+}
+
+.question-bar[data-shown="true"] {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 150ms ease-out;
+}
+
+.question-bar:focus-visible {
+  outline-offset: -3px;
+}
+
+.question-bar-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.question-bar-up {
+  flex: none;
+  font-size: 17px;
+  color: var(--accent-ink);
+}
+
+/* nothing focused or jumped to ends up under the bar (WCAG 2.4.11) */
+@media (max-width: 699px) {
+  html[data-page="explore"] {
+    scroll-padding-top: 52px;
+  }
+}
+
+@media (min-width: 700px) {
+  .question-bar {
+    display: none;
+  }
+}
+
 /* -------------------------------------------------------- sheet and popover */
 .scrim {
   position: fixed;

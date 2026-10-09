@@ -1,9 +1,11 @@
-import { forwardRef, useCallback, useId, useRef, useState } from "react";
+import { forwardRef, useCallback, useEffect, useId, useRef, useState } from "react";
+import { scrollBehavior } from "../lib/motion.js";
 import { subsetConflict } from "../lib/urlState.js";
-import { questionParts } from "../lib/wording.js";
+import { questionParts, questionText } from "../lib/wording.js";
 import InlineSelect, { SlotWords } from "./InlineSelect.jsx";
 import { PartBoundary, lazyPart } from "./lazyPart.jsx";
 import Overlay from "./Overlay.jsx";
+import useMediaQuery from "./useMediaQuery.js";
 
 // The picker and the measure menu load their code when first needed; the explorer fetches it once the first chart is
 // on screen and the browser is idle, and the words fetch it when hovered or focused.
@@ -39,6 +41,46 @@ function groupBy(list, key) {
     out.get(k).push(item);
   }
   return out;
+}
+
+/**
+ * The question bar on phones (idea I8): once the question sentence has scrolled above the screen, a 44 px bar at the
+ * top keeps the question in view ("Word count · Favorites per 1,000 views · All genres"); tapping it scrolls back up
+ * to the sentence and focuses it. Hidden while a sheet is open; it fades in and out (not under reduced motion).
+ */
+function QuestionBar({ text, question, sheetOpen }) {
+  const [away, setAway] = useState(false);
+  useEffect(() => {
+    const sentence = document.getElementById("question");
+    if (!sentence || typeof IntersectionObserver === "undefined") return undefined;
+    const io = new IntersectionObserver(([e]) => {
+      setAway(!e.isIntersecting && e.boundingClientRect.bottom <= (e.rootBounds?.top ?? 0));
+    });
+    io.observe(sentence);
+    return () => io.disconnect();
+  }, []);
+  const shown = away && !sheetOpen;
+  const back = () => {
+    const sentence = document.getElementById("question");
+    sentence?.scrollIntoView?.({ behavior: scrollBehavior(), block: "start" });
+    sentence?.focus({ preventScroll: true });
+  };
+  return (
+    <button
+      type="button"
+      className="question-bar"
+      data-shown={shown}
+      aria-hidden={!shown}
+      tabIndex={shown ? 0 : -1}
+      aria-label={`Back to the question: ${question}`}
+      onClick={back}
+    >
+      <span className="question-bar-text">{text}</span>
+      <span className="question-bar-up" aria-hidden="true">
+        ↑
+      </span>
+    </button>
+  );
 }
 
 /**
@@ -91,6 +133,10 @@ export default function Controls({ meta, state, onChange }) {
   const close = useCallback(() => setMenu(null), []);
   const subsetGroups = groupBy(meta.subsets, "group");
   const anyConflict = meta.subsets.some((s) => subsetConflict(s, variable));
+  const narrow = useMediaQuery("(max-width: 699px)");
+  const barText = [variable.label, metric.label, compare ? "Genre by genre" : genre.name, subset.id !== "all" && subset.label]
+    .filter(Boolean)
+    .join(" · ");
 
   const option = (s) => {
     const reason = subsetConflict(s, variable);
@@ -104,6 +150,13 @@ export default function Controls({ meta, state, onChange }) {
 
   return (
     <div className="controls">
+      {narrow && (
+        <QuestionBar
+          text={barText}
+          question={questionText({ variable, metric, genre, compare })}
+          sheetOpen={menu != null}
+        />
+      )}
       <fieldset className="question" id="question" tabIndex={-1}>
         <legend className="visually-hidden">Choose what to compare</legend>
         <p className="sentence">

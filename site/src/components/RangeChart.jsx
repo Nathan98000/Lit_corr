@@ -24,11 +24,11 @@ function rowDetails(row, format, minN) {
 
 /** What the rows are, with hyphenated words kept whole ("first-person" never breaks after its hyphen). */
 function GroupedBy({ variable }) {
+  const text = groupedBy(variable);
+  if (!text) return null;
   return (
     <p className="axis-groups">
-      {groupedBy(variable)
-        .split(/(\S+-\S+)/)
-        .map((part, i) => (i % 2 ? <span key={i} className="nowrap">{part}</span> : part))}
+      {text.split(/(\S+-\S+)/).map((part, i) => (i % 2 ? <span key={i} className="nowrap">{part}</span> : part))}
     </p>
   );
 }
@@ -47,8 +47,10 @@ const sameTick = (a, b) => Math.abs(a.v - b.v) < 1e-9;
  * chart, so nothing covers the rows (concept K1).
  *
  * What the rows are, and in what unit ("Stories grouped by story length in words"), is said above the first row, so
- * the unit is read before the numbers: on wider charts as the heading of the label column, next to the measure's axis
- * title over the plot; in the phone layout as a line between the axis title and the ticks (round 3).
+ * the unit is read before the numbers (round 3), on a line of its own across the chart: one line on wider screens,
+ * not a heading wrapped into the label column's corner (the owner's follow-up). The measure's axis title comes next,
+ * from where the plot starts and close above its ticks. A yes/no characteristic has no such line: its rows name
+ * themselves.
  *
  * Another genre glides the marks (F51): the scale's domain glides with them, so the dots, the bars, the dashed line,
  * the grid and the ticks are drawn from the same scale in every frame; the old ticks fade out as the new ones fade
@@ -162,7 +164,7 @@ export default function RangeChart({
       : layout.ticks.map((t) => ({ ...t, fade: 1 }));
   const inDomain = (v) => v >= scale[0] - 1e-9 && v <= scale[1] + 1e-9;
   const axisTitle = (
-    <p className="axis-title" aria-hidden="true">
+    <p className="axis-title" aria-hidden="true" style={layout.mode === "stacked" ? undefined : { paddingLeft: layout.left }}>
       {metric.label}
     </p>
   );
@@ -188,20 +190,8 @@ export default function RangeChart({
           </li>
         )}
       </ul>
-      {layout.mode === "side" ? (
-        <div
-          className="chart-heads"
-          style={{ gridTemplateColumns: `${layout.labelW}px minmax(0, 1fr)`, columnGap: layout.left - layout.labelW }}
-        >
-          <GroupedBy variable={variable} />
-          {axisTitle}
-        </div>
-      ) : (
-        <>
-          {axisTitle}
-          <GroupedBy variable={variable} />
-        </>
-      )}
+      <GroupedBy variable={variable} />
+      {axisTitle}
       <div className="chart-frame" ref={frame}>
         <span id={titleId} hidden>
           {title}

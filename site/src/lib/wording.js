@@ -147,8 +147,13 @@ export function unitNote(variable) {
   return ` (${u})`;
 }
 
-/** What the rows of a chart are, and in what unit: "Stories grouped by story length in words" (above the rows). */
+/**
+ * What the rows of a chart are, and in what unit: "Stories grouped by story length in words" (above the rows). None
+ * for a yes/no characteristic: its two rows name themselves ("Has dialogue", "No dialogue"), and its noun does not
+ * read after "grouped by" ("has dialogue").
+ */
 export function groupedBy(variable) {
+  if (variable.yes_subject) return "";
   return `Stories grouped by ${variable.noun}${unitNote(variable)}`;
 }
 

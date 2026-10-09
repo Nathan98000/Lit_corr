@@ -1,5 +1,5 @@
 // Round 3, change 2: story length is measured in words, and every chart says what its rows are, and in what unit,
-// above the first row.
+// above the first row; since the owner's follow-up, on a line of its own, and not for yes/no characteristics.
 import { render } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import RangeChart from "../components/RangeChart.jsx";
@@ -39,6 +39,8 @@ describe("the line that says what the rows are", () => {
     );
     expect(groupedBy(words)).toBe("Stories grouped by story length in words");
     for (const v of real.variables) expect(groupedBy(v)).not.toMatch(/\((\w[\w ,]*)\).*\(\1\)|in words \(words\)/);
+    // no "Stories grouped by has dialogue": yes/no characteristics have no such line
+    for (const v of real.variables) expect(groupedBy(v) === "").toBe(Boolean(v.yes_subject));
   });
 });
 
@@ -52,39 +54,50 @@ describe("above the first row", () => {
     render(<RangeChart rows={rows} overall={stats(0.45)} metric={metric} variable={variable} smallN={30} minN={10} title="T" n={400} {...props} />);
   const before = (a, b) => Boolean(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING);
 
-  it("on wider charts, heads the label column next to the axis title over the plot", () => {
+  it("is a line of its own across the chart, followed by the axis title from where the plot starts", () => {
     const { container } = draw(); // jsdom draws at 720 px: labels in a column beside the bars
-    const heads = container.querySelector(".chart-heads");
-    const [groups, title] = heads.children;
+    expect(container.querySelector(".chart-heads")).toBeNull(); // no longer a heading wrapped into the label column
+    const groups = container.querySelector(".axis-groups");
+    const title = container.querySelector(".axis-title");
     expect(groups.textContent).toBe("Stories grouped by dialogue share");
+    expect(groups.style.paddingLeft).toBe(""); // from the chart's left edge
+    expect(groups.nextElementSibling).toBe(title);
     expect(title.textContent).toBe("Favorites per 1,000 views");
     const layout = rangeLayout({ rows, overall: stats(0.45), format: metric.format, width: 720 });
-    expect(heads.style.gridTemplateColumns).toBe(`${layout.labelW}px minmax(0, 1fr)`);
-    expect(heads.style.columnGap).toBe(`${layout.left - layout.labelW}px`); // the axis title starts where the plot does
-    expect(before(heads, container.querySelector("svg"))).toBe(true);
+    expect(title.style.paddingLeft).toBe(`${layout.left}px`); // the axis title starts where the plot does
+    expect(before(title, container.querySelector("svg"))).toBe(true);
     expect(container.querySelector(".axis-caption")).toBeNull(); // no small groups: nothing under the chart
   });
 
-  it("on phones, is one line between the axis title and the ticks", () => {
+  it("on phones too: the line first, then the axis title right above the ticks", () => {
     vi.spyOn(Element.prototype, "getBoundingClientRect").mockReturnValue({ width: 343, height: 0, top: 0, left: 0, right: 343, bottom: 0 });
     const { container } = draw();
-    expect(container.querySelector(".chart-heads")).toBeNull();
-    const title = container.querySelector(".axis-title");
     const groups = container.querySelector(".axis-groups");
-    expect(title.nextElementSibling).toBe(groups);
-    expect(before(groups, container.querySelector("svg"))).toBe(true);
+    const title = container.querySelector(".axis-title");
+    expect(groups.nextElementSibling).toBe(title);
+    expect(title.style.paddingLeft).toBe(""); // labels above the bars: the plot starts at the chart's edge
+    expect(before(title, container.querySelector("svg"))).toBe(true);
   });
 
+  const yesNo = [
+    { index: 0, label: "Has dialogue", stats: stats(0.5, 20) },
+    { index: 1, label: "No dialogue", stats: stats(0.4) },
+  ];
+
   it("keeps hyphenated words whole, and leaves only the small-groups note under the chart", () => {
-    const yesNo = [
-      { index: 0, label: "Has dialogue", stats: stats(0.5, 20) },
-      { index: 1, label: "No dialogue", stats: stats(0.4) },
-    ];
-    const v = { ...binary, noun: "first-person narration" };
+    const v = { ...variable, noun: "the present-tense share of the narration" };
     const { container } = draw({ rows: yesNo, variable: v });
-    expect(container.querySelector(".axis-groups .nowrap").textContent).toBe("first-person");
+    expect(container.querySelector(".axis-groups .nowrap").textContent).toBe("present-tense");
     const caption = container.querySelector(".axis-caption");
     expect(caption.textContent).toBe("* Fewer than 30 stories: worth less trust.");
     expect(before(container.querySelector("svg"), caption)).toBe(true);
+  });
+
+  it("is left out for a yes/no characteristic, whose two rows name themselves", () => {
+    const { container } = draw({ rows: yesNo, variable: binary });
+    expect(groupedBy(binary)).toBe("");
+    expect(container.querySelector(".axis-groups")).toBeNull();
+    expect(container.querySelector(".axis-title").textContent).toBe("Favorites per 1,000 views");
+    expect(container.textContent).not.toMatch(/grouped by/);
   });
 });

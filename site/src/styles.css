@@ -1145,33 +1145,23 @@ table.numbers {
   margin-top: 4px;
 }
 
-/* above the rows: what they are and in what unit, and the measure's axis title (round 3) */
-.range-chart .axis-title,
-.range-chart .axis-groups {
-  margin: 10px 0 0;
+/* above the rows: what they are and in what unit, on a line of its own; then the measure's axis title, from where
+   the plot starts and close above its ticks (the ticks' band starts with 11 px of empty space) */
+.range-chart .axis-groups,
+.range-chart .axis-title {
+  margin: 12px 0 0;
   font-size: 12.5px;
   font-weight: 600;
   line-height: 1.35;
   color: var(--ink-2);
 }
 
-.range-chart .axis-title + .axis-groups {
-  margin-top: 2px;
+.range-chart .axis-groups + .axis-title {
+  margin-top: 8px;
 }
 
-/* wider charts: the rows' heading over the label column, the axis title over the plot */
-.range-chart .chart-heads {
-  display: grid;
-  align-items: end;
-  margin-top: 10px;
-}
-
-.range-chart .chart-heads p {
-  margin: 0;
-}
-
-.range-chart .chart-heads .axis-groups {
-  text-align: right;
+.range-chart .axis-title {
+  margin-bottom: -6px;
 }
 
 .range-chart .axis-groups .nowrap {
@@ -2339,8 +2329,13 @@ html[data-page="explore"] body {
     font-size: 12.5px;
   }
 
+  .range-chart .axis-groups,
   .range-chart .axis-title {
-    margin-top: 4px;
+    margin-top: 8px;
+  }
+
+  .range-chart .axis-groups + .axis-title {
+    margin-top: 6px;
   }
 }
 

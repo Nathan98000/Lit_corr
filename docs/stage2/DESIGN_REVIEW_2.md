@@ -6,7 +6,9 @@
 anywhere on the site (the disclaimer, the association note and their echoes go; no causal language stays the rule);
 code splitting; concepts N1, G2, H3 (not H1), J2 and K1 (not K2); idea I8 only (no I6, no I7); everything else as
 recommended, with Open Graph tags but no share image, no dark mode and no second font weight this round. Sections
-1–9 are the review as written; what changed, with before and after numbers, is in section 10.*
+1–9 are the review as written; what changed, with before and after numbers, is in section 10. Section 11 is round 3:
+the owner's follow-up changes, specified in `STAGE2_DESIGN_IMPLEMENTATION_3_PROMPT.md` and built on the same branch
+(October 9, 2026).*
 
 - Round 1 is [`DESIGN_REVIEW.md`](DESIGN_REVIEW.md); this document links to it rather than repeating it.
 - **Screenshots** are in [`design-review-2/`](design-review-2/): `b…` the site as it is now, `m…` mock-ups.
@@ -936,3 +938,195 @@ Decisions the implementation prompt left open, with one line of reasoning each.
 - No `twitter:title` or `twitter:description` (Twitter falls back to the Open Graph tags).
 - "kiss" and "kissing" do not point to Affection & love (10.5, item 23).
 - No second font weight; no share image; nothing on Patterns or the genre cards ordered by a result.
+
+---
+
+## 11. Round 3: the owner's follow-up changes
+
+The owner tried round 2 and asked for seven changes (`STAGE2_DESIGN_IMPLEMENTATION_3_PROMPT.md`). They are built on
+`design-review-2`, one commit per change in the order of the prompt's work plan, then this section; nothing is pushed.
+All three checks pass at every commit: `npm test` (**159 tests in 20 files** at the end, was 124 in 15), `npm run
+build`, `python -m pytest tests/test_stage2_site_data.py` (**20 tests**, was 19). Measured as in section 10: this Mac,
+the cached headless Chromium with Playwright 1.56, frozen copies of each build served with gzip by `serve.mjs`;
+"round 2" is `76ee10f`. The measuring scripts are in `Claude outputs/design-review-2-tools/` (outside git), with the
+round-3 ones added there: `snap3.mjs` (movement), `firstbodies.mjs` (first load as gzip bodies, without headers),
+`labels3.mjs` (`labels.mjs` plus the new lines above the rows), `ageheight.mjs` (the similar-age section's height),
+`first4.mjs` (first screens), `headlines.mjs` (the lines of the heading over the label column) and `menushots.mjs`.
+
+### 11.1 The seven changes
+
+| # | Change | Commit | Before → after |
+|---|---|---|---|
+| 1 | Opening, using or picking from the measure menu or the characteristic picker never moves the page | `909b40c` | opening a menu scrolled the page 372 px at 1440 × 900, 552 at 1280 × 720 and 538 at 768 × 1024 (picking from 300 px down left it anywhere from 102 to 624 px) → **0 px** in every one of the 64 cases below |
+| 5 | The footer is the independence statement and a link | `49a4abe` | 30 → 13 words; 158 → 114 px at 375 px, 114 → 93 at 1440 |
+| 7 | The Patterns page's count line | `1bfabb5` | "71 of 181 characteristics that can show a trend have a clear pattern … The other 110 show no clear pattern; that is a finding too." → "**39** of 181 characteristics have a clear pattern with views per month across all genres. The other 142 show no clear pattern." (65 and 116 for the average rating) |
+| 4 | "Median" and "interquartile range", said without explaining them | `9b71142` | 34 uses of "typical story", "typical age" and "middle half" in the site's text → **0**, checked by a scan of the source and of `meta.json` (in Vitest and in pytest) |
+| 6 | The average rating is the default measure, and its group leads the menu | `6dc7a46` | favorites per 1,000 views → **average rating**; groups Per 1,000 views · Per month online · Totals so far · Rating → **Rating** · Per 1,000 views · Per month online · Totals so far; `meta.metrics` keeps its order; "the" before a singular measure |
+| 2 | Story length is measured in words, said above the rows | `6e41eb0` | "story length" → "story length in words"; "Stories grouped by story length (words)." under the chart → "Stories grouped by story length in words" above the first row |
+| 3 | "Stories of similar age" as one aligned chart | `abc0837` | three full charts → one chart with the labels once and a column per period: **1,347 → 481 px** at 375 and **492 → 413 px** at 1440 (story length, ratings or views); 843 → 400 and 324 → 317 px (present-tense narration in Romance, yes/no) |
+
+**Change 1, in detail.** The cause was as diagnosed: `scrollIntoView()` on the active option scrolls every scrollable
+ancestor, the window included, while the popover is still partly below the screen. Three more causes turned up once
+it was gone, all for *picking* (the page itself did not move on opening any more):
+
+- **Scroll anchoring.** When the new question's heading and takeaway are shorter or longer, Chromium shifts the page to
+  keep what is on screen in place (300 → 334 px after picking a total at 375 px). It is switched off on the explore
+  page (`overflow-anchor: none` on `html` and `body`: the browser reads it from the body, or from `html` while a
+  sheet's lock is on).
+- **A shorter page.** A characteristic with three groups makes the page shorter than the screen's reach from 300 px
+  down, so the browser pulls it up (300 → 113 px at 1440 × 900). Before a question from the sentence or an age box's
+  "Switch to …", a spacer after `main` keeps the page tall enough for the current scroll position whatever the new
+  chart's height; it goes as soon as it is out of sight below the screen (`useScrollFloor.js`).
+- **A chart drawn wider than the screen for one layout.** A chart that is drawn again (another characteristic or
+  measure) started at a 720 px fallback width before measuring its box; on a phone that widened the layout viewport
+  for one forced layout and moved the page (300 → 210 px at 375 px, with the spacer already in place). A chart now
+  starts at the width last measured for its kind, and never wider than the window.
+
+| Opening (page at the top) | Round 2: measure menu | Round 2: picker | Round 3 |
+|---|---|---|---|
+| 1440 × 900 (default view / views) | 372 / 340 px | 372 / 340, then 297 after typing | 0 |
+| 1280 × 720 | 552 / 520 | 552 / 520, then 297 | 0 |
+| 768 × 1024 | 538 / 624 | 538 / 624, then 278 | 0 |
+| 375 × 667 (the sheet) | 0 | 0 | 0 |
+
+The round-3 script (`snap3.mjs`) covers 375, 768, 1280 and 1440 px × the default view and views × the top and 300 px
+down × the measure menu and the picker × (open, End, Escape, and for the picker typing "tense", a topic and back) or
+(open, pick an option); every reading of `window.scrollY` equals the start: **0 px in 64 of 64 cases** (round 2:
+51 of 64 moved: all 48 at 768, 1280 and 1440 px, and three picks from 300 px down at 375). The owner's `snap.mjs`
+reports 0 px for every start at the top; its "300 px down" rows read "MOVED … 0 → 0" on every build, because at 300
+px the sentence's words are above the screen at every width and Playwright's own click first scrolls them into view;
+`snap3.mjs` presses them with a dispatched click instead (as a keyboard user does once focus is there), clears the
+search with `fill()` (Control+A does not select on a Mac) and also picks an option. The popover now ends 10 px above the bottom of the screen (at 1280 × 720 it is 502 px tall, from 208 to 710
+px) and its list scrolls inside; on the 375 px sheet the scroll lock keeps the page's position (Chromium's mobile
+emulation; see 11.5 for the iPhone).
+
+### 11.2 Headline numbers
+
+| Measure | Round 2 | Round 3 |
+|---|---|---|
+| First load (HTML, JS, CSS, font, `meta.json`, first chart), gzip bodies | 148.7 KiB, 6 requests | **149.9 KiB**, 6 requests (149.4 after change 1, 149.7 after change 2); 4.3 KiB of picker and menu code still fetched when the browser is idle; the similar-age chart's chunk (about 4 KiB) is fetched when its button is hovered or focused |
+| First chart; largest paint, at 375 px (local / fast 4G / slow 4G / 3G, `perf.mjs`) | 0.06 / 0.88 / 2.00 / 4.67 s; 0.06 / 0.28 / 0.99 / 3.04 s | 0.06 / 0.90 / 2.01 / 4.68 s; 0.05 / 0.30 / 1.00 / 3.08 s |
+| Layout shift: first load / after the script's changes of characteristic and genre | 0 / 0.002 | 0 / 0.04–0.08, under 0.1: the question sentence now wraps differently when "story length in words" becomes "dialogue share" (0.037). The script changes the address itself; on the site the sentence changes right after the visitor's own tap or choice, and browsers leave shifts within 500 ms of an input out of the score |
+| The default view | "how do favorites per 1,000 views vary with story length?" | "how does the average rating vary with story length in words?" on a zoomed axis ("Average rating (the axis starts at 3.5)") |
+| First chart row at 375 × 667 | ends at 622 px | **639 px**, on the first screen; "words" is in the sentence (130 px) and in the line above the rows (536–553 px) |
+| Top of the page to the plot: 320 / 375 / 768 / 1440 | 560 / 536 / 474 / 508 | 610 / 553 / 528 / 571 (the sentence is a line longer and the line above the rows is new); at 320 × 568 the first row ends at 696 px, below the first screen as in round 2 (646) |
+| Explore page, default view: 375 / 1440 | 1,867 / 1,272 px | 1,839 / 1,290 |
+| Real label boxes in 11,220 phone charts per font (`labels.mjs`, plus the new lines above the rows against the ticks and the chart's width) | 0 problems (site font) | **0 problems with the site font**; with Verdana (in place of DejaVu Sans), no overlaps and nothing on a mark, only the same 995 charts as in round 2 whose "All stories shown: …" starts 1–3 px left of the chart (into the page's margin, not clipped); the new lines never touch the ticks or leave the chart |
+| axe-core, WCAG 2.0–2.2 A/AA and best practice | none (29 pages and states × 2 widths) | **none**, in 23 pages and states at 375 and 1440 px (46 runs): the review's 20, plus the similar-age chart with a group tapped, the similar-age chart of a yes/no characteristic, and Patterns' new default |
+| "Check stories of similar age" at 375 × 667 (`task2.mjs`) | heading at 52 px under the question bar, focused | the same: heading at 52 px, focused (1440: the page scrolls as far as it can, the panel on screen, its heading focused) |
+| Tests | 124 Vitest, 19 pytest | 159 Vitest, 20 pytest |
+
+### 11.3 Screenshots
+
+Palette-compressed; 1440 and 1280 px at half size.
+
+| View | Screenshot |
+|---|---|
+| The default first screen: round 2 and round 3 at 375 px, round 3 at 1440 px | [r3-01](design-review-2/r3-01-first-screen-375-1440.png) |
+| The measure menu and the picker opened at 1440 × 900: round 2 (the page jumped 372 px), round 3 (it stays at 0) | [r3-02](design-review-2/r3-02-menus-1440x900.png) |
+| The same at 1280 × 720 (552 px → 0) | [r3-03](design-review-2/r3-03-menus-1280x720.png) |
+| Stories of similar age at 375 px: before, after, and a yes/no characteristic with hollow dots and dashes | [r3-04](design-review-2/r3-04-similar-age-375.png) |
+| Stories of similar age at 1440 px: before and after | [r3-05](design-review-2/r3-05-similar-age-1440.png) |
+| Patterns: the count line in round 2 and round 3, and the new default (the average rating) | [r3-06](design-review-2/r3-06-patterns-375-1440.png) |
+| The footer: round 2 and round 3 | [r3-07](design-review-2/r3-07-footer-375-1440.png) |
+
+![The menus at 1280 × 720, round 2 and round 3](design-review-2/r3-03-menus-1280x720.png)
+
+![Stories of similar age at 375 px, before and after](design-review-2/r3-04-similar-age-375.png)
+
+### 11.4 Judgment calls
+
+1. **Order of the commits**: the prompt's work plan (1, 5, 7, 4, 6, 2, 3), so each change is reviewable on its own; the
+   change-2 commit was split out of a working tree that already held change 3 and checked on its own (tests, build,
+   first load, label boxes).
+2. **Change 1, the list's own container** is the sheet's or popover's scrolling body (the search box scrolls with the
+   list, as before), handed to the menu and the picker as a ref; another list (a topic, a new search) starts at its top.
+3. **Change 1, the focus trap**: when Tab wraps around, the focused control is also brought into view inside that body,
+   since `preventScroll` no longer lets the browser do it.
+4. **Change 1, a trigger off the screen** (reachable only from the keyboard) counts from the screen's edge, so the
+   popover always opens on the screen; above its word, the popover is placed by its bottom edge (the initial
+   containing block is one screen tall at the top of the page), so it hugs the word whatever its height.
+5. **Change 1, "the scroll position stays"** is taken literally: scroll anchoring is off on the explore page, and the
+   spacer holds the page for questions from the sentence and the age boxes' "Switch to …" only; changes of view
+   (comparing genres, a genre card, Keep exploring) are not held.
+6. **Change 1, the chart's first draw** uses the width last measured for its kind ("chart", "compare", "age"), or the
+   window's width minus the page's padding, instead of 720 px.
+7. **Change 4, How to read** keeps its last sentence ("Groups without an order …") only for characteristics without an
+   order, as in round 2 (10.5, item 20); the approved paragraph is otherwise word for word.
+8. **Change 4, How it works' new sentence** is plain text, as in the approved copy (the old bold marked definitions
+   that are gone); the chart's own "All stories shown: 0.54" label stays (the legend now says "Median of all stories
+   shown"); "Stories with longer typical sentences" and "… paragraphs" stay (another use of "typical").
+9. **Change 6, the article** sits outside the measure's word in the sentence ("how does the [average rating] vary"),
+   so the word that opens the menu is the measure's name; the Patterns key line keeps "its median average rating"
+   (a possessive needs no article).
+10. **Change 6, the test fixtures** were regenerated (only their `meta.json` changed); the synthetic data has no
+    average rating (half its stories lack one), so its default falls back to its first measure, as the site does for
+    any data without the default (`defaultMetric`, also used by How it works' "See the chart" links).
+11. **Change 2, the line's words** are today's caption without its period: "Stories grouped by {noun}{unit}"; a unit is
+    left out when the noun names it, as a phrase ("dialogue segments per 1,000 words") or, for a one-word unit, as a
+    word ("title word count", "the number of sentences", "unique words").
+12. **Change 2, on wider charts** the line is right-aligned over the label column (the labels below are right-aligned
+    too) and bottom-aligned with the axis title, which now starts over the plot. At 1440 px it takes two lines for 95
+    of the 187 characteristics, three for 80 and four for 12 (at 768 px: 122, 57 and 8). Hyphenated words never break
+    ("first- / person").
+13. **Change 2, on phones** the line sits between the axis title and the ticks (the prompt's first option), in the
+    axis title's style; merging the two into one line read as one long, mixed label.
+14. **Change 3, its own component**: the chart is drawn by `AgeCheckCharts.jsx` with a pure layout in `ageLayout.js`
+    (both lazy), not three copies of the main chart; the main chart's compact mode is gone with them.
+15. **Change 3, the dash** for fewer than 10 stories sits at the start of its row, like a dash in a table cell: drawn
+    on the period's dashed line, as on the genre cards, it read as "+".
+16. **Change 3, tick labels**: centered on their ticks and kept inside their column; the axis may end on its next tick
+    so that three labels fit; in a phone's 78 px columns thousands read "1k", and total views keep their two end
+    labels ("0" and "75k", "100k" or "200k"), as "50k" and "100k" do not fit side by side; every gridline stays.
+    Ratings on phones read "3 4 5" (the axis starts at 3), on wider screens "3.5 4.0 4.5 5.0".
+17. **Change 3, widths**: 8 px between columns on phones (20 px wider), so a 375 px phone has three 78 px columns next
+    to the 84 px label column; at 320 px (288 px of chart) the periods are stacked, each with the labels. Labels on
+    the left are right-aligned and wrap to two lines in the 84 px column; rows are 32 px.
+18. **Change 3, the columns' headings**: the period in the serif (14 px in narrow columns), its stories and verdict at
+    12–12.5 px; word joiners keep "2000–2009" whole; screen readers hear "Published 2000–2009".
+19. **Change 3, screen readers**: the marks are hidden from them and the numbers are in the hidden table (period ×
+    group: median, stories; one number of decimals for the whole table), as specified. Each group in a column is
+    still a named, focusable image, as on the main chart, because a control that takes keyboard focus cannot be hidden
+    from screen readers (WCAG 4.1.2); so they hear the focused group's details too.
+20. **Change 3, details**: the card adds the period under the group's name; the phone's line reads "Under 2,000,
+    published 2000–2009: median … · interquartile range … · mean … · … stories · median age …"; the row's label is
+    bold while one of its groups is shown.
+21. **Change 3, the hidden table** sits in a visually hidden box: a table is as wide as its content whatever its own
+    width, and on its own it widened the page at 1440 px.
+22. **Change 3, no heading over the label column** ("Stories grouped by …"): the chart right above says what the rows
+    are, and an 84 px column cannot hold the line.
+23. **Change 3, the placeholders** while the chart's code and its three files load are one block about as tall as the
+    chart (estimated from the number of groups and the width), instead of three chart-sized frames.
+24. **The prompt** (`STAGE2_DESIGN_IMPLEMENTATION_3_PROMPT.md`) is committed with this section, as rounds 1 and 2's
+    prompts are.
+25. **The wide font for the label check** is Verdana, as DejaVu Sans is not installed on this Mac (as in round 2).
+
+### 11.5 Still open
+
+- **A real iPhone.** The sheet's scroll lock (`overflow: hidden` on `html` and `body`) keeps the page's position in
+  Chromium's mobile emulation; it was not checked on an iPhone, nor were the on-screen keyboard and the page behind the
+  sheet (round 2's question 8 still stands).
+- **320 × 568**: the first chart row ends at 696 px, further below the first screen than in round 2 (646): the
+  sentence is a line longer ("how does the average rating vary with story length in words?") and the line above the
+  rows adds one.
+- **Total views in a phone's similar-age columns** show two tick labels, not three or four (11.4, item 16).
+- **The heading over the label column** takes two to four lines on wider charts (four for 12 of the 187
+  characteristics at 1440 px); a shorter wording (the noun alone) would take one or two, but the prompt asked for the
+  line itself to move.
+- **The spacer** can leave up to a screen of empty space under a short page, until it is scrolled out of sight; only
+  after a new question asked from far down the page.
+- **A popover opened from the keyboard while its word is above the screen** opens at the top of the screen, away from
+  its word.
+- **Screen readers in the similar-age chart** get the hidden table and, from the keyboard, the named groups (11.4,
+  item 19).
+- **Layout shift after a scripted change** is 0.04–0.08 (round 2: 0.002), because the longer question sentence
+  re-wraps; after a visitor's own choice browsers do not count it, and the first load stays at 0.
+
+### 11.6 Not done, on purpose
+
+- No reordering of `meta.metrics` (the aggregate files hold the measures by position); only the menu's groups moved.
+- No heading over the similar-age chart's label column (11.4, item 22).
+- The main chart's "All stories shown: …" label and the age box's "Switch to …" wording are unchanged (not in the
+  approved copy).
+- No new data fields or files: `site-data` changed only `meta.json` (twice: the default measure and the groups, then
+  the noun "story length in words"), as the rules require.

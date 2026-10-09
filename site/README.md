@@ -42,7 +42,7 @@ third). A chart loads one file of about 15–20 KB.
 ## First-load budget and lazy parts
 
 The **first load** is the HTML, the main script, the CSS, the heading font, `meta.json` and the first chart file:
-**148.6 KiB of gzip response bodies in 6 requests** (October 2026). The budget is **155 KiB of gzip response
+**149.9 KiB of gzip response bodies in 6 requests** (October 9, 2026). The budget is **155 KiB of gzip response
 bodies** for that set, measured on the built site served with gzip (the design review's `firstload.mjs` with
 `serve.mjs`; response headers are not counted).
 

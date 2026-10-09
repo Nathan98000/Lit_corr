@@ -108,10 +108,10 @@ export default function App() {
 
   return (
     <div className="site">
-      <a className="skip-link" href="#/explore" onClick={skip}>
-        Skip to content
-      </a>
       <header className="masthead">
+        <a className="skip-link" href="#/explore" onClick={skip}>
+          Skip to content
+        </a>
         <div className="wrap masthead-inner">
           <a className="brand" href={toHash("explore", lastExplore.current)}>
             {SITE_NAME}

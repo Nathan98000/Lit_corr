@@ -118,14 +118,28 @@ export default function CharacteristicPicker({ meta, value, sub, open, onClose, 
         </li>
       );
     }
+    // named by the label only; the topic and the description describe it (F59)
+    const id = optionId(i);
     return (
-      <li key={opt.id} {...optionProps(opt, i)} className={`pick${i === current ? " active" : ""}${isCurrent ? " current" : ""}`}>
-        {t && <span className="pick-topic">{t.label}</span>}
-        <span className="pick-label">
+      <li
+        key={opt.id}
+        {...optionProps(opt, i)}
+        aria-labelledby={`${id}-label`}
+        aria-describedby={t ? `${id}-topic ${id}-desc` : `${id}-desc`}
+        className={`pick${i === current ? " active" : ""}${isCurrent ? " current" : ""}`}
+      >
+        {t && (
+          <span className="pick-topic" id={`${id}-topic`}>
+            {t.label}
+          </span>
+        )}
+        <span className="pick-label" id={`${id}-label`}>
           <Marked label={v.label} query={query} />
           {isCurrent && <span className="pick-current"> · shown now</span>}
         </span>
-        <span className="pick-desc">{oneLine(v.description)}</span>
+        <span className="pick-desc" id={`${id}-desc`}>
+          {oneLine(v.description)}
+        </span>
       </li>
     );
   };

@@ -2,7 +2,7 @@ import { forwardRef, useCallback, useId, useRef, useState } from "react";
 import { subsetConflict } from "../lib/urlState.js";
 import { questionParts } from "../lib/wording.js";
 import CharacteristicPicker from "./CharacteristicPicker.jsx";
-import InlineSelect, { Caret } from "./InlineSelect.jsx";
+import InlineSelect, { SlotWords } from "./InlineSelect.jsx";
 import MetricMenu from "./MetricMenu.jsx";
 
 function groupBy(list, key) {
@@ -95,7 +95,7 @@ export default function Controls({ meta, state, onChange }) {
                   </option>
                 ))}
               </InlineSelect>
-              ,{" "}
+              {"\u2060,"}{" "}
             </>
           )}
           how {p.aux}{" "}
@@ -105,8 +105,7 @@ export default function Controls({ meta, state, onChange }) {
             onPress={() => setMenu(menu === "metric" ? null : "metric")}
           >
             <span className="visually-hidden">Popularity measure: </span>
-            {p.measure}
-            <Caret />
+            <SlotWords text={p.measure} />
           </SlotButton>{" "}
           {p.verb}{" "}
           <SlotButton
@@ -115,10 +114,10 @@ export default function Controls({ meta, state, onChange }) {
             onPress={() => setMenu(menu === "variable" ? null : "variable")}
           >
             <span className="visually-hidden">Story characteristic: </span>
-            {p.characteristic}
-            <Caret />
+            <SlotWords text={p.characteristic} />
           </SlotButton>
-          ?
+          {/* a word joiner keeps the question mark on the caret's line */}
+          {"\u2060?"}
         </p>
       </fieldset>
 

@@ -523,7 +523,8 @@ table.numbers {
 }
 
 .genre-card {
-  display: block;
+  display: flex;
+  flex-direction: column;
   min-width: 0;
   padding: 8px 0 4px;
   border: 1px solid var(--rule);
@@ -560,11 +561,12 @@ table.numbers {
 }
 
 .genre-name {
-  display: block;
-  font-weight: 600;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
+  font-weight: 600;
 }
 
 .genre-card.all .genre-name {
@@ -588,7 +590,8 @@ table.numbers {
 
 .spark {
   display: block;
-  margin: 0 1px;
+  flex: none;
+  margin: auto 1px 0; /* at the card's bottom, so the small charts of a row line up */
 }
 
 .spark-band {
@@ -1416,14 +1419,14 @@ table.numbers {
 }
 
 .disclosure summary::after {
-  content: "+";
+  content: "+" / "";
   font-size: 20px;
   line-height: 1;
   color: var(--ink-3);
 }
 
 .disclosure[open] summary::after {
-  content: "–";
+  content: "–" / "";
 }
 
 .disclosure p {
@@ -1595,9 +1598,9 @@ table.numbers {
 
 .inline-select select {
   position: absolute;
-  inset: -6px 0; /* a taller tap area than the words themselves */
+  inset: 0; /* exactly the words: a taller area would take taps from the line above or below (F38) */
   width: 100%;
-  height: calc(100% + 12px);
+  height: 100%;
   min-height: 0;
   opacity: 0;
   cursor: pointer;
@@ -1633,21 +1636,16 @@ table.numbers {
   border-bottom-width: 1.5px;
 }
 
+/* "Only include" has no line above or below it, so its select keeps a 44 px tall tap area */
 .include .inline-select select {
   inset: -10px -4px;
   width: calc(100% + 8px);
   height: calc(100% + 20px);
 }
 
-/* the menus' words get a 44 px tall tap area without changing the line */
-.slot-button::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 50%;
-  height: 44px;
-  transform: translateY(-50%);
+/* a slot's last word and its caret never part (F59) */
+.slot-end {
+  white-space: nowrap;
 }
 
 .include-note {
@@ -1920,6 +1918,11 @@ table.numbers {
     padding-top: 14px;
   }
 
+  /* lines far enough apart that each word owns its own tap area (F38) */
+  .sentence {
+    line-height: 1.45;
+  }
+
   .question-after {
     margin-top: 6px;
   }
@@ -2011,8 +2014,9 @@ table.numbers {
   text-decoration: none;
 }
 
-.pattern-topic li a:hover {
-  text-decoration: underline;
+.pattern-topic li a:hover,
+.pattern-topic li.no-pattern a {
+  text-decoration: underline; /* in a muted row, a link needs more than its color (axe link-in-text-block) */
 }
 
 .strength {

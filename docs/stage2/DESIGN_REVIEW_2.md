@@ -8,7 +8,7 @@ code splitting; concepts N1, G2, H3 (not H1), J2 and K1 (not K2); idea I8 only (
 recommended, with Open Graph tags but no share image, no dark mode and no second font weight this round. Sections
 1–9 are the review as written; what changed, with before and after numbers, is in section 10. Section 11 is round 3:
 the owner's follow-up changes, specified in `STAGE2_DESIGN_IMPLEMENTATION_3_PROMPT.md` and built on the same branch
-(October 9, 2026).*
+(October 9, 2026). Section 12 is the owner's five further changes after trying round 3, asked in chat the same day.*
 
 - Round 1 is [`DESIGN_REVIEW.md`](DESIGN_REVIEW.md); this document links to it rather than repeating it.
 - **Screenshots** are in [`design-review-2/`](design-review-2/): `b…` the site as it is now, `m…` mock-ups.
@@ -1112,7 +1112,7 @@ Palette-compressed; 1440 and 1280 px at half size.
 - **Total views in a phone's similar-age columns** show two tick labels, not three or four (11.4, item 16).
 - **The heading over the label column** takes two to four lines on wider charts (four for 12 of the 187
   characteristics at 1440 px); a shorter wording (the noun alone) would take one or two, but the prompt asked for the
-  line itself to move.
+  line itself to move. *(Resolved in section 12: a line of its own, one line at 768 px and wider.)*
 - **The spacer** can leave up to a screen of empty space under a short page, until it is scrolled out of sight; only
   after a new question asked from far down the page.
 - **A popover opened from the keyboard while its word is above the screen** opens at the top of the screen, away from
@@ -1130,3 +1130,84 @@ Palette-compressed; 1440 and 1280 px at half size.
   approved copy).
 - No new data fields or files: `site-data` changed only `meta.json` (twice: the default measure and the groups, then
   the noun "story length in words"), as the rules require.
+
+---
+
+## 12. The owner's follow-up to round 3
+
+After trying round 3 the owner asked, in chat, for five more changes. They are built on `design-review-2`, one
+commit each in the order asked, then this section; nothing is pushed. At the end `npm test` (**161 tests in 20
+files**, was 159), `npm run build` and `python -m pytest tests/test_stage2_site_data.py` (20 tests) pass. Measured as
+in section 11, against a frozen copy of round 3's final build (`b1d812a`); `heads4.mjs` (the lines above the rows,
+for every characteristic, at five widths) and `docshots.mjs` (these screenshots) are added to the tools.
+
+| # | The owner's request | Commit | Before → after |
+|---|---|---|---|
+| 1 | Delete "6 characteristics have no order (such as month) and are not summed up as a trend." | `df218f0` | Patterns: the count line stands alone |
+| 2 | Delete "With this many characteristics, some differences appear by chance; the rule behind “tend to” allows for that. When a title says “tend to”" | `4985912` | the note and its link are gone; How it works still says that the rule allows for the many charts ("When a title says “tend to”"), and the key line still links there |
+| 3 | Make the key line less awkward | `0234c0b` | "↗ tends higher: the more of the characteristic a group of stories has (or, for yes/no ones, the group that has it), the higher its median average rating; ↘ tends lower: the lower." → "↗ tends higher: the more of the characteristic, the higher the median average rating (for yes/no characteristics: higher in stories that have it). ↘ tends lower: the opposite." |
+| 4 | Remove "(the axis starts at X)" | `6dcf99f` | "Average rating (the axis starts at 3.5)" → "Average rating", on the main chart and on "Stories of similar age"; rating axes still start on a labeled tick (F56), so the first tick label says where |
+| 5 | "Stories grouped by …" looks bunched up in the corner; make the chart more pleasing | `9e7304a` | at 768–1440 px the line wrapped into **2–4 lines** in the label column's corner for every characteristic → **one line** across the chart; the axis title sits on its ticks; no line for yes/no characteristics |
+
+**Change 5, in detail.** The line was the heading of the label column, which is 156–180 px wide: "Stories grouped by
+story length in words" took two lines and the longest ("… the use of ‘he / she / they’ in the narration (per 1,000
+narration words)") four, right-aligned and pressed against the axis title, which in turn sat as far from its tick
+labels (10 px) as from the line beside it. Now:
+
+- The line is a line of its own across the chart, from its left edge, under the legend: one line for every
+  characteristic at 768 px and wider.
+- The measure's axis title follows, from where the plot starts and 4 px above its tick labels (was 10), so it reads
+  with its numbers. Phones have the same order (round 3 had the axis title first there, 11.4 item 13).
+- Yes/no characteristics have no such line. Their nouns do not read after "grouped by" ("Stories grouped by has
+  dialogue", "… by opens with speech", "… by published on a weekend": 9 of the 13), and their two rows name
+  themselves ("Has dialogue", "No dialogue"), as the question does ("… differ between stories with dialogue and
+  stories without dialogue?").
+
+| "Stories grouped by …" (187 characteristics × ratings and reading-list adds) | Round 3 | Now |
+|---|---|---|
+| 1280 and 1440 px | 2 lines: 190 · 3 lines: 160 · 4 lines: 24 | **1 line: 348** · none (yes/no): 26 |
+| 1024 px | 2: 142 · 3: 198 · 4: 34 | 1: 348 · none: 26 |
+| 768 px | 2: 244 · 3: 114 · 4: 16 | 1: 348 · none: 26 |
+| 560 px (the phone layout) | 1: 362 · 2: 12 | 1: 336 · 2: 12 · none: 26 |
+| Axis title to its tick labels (boxes) | 10 px at 768 px and wider | 4 px |
+
+| Top of the chart (legend) to the first row | Round 3 | Now |
+|---|---|---|
+| 1440 px: story length in words / the longest / has dialogue | 94 / 128 / 94 px | 98 / 98 / 73 |
+| 375 px: the same three | 111 / 127 / 111 | 113 / 129 / 90 |
+| First chart row of the default view: 320 / 375 / 768 / 1440 (`first4.mjs`) | 696 / 639 / 602 / 645 | 698 / **641** / 606 / 649; at 375 × 667 still on the first screen |
+
+**Checks** on the final build: label boxes in all 11,220 phone charts (`labels.mjs` with the lines above the rows,
+`labels4.mjs` here): **0 problems** with the site font; with Verdana the same 995 charts as in rounds 2 and 3 (an "All
+stories shown: …" that starts 1–3 px left of the chart), nothing new. At 560–1440 px (`heads4.mjs`) the lines never
+leave the chart or touch a tick label. The page never moves (`snap3.mjs`: 0 px in 64 of 64). axe-core: none in 46
+runs. First load **149.8 KiB** of gzip bodies in 6 requests (was 149.9).
+
+| View | Screenshot |
+|---|---|
+| The default chart at 1440 px: round 3 and now | [r4-01](design-review-2/r4-01-chart-heading-1440.png) |
+| The longest characteristic at 1440 px: round 3 and now | [r4-02](design-review-2/r4-02-chart-heading-long-1440.png) |
+| 375 px: round 3, now, and a yes/no characteristic now | [r4-03](design-review-2/r4-03-chart-heading-375.png) |
+| Patterns at 1440 px: round 3 and now | [r4-04](design-review-2/r4-04-patterns-1440.png) |
+
+![The longest characteristic at 1440 px, round 3 and now](design-review-2/r4-02-chart-heading-long-1440.png)
+
+**Judgment calls**
+
+1. **Change 3, the wording**: the comparison is kept ("the more …, the higher …"), without "a group of stories has",
+   "its" or the elliptical "the lower"; yes/no characteristics get their own short clause. It names the median
+   rather than individual stories, as before, and the banned-word tests pass.
+2. **Change 4 everywhere**: the note goes from both axis titles that had it; nothing else said where an axis starts.
+3. **Change 5, the position**: a line across the chart, rather than a shorter heading over the label column (by my
+   estimate the noun alone would still take three lines there for the longest characteristics) or a subtitle merged
+   with the axis title ("Average rating by story length in words" reads well, but not for yes/no nouns, and it is new
+   wording).
+4. **Change 5, its style** is unchanged (12.5 px, semibold, the second ink): the line and the axis title are both
+   titles of the chart's two directions; the distance does the grouping.
+5. **Change 5, yes/no characteristics** lose the line (an omission, not new wording); if the owner prefers one, "Stories
+   with dialogue and stories without dialogue" can be built from the data's existing names for the two groups.
+6. **Change 1** leaves the explore page's "How to read this chart" sentence about groups without an order, which is
+   shown only on those charts.
+7. **Change 2** removes the note's style too; the count line keeps 16 px before the buttons.
+
+**Still open**: as in 11.5, except the heading over the label column, which this section resolves.

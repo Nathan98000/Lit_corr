@@ -5,9 +5,10 @@ characteristics, overall and within each of Literotica's genres. The controls ar
 genres], how does the [average rating] vary with [story length in words]?" (the default view; the average rating is
 the default measure and leads the measure menu). For each group of stories the chart shows the median (with its
 value printed) and the interquartile range, with the number of stories behind every figure; the mean is in each
-group's details and in "Show the numbers". Above the rows a line says what they are and in what unit ("Stories
-grouped by story length in words"). "Compare all 30 genres" shows the same relationship for every genre as small
-charts, and the Patterns page lists every clear pattern for a genre and a measure, topic by topic.
+group's details and in "Show the numbers". Above the chart a line of its own says what the rows are and in what unit
+("Stories grouped by story length in words"; yes/no characteristics, whose two rows name themselves, have none), and
+the measure's name sits over the plot, on its ticks. "Compare all 30 genres" shows the same relationship for every
+genre as small charts, and the Patterns page lists every clear pattern for a genre and a measure, topic by topic.
 
 The site shows **descriptive associations only**, never causes, and it ships **only precomputed summaries of
 groups of stories**: no story text, titles, authors, addresses or story-by-story records.
@@ -42,7 +43,7 @@ third). A chart loads one file of about 15–20 KB.
 ## First-load budget and lazy parts
 
 The **first load** is the HTML, the main script, the CSS, the heading font, `meta.json` and the first chart file:
-**149.9 KiB of gzip response bodies in 6 requests** (October 9, 2026). The budget is **155 KiB of gzip response
+**149.8 KiB of gzip response bodies in 6 requests** (October 9, 2026). The budget is **155 KiB of gzip response
 bodies** for that set, measured on the built site served with gzip (the design review's `firstload.mjs` with
 `serve.mjs`; response headers are not counted).
 

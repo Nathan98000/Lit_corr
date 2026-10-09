@@ -14,9 +14,8 @@ const STEPS = [
 
 /**
  * The numbers behind the genre cards (concept D1, repaired): each group's median as a multiple of its genre's
- * typical story, in stepped colors with no fill between 0.91× and 1.1× and none for groups under 30 stories; the
- * verdict next to the sticky genre names. Tapping or focusing a cell shows its median, size and the genre's typical
- * story.
+ * median, in stepped colors with no fill between 0.91× and 1.1× and none for groups under 30 stories; the verdict
+ * next to the sticky genre names. Tapping or focusing a cell shows its median, size and the genre's median.
  */
 export default function CompareTable({ rows, variable, metric, smallN, minN, id }) {
   const fmt = (v) => formatValue(v, metric.format);
@@ -28,7 +27,7 @@ export default function CompareTable({ rows, variable, metric, smallN, minN, id 
       <div className="compare-scroll">
         <table className="compare-table">
           <caption className="visually-hidden">
-            {metric.label} by {variable.noun}: each group’s median as a multiple of its genre’s typical story
+            {metric.label} by {variable.noun}: each group’s median as a multiple of its genre’s median
           </caption>
           <thead>
             <tr>

@@ -20,7 +20,7 @@ async function renderApp(hash = "") {
   if (hash) window.history.replaceState(null, "", `/${hash}`);
   const user = userEvent.setup();
   render(<App />);
-  await screen.findByText(/Typical story \(median\)/);
+  await screen.findByText("Interquartile range", { selector: "li" });
   return user;
 }
 

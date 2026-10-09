@@ -40,7 +40,7 @@ describe("F40, F44: the takeaway", () => {
   it("names the strength of a clear pattern in one short sentence and links the word to its definition", async () => {
     await renderApp("#/explore?var=dlg_word_share");
     expect(takeaway().textContent).toMatch(
-      /^Typical story: [\d.]+ for “Under 10%”, [\d.]+ for “40%\+”\. A strong pattern; individual stories vary a lot within every group\.$/,
+      /^Median: [\d.]+ for “Under 10%”, [\d.]+ for “40%\+”\. A strong pattern; individual stories vary a lot within every group\.$/,
     );
     const link = within(takeaway()).getByRole("link", { name: "strong" });
     expect(link.getAttribute("href")).toBe("#/methodology/tend-to");

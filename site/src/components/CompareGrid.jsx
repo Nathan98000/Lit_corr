@@ -2,7 +2,7 @@ import { cardLabel, gridColumns, sparkGeometry } from "../lib/compare.js";
 import { textWidth } from "../lib/rangeLayout.js";
 import useWidth from "./useWidth.js";
 
-/** One genre's mini chart: groups left to right, each typical story against the genre's own (dashed line). */
+/** One genre's mini chart: groups left to right, each group's median against the genre's (dashed line). */
 function Spark({ row, width, ordered, showLabels }) {
   const g = sparkGeometry(row.cells, width, 56, showLabels ? Math.min(60, width / (2 * row.cells.length)) : 10);
   const shown = g.points.filter((p) => !p.hidden);

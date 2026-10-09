@@ -232,6 +232,8 @@ def test_visitor_text_is_us_english_and_never_causal(built):
             assert not UK_SPELLINGS.search(text), text
             assert not CAUSAL.search(text), text
             assert "'" not in text, text  # typographic quotes and apostrophes only
+            # visitors are assumed to know the median and the interquartile range (round 3)
+            assert not re.search(r"typical story|typical age|middle half", text, re.I), text
 
 
 def test_us_english_and_generated_phrases():

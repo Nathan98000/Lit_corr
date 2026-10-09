@@ -158,21 +158,21 @@ describe("answer heading, takeaway and summary", () => {
   it("names the end groups, and says so when one is hidden", () => {
     const variable = v("dlg_word_share");
     expect(segmentsText(takeawaySegments({ variable, rows: [r("Low", 0.28), r("Mid", 0.5), r("High", 0.89)], valueText: text }))).toBe(
-      "Typical story: 0.28 for “Low”, 0.89 for “High”.",
+      "Median: 0.28 for “Low”, 0.89 for “High”.",
     );
     expect(segmentsText(takeawaySegments({ variable, rows: [r("Low", null), r("Mid", 0.5), r("High", 0.89)], valueText: text }))).toBe(
-      "Typical story: 0.89 for “High”; “Low” has too few stories.",
+      "Median: 0.89 for “High”; “Low” has too few stories.",
     );
     const binary = v("dlg_has_dialogue");
     expect(segmentsText(takeawaySegments({ variable: binary, rows: [r("Has dialogue", 0.43), r("No dialogue", 0.56)], valueText: text }))).toBe(
-      "Typical story: 0.43 for stories with dialogue, 0.56 for stories without dialogue.",
+      "Median: 0.43 for stories with dialogue, 0.56 for stories without dialogue.",
     );
     expect(takeawaySegments({ variable: v("pov_class"), rows: [r("A", 1), r("B", 2)], valueText: text })).toBeNull();
   });
 
   it("describes the chart in one sentence and names the only group", () => {
     expect(chartSummary({ rows: [r("Under 2,000", 0.28), r("7,000+", 0.89)], valueText: text, n: 8987 })).toBe(
-      "Typical story from 0.28 for Under 2,000 to 0.89 for 7,000+; 2 groups; 8,987 stories.",
+      "Median from 0.28 for Under 2,000 to 0.89 for 7,000+; 2 groups; 8,987 stories.",
     );
     expect(oneGroupNote({ label: "Past tense", stats: { n: 102 } })).toBe(
       "Only “Past tense” has enough stories in this selection (102).",
@@ -211,7 +211,7 @@ describe("the chart", () => {
     const rowsEl = screen.getAllByRole("img");
     expect(rowsEl).toHaveLength(3);
     expect(rowsEl[0].getAttribute("tabindex")).toBe("0");
-    expect(rowsEl[0].getAttribute("aria-label")).toMatch(/Under 10%: typical story 0\.30, middle half 0\.18–0\.42, mean 0\.36, 100 stories, typical age 6 years/);
+    expect(rowsEl[0].getAttribute("aria-label")).toBe("Under 10%: median 0.30, interquartile range 0.18–0.42, mean 0.36, 100 stories, median age 6 years");
     expect(rowsEl[1].getAttribute("class")).toMatch(/small/);
     expect(screen.getByText("20 stories*")).toBeTruthy(); // jsdom draws at 720 px: n under the label
     expect(screen.getByText("Too few stories to show")).toBeTruthy();
@@ -226,7 +226,7 @@ describe("the chart", () => {
     const row = screen.getAllByRole("img")[0];
     fireEvent.pointerEnter(row, { pointerType: "touch" });
     fireEvent.click(row);
-    expect(screen.getByText("Typical story", { selector: "dt" })).toBeTruthy();
+    expect(screen.getByText("Median", { selector: "dt" })).toBeTruthy();
     expect(screen.getByText("Mean", { selector: "dt" })).toBeTruthy();
     // a pinned tooltip stays when the finger lifts or the pointer leaves
     fireEvent.pointerLeave(row, { pointerType: "touch" });
@@ -244,10 +244,10 @@ describe("the chart", () => {
     draw();
     const row = screen.getAllByRole("img")[1];
     fireEvent.pointerEnter(row, { pointerType: "mouse" });
-    expect(screen.getByText("Typical story", { selector: "dt" })).toBeTruthy();
+    expect(screen.getByText("Median", { selector: "dt" })).toBeTruthy();
     fireEvent.pointerLeave(row, { pointerType: "mouse" });
-    expect(screen.queryByText("Typical story", { selector: "dt" })).toBeNull();
+    expect(screen.queryByText("Median", { selector: "dt" })).toBeNull();
     fireEvent.focus(row);
-    expect(screen.getByText("Typical story", { selector: "dt" })).toBeTruthy();
+    expect(screen.getByText("Median", { selector: "dt" })).toBeTruthy();
   });
 });

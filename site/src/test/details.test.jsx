@@ -39,7 +39,7 @@ describe("the details line on phones", () => {
     const [first] = screen.getAllByRole("img");
     fireEvent.click(first);
     expect(shownLine()).toBe(
-      "Under 2,000 typical story 0.28 · middle half 0.10–0.66 · mean 0.46 · 2,708 stories · typical age 12 years. Tap again to close.",
+      "Under 2,000 median 0.28 · interquartile range 0.10–0.66 · mean 0.46 · 2,708 stories · median age 12 years. Tap again to close.",
     );
     expect(frame.contains(lines()[0])).toBe(true); // inside the chart frame…
     expect(frame.compareDocumentPosition(container.querySelector(".axis-caption")) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy(); // …above the caption
@@ -58,7 +58,7 @@ describe("the details line on phones", () => {
     expect(shownLine()).toBe("");
     fireEvent.click(first);
     fireEvent.click(second);
-    expect(shownLine()).toMatch(/^2,000–3,000 typical story 0\.38 /);
+    expect(shownLine()).toMatch(/^2,000–3,000 median 0\.38 /);
     fireEvent.click(hidden);
     expect(shownLine()).toBe("3–7 fewer than 10 stories, so this group is not shown.");
     fireEvent.keyDown(document, { key: "Escape" });
@@ -72,7 +72,7 @@ describe("the details line on phones", () => {
     const user = userEvent.setup();
     draw();
     await user.tab();
-    expect(shownLine()).toMatch(/^Under 2,000 typical story 0\.28 .* typical age 12 years\.$/); // no "Tap again"
+    expect(shownLine()).toMatch(/^Under 2,000 median 0\.28 .* median age 12 years\.$/); // no "Tap again"
     expect(lines()[0].textContent).toBe(""); // the live line stays quiet: the row's name says the same
     await user.keyboard("{ArrowDown}");
     expect(shownLine()).toMatch(/^2,000–3,000 /);

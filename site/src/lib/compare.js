@@ -1,5 +1,5 @@
-// Comparing genres (concept D2 of the design review, with D1 as the numbers): each group's typical story relative to
-// its own genre's typical story. Genres stay in alphabetical order (All genres first); nothing is ranked by a result.
+// Comparing genres (concept D2 of the design review, with D1 as the numbers): each group's median relative to its own
+// genre's median. Genres stay in alphabetical order (All genres first); nothing is ranked by a result.
 
 import { cellStats, pattern, relativeMedian } from "./data.js";
 import { formatCount, formatRatio } from "./format.js";
@@ -87,11 +87,11 @@ export function stepFill(ratio, small) {
   return null;
 }
 
-/** "Romance, Under 2,000: typical story 0.31 (24 stories), against 0.45 for all Romance stories shown." */
+/** "Romance, Under 2,000: median 0.31 (24 stories), against 0.45 for all Romance stories shown." */
 export function cellDetail(row, cell, fmt, minN) {
   if (cell.hidden) return `${row.genre.name}, ${cell.label}: fewer than ${minN} stories, not shown.`;
   return (
-    `${row.genre.name}, ${cell.label}: typical story ${fmt(cell.stats.median)} (${formatCount(cell.stats.n)} ` +
+    `${row.genre.name}, ${cell.label}: median ${fmt(cell.stats.median)} (${formatCount(cell.stats.n)} ` +
     `stories), against ${fmt(row.overall.median)} for all ${row.genre.id === "all" ? "" : `${row.genre.name} `}` +
     "stories shown."
   );

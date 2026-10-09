@@ -23,9 +23,9 @@ export default function NumbersTable({ rows, overall, metric, minN, id, visible 
         <>
           <td data-label="Stories">{formatCount(s.n)}</td>
           <td data-label="Median">{formatFixed(s.median, d.median)}</td>
-          <td data-label="Middle half">{formatRange(s.p25, s.p75, d.range)}</td>
+          <td data-label="Interquartile range">{formatRange(s.p25, s.p75, d.range)}</td>
           <td data-label="Mean">{formatFixed(s.mean, d.mean)}</td>
-          <td data-label="Typical age">{formatAge(s.age)}</td>
+          <td data-label="Median age">{formatAge(s.age)}</td>
         </>
       ) : (
         <td colSpan={5} className="muted">
@@ -43,9 +43,9 @@ export default function NumbersTable({ rows, overall, metric, minN, id, visible 
             <th scope="col">Group</th>
             <th scope="col">Stories</th>
             <th scope="col">Median</th>
-            <th scope="col">Middle half</th>
+            <th scope="col">Interquartile range</th>
             <th scope="col">Mean</th>
-            <th scope="col">Typical age</th>
+            <th scope="col">Median age</th>
           </tr>
         </thead>
         <tbody>

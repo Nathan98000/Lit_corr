@@ -109,7 +109,7 @@ describe("the explorer", () => {
     expect(within(table).getAllByRole("rowheader").map((th) => th.textContent)).toEqual(fixtureMeta.genres.map((g) => g.name));
     const cell = within(table).getAllByRole("cell").find((c) => c.className.includes("cell") && !c.className.includes("empty"));
     await user.click(cell);
-    expect(screen.getByText(/typical story .* stories\), against .* stories shown\./)).toBeTruthy();
+    expect(screen.getByText(/^.+, .+: median [\d.]+ \(\d+ stories\), against [\d.]+ for all .*stories shown\.$/)).toBeTruthy();
     expect(document.querySelector("[title*='median']")).toBeNull(); // no hover-only tooltips
 
     await user.click(cards.find((c) => c.textContent.startsWith("Romance")));
@@ -195,7 +195,7 @@ describe("robustness", () => {
     expect(await screen.findByText(/We couldn’t load the data/)).toBeTruthy();
     fail = false;
     await user.click(screen.getByRole("button", { name: "Try again" }));
-    expect(await screen.findByText(/Typical story \(median\)/)).toBeTruthy();
+    expect(await screen.findByText("Interquartile range", { selector: "li" })).toBeTruthy();
   });
 
   it("copies the link, or shows it to copy by hand when the clipboard is unavailable", async () => {
@@ -256,7 +256,7 @@ describe("loading", () => {
     expect(screen.getByRole("heading", { level: 1 })).toBeTruthy();
     expect(document.querySelector(".chart-placeholder")).toBeTruthy();
     release();
-    await screen.findByText(/Typical story \(median\)/);
+    await screen.findByText("Interquartile range", { selector: "li" });
   });
 });
 
@@ -340,7 +340,7 @@ describe("the pattern browser (concept G2)", () => {
     const key = document.querySelector(".pattern-key");
     expect(key.textContent).toBe(
       "↗ tends higher: the more of the characteristic a group of stories has (or, for yes/no ones, the group that has " +
-        "it), the higher its typical favorites per 1,000 views; ↘ tends lower: the lower. What weak, moderate and strong mean",
+        "it), the higher its median favorites per 1,000 views; ↘ tends lower: the lower. What weak, moderate and strong mean",
     );
     expect(within(key).getByRole("link", { name: "What weak, moderate and strong mean" }).getAttribute("href")).toBe(
       "#/methodology/tend-to",

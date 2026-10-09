@@ -59,7 +59,7 @@ describe("comparing genres", () => {
     };
     expect(cardLabel(r, 10)).toBe("Romance: tends higher. Low 0.8× (few stories), High: fewer than 10 stories. Open its chart.");
     expect(cellDetail(r, r.cells[0], (v) => v.toFixed(2), 10)).toBe(
-      "Romance, Low: typical story 0.36 (24 stories), against 0.45 for all Romance stories shown.",
+      "Romance, Low: median 0.36 (24 stories), against 0.45 for all Romance stories shown.",
     );
   });
 });

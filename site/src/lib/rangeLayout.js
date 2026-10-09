@@ -1,6 +1,6 @@
 // Layout of the one-genre chart (concept C2 of the design review): one row per group of stories, with the
-// middle half of stories as a capsule, the typical story (median) as a dot with its value printed beside it,
-// and a dashed line for all stories shown. Pure functions, so that the geometry can be tested without a browser.
+// interquartile range as a capsule, the median as a dot with its value printed beside it, and a dashed line for the
+// median of all stories shown. Pure functions, so that the geometry can be tested without a browser.
 
 import { columnDecimals, formatCompact, formatCount, formatFixed, stepDecimals } from "./format.js";
 

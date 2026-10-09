@@ -3,10 +3,9 @@
 **Story Patterns**: a static website for exploring how the popularity of Literotica stories varies with their
 characteristics, overall and within each of Literotica's genres. The controls are the question itself: "In [All
 genres], how do [favorites per 1,000 views] vary with [story length]?" For each group of stories the chart shows the
-typical story (median, with its value printed) and the middle half of stories, with the number of stories behind
-every figure; the mean is in each group's details and in "Show the numbers". "Compare all 30 genres" shows the same
-relationship for every genre as small charts, and the Patterns page lists every clear pattern for a genre and a
-measure, topic by topic.
+median (with its value printed) and the interquartile range, with the number of stories behind every figure; the mean
+is in each group's details and in "Show the numbers". "Compare all 30 genres" shows the same relationship for every
+genre as small charts, and the Patterns page lists every clear pattern for a genre and a measure, topic by topic.
 
 The site shows **descriptive associations only**, never causes, and it ships **only precomputed summaries of
 groups of stories**: no story text, titles, authors, addresses or story-by-story records.
@@ -112,9 +111,9 @@ src/
                           fits on the screen (title and Close)
     InlineSelect.jsx      a native select shown as a word of the sentence; SlotWords keeps a slot's last word
                           and its caret together
-    RangeChart.jsx        one genre: one row per group (median dot with value, middle-half capsule); one tab stop
-                          with arrow keys; details as a card, or a line under the chart in the phone layout; the
-                          genre-change glide on one scale
+    RangeChart.jsx        one genre: one row per group (median dot with value, interquartile-range capsule); one
+                          tab stop with arrow keys; details as a card, or a line under the chart in the phone layout;
+                          the genre-change glide on one scale
     ChartNotes.jsx        story-age warnings and the three explanations (disclosures at every width)
     AgeCheck.jsx          "Stories of similar age": the panel, its heading and Close
     AgeCheckCharts.jsx    (lazy) the same chart within 2000–2009, 2010–2019 and 2020+
@@ -164,7 +163,7 @@ License 1.1 (`public/fonts/OFL.txt`, taken from `@fontsource/source-serif-4` 5.3
   medians (0.1 stars for ratings). Otherwise it says "No clear pattern" (or "Too few stories to judge a pattern");
   characteristics without an order say "Each group on its own".
 - Story age is never hidden: totals carry a warning with a switch to a per-month or per-1,000-views measure, every
-  group shows its typical age, groups that differ in age get a warning and a one-tap check within three periods.
+  group shows its median age, groups that differ in age get a warning and a one-tap check within three periods.
 - Genres are always listed alphabetically, never ranked; the Patterns page is grouped by topic and alphabetical,
   never sorted by strength, and always gives the count of characteristics without a clear pattern.
 - Motion is switched off under "reduce motion": another genre glides the marks and the axis together (one scale

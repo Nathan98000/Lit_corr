@@ -24,8 +24,8 @@ function rowDetails(row, format, minN) {
     stories: formatCount(s.n),
     age: formatAge(s.age),
     label:
-      `${row.label}: typical story ${formatFixed(s.median, d)}, middle half ${formatRange(s.p25, s.p75, d)}, ` +
-      `mean ${formatFixed(s.mean, d)}, ${formatCount(s.n)} stories, typical age ${formatAge(s.age)}`,
+      `${row.label}: median ${formatFixed(s.median, d)}, interquartile range ${formatRange(s.p25, s.p75, d)}, ` +
+      `mean ${formatFixed(s.mean, d)}, ${formatCount(s.n)} stories, median age ${formatAge(s.age)}`,
   };
 }
 
@@ -33,8 +33,8 @@ const KEYS = ["ArrowDown", "ArrowUp", "Home", "End"];
 const sameTick = (a, b) => Math.abs(a.v - b.v) < 1e-9;
 
 /**
- * Popularity across the groups of one characteristic, in one genre (concept C2): one row per group, the middle
- * half of stories as a capsule, the typical story (median) as a dot with its value printed, and a dashed line for
+ * Popularity across the groups of one characteristic, in one genre (concept C2): one row per group, the
+ * interquartile range as a capsule, the median as a dot with its value printed, and a dashed line for the median of
  * all stories shown.
  *
  * The chart is one tab stop (F54): the arrow keys, Home and End move between rows, and the focused row shows its
@@ -122,8 +122,8 @@ export default function RangeChart({
       <b>{activeRow.label}</b>{" "}
       {activeDetails.median ? (
         <>
-          typical story {activeDetails.median} · middle half {activeDetails.range} · mean {activeDetails.mean} ·{" "}
-          {activeDetails.stories} stories · typical age {activeDetails.age}.
+          median {activeDetails.median} · interquartile range {activeDetails.range} · mean {activeDetails.mean} ·{" "}
+          {activeDetails.stories} stories · median age {activeDetails.age}.
           {shown.by === "tap" && <span className="muted"> Tap again to close.</span>}
         </>
       ) : (
@@ -162,10 +162,10 @@ export default function RangeChart({
       {!compact && (
         <ul className="legend" aria-hidden="true">
           <li>
-            <span className="key key-median" /> Typical story (median)
+            <span className="key key-median" /> Median
           </li>
           <li>
-            <span className="key key-iqr" /> Middle half of stories
+            <span className="key key-iqr" /> Interquartile range
           </li>
           {anySmall && (
             <li>
@@ -174,7 +174,7 @@ export default function RangeChart({
           )}
           {layout.ref && (
             <li>
-              <span className="key key-ref" /> All stories shown
+              <span className="key key-ref" /> Median of all stories shown
             </li>
           )}
         </ul>
@@ -316,15 +316,15 @@ export default function RangeChart({
             <strong>{activeRow.label}</strong>
             {activeDetails.median ? (
               <dl>
-                <dt>Typical story</dt>
+                <dt>Median</dt>
                 <dd>{activeDetails.median}</dd>
-                <dt>Middle half</dt>
+                <dt>Interquartile range</dt>
                 <dd>{activeDetails.range}</dd>
                 <dt>Mean</dt>
                 <dd>{activeDetails.mean}</dd>
                 <dt>Stories</dt>
                 <dd>{activeDetails.stories}</dd>
-                <dt>Typical age</dt>
+                <dt>Median age</dt>
                 <dd>{activeDetails.age}</dd>
               </dl>
             ) : (

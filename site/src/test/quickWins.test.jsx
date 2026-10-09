@@ -134,7 +134,7 @@ describe("F53: the compare table's cell details", () => {
     expect(detail.getAttribute("aria-live")).toBe("polite");
     const cell = within(table).getAllByRole("cell").find((c) => c.className.includes("cell") && !c.className.includes("empty"));
     await user.click(cell);
-    expect(detail.textContent).toMatch(/typical story .* stories\), against .* stories shown\./);
+    expect(detail.textContent).toMatch(/^.+, .+: median [\d.]+ \(\d+ stories\), against [\d.]+ for all .*stories shown\.$/);
   });
 });
 
@@ -187,7 +187,7 @@ describe("F54: the keyboard in the chart", () => {
     await user.keyboard("{Escape}");
     expect(card()).toBeNull();
     // the row names keep every number
-    expect(rowEls[1].getAttribute("aria-label")).toMatch(/^10–20%: typical story 0\.40, middle half 0\.24–0\.56, mean 0\.48, 100 stories/);
+    expect(rowEls[1].getAttribute("aria-label")).toBe("10–20%: median 0.40, interquartile range 0.24–0.56, mean 0.48, 100 stories, median age 6 years");
   });
 
   it("no longer pins the details with Enter or Space", async () => {

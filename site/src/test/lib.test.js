@@ -179,7 +179,11 @@ describe("chart titles", () => {
     expect(howToRead({ smallN: 30, unordered: true })).toMatch(
       / Groups without an order, such as months, are shown side by side and not summed up as one trend\.$/,
     );
-    expect(howToRead({ smallN: 30 })).not.toMatch(/without an order/);
+    expect(howToRead({ smallN: 30 })).toBe(
+      "Each row is a group of stories. The dot is the group’s median, printed beside it, and the bar is its " +
+        "interquartile range. The dashed line is the median of all stories shown. Hatched bars with hollow dots hold " +
+        "fewer than 30 stories and deserve less trust.",
+    );
     expect(text({ variable: v("dlg_word_share"), direction: 0, effect: 0.1, shown: 1 })).toMatch(/nothing to compare/);
   });
 
@@ -200,7 +204,10 @@ describe("chart titles", () => {
     const notes = ageNotes({ metric: m("pop_fav_per_1k_views"), ends });
     expect(notes).toHaveLength(1);
     expect(notes[0].kind).toBe("groups");
-    expect(notes[0].text).toMatch(/“Low” has been online 12 years, in “High” 4 years\. Age goes with popularity too, so it can shape this chart\.$/);
+    expect(notes[0].text).toBe(
+      "The groups also differ in age: stories in “Low” have a median age of 12 years, those in “High” 4 years. Age " +
+        "goes with popularity too, so it can shape this chart.",
+    );
     expect(ageNotes({ metric: m("pop_fav_per_1k_views"), ends: [ends[0], { label: "x", stats: { age: 11 } }] })).toEqual([]);
   });
 });

@@ -47,8 +47,8 @@ function InShort({ meta }) {
         <li>Popularity is one snapshot per story: the views, favorites, comments and ratings its page showed then.</li>
         <li>Characteristics are counts and simple rules, such as words per sentence or words from a list; no AI.</li>
         <li>
-          Each group of stories is summarized by its median (the typical story) and its middle half; groups of fewer
-          than {meta.min_n} stories are hidden.
+          Each group of stories is summarized by its median and interquartile range; groups of fewer than {meta.min_n}{" "}
+          stories are hidden.
         </li>
       </ul>
     </aside>
@@ -303,7 +303,7 @@ export default function Methodology({ meta, section }) {
           A story’s age is the time from its publication date to the day its numbers were recorded. Age matters a lot
           here: a 15-year-old story has had 15 years to collect views, and newer stories tend to collect far more
           favorites, ratings and reading-list adds per 1,000 views than older ones. That is why the site offers views
-          per month alongside raw views, shows each group’s typical age, warns when the groups being compared differ
+          per month alongside raw views, shows each group’s median age, warns when the groups being compared differ
           in age, and lets you look at stories published in the same period.
         </p>
 
@@ -354,11 +354,9 @@ export default function Methodology({ meta, section }) {
         <p>
           For each characteristic, stories are split into groups: ranges chosen so that each holds a similar share of
           stories (with readable round boundaries), a separate “None” group when many stories have none at all, or
-          the natural categories (first person, third person …). For each group the chart shows the{" "}
-          <strong>median</strong> (the typical story: half score higher, half lower), the{" "}
-          <strong>middle half</strong> of stories (from the 25th to the 75th percentile), the number of stories, and their
-          typical age. The <strong>mean</strong> (which a few very popular stories can pull up) is in each group’s
-          details and in “Show the numbers”.
+          the natural categories (first person, third person …). For each group the charts show the median, the
+          interquartile range, the number of stories and their median age. The mean (which a few very popular stories
+          can pull up) is in each group’s details and in “Show the numbers”.
         </p>
         <p>
           Every genre was sampled equally, but Literotica’s genres differ a lot in size. “All genres” therefore
@@ -366,7 +364,7 @@ export default function Methodology({ meta, section }) {
           with fewer than {meta.min_n} stories are not shown, and groups with fewer than {meta.small_n} are drawn hatched,
           with a hollow dot: they deserve less trust. “Only include” narrows any chart to stories published in a
           period, of a given length, or above a minimum number of views or ratings. When comparing all genres, each
-          genre’s groups are compared with that genre’s own typical story, and genres are listed alphabetically, never
+          genre’s groups are compared with that genre’s own median, and genres are listed alphabetically, never
           ranked.
         </p>
 
@@ -377,10 +375,10 @@ export default function Methodology({ meta, section }) {
           Titles describe a pattern (“Longer stories tend to get more favorites per 1,000 views”) only when it is
           clear in the data: stories with higher values of the characteristic must rank consistently higher (or
           lower) on popularity, clearly enough that chance is an unlikely explanation even allowing for the many
-          charts on this site, and the typical story in the lowest and highest groups must differ by at least 10% (or
-          0.1 stars for ratings). Otherwise the chart says “No clear pattern” (or “Too few stories to judge a pattern” when
+          charts on this site, and the medians of the lowest and highest groups must differ by at least 10% (or 0.1
+          stars for ratings). Otherwise the chart says “No clear pattern” (or “Too few stories to judge a pattern” when
           either end has fewer than {meta.small_n} stories). “No clear pattern” is an answer too: the groups differ only a
-          little, or not consistently. Even a clear pattern describes the typical story; individual stories vary widely.
+          little, or not consistently. Even a clear pattern describes the medians; individual stories vary widely.
         </p>
         <p>
           Weak, moderate and strong describe how consistently popularity rises or falls across the groups, on a rank

@@ -337,10 +337,10 @@ export default function Explorer({ meta, state, onChange, onAsk, onHoldScroll })
             <>
               <TotalsBox meta={meta} d={d} onSwitch={(metric) => keepPlace({ ...state, metric })} />
               <p className="compare-caption">
-                Each small chart is one genre. A dot is a group’s typical story compared with that genre’s own typical
-                story (the dashed line); the shaded band runs from 0.67× to 1.5×. Hollow dots: fewer than{" "}
-                {meta.small_n} stories; a dash: fewer than {meta.min_n}. Genres are in alphabetical order, not ranked.
-                Select a genre for its full chart.
+                Each small chart is one genre. A dot is a group’s median as a multiple of the genre’s median (the
+                dashed line); the shaded band runs from 0.67× to 1.5×. Hollow dots: fewer than {meta.small_n} stories; a
+                dash: fewer than {meta.min_n}. Genres are in alphabetical order, not ranked. Select a genre for its full
+                chart.
               </p>
               <p className="compare-axis" aria-hidden="true">
                 Left to right: {d.variable.bins.labels[0]} → {d.variable.bins.labels[d.variable.bins.labels.length - 1]}

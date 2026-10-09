@@ -157,7 +157,7 @@ export default function PatternBrowser({ meta, state, onChange }) {
           </div>
           <p className="pattern-key">
             ↗ tends higher: the more of the characteristic a group of stories has (or, for yes/no ones, the group that
-            has it), the higher its typical {metric.noun}; ↘ tends lower: the lower.{" "}
+            has it), the higher its median {metric.noun}; ↘ tends lower: the lower.{" "}
             <a href={TEND_TO}>What weak, moderate and strong mean</a>
           </p>
           <div className="pattern-topics">

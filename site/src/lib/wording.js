@@ -99,9 +99,8 @@ export function ageNotes({ metric, ends }) {
           kind: "groups",
           lead: "Story age.",
           text:
-            `The groups also differ in age: the typical story in “${ends[0].label}” has been online ` +
-            `${fmtYears(a)}, in “${ends[1].label}” ${fmtYears(b)}. Age goes with popularity too, so it can ` +
-            "shape this chart.",
+            `The groups also differ in age: stories in “${ends[0].label}” have a median age of ${fmtYears(a)}, ` +
+            `those in “${ends[1].label}” ${fmtYears(b)}. Age goes with popularity too, so it can shape this chart.`,
         });
       }
     }
@@ -131,10 +130,9 @@ export function methodSection(variable) {
  */
 export function howToRead({ smallN, unordered = false }) {
   return (
-    "Each row is a group of stories. The dot is the typical story (the median: half the stories score higher, " +
-    "half lower) and its value is printed beside it; the bar spans the middle half of stories. The dashed line " +
-    `is the typical story among all stories shown. Hatched bars with hollow dots hold fewer than ${smallN} ` +
-    "stories and deserve less trust." +
+    "Each row is a group of stories. The dot is the group’s median, printed beside it, and the bar is its " +
+    "interquartile range. The dashed line is the median of all stories shown. Hatched bars with hollow dots hold " +
+    `fewer than ${smallN} stories and deserve less trust.` +
     (unordered
       ? " Groups without an order, such as months, are shown side by side and not summed up as one trend."
       : "")
@@ -193,7 +191,7 @@ const quoted = (label) => `“${label}”`;
 
 /**
  * The takeaway line above the chart, as segments: plain strings and { strong } for the numbers.
- * "Typical story: 0.28 for “Under 2,000”, 0.89 for “7,000+”." Only for ordered and yes/no characteristics
+ * "Median: 0.28 for “Under 2,000”, 0.89 for “7,000+”." Only for ordered and yes/no characteristics
  * with at least two groups shown; end groups that are hidden are named, never skipped silently.
  */
 export function takeawaySegments({ variable, rows, valueText }) {
@@ -203,7 +201,7 @@ export function takeawaySegments({ variable, rows, valueText }) {
   const ends = [rows[0], rows[rows.length - 1]];
   const binary = Boolean(variable.yes_subject);
   const name = (r, i) => (binary ? lowerFirst(i === 0 ? variable.yes_subject : variable.no_subject) : quoted(r.label));
-  const segs = ["Typical story: "];
+  const segs = ["Median: "];
   const visible = ends.map((r, i) => ({ r, i })).filter(({ r }) => r.stats && !r.stats.suppressed);
   const hidden = ends.filter((r) => !(r.stats && !r.stats.suppressed));
   visible.forEach(({ r, i }, j) => {
@@ -233,12 +231,12 @@ export function chartSummary({ rows, valueText, n }) {
   const count = n != null ? `; ${n.toLocaleString("en-US")} stories` : "";
   if (!shown.length) return `No group has enough stories to show${count}.`;
   if (shown.length === 1) {
-    return `Typical story ${valueText(shown[0].stats.median)} for ${shown[0].label}; 1 group shown${count}.`;
+    return `Median ${valueText(shown[0].stats.median)} for ${shown[0].label}; 1 group shown${count}.`;
   }
   const a = shown[0];
   const b = shown[shown.length - 1];
   return (
-    `Typical story from ${valueText(a.stats.median)} for ${a.label} to ${valueText(b.stats.median)} for ` +
+    `Median from ${valueText(a.stats.median)} for ${a.label} to ${valueText(b.stats.median)} for ` +
     `${b.label}; ${shown.length} groups${count}.`
   );
 }

@@ -289,47 +289,6 @@ h3 {
   color: var(--ink-3);
 }
 
-.try-another {
-  margin: 8px 0 56px;
-  padding-top: 18px;
-  border-top: 1px solid var(--rule);
-}
-
-.try-another h2 {
-  margin: 0 0 10px;
-  font-family: var(--sans);
-  font-size: 13px;
-  font-weight: 650;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--ink-3);
-}
-
-.chips-row {
-  list-style: none;
-  margin: 0;
-  padding: 0 0 4px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-@media (max-width: 699px) {
-  /* one row that scrolls sideways, with a fade showing there is more */
-  .chips-row {
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    scrollbar-width: none;
-    margin-right: -16px;
-    padding-right: 32px;
-    mask-image: linear-gradient(90deg, #000 82%, transparent);
-  }
-
-  .chips-row .chip {
-    white-space: nowrap;
-  }
-}
-
 .controls {
   margin-bottom: 22px;
 }
@@ -1551,13 +1510,16 @@ table.numbers {
   border-radius: var(--radius);
 }
 
-/* ------------------------------------------------------------- next questions (I2) */
-.next-questions {
-  margin-top: 28px;
+/* ------------------------------------------------------- keep exploring (concept J2) */
+.keep-exploring {
+  margin: 32px 0 40px;
+  padding-top: 18px;
+  border-top: 1px solid var(--rule);
+  max-width: 62ch;
 }
 
-.next-questions h3 {
-  margin: 0 0 6px;
+.keep-exploring h3 {
+  margin: 0 0 4px;
   font-family: var(--sans);
   font-size: 13px;
   font-weight: 650;
@@ -1566,24 +1528,24 @@ table.numbers {
   color: var(--ink-3);
 }
 
-.next-questions ul {
+.keep-exploring ul {
   list-style: none;
   margin: 0;
   padding: 0;
 }
 
-.next-questions a {
+.keep-exploring a {
   display: flex;
   align-items: center;
-  gap: 4px;
-  flex-wrap: wrap;
   min-height: var(--target);
-  font-size: 15px;
-  text-decoration: none;
+  padding: 8px 0; /* two-line items keep their spacing */
   border-bottom: 1px solid var(--rule);
+  font-size: 15.5px;
+  line-height: 1.4;
+  text-decoration: none;
 }
 
-.next-questions a:hover {
+.keep-exploring a:hover {
   text-decoration: underline;
 }
 
@@ -2104,11 +2066,6 @@ table.numbers {
   background: var(--ink);
   border-color: var(--ink);
   color: #fff;
-}
-
-.next-patterns {
-  margin: 10px 0 0;
-  font-size: 15px;
 }
 
 .pattern-name {

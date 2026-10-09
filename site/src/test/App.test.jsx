@@ -123,11 +123,12 @@ describe("the explorer", () => {
     await waitFor(() => expect(screen.getByLabelText("Genre").value).toBe("fetish"));
   });
 
-  it("opens an example question", async () => {
+  it("opens an example question from Keep exploring, and goes back up to the question", async () => {
     const user = await renderApp("#/explore?var=emo_anger_per_1k");
-    const chip = screen.getByRole("button", { name: /Do stories with more dialogue get more comments/ });
-    await user.click(chip);
+    const nav = screen.getByRole("navigation", { name: "Keep exploring" });
+    await user.click(within(nav).getByRole("link", { name: /Do stories with more dialogue get more comments/ }));
     await waitFor(() => expect(window.location.hash).toMatch(/var=dlg_word_share/));
+    await waitFor(() => expect(document.activeElement).toBe(document.getElementById("question")));
   });
 
   it("has a How it works page that keeps the limits of the sample", async () => {
@@ -254,7 +255,7 @@ describe("loading", () => {
   });
 });
 
-describe("notes, age check and next questions", () => {
+describe("notes and the age check", () => {
   /** Serve the fixtures, with the end groups of dialogue share made 15 and 3 years old. */
   function agedFetch() {
     const serve = fixtureFetch();
@@ -307,19 +308,6 @@ describe("notes, age check and next questions", () => {
     expect(screen.getByText(/so the stories compared are of similar age/)).toBeTruthy();
     await user.click(screen.getByRole("button", { name: "Close" }));
     await waitFor(() => expect(window.location.hash).not.toMatch(/check=age/));
-  });
-
-  it("offers the next two characteristics of the topic and the rate version of a total", async () => {
-    await renderApp("#/explore?var=dlg_word_share&metric=pop_views");
-    const nav = screen.getByRole("navigation", { name: "Next questions" });
-    const links = within(within(nav).getByRole("list")).getAllByRole("link");
-    expect(links[0].textContent).toMatch(/views per month/);
-    expect(links[0].getAttribute("href")).toMatch(/metric=pop_views_per_month/);
-    expect(links[1].getAttribute("href")).toMatch(/var=dlg_has_dialogue/);
-    expect(links).toHaveLength(2); // the fixture's Dialogue topic has only two characteristics
-    expect(within(nav).getByRole("link", { name: /Every clear pattern with views across all genres/ }).getAttribute("href")).toBe(
-      "#/patterns?genre=all&metric=pop_views",
-    );
   });
 
   it("switches to comparing all genres", async () => {

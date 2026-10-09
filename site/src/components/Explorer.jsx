@@ -12,7 +12,7 @@ import {
   subtitleParts,
   takeawaySegments,
 } from "../lib/wording.js";
-import { toHash } from "../lib/urlState.js";
+import { sanitize, toHash } from "../lib/urlState.js";
 import AgeCheck, { preloadAgeCheck } from "./AgeCheck.jsx";
 import ChartNotes from "./ChartNotes.jsx";
 import { compareRows, compareSummary, gridColumns } from "../lib/compare.js";
@@ -21,6 +21,7 @@ import CopyLink from "./CopyLink.jsx";
 import { PartBoundary, lazyPart, whenIdle } from "./lazyPart.jsx";
 import LoadError from "./LoadError.jsx";
 import NumbersTable from "./NumbersTable.jsx";
+import { PatternBrowser } from "./pages.js";
 import RangeChart from "./RangeChart.jsx";
 import useMediaQuery from "./useMediaQuery.js";
 import useWidth from "./useWidth.js";
@@ -165,29 +166,63 @@ function Takeaway({ segments, note, why }) {
   );
 }
 
+/** Do two settings show the same view? (Comparing genres shows every genre, whichever one is remembered.) */
+const sameView = (a, b) =>
+  a.mode === b.mode && a.metric === b.metric && a.v === b.v && a.sub === b.sub && (a.mode === "compare" || a.genre === b.genre);
+
 /**
- * Next questions (idea I2): the per-month or per-1,000-views version when the measure is a total, and the next
- * two characteristics in the same topic's order. Never chosen by their results.
+ * "Keep exploring" (concept J2 of the second review): the first three example questions, in their fixed order, that
+ * open a view other than the one shown and other than the age box's "Switch to …". Never chosen or ordered by a
+ * result. Returns [{ question, state }].
  */
-export function nextQuestions(meta, view) {
-  const out = [];
-  const metric = meta.metrics.find((m) => m.id === view.metric);
-  const rateId = RATE_FOR[metric.id];
-  const rate = rateId && meta.metrics.find((m) => m.id === rateId);
-  if (rate) {
-    out.push({ key: "rate", text: `The same chart with ${rate.label.toLowerCase()}`, state: { ...view, metric: rate.id } });
-  }
-  const variable = meta.variables.find((v) => v.id === view.v);
-  const topic = meta.topics.find((t) => t.id === variable.topic);
-  if (topic && topic.ids.length > 1) {
-    const i = topic.ids.indexOf(variable.id);
-    const picks = [1, 2].map((j) => topic.ids[(i + j) % topic.ids.length]).filter((id) => id !== variable.id);
-    for (const id of [...new Set(picks)]) {
-      const v = meta.variables.find((x) => x.id === id);
-      out.push({ key: id, text: `${v.label}`, prefix: `Next in ${topic.label}: `, state: { ...view, v: id, check: undefined } });
-    }
-  }
-  return out;
+export function keepExploring(meta, view) {
+  const rate = RATE_FOR[view.metric];
+  const avoid = [view, rate && meta.metrics.some((m) => m.id === rate) ? { ...view, metric: rate } : null].filter(Boolean);
+  return meta.featured
+    .map((q) => ({
+      question: q.question,
+      state: sanitize({ mode: q.mode || "one", genre: q.genre || "all", metric: q.metric, v: q.var, sub: "all" }, meta),
+    }))
+    .filter(({ state }) => !avoid.some((a) => sameView(a, state)))
+    .slice(0, 3);
+}
+
+/** One list after the chart: every clear pattern with this measure, then three example questions. */
+function KeepExploring({ meta, view, d, onAsk }) {
+  const headingId = useId();
+  const genre = d.compare ? meta.genres[0] : d.genre;
+  const plainClick = (e) => !(e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey);
+  return (
+    <nav className="keep-exploring" aria-labelledby={headingId}>
+      <h3 id={headingId}>Keep exploring</h3>
+      <ul>
+        <li>
+          <a
+            href={toHash("patterns", { genre: genre.id, metric: view.metric })}
+            onPointerEnter={PatternBrowser.preload}
+            onFocus={PatternBrowser.preload}
+          >
+            Every clear pattern with {d.metric.noun}
+            {genre.id === "all" ? " across all genres" : ` in ${genre.name}`} →
+          </a>
+        </li>
+        {keepExploring(meta, view).map(({ question, state }) => (
+          <li key={question}>
+            <a
+              href={toHash("explore", state)}
+              onClick={(e) => {
+                if (!plainClick(e)) return;
+                e.preventDefault();
+                onAsk(state);
+              }}
+            >
+              {question} →
+            </a>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  );
 }
 
 /** The story-age box for totals in compare mode, with its one-tap switch to the per-month or per-1,000-views measure. */
@@ -209,7 +244,7 @@ function TotalsBox({ meta, d, onSwitch }) {
   );
 }
 
-export default function Explorer({ meta, state, onChange }) {
+export default function Explorer({ meta, state, onChange, onAsk }) {
   const { view, data, busy, error, retry } = useShownData(state);
   const d = view ? describeView(meta, view, data) : null;
   const [showNumbers, setShowNumbers] = useState(false);
@@ -240,7 +275,6 @@ export default function Explorer({ meta, state, onChange }) {
   const ageCheckOpen = Boolean(
     d && !d.compare && view.check === "age" && view.sub === "all" && d.ageNotes.some((n) => n.kind === "groups"),
   );
-  const next = view && !d?.compare ? nextQuestions(meta, view) : [];
   const checkAge = () => {
     setAgeCheckAsked(true);
     onChange({ ...view, check: "age" });
@@ -422,27 +456,7 @@ export default function Explorer({ meta, state, onChange }) {
               onClose={closeAgeCheck}
             />
           )}
-          {next.length > 0 && (
-            <nav className="next-questions" aria-label="Next questions">
-              <h3>Next questions</h3>
-              <ul>
-                {next.map((q) => (
-                  <li key={q.key}>
-                    <a href={toHash("explore", q.state)}>
-                      {q.prefix && <span className="muted">{q.prefix}</span>}
-                      {q.text} →
-                    </a>
-                  </li>
-                ))}
-              </ul>
-              <p className="next-patterns">
-                <a href={toHash("patterns", { genre: view.genre, metric: view.metric })}>
-                  Every clear pattern with {d.metric.noun}
-                  {view.genre === "all" ? " across all genres" : ` in ${d.genre.name}`} →
-                </a>
-              </p>
-            </nav>
-          )}
+          <KeepExploring meta={meta} view={view} d={d} onAsk={onAsk} />
         </article>
       )}
     </section>

@@ -1,16 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Explorer, { ChartPlaceholder } from "./components/Explorer.jsx";
-import { PartBoundary, lazyPart } from "./components/lazyPart.jsx";
+import { PartBoundary } from "./components/lazyPart.jsx";
 import LoadError from "./components/LoadError.jsx";
+import { Methodology, PatternBrowser } from "./components/pages.js";
 import { clearCache, loadMeta } from "./lib/data.js";
 import { scrollBehavior } from "./lib/motion.js";
 import { parseHash, sanitize, toHash } from "./lib/urlState.js";
 import { aboutCount } from "./lib/wording.js";
 
-// How it works and the Patterns page load their code when first visited, or ahead of time when a link to them is
-// hovered or focused (F49).
-const Methodology = lazyPart(() => import("./components/Methodology.jsx"));
-const PatternBrowser = lazyPart(() => import("./components/PatternBrowser.jsx"));
 const PAGE_PLACEHOLDER = <div className="page-placeholder" aria-busy="true" />;
 
 export const TITLE = "What do popular Literotica stories have in common?";
@@ -30,24 +27,6 @@ function Kicker({ meta }) {
         · {meta ? aboutCount(meta.counts.included) : "about 9,000"} stories · {meta ? meta.genres.length - 1 : 30} genres
       </span>
     </h1>
-  );
-}
-
-/** Example questions under the chart: a row that scrolls sideways on phones and wraps on wider screens. */
-function TryAnother({ meta, onAsk }) {
-  return (
-    <section className="try-another" aria-labelledby="try-title">
-      <h2 id="try-title">Try another question</h2>
-      <ul className="chips-row">
-        {meta.featured.map((q) => (
-          <li key={q.question}>
-            <button type="button" className="chip" onClick={() => onAsk(q)}>
-              {q.question}
-            </button>
-          </li>
-        ))}
-      </ul>
-    </section>
   );
 }
 
@@ -94,8 +73,8 @@ export default function App() {
     setRoute({ page: "explore", state: next });
   }, []);
 
-  const ask = (q) => {
-    const next = sanitize({ mode: q.mode || "one", genre: q.genre || "all", metric: q.metric, v: q.var, sub: "all" }, meta);
+  // an example question opens as a new entry in the history, and the page goes back up to the question sentence
+  const ask = (next) => {
     window.history.pushState(null, "", toHash("explore", next));
     setRoute({ page: "explore", state: next });
     const later = window.requestAnimationFrame || ((f) => setTimeout(f, 0));
@@ -182,10 +161,7 @@ export default function App() {
               <Kicker meta={meta} />
             </div>
             {meta ? (
-              <>
-                <Explorer meta={meta} state={state} onChange={update} />
-                <TryAnother meta={meta} onAsk={ask} />
-              </>
+              <Explorer meta={meta} state={state} onChange={update} onAsk={ask} />
             ) : (
               <div className="explorer" aria-busy="true">
                 <div className="controls">

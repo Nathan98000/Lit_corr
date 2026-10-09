@@ -2,10 +2,11 @@
 
 **Story Patterns**: a static website for exploring how the popularity of Literotica stories varies with their
 characteristics, overall and within each of Literotica's genres. The controls are the question itself: "In [All
-genres], how does the [average rating] vary with [story length]?" (the default view; the average rating is the
-default measure and leads the measure menu). For each group of stories the chart shows the median (with its value
-printed) and the interquartile range, with the number of stories behind every figure; the mean is in each group's
-details and in "Show the numbers". "Compare all 30 genres" shows the same relationship for every genre as small
+genres], how does the [average rating] vary with [story length in words]?" (the default view; the average rating is
+the default measure and leads the measure menu). For each group of stories the chart shows the median (with its
+value printed) and the interquartile range, with the number of stories behind every figure; the mean is in each
+group's details and in "Show the numbers". Above the rows a line says what they are and in what unit ("Stories
+grouped by story length in words"). "Compare all 30 genres" shows the same relationship for every genre as small
 charts, and the Patterns page lists every clear pattern for a genre and a measure, topic by topic.
 
 The site shows **descriptive associations only**, never causes, and it ships **only precomputed summaries of

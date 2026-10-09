@@ -41,8 +41,8 @@ describe("the details line on phones", () => {
     expect(shownLine()).toBe(
       "Under 2,000 median 0.28 · interquartile range 0.10–0.66 · mean 0.46 · 2,708 stories · median age 12 years. Tap again to close.",
     );
-    expect(frame.contains(lines()[0])).toBe(true); // inside the chart frame…
-    expect(frame.compareDocumentPosition(container.querySelector(".axis-caption")) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy(); // …above the caption
+    expect(frame.contains(lines()[0])).toBe(true); // inside the chart frame, at its end: under the rows
+    expect(frame.lastElementChild).toBe(lines()[1]);
     expect(lines()[0].getAttribute("aria-live")).toBe("polite");
     expect(lines()[0].textContent).not.toBe(""); // a tap's details are announced
     expect(container.querySelector(".chart-tip")).toBeNull();

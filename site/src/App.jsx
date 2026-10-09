@@ -14,7 +14,7 @@ const PAGE_PLACEHOLDER = <div className="page-placeholder" aria-busy="true" />;
 export const TITLE = "What do popular Literotica stories have in common?";
 export const SITE_NAME = "Story Patterns"; // the masthead name: change it here
 const PAGE_TITLES = { methodology: `How it works · ${TITLE}`, patterns: `Patterns · ${TITLE}` };
-const DEFAULT_QUESTION = "In All genres, how does the average rating vary with story length?";
+const DEFAULT_QUESTION = "In All genres, how does the average rating vary with story length in words?";
 
 /**
  * The headline as a kicker, with the story and genre counts (filled in when the data arrives; the placeholder says

@@ -198,7 +198,7 @@ BINARY = {
 NOUN = {
     "pub_year": "publication year", "pub_month": "publication month", "pub_weekday": "publication weekday",
     "age_years": "story age", "story_pages": "the number of pages", "meta_tag_count": "the number of tags",
-    "author_stories_count": "the author's number of stories", "story_words": "story length",
+    "author_stories_count": "the author's number of stories", "story_words": "story length in words",
     "story_sentences": "the number of sentences", "story_paragraphs": "the number of paragraphs",
     "story_one_sentence_paragraph_share": "one-sentence paragraphs",
     "story_long_paragraph_share": "very long paragraphs",

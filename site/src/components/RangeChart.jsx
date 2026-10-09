@@ -1,16 +1,9 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { formatAge, formatCount, formatFixed, formatRange, columnDecimals } from "../lib/format.js";
 import { PHONE, capsule, rangeLayout, scaleX } from "../lib/rangeLayout.js";
-import { chartSummary } from "../lib/wording.js";
+import { chartSummary, groupedBy } from "../lib/wording.js";
 import useGlide from "./useGlide.js";
 import useWidth from "./useWidth.js";
-
-/** The unit of a characteristic's ranges, when it helps to read the group labels (e.g. "per 1,000 words"). */
-export function unitNote(variable) {
-  const u = variable.unit || "";
-  if (variable.bins.type !== "ranges" || !u || u.includes("(") || /^(share|yes|1 =|position|year$)/.test(u)) return "";
-  return ` (${u})`;
-}
 
 /** The full description of one group, for its accessible name and its tooltip. */
 function rowDetails(row, format, minN) {
@@ -29,6 +22,17 @@ function rowDetails(row, format, minN) {
   };
 }
 
+/** What the rows are, with hyphenated words kept whole ("first-person" never breaks after its hyphen). */
+function GroupedBy({ variable }) {
+  return (
+    <p className="axis-groups">
+      {groupedBy(variable)
+        .split(/(\S+-\S+)/)
+        .map((part, i) => (i % 2 ? <span key={i} className="nowrap">{part}</span> : part))}
+    </p>
+  );
+}
+
 const KEYS = ["ArrowDown", "ArrowUp", "Home", "End"];
 const sameTick = (a, b) => Math.abs(a.v - b.v) < 1e-9;
 
@@ -41,6 +45,10 @@ const sameTick = (a, b) => Math.abs(a.v - b.v) < 1e-9;
  * details; Escape hides them. Hover shows them too, and a tap or click keeps them until the next tap. On wider
  * charts the details are a card by the row; in the phone layout (narrower than 560 px) they are a line under the
  * chart, so nothing covers the rows (concept K1).
+ *
+ * What the rows are, and in what unit ("Stories grouped by story length in words"), is said above the first row, so
+ * the unit is read before the numbers: on wider charts as the heading of the label column, next to the measure's axis
+ * title over the plot; in the phone layout as a line between the axis title and the ticks (round 3).
  *
  * Another genre glides the marks (F51): the scale's domain glides with them, so the dots, the bars, the dashed line,
  * the grid and the ticks are drawn from the same scale in every frame; the old ticks fade out as the new ones fade
@@ -155,6 +163,12 @@ export default function RangeChart({
         ]
       : layout.ticks.map((t) => ({ ...t, fade: 1 }));
   const inDomain = (v) => v >= scale[0] - 1e-9 && v <= scale[1] + 1e-9;
+  const axisTitle = (
+    <p className="axis-title" aria-hidden="true">
+      {metric.label}
+      {layout.lo > 0 ? ` (the axis starts at ${Number(layout.lo.toFixed(2)).toLocaleString("en-US")})` : ""}
+    </p>
+  );
   const svgClass = [active != null && "has-active", glide.gliding && "gliding"].filter(Boolean).join(" ");
 
   return (
@@ -179,12 +193,21 @@ export default function RangeChart({
           )}
         </ul>
       )}
-      {!compact && (
-        <p className="axis-title" aria-hidden="true">
-          {metric.label}
-          {layout.lo > 0 ? ` (the axis starts at ${Number(layout.lo.toFixed(2)).toLocaleString("en-US")})` : ""}
-        </p>
-      )}
+      {!compact &&
+        (layout.mode === "side" ? (
+          <div
+            className="chart-heads"
+            style={{ gridTemplateColumns: `${layout.labelW}px minmax(0, 1fr)`, columnGap: layout.left - layout.labelW }}
+          >
+            <GroupedBy variable={variable} />
+            {axisTitle}
+          </div>
+        ) : (
+          <>
+            {axisTitle}
+            <GroupedBy variable={variable} />
+          </>
+        ))}
       <div className="chart-frame" ref={frame}>
         <span id={titleId} hidden>
           {title}
@@ -333,12 +356,7 @@ export default function RangeChart({
           </div>
         )}
       </div>
-      {!compact && (
-        <p className="axis-caption">
-          Stories grouped by {variable.noun}
-          {unitNote(variable)}.{anySmall ? ` * Fewer than ${smallN} stories: worth less trust.` : ""}
-        </p>
-      )}
+      {!compact && anySmall && <p className="axis-caption">* Fewer than {smallN} stories: worth less trust.</p>}
     </div>
   );
 }

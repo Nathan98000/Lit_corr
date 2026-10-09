@@ -132,6 +132,26 @@ export function methodSection(variable) {
   return "measures";
 }
 
+const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+/**
+ * The unit of a characteristic's ranges, when it helps to read the group labels (" (per 1,000 words)"), and only when
+ * the noun does not name it already: "story length in words", not "story length in words (words)"; "the number of
+ * sentences", not "… (sentences)"; "title word count", not "… (words)".
+ */
+export function unitNote(variable) {
+  const u = variable.unit || "";
+  if (variable.bins.type !== "ranges" || !u || u.includes("(") || /^(share|yes|1 =|position|year$)/.test(u)) return "";
+  const names = (word) => new RegExp(`(^|[^\\p{L}])${escapeRe(word)}([^\\p{L}]|$)`, "iu").test(variable.noun);
+  if (names(u) || (!u.includes(" ") && u.endsWith("s") && names(u.slice(0, -1)))) return "";
+  return ` (${u})`;
+}
+
+/** What the rows of a chart are, and in what unit: "Stories grouped by story length in words" (above the rows). */
+export function groupedBy(variable) {
+  return `Stories grouped by ${variable.noun}${unitNote(variable)}`;
+}
+
 /**
  * One short paragraph on how to read the one-genre chart; for characteristics without an order (months, narrative
  * perspective) it also says that their groups are not summed up as one trend (F40).

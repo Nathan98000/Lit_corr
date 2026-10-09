@@ -1,12 +1,17 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Explorer, { ChartPlaceholder } from "./components/Explorer.jsx";
+import { PartBoundary, lazyPart } from "./components/lazyPart.jsx";
 import LoadError from "./components/LoadError.jsx";
-import Methodology from "./components/Methodology.jsx";
-import PatternBrowser from "./components/PatternBrowser.jsx";
 import { clearCache, loadMeta } from "./lib/data.js";
 import { scrollBehavior } from "./lib/motion.js";
 import { formatCount } from "./lib/format.js";
 import { parseHash, sanitize, toHash } from "./lib/urlState.js";
+
+// How it works and the Patterns page load their code when first visited, or ahead of time when a link to them is
+// hovered or focused (F49).
+const Methodology = lazyPart(() => import("./components/Methodology.jsx"));
+const PatternBrowser = lazyPart(() => import("./components/PatternBrowser.jsx"));
+const PAGE_PLACEHOLDER = <div className="page-placeholder" aria-busy="true" />;
 
 export const TITLE = "What do popular Literotica stories have in common?";
 export const SITE_NAME = "Story Patterns"; // the masthead name: change it here
@@ -127,10 +132,17 @@ export default function App() {
             <a
               href={toHash("patterns", { genre: lastExplore.current.genre, metric: lastExplore.current.metric })}
               aria-current={route.page === "patterns" ? "page" : undefined}
+              onPointerEnter={PatternBrowser.preload}
+              onFocus={PatternBrowser.preload}
             >
               Patterns
             </a>
-            <a href="#/methodology" aria-current={route.page === "methodology" ? "page" : undefined}>
+            <a
+              href="#/methodology"
+              aria-current={route.page === "methodology" ? "page" : undefined}
+              onPointerEnter={Methodology.preload}
+              onFocus={Methodology.preload}
+            >
               How it works
             </a>
           </nav>
@@ -146,12 +158,20 @@ export default function App() {
             <LoadError onRetry={retry} detail={error} />
           </>
         ) : route.page === "methodology" ? (
-          meta ? <Methodology meta={meta} section={route.section} /> : <div className="page-placeholder" aria-busy="true" />
+          meta ? (
+            <PartBoundary fallback={PAGE_PLACEHOLDER}>
+              <Methodology meta={meta} section={route.section} />
+            </PartBoundary>
+          ) : (
+            PAGE_PLACEHOLDER
+          )
         ) : route.page === "patterns" ? (
           meta ? (
-            <PatternBrowser meta={meta} state={sanitize(route.state, meta)} onChange={updatePatterns} />
+            <PartBoundary fallback={PAGE_PLACEHOLDER}>
+              <PatternBrowser meta={meta} state={sanitize(route.state, meta)} onChange={updatePatterns} />
+            </PartBoundary>
           ) : (
-            <div className="page-placeholder" aria-busy="true" />
+            PAGE_PLACEHOLDER
           )
         ) : (
           <>
@@ -185,7 +205,9 @@ export default function App() {
           <p>
             An independent project, not affiliated with or endorsed by Literotica. This site holds summaries of groups
             of stories only: no story text, titles, authors or story-by-story records.{" "}
-            <a href="#/methodology">How it works</a>
+            <a href="#/methodology" onPointerEnter={Methodology.preload} onFocus={Methodology.preload}>
+              How it works
+            </a>
           </p>
         </div>
       </footer>

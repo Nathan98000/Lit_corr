@@ -75,6 +75,7 @@ describe("F37: checking stories of similar age", () => {
 describe("F39: comparing a total", () => {
   it("puts the story-age box with its switch above the genre cards", async () => {
     const user = await renderApp("#/explore?mode=compare&metric=pop_views&var=dlg_word_share");
+    await screen.findAllByRole("button", { name: /Open its chart\.$/ }); // the cards' code has arrived
     const box = screen.getByText("Totals grow with time online.").closest(".agebox");
     const caption = document.querySelector(".compare-caption");
     const grid = document.querySelector(".compare-grid");
@@ -93,7 +94,7 @@ describe("F47: what screen readers hear", () => {
     expect(live.textContent).toBe("How favorites per 1,000 views vary with dialogue share in Romance. No clear pattern.");
     await user.click(screen.getByRole("button", { name: /^Popularity measure:/ }));
     const dialog = await screen.findByRole("dialog", { name: "Popularity measure" });
-    await user.click(within(dialog).getAllByRole("option").find((o) => o.textContent.startsWith("Views per month")));
+    await user.click((await within(dialog).findAllByRole("option")).find((o) => o.textContent.startsWith("Views per month")));
     await waitFor(() => expect(live.textContent).toBe("How views per month vary with dialogue share in Romance. No clear pattern."));
     expect(document.querySelector(".chart-title").textContent).toBe("No clear pattern");
   });

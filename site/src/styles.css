@@ -138,9 +138,30 @@ main.wrap {
 }
 
 .page-placeholder {
-  height: 60vh;
-  margin-top: 44px;
-  background: transparent;
+  min-height: 100vh; /* a page whose code is on its way holds at least one screen, so the footer stays below */
+  background: transparent; /* no top margin: it would collapse through main, which then jumps when the page arrives */
+}
+
+/* the genre cards and the compare table while their code is on its way */
+.compare-grid-placeholder,
+.compare-numbers-placeholder {
+  border-radius: var(--radius);
+  background: var(--band);
+}
+
+.compare-numbers-placeholder {
+  min-height: 60vh;
+  margin-top: 16px;
+}
+
+/* a sheet's or popover's body while its code is on its way: as tall as the body it waits for */
+.overlay-placeholder {
+  min-height: 100vh;
+}
+
+.search-placeholder {
+  font-size: 16px;
+  color: var(--ink-3);
 }
 
 .skip-link {

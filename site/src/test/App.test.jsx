@@ -20,14 +20,15 @@ const fullTitle = () => document.title; // the full chart title, also the chart'
 /** Choose a characteristic through the picker: open it, search, press Enter. */
 async function pickCharacteristic(user, query) {
   await user.click(screen.getByRole("button", { name: /^Story characteristic:/ }));
-  await user.type(screen.getByRole("combobox", { name: /^Search/ }), query);
+  await user.type(await screen.findByRole("combobox", { name: /^Search/ }), query);
   await user.keyboard("{Enter}");
 }
 
-/** Choose a popularity measure through its menu. */
+/** Choose a popularity measure through its menu (its body loads its own code, so wait for the options). */
 async function pickMeasure(user, label) {
   await user.click(screen.getByRole("button", { name: /^Popularity measure:/ }));
-  const option = screen.getAllByRole("option").find((o) => o.querySelector(".pick-label")?.firstChild.textContent === label);
+  const options = await within(screen.getByRole("dialog", { name: "Popularity measure" })).findAllByRole("option");
+  const option = options.find((o) => o.querySelector(".pick-label")?.firstChild.textContent === label);
   await user.click(option);
 }
 
@@ -94,7 +95,7 @@ describe("the explorer", () => {
     await waitFor(() => expect(document.title).toMatch(/genre by genre$/));
     // the answer is the count of verdicts (dialogue share is a clear pattern in the synthetic data)
     expect(chartTitle().textContent).toMatch(/^Tends higher in .* of 3 genres, tends lower in .*, no clear pattern in .*\.$/);
-    const cards = screen.getAllByRole("button", { name: /Open its chart\.$/ });
+    const cards = await screen.findAllByRole("button", { name: /Open its chart\.$/ }); // the cards load their own code
     expect(cards.map((c) => c.querySelector(".genre-name").textContent)).toEqual(fixtureMeta.genres.map((g) => g.name));
     const tiny = cards.find((c) => c.textContent.startsWith("Tiny Genre"));
     expect(tiny.getAttribute("aria-label")).toMatch(/fewer than 10 stories/);
@@ -104,7 +105,7 @@ describe("the explorer", () => {
     expect(screen.getByText(/alphabetical order, not ranked/)).toBeTruthy();
 
     await user.click(screen.getByRole("button", { name: "Show the numbers" }));
-    const table = screen.getByRole("table");
+    const table = await screen.findByRole("table");
     expect(within(table).getAllByRole("rowheader").map((th) => th.textContent)).toEqual(fixtureMeta.genres.map((g) => g.name));
     const cell = within(table).getAllByRole("cell").find((c) => c.className.includes("cell") && !c.className.includes("empty"));
     await user.click(cell);

@@ -1,9 +1,35 @@
 import { forwardRef, useCallback, useId, useRef, useState } from "react";
 import { subsetConflict } from "../lib/urlState.js";
 import { questionParts } from "../lib/wording.js";
-import CharacteristicPicker from "./CharacteristicPicker.jsx";
 import InlineSelect, { SlotWords } from "./InlineSelect.jsx";
-import MetricMenu from "./MetricMenu.jsx";
+import { PartBoundary, lazyPart } from "./lazyPart.jsx";
+import Overlay from "./Overlay.jsx";
+
+// The picker and the measure menu load their code when first needed; the explorer fetches it once the first chart is
+// on screen and the browser is idle, and the words fetch it when hovered or focused.
+const CharacteristicPicker = lazyPart(() => import("./CharacteristicPicker.jsx"));
+const MetricMenu = lazyPart(() => import("./MetricMenu.jsx"));
+export function preloadMenus() {
+  CharacteristicPicker.preload();
+  MetricMenu.preload();
+}
+
+/** What a sheet or popover shows until its body's code has arrived: the same size, so nothing moves. */
+function BodyPlaceholder({ search = null }) {
+  return (
+    <div className="overlay-placeholder" aria-busy="true">
+      {search && (
+        <div className="search" aria-hidden="true">
+          <svg width="18" height="18">
+            <circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" strokeWidth="2" />
+            <path d="M12.5 12.5l4 4" stroke="currentColor" strokeWidth="2" />
+          </svg>
+          <span className="search-placeholder">{search}</span>
+        </div>
+      )}
+    </div>
+  );
+}
 
 function groupBy(list, key) {
   const out = new Map();
@@ -28,6 +54,8 @@ const SlotButton = forwardRef(function SlotButton({ expanded, onPress, children 
       className="slot slot-button"
       aria-haspopup="dialog"
       aria-expanded={expanded}
+      onPointerEnter={preloadMenus}
+      onFocus={preloadMenus}
       onClick={onPress}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
@@ -57,6 +85,8 @@ export default function Controls({ meta, state, onChange }) {
   const [menu, setMenu] = useState(null); // "metric" | "variable" | null
   const metricBtn = useRef(null);
   const varBtn = useRef(null);
+  const menuFocus = useRef(null);
+  const pickerFocus = useRef(null);
   const ids = useId();
   const close = useCallback(() => setMenu(null), []);
   const subsetGroups = groupBy(meta.subsets, "group");
@@ -157,32 +187,53 @@ export default function Controls({ meta, state, onChange }) {
         </p>
       )}
 
-      <MetricMenu
-        meta={meta}
-        value={state.metric}
+      <Overlay
         open={menu === "metric"}
+        onClose={close}
         anchor={metricBtn}
-        onClose={close}
-        onPick={(id) => {
-          setMenu(null);
-          set({ metric: id });
-        }}
-      />
-      <CharacteristicPicker
-        meta={meta}
-        value={state.v}
-        sub={state.sub}
+        title="Popularity measure"
+        titleId={`${ids}-metric-title`}
+        initialFocus={menuFocus}
+        className="metric-menu"
+      >
+        <PartBoundary fallback={<BodyPlaceholder />}>
+          <MetricMenu
+            meta={meta}
+            value={state.metric}
+            focusRef={menuFocus}
+            labelledBy={`${ids}-metric-title`}
+            onPick={(id) => {
+              setMenu(null);
+              set({ metric: id });
+            }}
+          />
+        </PartBoundary>
+      </Overlay>
+      <Overlay
         open={menu === "variable"}
-        anchor={varBtn}
         onClose={close}
-        onPick={(id) => {
-          setMenu(null);
-          const next = { ...state, v: id, check: undefined };
-          const nextVar = meta.variables.find((v) => v.id === id);
-          if (subsetConflict(meta.subsets.find((s) => s.id === state.sub), nextVar)) next.sub = "all";
-          onChange(next);
-        }}
-      />
+        anchor={varBtn}
+        title="Story characteristic"
+        titleId={`${ids}-picker-title`}
+        initialFocus={pickerFocus}
+        className="picker"
+      >
+        <PartBoundary fallback={<BodyPlaceholder search={`Search ${meta.variables.length} characteristics`} />}>
+          <CharacteristicPicker
+            meta={meta}
+            value={state.v}
+            sub={state.sub}
+            focusRef={pickerFocus}
+            onPick={(id) => {
+              setMenu(null);
+              const next = { ...state, v: id, check: undefined };
+              const nextVar = meta.variables.find((v) => v.id === id);
+              if (subsetConflict(meta.subsets.find((s) => s.id === state.sub), nextVar)) next.sub = "all";
+              onChange(next);
+            }}
+          />
+        </PartBoundary>
+      </Overlay>
     </div>
   );
 }

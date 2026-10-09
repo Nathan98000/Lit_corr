@@ -1,7 +1,6 @@
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 import { prefetchVariable } from "../lib/data.js";
 import { highlight, oneLine, searchCharacteristics } from "../lib/search.js";
-import Overlay from "./Overlay.jsx";
 
 /** A label with the matched part marked. */
 function Marked({ label, query }) {
@@ -20,23 +19,21 @@ function Marked({ label, query }) {
  * The characteristic picker (concept 2A): a search box over a listbox, following the WAI-ARIA 1.2
  * combobox-with-listbox pattern. With the search box empty it shows a Popular set and the eight topics; a topic opens
  * its list (browsing never changes the chart); typing searches labels, descriptions, topics and synonyms.
+ *
+ * This is the body of the "Story characteristic" sheet or popover; it loads with its own code (F49), so it takes
+ * focus itself when it arrives. `focusRef` is the search box.
  */
-export default function CharacteristicPicker({ meta, value, sub, open, onClose, onPick, anchor }) {
+export default function CharacteristicPicker({ meta, value, sub, onPick, focusRef }) {
   const [query, setQuery] = useState("");
   const [topicId, setTopicId] = useState(null);
   const [active, setActive] = useState(0);
-  const input = useRef(null);
-  const list = useRef(null);
+  const input = focusRef;
   const base = useId().replace(/:/g, "");
   const byId = useMemo(() => new Map(meta.variables.map((v) => [v.id, v])), [meta]);
 
   useEffect(() => {
-    if (open) {
-      setQuery("");
-      setTopicId(null);
-      setActive(0);
-    }
-  }, [open]);
+    input.current?.focus({ preventScroll: true });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // The options on screen, in order, as { kind: "var" | "topic" | "back", id, group }.
   const results = useMemo(() => searchCharacteristics(meta, query), [meta, query]);
@@ -229,15 +226,7 @@ export default function CharacteristicPicker({ meta, value, sub, open, onClose, 
   }
 
   return (
-    <Overlay
-      open={open}
-      onClose={onClose}
-      anchor={anchor}
-      title="Story characteristic"
-      titleId={`${base}-title`}
-      initialFocus={input}
-      className="picker"
-    >
+    <>
       <div className="search">
         <svg width="18" height="18" aria-hidden="true">
           <circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" strokeWidth="2" />
@@ -263,9 +252,9 @@ export default function CharacteristicPicker({ meta, value, sub, open, onClose, 
           onKeyDown={onKeyDown}
         />
       </div>
-      <div id={`${base}-list`} ref={list} role="listbox" aria-label="Story characteristics" className="pick-list">
+      <div id={`${base}-list`} role="listbox" aria-label="Story characteristics" className="pick-list">
         {content}
       </div>
-    </Overlay>
+    </>
   );
 }

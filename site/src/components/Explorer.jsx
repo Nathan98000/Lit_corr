@@ -13,17 +13,38 @@ import {
   takeawaySegments,
 } from "../lib/wording.js";
 import { toHash } from "../lib/urlState.js";
-import AgeCheck from "./AgeCheck.jsx";
+import AgeCheck, { preloadAgeCheck } from "./AgeCheck.jsx";
 import ChartNotes from "./ChartNotes.jsx";
-import { compareRows, compareSummary } from "../lib/compare.js";
-import CompareGrid from "./CompareGrid.jsx";
-import CompareTable from "./CompareTable.jsx";
-import Controls from "./Controls.jsx";
+import { compareRows, compareSummary, gridColumns } from "../lib/compare.js";
+import Controls, { preloadMenus } from "./Controls.jsx";
 import CopyLink from "./CopyLink.jsx";
+import { PartBoundary, lazyPart, whenIdle } from "./lazyPart.jsx";
 import LoadError from "./LoadError.jsx";
 import NumbersTable from "./NumbersTable.jsx";
 import RangeChart from "./RangeChart.jsx";
 import useMediaQuery from "./useMediaQuery.js";
+import useWidth from "./useWidth.js";
+
+// Comparing genres loads its code when first needed (F49), or ahead of time when "Compare all … genres" is hovered
+// or focused.
+const CompareGrid = lazyPart(() => import("./CompareGrid.jsx"));
+const CompareTable = lazyPart(() => import("./CompareTable.jsx"));
+const preloadCompare = () => {
+  CompareGrid.preload();
+  CompareTable.preload();
+};
+
+/**
+ * The genre cards' space while their code is on its way: the full-width "All genres" card, then rows of cards
+ * (108 px and a 10 px gap each; on two-column phones a few long genre names take a second line).
+ */
+function CompareGridPlaceholder({ genres }) {
+  const [ref, width] = useWidth(960);
+  const cols = gridColumns(width);
+  const rows = Math.ceil(genres / cols);
+  const height = (cols > 2 ? 111 : 91) + rows * 118 + (cols > 2 ? 0 : 25);
+  return <div ref={ref} className="compare-grid-placeholder" aria-busy="true" style={{ height }} />;
+}
 
 const fileKey = (s) => `${s.v}/${s.sub}`;
 
@@ -195,6 +216,10 @@ export default function Explorer({ meta, state, onChange }) {
     }
   });
 
+  // once the first chart is on screen, fetch the picker's and the measure menu's code while the browser is idle
+  const ready = Boolean(d && !busy);
+  useEffect(() => (ready ? whenIdle(preloadMenus) : undefined), [ready]);
+
   const ageCheckOpen = Boolean(
     d && !d.compare && view.check === "age" && view.sub === "all" && d.ageNotes.some((n) => n.kind === "groups"),
   );
@@ -255,12 +280,14 @@ export default function Explorer({ meta, state, onChange }) {
               <p className="compare-axis" aria-hidden="true">
                 Left to right: {d.variable.bins.labels[0]} → {d.variable.bins.labels[d.variable.bins.labels.length - 1]}
               </p>
-              <CompareGrid
-                rows={d.compareRows}
-                variable={d.variable}
-                minN={meta.min_n}
-                onPickGenre={(id) => onChange({ ...state, mode: "one", genre: id })}
-              />
+              <PartBoundary fallback={<CompareGridPlaceholder genres={genreCount} />}>
+                <CompareGrid
+                  rows={d.compareRows}
+                  variable={d.variable}
+                  minN={meta.min_n}
+                  onPickGenre={(id) => onChange({ ...state, mode: "one", genre: id })}
+                />
+              </PartBoundary>
               <div className="chart-actions">
                 <button
                   type="button"
@@ -274,14 +301,16 @@ export default function Explorer({ meta, state, onChange }) {
                 <CopyLink />
               </div>
               {showNumbers && (
-                <CompareTable
-                  id={numbersId}
-                  rows={d.compareRows}
-                  variable={d.variable}
-                  metric={d.metric}
-                  smallN={meta.small_n}
-                  minN={meta.min_n}
-                />
+                <PartBoundary fallback={<div className="compare-numbers-placeholder" aria-busy="true" />}>
+                  <CompareTable
+                    id={numbersId}
+                    rows={d.compareRows}
+                    variable={d.variable}
+                    metric={d.metric}
+                    smallN={meta.small_n}
+                    minN={meta.min_n}
+                  />
+                </PartBoundary>
               )}
             </>
           ) : (
@@ -331,6 +360,7 @@ export default function Explorer({ meta, state, onChange }) {
                 onChange={onChange}
                 ageCheckOpen={ageCheckOpen}
                 onCheckAge={checkAge}
+                onAgeCheckHint={preloadAgeCheck}
                 ageButton={ageButton}
               />
               <div className="chart-actions">
@@ -344,7 +374,13 @@ export default function Explorer({ meta, state, onChange }) {
                   {showNumbers ? "Hide the numbers" : "Show the numbers"}
                 </button>
                 <CopyLink />
-                <button type="button" className="btn primary" onClick={() => onChange({ ...state, mode: "compare", check: undefined })}>
+                <button
+                  type="button"
+                  className="btn primary"
+                  onPointerEnter={preloadCompare}
+                  onFocus={preloadCompare}
+                  onClick={() => onChange({ ...state, mode: "compare", check: undefined })}
+                >
                   Compare all {genreCount} genres →
                 </button>
               </div>

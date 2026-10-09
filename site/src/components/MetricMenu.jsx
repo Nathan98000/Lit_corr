@@ -1,5 +1,4 @@
-import { useEffect, useId, useRef, useState } from "react";
-import Overlay from "./Overlay.jsx";
+import { useEffect, useId, useState } from "react";
 
 export const MEASURE_NOTE =
   "Totals keep growing while a story is online; per-month and per-1,000-views measures make old and new stories " +
@@ -8,20 +7,23 @@ export const MEASURE_NOTE =
 /**
  * The popularity-measure menu (it replaces the old select and its "i"): a listbox grouped "Per 1,000 views / Per
  * month online / Totals so far / Rating", each option with its one-line help. Arrows, Home/End, Enter; Escape closes.
+ *
+ * This is the body of the "Popularity measure" sheet or popover; it loads with its own code (F49), so it takes focus
+ * itself when it arrives. `focusRef` is the listbox. `labelledBy` is the id of the sheet's title.
  */
-export default function MetricMenu({ meta, value, open, onClose, onPick, anchor }) {
+export default function MetricMenu({ meta, value, onPick, focusRef, labelledBy }) {
   const base = useId().replace(/:/g, "");
-  const listRef = useRef(null);
+  const listRef = focusRef;
   const ordered = meta.metric_groups.flatMap((g) => meta.metrics.filter((m) => m.group === g));
-  const [active, setActive] = useState(0);
+  const [active, setActive] = useState(() => Math.max(0, ordered.findIndex((m) => m.id === value)));
 
   useEffect(() => {
-    if (open) setActive(Math.max(0, ordered.findIndex((m) => m.id === value)));
-  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
+    listRef.current?.focus({ preventScroll: true });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    if (open) document.getElementById(`${base}-m-${active}`)?.scrollIntoView?.({ block: "nearest" });
-  }, [active, open, base]);
+    document.getElementById(`${base}-m-${active}`)?.scrollIntoView?.({ block: "nearest" });
+  }, [active, base]);
 
   const onKeyDown = (e) => {
     const last = ordered.length - 1;
@@ -35,21 +37,13 @@ export default function MetricMenu({ meta, value, open, onClose, onPick, anchor 
   };
 
   return (
-    <Overlay
-      open={open}
-      onClose={onClose}
-      anchor={anchor}
-      title="Popularity measure"
-      titleId={`${base}-title`}
-      initialFocus={listRef}
-      className="metric-menu"
-    >
+    <>
       <p className="menu-note">{MEASURE_NOTE}</p>
       <div
         ref={listRef}
         role="listbox"
         tabIndex={0}
-        aria-labelledby={`${base}-title`}
+        aria-labelledby={labelledBy}
         aria-activedescendant={`${base}-m-${active}`}
         className="pick-list"
         onKeyDown={onKeyDown}
@@ -86,6 +80,6 @@ export default function MetricMenu({ meta, value, open, onClose, onPick, anchor 
           );
         })}
       </div>
-    </Overlay>
+    </>
   );
 }

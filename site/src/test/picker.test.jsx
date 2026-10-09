@@ -98,9 +98,10 @@ describe("the characteristic picker", () => {
     const user = await renderApp();
     const trigger = screen.getByRole("button", { name: /^Story characteristic:/ });
     await user.click(trigger);
+    // the sheet opens at once; its body arrives with its code and takes focus
     const dialog = screen.getByRole("dialog", { name: "Story characteristic" });
-    const search = within(dialog).getByRole("combobox");
-    expect(document.activeElement).toBe(search);
+    const search = await within(dialog).findByRole("combobox");
+    await waitFor(() => expect(document.activeElement).toBe(search));
     expect(within(dialog).getByText("Popular")).toBeTruthy();
     expect(within(dialog).getByText("Browse by topic")).toBeTruthy();
     // the first option (Popular) is active; move down to a topic and open it
@@ -124,7 +125,7 @@ describe("the characteristic picker", () => {
     const user = await renderApp();
     const trigger = screen.getByRole("button", { name: /^Story characteristic:/ });
     await user.click(trigger);
-    await user.type(screen.getByRole("combobox", { name: /^Search/ }), "perspective");
+    await user.type(await screen.findByRole("combobox", { name: /^Search/ }), "perspective");
     expect(screen.getByText("perspective", { selector: "mark" })).toBeTruthy();
     expect(screen.getByText(/1 match/)).toBeTruthy();
     await user.clear(screen.getByRole("combobox", { name: /^Search/ }));
@@ -143,11 +144,11 @@ describe("the measure menu", () => {
     const trigger = screen.getByRole("button", { name: /^Popularity measure:/ });
     await user.click(trigger);
     const dialog = screen.getByRole("dialog", { name: "Popularity measure" });
-    expect(within(dialog).getByText(/Totals keep growing while a story is online/)).toBeTruthy();
+    expect(await within(dialog).findByText(/Totals keep growing while a story is online/)).toBeTruthy();
     expect(within(dialog).getByText("Per 1,000 views")).toBeTruthy();
     expect(within(dialog).getByText("Totals so far")).toBeTruthy();
     const list = within(dialog).getByRole("listbox");
-    expect(document.activeElement).toBe(list);
+    await waitFor(() => expect(document.activeElement).toBe(list));
     await user.keyboard("{End}{Enter}");
     await waitFor(() => expect(window.location.hash).toMatch(/metric=pop_rating_count/));
     expect(screen.queryByRole("dialog")).toBeNull();

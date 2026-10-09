@@ -7,6 +7,7 @@ import LoadError from "./LoadError.jsx";
 
 const readsAsTrend = (v) => v.bins.ordered || Boolean(v.yes_subject);
 const byLabel = (a, b) => a.variable.label.localeCompare(b.variable.label, "en");
+const TEND_TO = toHash("methodology", { section: "tend-to" });
 
 /** Everything the page says, from meta and patterns.json only (no medians, no counts of stories). */
 export function patternSummary(meta, patterns, genreId, metricId) {
@@ -25,16 +26,39 @@ export function patternSummary(meta, patterns, genreId, metricId) {
   return { trend: trend.length, clear: clear.length, unordered: items.length - trend.length, topics };
 }
 
+/** One characteristic with a clear pattern: its name (linking to its chart), the direction and the strength. */
+function ClearRow({ variable, pattern, metric, genre, link }) {
+  const id = useId();
+  const up = pattern.direction > 0;
+  return (
+    <li className="pattern-row">
+      <a href={link(variable)} aria-describedby={id}>
+        {variable.label}
+      </a>
+      <span id={id} className="visually-hidden">
+        {chartTitle({ variable, metric, genre, direction: pattern.direction })}
+      </span>
+      <span className={`pattern-dir ${up ? "up" : "down"}`}>
+        <span aria-hidden="true">{up ? "↗" : "↘"} </span>
+        {up ? "tends higher" : "tends lower"}
+      </span>
+      <span className="pattern-strength">{pattern.strength}</span>
+    </li>
+  );
+}
+
 /**
- * The pattern browser (idea I4): for a genre and a measure, every characteristic with a clear pattern, grouped by
- * topic in the topics' order and alphabetical within each topic. Never sorted by strength; the count of those
- * without a clear pattern is always given.
+ * The pattern browser (idea I4, laid out as concept G2 of the second review): for a genre and a measure, the eight
+ * topics folded, each with its count of clear patterns; inside, one compact row per characteristic with a clear
+ * pattern, alphabetical. Never sorted by strength, effect or direction; the count of those without a clear pattern
+ * is always given, and the toggle lists them too.
  */
 export default function PatternBrowser({ meta, state, onChange }) {
   const [patterns, setPatterns] = useState(null);
   const [error, setError] = useState(null);
   const [attempt, setAttempt] = useState(0);
   const [showAll, setShowAll] = useState(false);
+  const [open, setOpen] = useState(() => new Set());
   const ids = useId();
   useEffect(() => {
     let live = true;
@@ -53,6 +77,18 @@ export default function PatternBrowser({ meta, state, onChange }) {
   const where = genre.id === "all" ? "across all genres" : `in ${genre.name}`;
   const s = patterns ? patternSummary(meta, patterns, genre.id, metric.id) : null;
   const link = (v) => toHash("explore", { mode: "one", genre: genre.id, metric: metric.id, v: v.id, sub: "all" });
+  // a topic folds open when it has something to list: its clear patterns, or (with the toggle) the others
+  const opens = (t) => t.clear.length > 0 || (showAll && t.other.length > 0);
+  const openable = s ? s.topics.filter(opens) : [];
+  const allOpen = openable.length > 0 && openable.every((t) => open.has(t.topic.id));
+  const setTopic = (id, isOpen) =>
+    setOpen((prev) => {
+      if (prev.has(id) === isOpen) return prev;
+      const next = new Set(prev);
+      if (isOpen) next.add(id);
+      else next.delete(id);
+      return next;
+    });
 
   return (
     <article className="patterns-page">
@@ -96,42 +132,79 @@ export default function PatternBrowser({ meta, state, onChange }) {
         <>
           <p className="pattern-count">
             <strong>{s.clear}</strong> of {s.trend} characteristics that can show a trend have a clear pattern with{" "}
-            {metric.noun} {where}. The other {s.trend - s.clear} don’t, which is just as informative.
+            {metric.noun} {where}. The other {s.trend - s.clear} show no clear pattern; that is a finding too.
           </p>
           <p className="pattern-count muted">
             {s.unordered} characteristics have no order (such as month) and are not summed up as a trend.
           </p>
           <p className="pattern-note">
             With this many characteristics, some differences appear by chance; the rule behind “tend to” allows for
-            that.{" "}
-            <a href={toHash("methodology", { section: "tend-to" })}>When a title says “tend to”</a>
+            that. <a href={TEND_TO}>When a title says “tend to”</a>
           </p>
-          <button type="button" className="btn" aria-pressed={showAll} onClick={() => setShowAll((x) => !x)}>
-            Show the ones with no clear pattern too
-          </button>
-          {s.topics
-            .filter((t) => t.clear.length || showAll)
-            .map(({ topic, clear, other }) => (
-              <section key={topic.id} className="pattern-topic" aria-labelledby={`${ids}-${topic.id}`}>
-                <h2 id={`${ids}-${topic.id}`}>{topic.label}</h2>
-                <ul>
-                  {clear.map(({ variable, pattern }) => (
-                    <li key={variable.id}>
-                      <span className="pattern-name">{variable.label}</span>
-                      <a href={link(variable)}>{chartTitle({ variable, metric, genre, direction: pattern.direction })}</a>{" "}
-                      <span className={`strength ${pattern.direction > 0 ? "up" : "down"}`}>{pattern.strength}</span>
-                    </li>
-                  ))}
-                  {showAll &&
-                    other.map(({ variable, pattern }) => (
-                      <li key={variable.id} className="no-pattern">
-                        <a href={link(variable)}>{variable.label}</a>{" "}
-                        <span className="muted">{pattern ? "no clear pattern" : "too few stories to judge"}</span>
-                      </li>
+          <div className="pattern-buttons">
+            <button type="button" className="btn" aria-pressed={showAll} onClick={() => setShowAll((x) => !x)}>
+              Show the ones with no clear pattern too
+            </button>
+            {openable.length > 0 && (
+              <button
+                type="button"
+                className="btn"
+                onClick={() => setOpen(allOpen ? new Set() : new Set(openable.map((t) => t.topic.id)))}
+              >
+                {allOpen ? "Close all topics" : "Open all topics"}
+              </button>
+            )}
+          </div>
+          <p className="pattern-key">
+            ↗ tends higher: the more of the characteristic a group of stories has (or, for yes/no ones, the group that
+            has it), the higher its typical {metric.noun}; ↘ tends lower: the lower.{" "}
+            <a href={TEND_TO}>What weak, moderate and strong mean</a>
+          </p>
+          <div className="pattern-topics">
+            {s.topics.map((t) => {
+              const { topic, clear, other } = t;
+              const total = clear.length + other.length;
+              const head = (
+                <>
+                  <h2 className="pattern-topic-name">{topic.label}</h2>
+                  <span className="pattern-topic-count">
+                    {" · "}
+                    {clear.length} of {total} clear
+                  </span>
+                </>
+              );
+              if (!opens(t)) {
+                // nothing to list until "Show the ones with no clear pattern too" is on: the topic and its count only
+                return (
+                  <div key={topic.id} className="pattern-topic is-empty">
+                    <div className="pattern-topic-head">{head}</div>
+                  </div>
+                );
+              }
+              return (
+                <details
+                  key={topic.id}
+                  className="pattern-topic"
+                  open={open.has(topic.id)}
+                  onToggle={(e) => setTopic(topic.id, e.currentTarget.open)}
+                >
+                  <summary className="pattern-topic-head">{head}</summary>
+                  <ul className="pattern-rows">
+                    {clear.map(({ variable, pattern }) => (
+                      <ClearRow key={variable.id} variable={variable} pattern={pattern} metric={metric} genre={genre} link={link} />
                     ))}
-                </ul>
-              </section>
-            ))}
+                    {showAll &&
+                      other.map(({ variable, pattern }) => (
+                        <li key={variable.id} className="pattern-row no-pattern">
+                          <a href={link(variable)}>{variable.label}</a>
+                          <span className="pattern-verdict">{pattern ? "no clear pattern" : "too few stories to judge"}</span>
+                        </li>
+                      ))}
+                  </ul>
+                </details>
+              );
+            })}
+          </div>
         </>
       )}
     </article>

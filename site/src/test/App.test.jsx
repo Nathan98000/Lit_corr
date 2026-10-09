@@ -317,8 +317,8 @@ describe("notes and the age check", () => {
   });
 });
 
-describe("the pattern browser", () => {
-  it("counts clear patterns, lists them by topic and alphabetically, and links each to its chart", async () => {
+describe("the pattern browser (concept G2)", () => {
+  it("counts clear patterns, folds the topics with their counts and lists each pattern as a compact row", async () => {
     window.history.replaceState(null, "", "/#/patterns?genre=all&metric=pop_fav_per_1k_views");
     const user = userEvent.setup();
     render(<App />);
@@ -327,25 +327,53 @@ describe("the pattern browser", () => {
     // fixture: 3 characteristics read as a trend (dialogue share, has dialogue, anger), 1 without order
     const count = await screen.findByText(/characteristics that can show a trend/);
     expect(count.textContent).toBe(
-      "2 of 3 characteristics that can show a trend have a clear pattern with favorites per 1,000 views across all genres. The other 1 don’t, which is just as informative.",
+      "2 of 3 characteristics that can show a trend have a clear pattern with favorites per 1,000 views across all genres. The other 1 show no clear pattern; that is a finding too.",
     );
     expect(screen.getByText(/1 characteristics have no order/)).toBeTruthy();
-    const topics = screen.getAllByRole("heading", { level: 2 }).map((h) => h.textContent);
-    expect(topics).toEqual(["Dialogue & characters"]);
-    const items = within(screen.getByRole("region", { name: "Dialogue & characters" })).getAllByRole("link");
-    expect(items.map((a) => a.textContent)).toEqual([
-      "Stories with more dialogue tend to get more favorites per 1,000 views",
-      "Stories with dialogue tend to get more favorites per 1,000 views than stories without dialogue",
-    ]);
-    expect(items[0].getAttribute("href")).toMatch(/var=dlg_word_share/);
+    const key = document.querySelector(".pattern-key");
+    expect(key.textContent).toBe(
+      "↗ tends higher: the more of the characteristic a group of stories has (or, for yes/no ones, the group that has " +
+        "it), the higher its typical favorites per 1,000 views; ↘ tends lower: the lower. What weak, moderate and strong mean",
+    );
+    expect(within(key).getByRole("link", { name: "What weak, moderate and strong mean" }).getAttribute("href")).toBe(
+      "#/methodology/tend-to",
+    );
     expect(screen.getByRole("link", { name: /When a title says/ }).getAttribute("href")).toBe("#/methodology/tend-to");
 
-    await user.click(screen.getByRole("button", { name: "Show the ones with no clear pattern too" }));
+    // the topics in the topics' order (those with something that can show a trend), each with its count, closed
+    expect([...document.querySelectorAll(".pattern-topic-head")].map((h) => h.textContent)).toEqual([
+      "Dialogue & characters · 2 of 2 clear",
+      "Emotion & relationships · 0 of 1 clear",
+    ]);
     expect(screen.getAllByRole("heading", { level: 2 }).map((h) => h.textContent)).toEqual([
       "Dialogue & characters",
       "Emotion & relationships",
     ]);
-    expect(screen.getByRole("link", { name: "Anger" })).toBeTruthy();
+    const dialogue = document.querySelector("details.pattern-topic");
+    expect(dialogue.open).toBe(false);
+    expect(document.querySelectorAll("details.pattern-topic")).toHaveLength(1); // 0 clear: nothing to fold open yet
+
+    // one row per clear pattern, alphabetical: the name links to its chart, described by the full sentence
+    const rows = within(dialogue).getAllByRole("listitem");
+    expect(rows.map((r) => r.querySelector("a").textContent)).toEqual(["Dialogue share", "Has dialogue"]);
+    const link = within(rows[0]).getByRole("link", { name: "Dialogue share" });
+    expect(link.getAttribute("href")).toMatch(/var=dlg_word_share/);
+    expect(document.getElementById(link.getAttribute("aria-describedby")).textContent).toBe(
+      "Stories with more dialogue tend to get more favorites per 1,000 views",
+    );
+    expect(rows[0].querySelector(".pattern-dir").textContent).toBe("↗ tends higher");
+    expect(rows[0].querySelector(".pattern-strength").textContent).toBe("strong");
+
+    // open and close every topic at once
+    await user.click(screen.getByRole("button", { name: "Open all topics" }));
+    expect(dialogue.open).toBe(true);
+    await user.click(screen.getByRole("button", { name: "Close all topics" }));
+    expect(dialogue.open).toBe(false);
+
+    // the toggle adds the others, muted, in the same topics
+    await user.click(screen.getByRole("button", { name: "Show the ones with no clear pattern too" }));
+    const emotion = [...document.querySelectorAll("details.pattern-topic")].find((d) => d.textContent.includes("Emotion"));
+    expect(within(emotion).getByRole("link", { name: "Anger" }).closest("li").textContent).toBe("Anger" + "no clear pattern");
 
     await user.selectOptions(screen.getByLabelText("Genre"), "tiny");
     await waitFor(() => expect(window.location.hash).toBe("#/patterns?genre=tiny&metric=pop_fav_per_1k_views"));

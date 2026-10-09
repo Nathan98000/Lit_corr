@@ -166,7 +166,12 @@ describe("no causation reminders (decision 1 of round 2)", () => {
     await ready();
     expect(document.body.textContent).not.toMatch(REMINDERS);
     expect(screen.getByRole("contentinfo").textContent).toMatch(
-      /^An independent project, not affiliated with or endorsed by Literotica\. This site holds summaries of groups of stories only: no story text, titles, authors or story-by-story records\. How it works$/,
+      /^An independent project, not affiliated with or endorsed by Literotica\. How it works$/,
+    );
+    // round 3, change 5: the footer no longer lists what the site does not hold; How it works keeps that section
+    expect(screen.getByRole("contentinfo").textContent).not.toMatch(/story-by-story records/);
+    expect(within(screen.getByRole("contentinfo")).getByRole("link", { name: "How it works" }).getAttribute("href")).toBe(
+      "#/methodology",
     );
   });
 

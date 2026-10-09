@@ -187,8 +187,7 @@ export default function App() {
       <footer className="site-footer">
         <div className="wrap">
           <p>
-            An independent project, not affiliated with or endorsed by Literotica. This site holds summaries of groups
-            of stories only: no story text, titles, authors or story-by-story records.{" "}
+            An independent project, not affiliated with or endorsed by Literotica.{" "}
             <a href="#/methodology" onPointerEnter={Methodology.preload} onFocus={Methodology.preload}>
               How it works
             </a>

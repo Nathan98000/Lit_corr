@@ -6,8 +6,9 @@ export const MEASURE_NOTE =
   "easier to compare.";
 
 /**
- * The popularity-measure menu (it replaces the old select and its "i"): a listbox grouped "Per 1,000 views / Per
- * month online / Totals so far / Rating", each option with its one-line help. Arrows, Home/End, Enter; Escape closes.
+ * The popularity-measure menu (it replaces the old select and its "i"): a listbox grouped as meta.metric_groups says
+ * ("Rating / Per 1,000 views / Per month online / Totals so far"), each option with its one-line help. Arrows,
+ * Home/End, Enter; Escape closes.
  *
  * This is the body of the "Popularity measure" sheet or popover; it loads with its own code (F49), so it takes focus
  * itself when it arrives. `focusRef` is the listbox. `labelledBy` is the id of the sheet's title. `scrollRef` is the

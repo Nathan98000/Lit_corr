@@ -4,7 +4,7 @@
 export const DEFAULT_STATE = {
   mode: "one",
   genre: "all",
-  metric: "pop_fav_per_1k_views",
+  metric: "pop_rating", // the average rating, also meta.default_metric (litcorr/stage2/wording.py)
   v: "story_words",
   sub: "all",
 };
@@ -58,13 +58,17 @@ export function subsetConflict(subset, variable) {
   return null;
 }
 
+const has = (list, id) => list.some((x) => x.id === id);
+
+/** The measure a chart opens with: the data's default (the average rating), or its first measure if it has none. */
+export const defaultMetric = (meta) => (has(meta.metrics, meta.default_metric) ? meta.default_metric : meta.metrics[0].id);
+
 /** Fill in defaults and replace anything the data does not know about. */
 export function sanitize(state, meta) {
-  const has = (list, id) => list.some((x) => x.id === id);
   const s = { ...DEFAULT_STATE, ...state };
   if (s.mode !== "one" && s.mode !== "compare") s.mode = DEFAULT_STATE.mode;
   if (!has(meta.genres, s.genre)) s.genre = "all";
-  if (!has(meta.metrics, s.metric)) s.metric = has(meta.metrics, meta.default_metric) ? meta.default_metric : meta.metrics[0].id;
+  if (!has(meta.metrics, s.metric)) s.metric = defaultMetric(meta);
   if (!has(meta.variables, s.v)) s.v = has(meta.variables, DEFAULT_STATE.v) ? DEFAULT_STATE.v : meta.variables[0].id;
   if (!has(meta.subsets, s.sub)) s.sub = "all";
   const variable = meta.variables.find((v) => v.id === s.v);

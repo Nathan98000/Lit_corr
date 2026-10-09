@@ -53,8 +53,10 @@ METRICS = [
      "help": "The average star rating (1 to 5) shown on the story page. Most stories score between 4 and "
              "5, so small differences can matter."},
 ]
-METRIC_GROUPS = ["Per 1,000 views", "Per month online", "Totals so far", "Rating"]
-DEFAULT_METRIC = "pop_fav_per_1k_views"
+# The order of the measure menu's groups (Rating first) and the measure a chart opens with. METRICS keeps its own
+# order: the aggregate files hold the measures by their position in it.
+METRIC_GROUPS = ["Rating", "Per 1,000 views", "Per month online", "Totals so far"]
+DEFAULT_METRIC = "pop_rating"
 MIN_METRIC_COVERAGE = 0.9  # a measure is offered only if at least this share of stories has it
 
 # ------------------------------------------------------------------------------------------ stories included

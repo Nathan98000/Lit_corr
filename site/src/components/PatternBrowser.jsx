@@ -1,7 +1,7 @@
 import { useEffect, useId, useState } from "react";
 import { decodePattern, loadPatterns } from "../lib/data.js";
 import { toHash } from "../lib/urlState.js";
-import { chartTitle } from "../lib/wording.js";
+import { chartTitle, theMeasure } from "../lib/wording.js";
 import InlineSelect from "./InlineSelect.jsx";
 import LoadError from "./LoadError.jsx";
 
@@ -102,7 +102,7 @@ export default function PatternBrowser({ meta, state, onChange }) {
             </option>
           ))}
         </InlineSelect>{" "}
-        with{" "}
+        with {metric.plural ? "" : "the "}
         <InlineSelect
           id={`${ids}-m`}
           label="Popularity measure"
@@ -131,7 +131,7 @@ export default function PatternBrowser({ meta, state, onChange }) {
       ) : (
         <>
           <p className="pattern-count">
-            <strong>{s.clear}</strong> of {s.trend} characteristics have a clear pattern with {metric.noun} {where}. The
+            <strong>{s.clear}</strong> of {s.trend} characteristics have a clear pattern with {theMeasure(metric)} {where}. The
             other {s.trend - s.clear} show no clear pattern.
           </p>
           <p className="pattern-count muted">

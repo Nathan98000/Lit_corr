@@ -2,10 +2,11 @@
 
 **Story Patterns**: a static website for exploring how the popularity of Literotica stories varies with their
 characteristics, overall and within each of Literotica's genres. The controls are the question itself: "In [All
-genres], how do [favorites per 1,000 views] vary with [story length]?" For each group of stories the chart shows the
-median (with its value printed) and the interquartile range, with the number of stories behind every figure; the mean
-is in each group's details and in "Show the numbers". "Compare all 30 genres" shows the same relationship for every
-genre as small charts, and the Patterns page lists every clear pattern for a genre and a measure, topic by topic.
+genres], how does the [average rating] vary with [story length]?" (the default view; the average rating is the
+default measure and leads the measure menu). For each group of stories the chart shows the median (with its value
+printed) and the interquartile range, with the number of stories behind every figure; the mean is in each group's
+details and in "Show the numbers". "Compare all 30 genres" shows the same relationship for every genre as small
+charts, and the Patterns page lists every clear pattern for a genre and a measure, topic by topic.
 
 The site shows **descriptive associations only**, never causes, and it ships **only precomputed summaries of
 groups of stories**: no story text, titles, authors, addresses or story-by-story records.
@@ -143,9 +144,10 @@ public/
   favicon.svg             the chart's own mark: a capsule with a dot
 ```
 
-Wording that comes with the data (measure names, labels, topics, the Popular list, search synonyms, "only include"
-options, the example questions under "Keep exploring", US spelling) lives in `litcorr/stage2/wording.py`; rebuild the
-aggregates after editing it. Search synonyms are search-only text: they keep the spellings people type ("humour") and
+Wording that comes with the data (measure names, the order of the measure menu's groups and the default measure,
+labels, topics, the Popular list, search synonyms, "only include" options, the example questions under "Keep
+exploring", US spelling) lives in `litcorr/stage2/wording.py`; rebuild the aggregates after editing it. The measures
+themselves keep their order in `METRICS`: the aggregate files hold them by position. Search synonyms are search-only text: they keep the spellings people type ("humour") and
 are left out of the US-spelling conversion and checks. The masthead name is the `SITE_NAME` constant in `App.jsx`.
 
 ## Font

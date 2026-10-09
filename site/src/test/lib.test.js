@@ -11,7 +11,7 @@ import {
   formatValue,
   stepDecimals,
 } from "../lib/format.js";
-import { DEFAULT_STATE, parseHash, sanitize, toHash } from "../lib/urlState.js";
+import { DEFAULT_STATE, defaultMetric, parseHash, sanitize, toHash } from "../lib/urlState.js";
 import { aboutCount, ageNotes, chartTitle, howToRead, patternNote, segmentsText, strengthWord } from "../lib/wording.js";
 import { fixtureMeta, realMeta } from "./fixtures.js";
 
@@ -92,7 +92,10 @@ describe("addresses", () => {
     const s = sanitize({ mode: "weird", genre: "nope", metric: "nope", v: "nope", sub: "nope" }, fixtureMeta);
     expect(s.mode).toBe(DEFAULT_STATE.mode);
     expect(s.genre).toBe("all");
-    expect(s.metric).toBe(fixtureMeta.default_metric);
+    // the test data has no average rating (too few stories have one), so its first measure stands in
+    expect(fixtureMeta.default_metric).toBe("pop_rating");
+    expect(s.metric).toBe(defaultMetric(fixtureMeta));
+    expect(s.metric).toBe(fixtureMeta.metrics[0].id);
     expect(fixtureMeta.variables.map((v) => v.id)).toContain(s.v);
     expect(s.sub).toBe("all");
   });

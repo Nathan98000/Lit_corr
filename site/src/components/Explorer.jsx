@@ -11,6 +11,7 @@ import {
   patternNote,
   subtitleParts,
   takeawaySegments,
+  theMeasure,
 } from "../lib/wording.js";
 import { sanitize, toHash } from "../lib/urlState.js";
 import AgeCheck, { preloadAgeCheck } from "./AgeCheck.jsx";
@@ -202,7 +203,7 @@ function KeepExploring({ meta, view, d, onAsk }) {
             onPointerEnter={PatternBrowser.preload}
             onFocus={PatternBrowser.preload}
           >
-            Every clear pattern with {d.metric.noun}
+            Every clear pattern with {theMeasure(d.metric)}
             {genre.id === "all" ? " across all genres" : ` in ${genre.name}`} →
           </a>
         </li>

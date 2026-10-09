@@ -183,7 +183,7 @@ export default function Controls({ meta, state, onChange }) {
               {"\u2060,"}{" "}
             </>
           )}
-          how {p.aux}{" "}
+          how {p.aux} {p.article}
           <SlotButton
             ref={metricBtn}
             expanded={menu === "metric"}

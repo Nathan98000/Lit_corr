@@ -212,6 +212,18 @@ def _metas(built):
     return metas
 
 
+def test_ratings_lead_the_menu_and_the_measures_keep_their_order(built):
+    for meta in _metas(built):
+        assert meta["metric_groups"] == ["Rating", "Per 1,000 views", "Per month online", "Totals so far"]
+        assert meta["default_metric"] == W.DEFAULT_METRIC == "pop_rating"
+        # the aggregate files hold the measures by their position in meta.metrics, which follows METRICS
+        ids = [m["id"] for m in meta["metrics"]]
+        assert ids == [m["id"] for m in W.METRICS if m["id"] in ids]
+    real = _metas(built)[-1]
+    if len(real["variables"]) > 100:  # the real aggregates offer all ten measures, the average rating last
+        assert [m["id"] for m in real["metrics"]] == [m["id"] for m in W.METRICS]
+
+
 def test_topics_cover_every_characteristic_once_and_popular_ids_exist(built):
     for meta in _metas(built):
         ids = [v["id"] for v in meta["variables"]]

@@ -23,6 +23,14 @@ export function strengthWord(effect) {
   return "strong";
 }
 
+/**
+ * A measure where it starts a noun phrase in a sentence: a singular measure takes "the" ("How the average rating
+ * varies with …"), a plural one does not ("How favorites per 1,000 views vary with …").
+ */
+export function theMeasure(metric) {
+  return metric.plural ? metric.noun : `the ${metric.noun}`;
+}
+
 function where(genre) {
   return genre.id === "all" ? " across all genres" : ` in ${genre.name}`;
 }
@@ -36,8 +44,8 @@ export function chartTitle({ variable, metric, genre, direction, compare = false
   const verb = metric.plural ? "vary" : "varies";
   const binary = Boolean(variable.yes_subject);
   if (compare) {
-    if (binary) return `How ${metric.noun} ${verb} between ${lowerFirst(variable.yes_subject)} and ${variable.no_subject}, genre by genre`;
-    return `How ${metric.noun} ${verb} ${variable.bins.ordered ? "with" : "by"} ${variable.noun}, genre by genre`;
+    if (binary) return `How ${theMeasure(metric)} ${verb} between ${lowerFirst(variable.yes_subject)} and ${variable.no_subject}, genre by genre`;
+    return `How ${theMeasure(metric)} ${verb} ${variable.bins.ordered ? "with" : "by"} ${variable.noun}, genre by genre`;
   }
   if (direction && binary) {
     const what = direction > 0 ? metric.more : metric.less;
@@ -48,10 +56,10 @@ export function chartTitle({ variable, metric, genre, direction, compare = false
     return inGenre(genre, `${variable.more} tend to ${what}`);
   }
   if (binary) {
-    return `How ${metric.noun} ${verb} between ${lowerFirst(variable.yes_subject)} and ${variable.no_subject}${where(genre)}`;
+    return `How ${theMeasure(metric)} ${verb} between ${lowerFirst(variable.yes_subject)} and ${variable.no_subject}${where(genre)}`;
   }
-  if (!variable.bins.ordered) return `How ${metric.noun} ${verb} by ${variable.noun}${where(genre)}`;
-  return `How ${metric.noun} ${verb} with ${variable.noun}${where(genre)}`;
+  if (!variable.bins.ordered) return `How ${theMeasure(metric)} ${verb} by ${variable.noun}${where(genre)}`;
+  return `How ${theMeasure(metric)} ${verb} with ${variable.noun}${where(genre)}`;
 }
 
 /**
@@ -244,13 +252,15 @@ export function chartSummary({ rows, valueText, n }) {
 /**
  * The question sentence (concept B), in pieces so that each bracketed part can be a control:
  * "In [All genres], how do [favorites per 1,000 views] vary with [story length]?"
- * "does" for singular measures; "vary with" for ordered characteristics, "vary by" for unordered ones and
- * "differ between [first-person stories and third-person stories]" for yes/no ones.
+ * "does the" for singular measures ("how does the [average rating] vary"; the article stays outside the measure's
+ * word); "vary with" for ordered characteristics, "vary by" for unordered ones and "differ between [first-person
+ * stories and third-person stories]" for yes/no ones.
  */
 export function questionParts({ variable, metric }) {
   const binary = Boolean(variable.yes_subject);
   return {
     aux: metric.plural ? "do" : "does",
+    article: metric.plural ? "" : "the ",
     verb: binary ? "differ between" : variable.bins.ordered ? "vary with" : "vary by",
     measure: metric.noun,
     characteristic: binary ? `${lowerFirst(variable.yes_subject)} and ${variable.no_subject}` : variable.noun,
@@ -261,5 +271,5 @@ export function questionParts({ variable, metric }) {
 export function questionText({ variable, metric, genre, compare = false }) {
   const p = questionParts({ variable, metric });
   const lead = compare ? "Genre by genre," : `In ${genre.name},`;
-  return `${lead} how ${p.aux} ${p.measure} ${p.verb} ${p.characteristic}?`;
+  return `${lead} how ${p.aux} ${p.article}${p.measure} ${p.verb} ${p.characteristic}?`;
 }

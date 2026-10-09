@@ -2,7 +2,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { formatCount, formatDate } from "../lib/format.js";
 import { scrollBehavior } from "../lib/motion.js";
 import { searchCharacteristics } from "../lib/search.js";
-import { toHash } from "../lib/urlState.js";
+import { defaultMetric, toHash } from "../lib/urlState.js";
 import useMediaQuery from "./useMediaQuery.js";
 
 const REASONS = {
@@ -60,7 +60,7 @@ function Glossary({ meta }) {
   const [query, setQuery] = useState("");
   const byId = new Map(meta.variables.map((v) => [v.id, v]));
   const results = query.trim() ? searchCharacteristics(meta, query) : null;
-  const chart = (v) => toHash("explore", { mode: "one", genre: "all", metric: meta.default_metric, v: v.id, sub: "all" });
+  const chart = (v) => toHash("explore", { mode: "one", genre: "all", metric: defaultMetric(meta), v: v.id, sub: "all" });
   const entry = (v) => (
     <div key={v.id}>
       <dt>{v.label}</dt>

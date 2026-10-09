@@ -8,7 +8,7 @@ code splitting; concepts N1, G2, H3 (not H1), J2 and K1 (not K2); idea I8 only (
 recommended, with Open Graph tags but no share image, no dark mode and no second font weight this round. Sections
 1–9 are the review as written; what changed, with before and after numbers, is in section 10. Section 11 is round 3:
 the owner's follow-up changes, specified in `STAGE2_DESIGN_IMPLEMENTATION_3_PROMPT.md` and built on the same branch
-(October 9, 2026). Section 12 is the owner's five further changes after trying round 3, asked in chat the same day.*
+(October 9, 2026). Section 12 is the owner's six further changes after trying round 3, asked in chat the same day.*
 
 - Round 1 is [`DESIGN_REVIEW.md`](DESIGN_REVIEW.md); this document links to it rather than repeating it.
 - **Screenshots** are in [`design-review-2/`](design-review-2/): `b…` the site as it is now, `m…` mock-ups.
@@ -1052,7 +1052,8 @@ Palette-compressed; 1440 and 1280 px at half size.
 6. **Change 1, the chart's first draw** uses the width last measured for its kind ("chart", "compare", "age"), or the
    window's width minus the page's padding, instead of 720 px.
 7. **Change 4, How to read** keeps its last sentence ("Groups without an order …") only for characteristics without an
-   order, as in round 2 (10.5, item 20); the approved paragraph is otherwise word for word.
+   order, as in round 2 (10.5, item 20); the approved paragraph is otherwise word for word. *(The sentence is gone
+   since section 12, change 6.)*
 8. **Change 4, How it works' new sentence** is plain text, as in the approved copy (the old bold marked definitions
    that are gone); the chart's own "All stories shown: 0.54" label stays (the legend now says "Median of all stories
    shown"); "Stories with longer typical sentences" and "… paragraphs" stay (another use of "typical").
@@ -1135,8 +1136,8 @@ Palette-compressed; 1440 and 1280 px at half size.
 
 ## 12. The owner's follow-up to round 3
 
-After trying round 3 the owner asked, in chat, for five more changes. They are built on `design-review-2`, one
-commit each in the order asked, then this section; nothing is pushed. At the end `npm test` (**161 tests in 20
+After trying round 3 the owner asked, in chat, for five more changes, and for a sixth after reading their summary.
+They are built on `design-review-2`, one commit each in the order asked, then this section; nothing is pushed. At the end `npm test` (**161 tests in 20
 files**, was 159), `npm run build` and `python -m pytest tests/test_stage2_site_data.py` (20 tests) pass. Measured as
 in section 11, against a frozen copy of round 3's final build (`b1d812a`); `heads4.mjs` (the lines above the rows,
 for every characteristic, at five widths) and `docshots.mjs` (these screenshots) are added to the tools.
@@ -1148,6 +1149,7 @@ for every characteristic, at five widths) and `docshots.mjs` (these screenshots)
 | 3 | Make the key line less awkward | `0234c0b` | "↗ tends higher: the more of the characteristic a group of stories has (or, for yes/no ones, the group that has it), the higher its median average rating; ↘ tends lower: the lower." → "↗ tends higher: the more of the characteristic, the higher the median average rating (for yes/no characteristics: higher in stories that have it). ↘ tends lower: the opposite." |
 | 4 | Remove "(the axis starts at X)" | `6dcf99f` | "Average rating (the axis starts at 3.5)" → "Average rating", on the main chart and on "Stories of similar age"; rating axes still start on a labeled tick (F56), so the first tick label says where |
 | 5 | "Stories grouped by …" looks bunched up in the corner; make the chart more pleasing | `9e7304a` | at 768–1440 px the line wrapped into **2–4 lines** in the label column's corner for every characteristic → **one line** across the chart; the axis title sits on its ticks; no line for yes/no characteristics |
+| 6 | Remove the sentence in "How to read this chart" about not summing up as one trend | `f018c0d` | "Groups without an order, such as months, are shown side by side and not summed up as one trend." is gone; the paragraph is the same for every characteristic, and such a chart's heading still says "Each group on its own" |
 
 **Change 5, in detail.** The line was the heading of the label column, which is 156–180 px wide: "Stories grouped by
 story length in words" took two lines and the longest ("… the use of ‘he / she / they’ in the narration (per 1,000
@@ -1206,8 +1208,8 @@ runs. First load **149.8 KiB** of gzip bodies in 6 requests (was 149.9).
    titles of the chart's two directions; the distance does the grouping.
 5. **Change 5, yes/no characteristics** lose the line (an omission, not new wording); if the owner prefers one, "Stories
    with dialogue and stories without dialogue" can be built from the data's existing names for the two groups.
-6. **Change 1** leaves the explore page's "How to read this chart" sentence about groups without an order, which is
-   shown only on those charts.
+6. **Change 1** left the explore page's "How to read this chart" sentence about groups without an order (shown only on
+   those charts); change 6 removed it too, at the owner's request.
 7. **Change 2** removes the note's style too; the count line keeps 16 px before the buttons.
 
 **Still open**: as in 11.5, except the heading over the label column, which this section resolves.

@@ -164,7 +164,6 @@ export default function RangeChart({
   const axisTitle = (
     <p className="axis-title" aria-hidden="true">
       {metric.label}
-      {layout.lo > 0 ? ` (the axis starts at ${Number(layout.lo.toFixed(2)).toLocaleString("en-US")})` : ""}
     </p>
   );
   const svgClass = [active != null && "has-active", glide.gliding && "gliding"].filter(Boolean).join(" ");

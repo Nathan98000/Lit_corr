@@ -80,6 +80,16 @@ describe("one aligned chart, three columns", () => {
     ]);
   });
 
+  it("titles its axis with the measure's name alone, also when a rating axis is zoomed (the owner's follow-up, 4)", () => {
+    const rating = { id: "pop_rating", label: "Average rating", noun: "average rating", plural: false, format: "rating" };
+    const lift = (s) => (s.suppressed ? s : { ...s, median: 4 + s.median, p25: 4 + s.p25, p75: 4 + s.p75, mean: 4 + s.mean });
+    const ps = periods().map((p) => ({ ...p, rows: p.rows.map((r) => ({ ...r, stats: lift(r.stats) })), overall: lift(p.overall) }));
+    const { container } = render(<AgeChart meta={fixtureMeta} d={{ ...d, metric: rating }} periods={ps} />);
+    expect(container.querySelector(".age-axis-title").textContent).toBe("Average rating");
+    expect(Number(container.querySelector("text.age-tick").textContent)).toBeGreaterThan(3); // the first tick says where it starts
+    expect(container.textContent).not.toMatch(/axis starts/);
+  });
+
   it("gives screen readers the numbers in a hidden table: period × group, median and stories", () => {
     draw();
     const table = screen.getByRole("table");

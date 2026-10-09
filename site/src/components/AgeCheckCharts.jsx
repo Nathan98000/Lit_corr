@@ -253,7 +253,6 @@ export function AgeChart({ meta, d, periods }) {
     <div ref={ref} className="age-chart">
       <p className="age-axis-title" aria-hidden="true">
         {d.metric.label}
-        {L.lo > 0 ? ` (the axis starts at ${Number(L.lo.toFixed(2)).toLocaleString("en-US")})` : ""}
       </p>
       {L.side ? (
         <div className={`age-grid${L.colW < 110 ? " narrow" : ""}`} style={grid(3)}>

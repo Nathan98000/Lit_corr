@@ -140,16 +140,17 @@ describe("F56: the rating axis", () => {
   const stats = (median) => ({ n: 100, age: 6, median, p25: median - 0.15, p75: median + 0.1, mean: median });
   const rows = [4.19, 4.4, 4.65].map((m, index) => ({ index, label: `Group ${index + 1}`, stats: stats(m) }));
 
-  it("says where a zoomed axis starts", () => {
+  it("starts a zoomed axis on a labeled tick, and its title is the measure's name alone (the owner's follow-up, 4)", () => {
     const { container } = render(
       <RangeChart rows={rows} overall={stats(4.4)} metric={rating} variable={variable} smallN={30} minN={10} title="T" n={300} />,
     );
-    const title = container.querySelector(".axis-title").textContent;
-    expect(title).toMatch(/^Average rating \(the axis starts at \d(\.\d+)?\)$/);
-    const start = Number(title.match(/starts at ([\d.]+)/)[1]);
+    expect(container.querySelector(".axis-title").textContent).toBe("Average rating");
+    const first = container.querySelector(".tick-mark");
+    const start = Number(first.getAttribute("data-v"));
     expect(start).toBeGreaterThan(3);
     expect(start).toBeLessThan(4.04);
-    expect(Number(container.querySelector(".tick-mark").getAttribute("data-v"))).toBeCloseTo(start);
+    expect(Number(first.querySelector("text").textContent)).toBeCloseTo(start); // where the axis starts is printed
+    expect(container.textContent).not.toMatch(/axis starts/);
   });
 
   it("says nothing more for axes that start at zero", () => {

@@ -10,15 +10,21 @@ import {
   takeawayLists,
 } from "../lib/genres.js";
 import { subsetConflict, toHash } from "../lib/urlState.js";
+import { mixColors } from "../lib/genreLayout.js";
 import CopyLink from "./CopyLink.jsx";
 import GenreChart from "./GenreChart.jsx";
+import GenreMix from "./GenreMix.jsx";
+import GenreSplit from "./GenreSplit.jsx";
 import GenreTable from "./GenreTable.jsx";
 
 export const HOW_DECIDED = toHash("methodology", { section: "genres" });
 const RECENT = "y2020"; // "Published 2020 or later", the age notes' comparison
 
-/** The key of the forms: what the marks and lines mean, and the link to how a difference is decided. */
-export function GenreLegend({ kind, anySmall, smallN }) {
+/**
+ * The key of the forms: what the marks and lines mean, and the link to how a difference is decided; for named groups
+ * and bands, the groups' swatches (`groups`: [{ label, fill }]).
+ */
+export function GenreLegend({ kind, anySmall, smallN, groups = null }) {
   const decided = (
     <>
       {" "}
@@ -30,6 +36,51 @@ export function GenreLegend({ kind, anySmall, smallN }) {
       <span className="key key-small" aria-hidden="true" /> Fewer than {smallN} stories
     </li>
   );
+  if (kind === "grp" || kind === "band") {
+    return (
+      <ul className="legend genre-legend">
+        {groups.map((g) => (
+          <li key={g.label}>
+            <span className="key key-swatch" aria-hidden="true" style={{ background: g.fill }} /> {g.label}
+          </li>
+        ))}
+        <li>
+          <span>
+            {kind === "grp" ? (
+              <>
+                <span aria-hidden="true">≠</span> A clearly different mix
+              </>
+            ) : (
+              <>
+                <span aria-hidden="true">▲▼</span> Clearly higher or lower than all genres
+              </>
+            )}
+            {decided}
+          </span>
+        </li>
+        {small}
+      </ul>
+    );
+  }
+  if (kind === "zero") {
+    return (
+      <ul className="legend genre-legend">
+        <li>
+          <span className="key key-share" aria-hidden="true" /> Share of stories above 0
+        </li>
+        <li>
+          <span className="key key-median" aria-hidden="true" />
+          <span className="key key-iqr" aria-hidden="true" /> Median and interquartile range among stories above 0
+        </li>
+        <li>
+          <span>
+            <span aria-hidden="true">▲▼</span> Clearly higher or lower than all genres{decided}
+          </span>
+        </li>
+        {small}
+      </ul>
+    );
+  }
   if (kind === "bin") {
     return (
       <ul className="legend genre-legend">
@@ -114,22 +165,24 @@ export default function GenreAnswer({ meta, state, file, busy, onChange, onNavig
     sub: state.sub,
   });
 
-  let chart = null;
-  if (kind === "num" || kind === "bin") {
-    chart = (
-      <GenreChart
-        key={`${variable.id}/${file.s}`}
-        meta={meta}
-        variable={variable}
-        entry={entry}
-        rows={ordered}
-        highlight={state.genre}
-        sub={state.sub}
-        title={`${question} ${heading}`}
-        onNavigate={onNavigate}
-      />
-    );
-  }
+  const chartProps = {
+    meta,
+    variable,
+    entry,
+    rows: ordered,
+    highlight: state.genre,
+    sub: state.sub,
+    title: `${question} ${heading}`,
+    onNavigate,
+  };
+  const Chart = kind === "zero" ? GenreSplit : kind === "grp" || kind === "band" ? GenreMix : GenreChart;
+  const groups =
+    kind === "grp" || kind === "band"
+      ? mixColors(kind, rows[0].stats?.shares || variable.bins.labels.map(() => 0)).map((c, b) => ({
+          label: variable.bins.labels[b],
+          fill: c.fill,
+        }))
+      : null;
 
   return (
     <article className={`chart-panel genre-answer${busy ? " is-busy" : ""}`} aria-busy={busy}>
@@ -155,8 +208,8 @@ export default function GenreAnswer({ meta, state, file, busy, onChange, onNavig
         </div>
       )}
       {spread && <AgeNote meta={meta} variable={variable} text={ageNoteText(spread)} onCompare={(sub) => onChange({ ...state, sub })} />}
-      <GenreLegend kind={kind} anySmall={anySmall} smallN={meta.small_n} />
-      {chart}
+      <GenreLegend kind={kind} anySmall={anySmall} smallN={meta.small_n} groups={groups} />
+      <Chart key={`${variable.id}/${file.s}`} {...chartProps} />
       <GenreTable
         meta={meta}
         variable={variable}

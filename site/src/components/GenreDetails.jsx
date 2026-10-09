@@ -1,5 +1,7 @@
-import { standsOutQuestion } from "../lib/genres.js";
+import { useRef } from "react";
+import { rowDetails, standsOutQuestion } from "../lib/genres.js";
 import { toHash } from "../lib/urlState.js";
+import useRowDetails from "./useRowDetails.js";
 
 const plainClick = (e) => !(e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey);
 
@@ -100,5 +102,72 @@ export function DetailsLine({ row, details, by, lineRef, onLeave, onEscape, sub,
       )}
       {by === "tap" && <span className="muted"> Tap again to close.</span>}
     </div>
+  );
+}
+
+/** About how tall a details card is (its title, a line per number, the comparison and the link). */
+export const cardHeight = (details) => 70 + 19 * details.items.length + (details.comparison ? 22 : 0);
+
+/**
+ * The details of a chart's genres (rows of the Genres page's charts): useRowDetails() for the keyboard and the
+ * pointer, the shown genre's numbers, and what the card or the line needs.
+ */
+export function useGenreDetails({ ids, frame, phone, byIndex, variable, entry, minN }) {
+  const detailsRef = useRef(null);
+  const { shown, setShown, rowProps } = useRowDetails({ ids, frame, phone, within: detailsRef });
+  const active = shown?.i ?? null;
+  const row = active == null ? null : byIndex.get(active);
+  return {
+    shown,
+    active,
+    row,
+    details: row ? rowDetails(row, variable, entry, minN) : null,
+    rowProps,
+    detailsRef,
+    // focus leaving the details for somewhere outside the chart hides details that focus showed
+    leave: (e) => {
+      if (!frame.current?.contains(e.relatedTarget)) setShown((s) => (s?.by === "focus" ? null : s));
+    },
+    backToRow: () => {
+      frame.current?.querySelector(".row[tabindex='0']")?.focus();
+      setShown(null);
+    },
+  };
+}
+
+/**
+ * The shown genre's details: a line under the chart on phones, else a card under its row (above it near the chart's
+ * end), centered on `x` and kept inside the chart.
+ */
+export function GenreRowDetails({ d, phone, geom, x, height, width, sub, onNavigate }) {
+  if (phone) {
+    return (
+      <DetailsLine
+        row={d.row}
+        details={d.details}
+        by={d.shown?.by}
+        lineRef={d.detailsRef}
+        onLeave={d.leave}
+        onEscape={d.backToRow}
+        sub={sub}
+        onNavigate={onNavigate}
+      />
+    );
+  }
+  if (!d.row || !geom) return null;
+  const above = geom.y1 + cardHeight(d.details) > height;
+  return (
+    <DetailsCard
+      row={d.row}
+      details={d.details}
+      pinned={d.shown.by === "tap"}
+      above={above}
+      cardRef={d.detailsRef}
+      onLeave={d.leave}
+      onEscape={d.backToRow}
+      sub={sub}
+      onNavigate={onNavigate}
+      style={{ left: Math.min(Math.max(x, 140), width - 140), top: above ? geom.y0 - 2 : geom.y1 + 2 }}
+    />
   );
 }

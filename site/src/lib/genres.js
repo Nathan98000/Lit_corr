@@ -313,6 +313,11 @@ export function rowDetails(row, variable, entry, minN) {
     numbers.push(["Share", formatPercent(s.share)]);
     said.push(`${formatPercent(s.share)} ${lowerFirst(variable.yes_subject)}`);
   } else {
+    if (kind === "band") {
+      const median = variable.bins.labels[bandQuartiles(s.shares).median];
+      numbers.push(["Median", median]);
+      said.push(`median ${median}`);
+    }
     variable.bins.labels.forEach((label, b) => {
       numbers.push([label, formatPercent(s.shares[b])]);
       said.push(`${label} ${formatPercent(s.shares[b])}`);

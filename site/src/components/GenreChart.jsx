@@ -1,12 +1,8 @@
 import { useId, useRef } from "react";
 import { chartDomain, chartRows, printedFor, rowDetails, tickFormatFor } from "../lib/genres.js";
 import { PHONE, rangeLayout } from "../lib/rangeLayout.js";
-import { DetailsCard, DetailsLine } from "./GenreDetails.jsx";
-import useRowDetails from "./useRowDetails.js";
+import { GenreRowDetails, useGenreDetails } from "./GenreDetails.jsx";
 import useWidth from "./useWidth.js";
-
-/** About how tall a details card is (its title, a line per number, the comparison and the link). */
-export const cardHeight = (details) => 70 + 19 * details.items.length + (details.comparison ? 22 : 0);
 
 /**
  * One characteristic in every genre, for numbers (num: each genre's interquartile range as a capsule and its median as
@@ -24,7 +20,6 @@ export default function GenreChart({ meta, variable, entry, rows, highlight, sub
   const { min_n: minN, small_n: smallN } = meta;
   const [ref, width] = useWidth(720, "genres");
   const frame = useRef(null);
-  const details = useRef(null);
   const ids = useId();
   const titleId = `${ids}-title`;
   const hatchId = `${ids}-hatch`.replace(/:/g, "");
@@ -47,20 +42,11 @@ export default function GenreChart({ meta, variable, entry, rows, highlight, sub
     noneText: `Fewer than ${minN} stories`,
   });
   const phone = layout.width < PHONE;
-  const { shown, setShown, rowProps } = useRowDetails({ ids: layout.rows.map((r) => r.index), frame, phone, within: details });
   const byIndex = new Map(rows.map((r) => [r.i, r]));
-  const active = shown?.i ?? null;
+  const d = useGenreDetails({ ids: layout.rows.map((r) => r.index), frame, phone, byIndex, variable, entry, minN });
+  const { active, rowProps } = d;
   const activeRow = active == null ? null : layout.rows.find((r) => r.index === active);
-  const activeDetails = activeRow ? rowDetails(byIndex.get(active), variable, entry, minN) : null;
   const x = layout.x;
-  // focus leaving the details for somewhere outside the chart hides details that focus showed
-  const leave = (e) => {
-    if (!frame.current?.contains(e.relatedTarget)) setShown((s) => (s?.by === "focus" ? null : s));
-  };
-  const backToRow = () => {
-    frame.current?.querySelector(".row[tabindex='0']")?.focus();
-    setShown(null);
-  };
   const svgClass = active != null ? "has-active" : undefined;
 
   return (
@@ -178,37 +164,16 @@ export default function GenreChart({ meta, variable, entry, rows, highlight, sub
             );
           })}
         </svg>
-        {phone && (
-          <DetailsLine
-            row={activeRow ? byIndex.get(active) : null}
-            details={activeDetails}
-            by={shown?.by}
-            lineRef={details}
-            onLeave={leave}
-            onEscape={backToRow}
-            sub={sub}
-            onNavigate={onNavigate}
-          />
-        )}
-        {activeRow && !phone && (
-          <DetailsCard
-            row={byIndex.get(active)}
-            details={activeDetails}
-            pinned={shown.by === "tap"}
-            above={activeRow.y1 + cardHeight(activeDetails) > layout.height}
-            cardRef={details}
-            onLeave={leave}
-            onEscape={backToRow}
-            sub={sub}
-            onNavigate={onNavigate}
-            style={{
-              left: Math.min(Math.max(activeRow.dotX ?? layout.left + 80, 140), layout.width - 140),
-              ...(activeRow.y1 + cardHeight(activeDetails) > layout.height
-                ? { top: activeRow.y0 - 2 }
-                : { top: activeRow.y1 + 2 }),
-            }}
-          />
-        )}
+        <GenreRowDetails
+          d={d}
+          phone={phone}
+          geom={activeRow}
+          x={activeRow?.dotX ?? layout.left + 80}
+          height={layout.height}
+          width={layout.width}
+          sub={sub}
+          onNavigate={onNavigate}
+        />
       </div>
     </div>
   );

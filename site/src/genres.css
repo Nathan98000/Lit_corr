@@ -212,3 +212,179 @@
   font-weight: 600;
   color: var(--ink);
 }
+
+/* ------------------------------------------------------------------ named groups and bands: 100% bars */
+.genre-mix svg {
+  display: block;
+  overflow: visible;
+  font-family: var(--sans);
+}
+
+.genre-mix .glabel {
+  fill: var(--ink);
+  font-size: 14px;
+}
+
+.genre-mix .gn,
+.genre-mix .stories-head {
+  fill: var(--ink-3);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.genre-mix .gnone {
+  fill: var(--ink-3);
+  font-size: 12.5px;
+  font-style: italic;
+}
+
+.genre-mix .gmark {
+  fill: var(--ink);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.genre-mix .segment {
+  stroke: #fff;
+  stroke-width: 1;
+}
+
+.genre-mix .bar-outline {
+  fill: none;
+  stroke: var(--rule-2);
+}
+
+.genre-mix .row.small .bar-outline {
+  stroke: var(--control);
+  stroke-dasharray: 3 2;
+}
+
+.genre-mix .hatch-over {
+  stroke: rgb(255 255 255 / 0.65);
+  stroke-width: 2.4;
+}
+
+.genre-mix .seglab {
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.genre-mix .band-all {
+  fill: var(--band);
+}
+
+.genre-mix .band-highlight {
+  fill: var(--accent-wash);
+}
+
+.genre-mix .all-rule {
+  stroke: var(--rule-2);
+}
+
+.genre-mix .row {
+  cursor: pointer;
+  outline: none;
+  transition: opacity 120ms ease-out;
+}
+
+.genre-mix .row-hit {
+  fill: transparent;
+}
+
+.genre-mix .row:hover .row-hit,
+.genre-mix .row.active .row-hit {
+  fill: rgb(74 137 243 / 0.06);
+}
+
+.genre-mix .row:focus-visible .row-hit {
+  fill: rgb(74 137 243 / 0.1);
+  stroke: var(--accent-ink);
+  stroke-width: 2px;
+}
+
+.genre-mix svg.has-active .row:not(.active) {
+  opacity: 0.5;
+}
+
+.genre-mix .row.all .glabel,
+.genre-mix .row.highlight .glabel,
+.genre-mix .row.active .glabel {
+  font-weight: 600;
+}
+
+.genre-legend .key-swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 2px;
+  border: 1px solid var(--control);
+}
+
+/* ------------------------------------------------------------------ mostly zero: the split chart */
+.split-heads {
+  display: grid;
+  margin: 14px 0 -4px;
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--ink-2);
+}
+
+.split-heads span + span {
+  padding-right: 12px;
+}
+
+.split-head {
+  margin: 14px 0 -2px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+
+.genre-split .split-plot {
+  margin-top: 4px;
+}
+
+@media (forced-colors: active) {
+  .genre-mix svg,
+  .genre-legend .key-swatch {
+    forced-color-adjust: none;
+  }
+
+  .genre-mix .glabel,
+  .genre-mix .gn,
+  .genre-mix .gmark,
+  .genre-mix .gnone,
+  .genre-mix .stories-head {
+    fill: CanvasText;
+  }
+
+  .genre-mix .segment {
+    stroke: CanvasText;
+  }
+
+  .genre-mix .bar-outline {
+    stroke: CanvasText;
+  }
+
+  .genre-mix .band-all {
+    fill: Canvas;
+    stroke: GrayText;
+  }
+
+  .genre-mix .band-highlight {
+    fill: Canvas;
+    stroke: Highlight;
+    stroke-width: 2px;
+  }
+
+  .genre-mix .row-hit,
+  .genre-mix .row:hover .row-hit,
+  .genre-mix .row.active .row-hit {
+    fill: transparent;
+  }
+
+  .genre-mix .row:focus-visible .row-hit {
+    stroke: Highlight;
+  }
+}

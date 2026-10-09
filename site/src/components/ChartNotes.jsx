@@ -15,8 +15,8 @@ function AgeBox({ note, action }) {
 
 /**
  * The notes beside (wide screens, E2) or under (narrow screens, E1) a one-genre chart: story-age warnings first, as
- * boxes with an action; then how to read the chart, what the characteristic measures and what the measure means
- * (one-line disclosures on narrow screens, plain text in the margin on wide ones).
+ * open boxes with an action; then how to read the chart, what the characteristic measures and what the measure means,
+ * as one-line disclosures at every width (concept N1 of the second review), so the margin is about the chart shown.
  */
 export default function ChartNotes({ meta, d, view, wide, onChange, ageCheckOpen, onCheckAge, onAgeCheckHint, ageButton }) {
   const { variable, metric } = d;
@@ -66,19 +66,12 @@ export default function ChartNotes({ meta, d, view, wide, onChange, ageCheckOpen
   return (
     <div className={wide ? "notes notes-margin" : "notes notes-stack"}>
       {boxes}
-      {wide
-        ? sections.map((s) => (
-            <div key={s.id} className="note-block">
-              <h3>{s.title}</h3>
-              <p>{s.body}</p>
-            </div>
-          ))
-        : sections.map((s) => (
-            <details key={s.id} className="disclosure">
-              <summary>{s.title}</summary>
-              <p>{s.body}</p>
-            </details>
-          ))}
+      {sections.map((s) => (
+        <details key={s.id} className="disclosure">
+          <summary>{s.title}</summary>
+          <p>{s.body}</p>
+        </details>
+      ))}
     </div>
   );
 }

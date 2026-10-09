@@ -1388,17 +1388,14 @@ table.numbers {
   font-size: 14px;
 }
 
-.notes-margin .note-block h3 {
-  font-family: var(--sans);
-  font-size: 13px;
-  font-weight: 650;
-  letter-spacing: 0;
-  color: var(--ink);
-  margin: 0 0 4px;
+/* in the margin, the explanations are the phones' disclosures at 14 px (concept N1) */
+.notes-margin .disclosure summary {
+  min-height: var(--target);
+  font-size: 14px;
 }
 
-.notes-margin .note-block p {
-  margin: 0 0 16px;
+.notes-margin .disclosure p {
+  font-size: 14px;
 }
 
 .agebox {

@@ -20,7 +20,9 @@ import {
   orderRows,
   plainUnit,
   rowDetails,
+  rowsHeading,
   takeawayLists,
+  tooFewLine,
   withUnit,
 } from "../lib/genres.js";
 import { fixtureFetch, fixtureFile, fixtureMeta, realMeta } from "./fixtures.js";
@@ -133,13 +135,58 @@ describe("headings and lists", () => {
 
   it("render the heading, the lists with their marks and the All genres line", async () => {
     await openGenres("#/genres?var=dlg_word_share");
-    expect(heading()).toBe("2 of 3 genres clearly differ from all genres");
+    // Tiny Genre (8 stories) is not compared: the heading counts the genres compared (F63) and the takeaway names it
+    expect(heading()).toBe("2 of 2 genres clearly differ from all genres");
+    expect(document.querySelector(".genre-takeaway .too-few").textContent).toBe("Too few stories to compare: Tiny Genre (fewer than 10).");
     const lists = [...document.querySelectorAll(".genre-list")].map((p) => p.textContent);
     expect(lists).toEqual(["▲ More dialogue: Fetish.", "▼ Less dialogue: Romance."]); // D10's words
     expect(document.querySelector(".all-line").textContent).toMatch(
       /^All genres: median \d+%, interquartile range \d+%–\d+%\. Genre medians run from \d+% to \d+%\.$/,
     );
     expect(document.querySelector(".all-line strong")).toBeTruthy();
+  });
+});
+
+describe("genres with too few stories to compare (F63)", () => {
+  it.skipIf(!real)("are left out of the heading's count and named after the takeaway, A–Z", () => {
+    const say = (sub, id) => {
+      const rows = genreRows(real, realFile(sub), id);
+      return [rowsHeading(rows), tooFewLine(rows, real.min_n)];
+    };
+    expect(say("y2020", "story_words")).toEqual([
+      "8 of 29 genres clearly differ from all genres",
+      "Too few stories to compare: Chain Stories (12).",
+    ]);
+    expect(say("long", "sex_terms_per_1k")).toEqual([
+      "12 of 27 genres clearly differ from all genres",
+      "Too few stories to compare: How To (13), Letters & Transcripts (29), Reviews & Essays (15).",
+    ]);
+    // a genre with fewer than 10 stories with the characteristic: the file has no count for it
+    expect(say("long", "dlg_adverb_tag_share")[1]).toBe(
+      "Too few stories to compare: How To (fewer than 10), Letters & Transcripts (14), Reviews & Essays (fewer than 10).",
+    );
+  });
+
+  it.skipIf(!real)("change nothing with All stories, except where missing values leave a genre under 30 stories", () => {
+    const file = realFile();
+    const changed = Object.keys(file.c).filter((id) => tooFewLine(genreRows(real, file, id), real.min_n));
+    expect(changed).toEqual(["dlg_adverb_tag_share", "sex_first_scene_position"]);
+    const adverbs = genreRows(real, file, "dlg_adverb_tag_share");
+    expect(adverbs.filter((r) => !r.all && r.stats && !r.small)).toHaveLength(28); // 28 genres compared, none marked
+    expect(rowsHeading(adverbs)).toBe("No genre clearly differs from all genres");
+    expect(tooFewLine(adverbs, real.min_n)).toBe("Too few stories to compare: How To (28), Reviews & Essays (20).");
+    expect(rowsHeading(genreRows(real, file, "sex_first_scene_position"))).toBe("6 of 29 genres clearly differ from all genres");
+    expect(rowsHeading(genreRows(real, file, "story_words"))).toBe("8 of 30 genres clearly differ from all genres");
+  });
+
+  it("say the same in the chart's name and the live region", async () => {
+    await openGenres("#/genres?var=dlg_word_share");
+    const svg = document.querySelector(".genre-chart svg[role=group]");
+    expect(document.getElementById(svg.getAttribute("aria-labelledby")).textContent).toBe(
+      "How do genres differ in dialogue share? 2 of 2 genres clearly differ from all genres",
+    );
+    const live = () => document.querySelector(".genres-page > [aria-live='polite']").textContent;
+    await waitFor(() => expect(live()).toMatch(/^2 of 2 genres clearly differ from all genres\. /));
   });
 });
 
@@ -187,7 +234,7 @@ describe("the chart", () => {
     await waitFor(() => expect(document.querySelector(".genre-chart.kind-bin")).toBeTruthy());
     expect(document.querySelectorAll(".genre-chart .share-bar").length).toBe(3);
     expect(document.querySelectorAll(".genre-chart .iqr").length).toBe(0);
-    expect(heading()).toBe("1 of 3 genres clearly differs from all genres");
+    expect(heading()).toBe("1 of 2 genres clearly differs from all genres");
     expect(document.querySelector(".genre-list").textContent).toBe("▲ More common: Romance.");
     expect(document.querySelector(".all-line").textContent).toMatch(/^All genres: stories with dialogue make up \d+% of stories\./);
   });
@@ -341,7 +388,9 @@ describe("the numbers and the actions", () => {
     const user = await openGenres("#/genres?var=dlg_word_share");
     const live = () => document.querySelector(".genres-page > [aria-live='polite']").textContent;
     await waitFor(() =>
-      expect(live()).toMatch(/^2 of 3 genres clearly differ from all genres\. ▲ More dialogue: Fetish\. ▼ Less dialogue: Romance\. All genres: median/),
+      expect(live()).toMatch(
+        /^2 of 2 genres clearly differ from all genres\. ▲ More dialogue: Fetish\. ▼ Less dialogue: Romance\. All genres: median .* Too few stories to compare: Tiny Genre \(fewer than 10\)\.$/,
+      ),
     );
     const said = live();
     await user.click(screen.getByRole("radio", { name: "By median" }));

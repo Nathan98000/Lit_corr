@@ -88,7 +88,7 @@ describe("the heading and the takeaway", () => {
     await openGenre("#/genres?view=genre&genre=fetish&include=all");
     expect(heading()).toBe("No characteristic clearly sets Fetish apart from all genres");
     expect(document.querySelector(".profile-none").textContent).toBe(
-      "Its stories are close to those of all genres on each of the 4 characteristics.",
+      "Its stories are close to those of all genres on each of the 4 characteristics compared.",
     );
     expect(document.querySelector(".profile-takeaway")).toBeNull();
     expect(document.querySelectorAll(".profile-list")).toHaveLength(0); // empty lists are left out
@@ -189,7 +189,7 @@ describe("edge states", () => {
     await waitFor(() => expect(window.location.hash).toBe("#/genres?view=genre&genre=tiny&include=all"));
   });
 
-  it("draws a genre with fewer than 30 stories as uncertain, and marks nothing", async () => {
+  it("says a genre with 10 to 29 stories is too few to compare, and keeps its numbers by topic (F60)", async () => {
     const serve = fixtureFetch();
     vi.stubGlobal("fetch", async (url) => {
       const res = await serve(url);
@@ -204,10 +204,25 @@ describe("edge states", () => {
       return { ok: true, status: 200, json: async () => body };
     });
     const user = await openGenre("#/genres?view=genre&genre=romance&include=all");
-    expect(heading()).toBe("No characteristic clearly sets Romance apart from all genres");
+    expect(heading()).toBe("Fewer than 30 stories in Romance match “All stories”: too few to compare.");
+    expect(document.querySelector(".profile-none")).toBeNull(); // never "close to all genres" when nothing was compared
+    expect(document.querySelectorAll(".profile-list")).toHaveLength(0);
+    expect(document.querySelectorAll(".profile-topic").length).toBeGreaterThan(0);
     await user.click(document.querySelector(".profile-topic summary"));
     await waitFor(() => expect(document.querySelector(".profile-row.small")).toBeTruthy());
     expect(document.querySelector(".profile-row.small .visually-hidden").textContent).toMatch(/; too few stories to compare\. Opens/);
+  });
+
+  it("offers all stories when an option leaves a genre with 10 to 29 stories (F60)", async () => {
+    // the test data's "5,000 words or more", as built: Romance has 15 stories, so no r and no flag
+    vi.stubGlobal("fetch", fixtureFetch());
+    const user = await openGenre("#/genres?view=genre&genre=romance&include=long");
+    expect(heading()).toBe("Fewer than 30 stories in Romance match “5,000 words or more”: too few to compare.");
+    expect(document.querySelector(".profile-takeaway")).toBeNull();
+    expect(document.querySelectorAll(".profile-topic").length).toBeGreaterThan(0);
+    expect(document.querySelector(".profile-topic-count").textContent).toMatch(/^\d+ characteristics?$/);
+    await user.click(screen.getByRole("button", { name: "Show all stories" }));
+    await waitFor(() => expect(window.location.hash).toBe("#/genres?view=genre&genre=romance&include=all"));
   });
 
   it("notes the story age when the genre's and all genres' are 3 or more years apart, with All stories", async () => {
@@ -245,6 +260,23 @@ describe("one genre on the real data", () => {
       "28 characteristics clearly set Romance apart from all genres. Biggest differences: sexual language (less), " +
         "the share of sentences with sexual language (lower), anatomical terms (less).",
     );
+  });
+
+  it.skipIf(!real)("says Chain Stories' 12 stories of 2020 or later are too few to compare (F60)", () => {
+    const file = realFile("y2020");
+    const gi = file.genres.indexOf("chain-stories");
+    expect(file.n[gi]).toBe(12);
+    expect(profileAnnouncement(real, file, { genre: "chain-stories", sub: "y2020" })).toBe(
+      "Fewer than 30 stories in Chain Stories match “Published 2020 or later”: too few to compare.",
+    );
+    const p = genreProfile(real, file, gi);
+    expect([p.flagged.length, p.compared]).toEqual([0, 0]);
+    expect(p.items.length).toBe(183); // every characteristic's numbers are there, by topic
+    // a genre with enough stories: the topics count only the characteristics compared
+    const all = realFile();
+    const howTo = genreProfile(real, all, all.genres.indexOf("adult-how-to"));
+    expect(howTo.compared).toBeLessThan(howTo.items.length); // the adverbs in speech tags: How To has 28 stories with them
+    expect(howTo.topics.reduce((sum, t) => sum + t.compared, 0)).toBe(howTo.compared);
   });
 
   it.skipIf(!real)("writes the values as the copy does", () => {

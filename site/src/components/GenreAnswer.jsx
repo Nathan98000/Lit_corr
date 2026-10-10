@@ -3,12 +3,13 @@ import {
   ageNoteText,
   ageSpread,
   allGenresLine,
-  chartHeading,
   chartQuestionText,
   genreRows,
   nounOf,
   orderRows,
+  rowsHeading,
   takeawayLists,
+  tooFewLine,
 } from "../lib/genres.js";
 import { subsetConflict, toHash } from "../lib/urlState.js";
 import { mixColors } from "../lib/genreLayout.js";
@@ -152,9 +153,10 @@ export default function GenreAnswer({ meta, state, file, busy, onChange, onSwitc
   const kind = entry.k;
   const rows = genreRows(meta, file, state.v);
   const ordered = orderRows(rows, kind, state.sort);
-  const heading = chartHeading(rows.filter((r) => !r.all && r.f).length, meta.genres.length - 1);
+  const heading = rowsHeading(rows);
   const lists = takeawayLists(rows, variable, kind);
   const allLine = allGenresLine(rows, variable, entry);
+  const tooFew = tooFewLine(rows, meta.min_n);
   const spread = state.sub === "all" ? ageSpread(file) : null;
   const anySmall = rows.some((r) => r.small);
   const question = chartQuestionText(variable);
@@ -192,7 +194,7 @@ export default function GenreAnswer({ meta, state, file, busy, onChange, onSwitc
           {heading}
         </h2>
       </header>
-      {(lists.length > 0 || allLine) && (
+      {(lists.length > 0 || allLine || tooFew) && (
         <div className="takeaway genre-takeaway">
           {lists.map((l) => (
             <p key={l.mark} className="genre-list">
@@ -208,6 +210,7 @@ export default function GenreAnswer({ meta, state, file, busy, onChange, onSwitc
               {allLine.map((seg, i) => (typeof seg === "string" ? seg : <strong key={i}>{seg.strong}</strong>))}
             </p>
           )}
+          {tooFew && <p className="too-few muted">{tooFew}</p>}
         </div>
       )}
       {spread && <AgeNote meta={meta} variable={variable} text={ageNoteText(spread)} onCompare={(sub) => onSwitch({ ...state, sub })} />}

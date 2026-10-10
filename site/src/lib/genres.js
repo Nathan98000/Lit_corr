@@ -181,6 +181,24 @@ export function flagLists(rows, kind) {
   return { up: flagged.filter((r) => r.f > 0).sort(bySize), down: flagged.filter((r) => r.f < 0).sort(bySize), mix: [] };
 }
 
+/**
+ * The genres compared with all genres: those with at least the rule's min_n stories with the characteristic in this
+ * option (their r is in the file); the heading's denominator (F63).
+ */
+export const comparedRows = (rows) => rows.filter((r) => !r.all && r.stats && !r.small);
+
+/**
+ * The genres left out of the comparison, A–Z, with their stories: "Too few stories to compare: Chain Stories (12)."
+ * (a genre with fewer than meta.min_n stories, whose count the file leaves out: "(fewer than 10)"); null when every
+ * genre is compared.
+ */
+export function tooFewLine(rows, minN) {
+  const left = rows.filter((r) => !r.all && (!r.stats || r.small));
+  if (!left.length) return null;
+  const named = left.map((r) => `${r.genre.name} (${r.stats ? formatCount(r.stats.n) : `fewer than ${minN}`})`);
+  return `Too few stories to compare: ${named.join(", ")}.`;
+}
+
 /** The heading of one characteristic in every genre: "8 of 30 genres clearly differ from all genres". */
 export function chartHeading(count, total) {
   if (!count) return "No genre clearly differs from all genres";
@@ -334,8 +352,9 @@ export function rowDetails(row, variable, entry, minN) {
 // ------------------------------------------------------------------------------------------------- one genre
 /**
  * "One genre" (View 2) for genre index `gi`: every characteristic of the file (browsing order) with its flag,
- * { lower, higher, mix } (flagged, ordered by the size of the difference; ties in browsing order) and the topics
- * (meta.topics' order) with their characteristics and how many stand out.
+ * { lower, higher, mix } (flagged, ordered by the size of the difference; ties in browsing order), how many were
+ * compared, and the topics (meta.topics' order) with their characteristics, how many stand out and how many were
+ * compared.
  */
 export function genreProfile(meta, file, gi) {
   const byId = new Map(meta.variables.map((v) => [v.id, v]));
@@ -356,14 +375,17 @@ export function genreProfile(meta, file, gi) {
   });
   const bySize = (a, b) => Math.abs(b.r) - Math.abs(a.r) || a.pos - b.pos;
   const flagged = items.filter((x) => x.f);
+  // compared: the characteristics with at least the rule's min_n stories in the genre (their r is in the file)
+  const compared = (list) => list.filter((x) => x.r != null).length;
   const topics = meta.topics
     .map((topic) => {
       const own = items.filter((x) => x.variable.topic === topic.id);
-      return { topic, items: own, count: own.filter((x) => x.f).length };
+      return { topic, items: own, count: own.filter((x) => x.f).length, compared: compared(own) };
     })
     .filter((t) => t.items.length);
   return {
     items,
+    compared: compared(items),
     flagged: [...flagged].sort(bySize),
     lower: flagged.filter((x) => x.kind !== "grp" && x.f < 0).sort(bySize),
     higher: flagged.filter((x) => x.kind !== "grp" && x.f > 0).sort(bySize),
@@ -501,15 +523,25 @@ export function tickFormatFor(kind, fmt) {
 /** The value printed in a row's column: the median, or the share. */
 export const printedFor = (kind, fmt) => (stats) => (kind === "bin" ? formatPercent(stats.median) : formatNumber(stats.median, fmt));
 
-/** What screen readers hear for one characteristic: the heading, then the takeaway's lists and All genres line. */
+/** The heading of a characteristic's rows: the genres that clearly differ, of those compared (F63). */
+export const rowsHeading = (rows) => chartHeading(rows.filter((r) => !r.all && r.f).length, comparedRows(rows).length);
+
+/**
+ * What screen readers hear for one characteristic: the heading, then the takeaway's lists, All genres line and the
+ * genres with too few stories to compare.
+ */
 export function chartAnnouncement(meta, file, variable) {
   const entry = file.c[variable.id];
   if (!entry) return "";
   const rows = genreRows(meta, file, variable.id);
-  const heading = chartHeading(rows.filter((r) => !r.all && r.f).length, meta.genres.length - 1);
   const lists = takeawayLists(rows, variable, entry.k).map(listText);
   const all = allGenresLine(rows, variable, entry);
-  return [`${heading}.`, ...lists, all ? all.map((s) => (typeof s === "string" ? s : s.strong)).join("") : ""]
+  return [
+    `${rowsHeading(rows)}.`,
+    ...lists,
+    all ? all.map((s) => (typeof s === "string" ? s : s.strong)).join("") : "",
+    tooFewLine(rows, meta.min_n),
+  ]
     .filter(Boolean)
     .join(" ");
 }

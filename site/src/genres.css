@@ -11,6 +11,12 @@
   margin: 6px 0 0;
 }
 
+/* the genres left out of the comparison, after the All genres line (F63) */
+.genre-takeaway .too-few {
+  margin: 4px 0 0;
+  font-size: 14.5px;
+}
+
 .genre-takeaway b {
   font-weight: 650;
 }

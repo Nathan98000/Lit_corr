@@ -91,7 +91,7 @@ describe("named groups: 100% bars", () => {
     await openGenres("#/genres?var=pov_class");
     const chart = document.querySelector(".genre-mix.kind-grp");
     expect(chart).toBeTruthy();
-    expect(document.querySelector(".genres-page .chart-title").textContent).toBe("1 of 3 genres clearly differs from all genres");
+    expect(document.querySelector(".genres-page .chart-title").textContent).toBe("1 of 2 genres clearly differs from all genres");
     expect(document.querySelector(".genre-list").textContent).toBe("≠ A different mix: Romance.");
     expect(document.querySelector(".all-line").textContent).toMatch(/^All genres: First person \(I\) \d+%, .* Mixed \d+%\.$/);
     const rows = [...chart.querySelectorAll(".row")];

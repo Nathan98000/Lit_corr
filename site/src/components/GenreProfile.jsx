@@ -167,7 +167,10 @@ function ProfileLegend({ genre }) {
   );
 }
 
-/** "Fewer than 10 stories in Chain Stories match “Published 2020 or later”: too few to compare." */
+/**
+ * "Fewer than 10 stories in Chain Stories match “Published 2020 or later”: too few to compare.", or with the rule's
+ * min_n ("Fewer than 30 …") when the genre has its numbers but too few stories to be compared (F60).
+ */
 export const tooFewText = (genre, subset, minN) =>
   `Fewer than ${minN} stories in ${genre.name} match “${subset.label}”: too few to compare.`;
 
@@ -177,7 +180,8 @@ export const tooFewText = (genre, subset, minN) =>
  * only), the characteristics lower and higher in the genre (ordered by the size of the difference: this ranks
  * characteristics within one genre, never genres), the named groups with a different mix, and every characteristic by
  * topic, folded (a topic's rows are drawn when it is opened). Every row opens that characteristic's chart with the
- * genre highlighted.
+ * genre highlighted. With fewer stories than the rule needs, nothing is compared: the heading says so, then "Show all
+ * stories" and the topics, whose rows give the numbers.
  */
 export default function GenreProfile({ meta, state, file, busy, onSwitch, onNavigate, headingRef }) {
   const [ref, width] = useWidth(720, "genres");
@@ -187,10 +191,18 @@ export default function GenreProfile({ meta, state, file, busy, onSwitch, onNavi
   const genre = meta.genres.find((g) => g.id === state.genre);
   const subset = meta.subsets.find((s) => s.id === state.sub);
   const gi = file.genres.indexOf(state.genre);
+  const n = gi < 0 ? 0 : file.n[gi];
   const { min_n: minN, small_n: smallN } = meta;
   const panel = `chart-panel genre-profile${busy ? " is-busy" : ""}`;
+  const showAll = state.sub !== "all" && (
+    <p className="inline-actions">
+      <button type="button" className="btn" onClick={() => onSwitch({ ...state, sub: "all" })}>
+        Show all stories
+      </button>
+    </p>
+  );
 
-  if (gi < 0 || file.n[gi] < minN) {
+  if (n < minN) {
     return (
       <article className={panel} aria-busy={busy} ref={ref}>
         <header className="chart-head">
@@ -198,17 +210,13 @@ export default function GenreProfile({ meta, state, file, busy, onSwitch, onNavi
             {tooFewText(genre, subset, minN)}
           </h2>
         </header>
-        {state.sub !== "all" && (
-          <p className="inline-actions">
-            <button type="button" className="btn" onClick={() => onSwitch({ ...state, sub: "all" })}>
-              Show all stories
-            </button>
-          </p>
-        )}
+        {showAll}
       </article>
     );
   }
 
+  // fewer stories than the rule needs: nothing was compared, but every characteristic's numbers are there (F60)
+  const few = n < file.rule.min_n;
   const p = genreProfile(meta, file, gi);
   const count = p.flagged.length;
   const takeaway = profileTakeaway(p.flagged);
@@ -235,35 +243,39 @@ export default function GenreProfile({ meta, state, file, busy, onSwitch, onNavi
       </svg>
       <header className="chart-head">
         <h2 className="chart-title" ref={headingRef} tabIndex={-1}>
-          {profileHeading(count, genre)}
+          {few ? tooFewText(genre, subset, file.rule.min_n) : profileHeading(count, genre)}
         </h2>
       </header>
-      {count === 0 && (
-        <p className="profile-none">
-          Its stories are close to those of all genres on each of the {p.items.length} characteristics.
-        </p>
+      {few ? (
+        showAll
+      ) : (
+        <>
+          {count === 0 && (
+            <p className="profile-none">
+              Its stories are close to those of all genres on each of the {p.compared} characteristics compared.
+            </p>
+          )}
+          {takeaway && <p className="takeaway profile-takeaway">{takeaway}</p>}
+          {ageNote && <AgeNote meta={meta} variable={null} text={ageNote} onCompare={(sub) => onSwitch({ ...state, sub })} />}
+          <ProfileLegend genre={genre} />
+          {p.lower.length > 0 && (
+            <ProfileList title={`Lower in ${genre.name} than in all genres`} items={p.lower} rowProps={rowProps} />
+          )}
+          {p.higher.length > 0 && (
+            <ProfileList title={`Higher in ${genre.name} than in all genres`} items={p.higher} rowProps={rowProps} />
+          )}
+          {p.mix.length > 0 && <ProfileList title="A different mix" items={p.mix} all rowProps={rowProps} />}
+        </>
       )}
-      {takeaway && <p className="takeaway profile-takeaway">{takeaway}</p>}
-      {ageNote && <AgeNote meta={meta} variable={null} text={ageNote} onCompare={(sub) => onSwitch({ ...state, sub })} />}
-      <ProfileLegend genre={genre} />
-      {p.lower.length > 0 && (
-        <ProfileList title={`Lower in ${genre.name} than in all genres`} items={p.lower} rowProps={rowProps} />
-      )}
-      {p.higher.length > 0 && (
-        <ProfileList title={`Higher in ${genre.name} than in all genres`} items={p.higher} rowProps={rowProps} />
-      )}
-      {p.mix.length > 0 && <ProfileList title="A different mix" items={p.mix} all rowProps={rowProps} />}
       <section className="profile-topics" aria-labelledby={`${ids}-topics`}>
         <h3 id={`${ids}-topics`}>Every characteristic, by topic</h3>
-        {p.topics.map(({ topic, items, count: k }) => {
+        {p.topics.map(({ topic, items, count: k, compared }) => {
           const open = openTopics.has(topic.id);
           return (
             <details key={topic.id} className="profile-topic" open={open} onToggle={(e) => setTopic(topic.id, e.currentTarget.open)}>
               <summary className="profile-topic-head">
                 <h4>{topic.label}</h4>
-                <span className="profile-topic-count">
-                  {k ? `${k} of ${items.length} stand out` : characteristics(items.length)}
-                </span>
+                <span className="profile-topic-count">{k ? `${k} of ${compared} stand out` : characteristics(items.length)}</span>
               </summary>
               {open && <ProfileRows items={items} marks rowProps={rowProps} />}
             </details>
@@ -278,7 +290,10 @@ export default function GenreProfile({ meta, state, file, busy, onSwitch, onNavi
 export function profileAnnouncement(meta, file, state) {
   const genre = meta.genres.find((g) => g.id === state.genre);
   const gi = file.genres.indexOf(state.genre);
-  if (gi < 0 || file.n[gi] < meta.min_n) return tooFewText(genre, meta.subsets.find((s) => s.id === state.sub), meta.min_n);
+  const n = gi < 0 ? 0 : file.n[gi];
+  const subset = meta.subsets.find((s) => s.id === state.sub);
+  if (n < meta.min_n) return tooFewText(genre, subset, meta.min_n);
+  if (n < file.rule.min_n) return tooFewText(genre, subset, file.rule.min_n);
   const p = genreProfile(meta, file, gi);
   const takeaway = profileTakeaway(p.flagged);
   return [`${profileHeading(p.flagged.length, genre)}.`, takeaway].filter(Boolean).join(" ");

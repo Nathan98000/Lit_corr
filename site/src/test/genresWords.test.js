@@ -11,7 +11,7 @@ import {
   chartQuestionText,
   genreProfile,
   genreRows,
-  profileRowName,
+  profileRowDescription,
   profileValues,
   rowDetails,
 } from "../lib/genres.js";
@@ -45,14 +45,15 @@ function sentences(meta, file) {
     if (file.n[gi] < meta.min_n) continue;
     for (const item of genreProfile(meta, file, gi).items) {
       add(profileValues(item));
-      add(profileRowName(item, genre, Boolean(item.stats) && item.stats.n < meta.small_n));
+      add(profileRowDescription(item, genre, Boolean(item.stats) && item.stats.n < meta.small_n));
     }
   }
   return out;
 }
 
 describe("the Genres page's sentences on the real data", () => {
-  it.skipIf(!real)("are never causal, always US English, and have no gaps, in every option", () => {
+  // 13.7 s on a 2-core machine: longer than Vitest's 5 s default
+  it.skipIf(!real)("are never causal, always US English, and have no gaps, in every option", { timeout: 30000 }, () => {
     let count = 0;
     for (const s of real.subsets) {
       const file = JSON.parse(readFileSync(path.join(here, "..", "..", "public", "aggregates", "genres", `${s.id}.json`), "utf8"));

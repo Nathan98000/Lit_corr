@@ -55,7 +55,15 @@ export function GenresPlaceholder() {
 export default function App() {
   const [meta, setMeta] = useState(null);
   const [error, setError] = useState(null);
-  const [route, setRoute] = useState(() => parseHash(window.location.hash));
+  const [route, setRoute] = useState(() => {
+    const first = parseHash(window.location.hash);
+    // a visit that starts on the Genres page fetches the page's code and its file at once, not after meta.json (F68)
+    if (first.page === "genres") {
+      GenresPage.preload();
+      prefetchGenres(first.state.sub || "all");
+    }
+    return first;
+  });
   const lastExplore = useRef(route.page === "explore" ? route.state : {});
   const lastGenres = useRef(null); // the last Genres address of this visit (the masthead's link goes back to it)
   const lastChart = useRef({}); // the Genres page's last characteristic and order, for the way back from one genre

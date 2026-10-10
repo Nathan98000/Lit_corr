@@ -1,5 +1,6 @@
 import { useRef } from "react";
 import { rowDetails, standsOutQuestion } from "../lib/genres.js";
+import { textWidth } from "../lib/rangeLayout.js";
 import { toHash } from "../lib/urlState.js";
 import useRowDetails from "./useRowDetails.js";
 
@@ -105,8 +106,35 @@ export function DetailsLine({ row, details, by, lineRef, onLeave, onEscape, sub,
   );
 }
 
-/** About how tall a details card is (its title, a line per number, the comparison and the link). */
-export const cardHeight = (details) => 70 + 19 * details.items.length + (details.comparison ? 22 : 0);
+const CARD_MAX = 420; // the card follows its content, up to this width (F70)
+const LINK = (genre) => `${standsOutQuestion(genre)} →`;
+
+/**
+ * About how wide a details card is: its numbers in two pairs of columns (label, value, label, value), its title, the
+ * comparison and the link, up to CARD_MAX, with its padding and border.
+ */
+export function cardWidth(row, details) {
+  const pairs = [[], [], [], []];
+  details.items.forEach(([k, v], j) => {
+    pairs[(j % 2) * 2].push(textWidth(k, 13));
+    pairs[(j % 2) * 2 + 1].push(textWidth(v, 13));
+  });
+  const grid = pairs.reduce((sum, col) => sum + (col.length ? Math.max(...col) : 0), 0) + 3 * 10 + (details.items.length > 1 ? 12 : 0);
+  const lines = [
+    grid,
+    textWidth(row.genre.name, 13, 700),
+    details.comparison ? textWidth(`Compared with all genres: ${details.comparison.short}`, 13, 600) : 0,
+    row.all ? 0 : textWidth(LINK(row.genre), 13.5),
+    details.items.length ? 0 : Math.min(CARD_MAX, textWidth(details.line, 13)),
+  ];
+  return Math.min(CARD_MAX, Math.ceil(Math.max(...lines)) + 26);
+}
+
+/** About how tall a details card is: its title, a line per pair of numbers, the comparison and the link. */
+export function cardHeight(row, details) {
+  const linkLines = row.all ? 0 : textWidth(LINK(row.genre), 13.5) > CARD_MAX - 26 ? 2 : 1;
+  return 38 + 19 * Math.ceil(details.items.length / 2) + (details.comparison ? 22 : 0) + (linkLines ? 10 + 19 * linkLines : 0);
+}
 
 /**
  * The details of a chart's genres (rows of the Genres page's charts): useRowDetails() for the keyboard and the
@@ -155,7 +183,8 @@ export function GenreRowDetails({ d, phone, geom, x, height, width, sub, onNavig
     );
   }
   if (!d.row || !geom) return null;
-  const above = geom.y1 + cardHeight(d.details) > height;
+  const above = geom.y1 + cardHeight(d.row, d.details) > height;
+  const half = cardWidth(d.row, d.details) / 2;
   return (
     <DetailsCard
       row={d.row}
@@ -167,7 +196,7 @@ export function GenreRowDetails({ d, phone, geom, x, height, width, sub, onNavig
       onEscape={d.backToRow}
       sub={sub}
       onNavigate={onNavigate}
-      style={{ left: Math.min(Math.max(x, 140), width - 140), top: above ? geom.y0 - 2 : geom.y1 + 2 }}
+      style={{ left: Math.min(Math.max(x, half + 4), width - half - 4), top: above ? geom.y0 - 2 : geom.y1 + 2 }}
     />
   );
 }

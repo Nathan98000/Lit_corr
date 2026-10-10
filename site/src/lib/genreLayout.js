@@ -43,7 +43,7 @@ export function rowGrid({ rows, width, top = TOP }) {
     const labelLines = lines.map((text, k) => ({ text, x: labelW, y: first + 16 * k }));
     let count = null;
     if (r.n != null && !phone) count = { x: width, y: cy + 4.5, text: formatCount(r.n) };
-    else if (below) count = { x: labelW, y: first + 16 * (lines.length - 1) + 14, text: `${formatCount(r.n)} stories` };
+    else if (below) count = { x: labelW, y: first + 16 * (lines.length - 1) + 15, text: `${formatCount(r.n)} stories` };
     const boxes = labelLines.map((l) => ({ kind: "label", ...box(l.x, l.y, l.text, LABEL_SIZE, 400, "end") }));
     if (count) boxes.push({ kind: "n", ...box(count.x, count.y, count.text, phone ? 12 : 12.5, 400, "end") });
     return { index: r.index, label: r.label, y0, y1: y, cy, labelLines, count, boxes };

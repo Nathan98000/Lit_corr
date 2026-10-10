@@ -145,6 +145,22 @@ export default function GenresPage({ meta, state, onChange, onNavigate, onHoldSc
     onHoldScroll?.();
     onChange(next);
   };
+  // A button inside the answer that changes it (the story-age note's comparison, "Show all stories") goes away with
+  // the change, so focus moves to the answer's heading, without scrolling (F64); again once the new file is drawn,
+  // since one genre's answer can be drawn anew.
+  const heading = useRef(null);
+  const focusHeading = useRef(false);
+  const toHeading = () => heading.current?.focus({ preventScroll: true });
+  const switchFromAnswer = (next) => {
+    focusHeading.current = true;
+    keepPlace(next);
+    toHeading();
+  };
+  useEffect(() => {
+    if (!focusHeading.current || busy || !file) return;
+    focusHeading.current = false;
+    toHeading();
+  }, [file, busy]);
   // while another option's file loads, the answer on screen keeps describing its own file (its option, and a
   // characteristic it has)
   const shownV = useRef(state.v);
@@ -322,7 +338,15 @@ export default function GenresPage({ meta, state, onChange, onNavigate, onHoldSc
       ) : !file ? (
         <ChartPlaceholder />
       ) : profile ? (
-        <GenreProfile meta={meta} state={view} file={file} busy={busy} onChange={keepPlace} onNavigate={onNavigate} />
+        <GenreProfile
+          meta={meta}
+          state={view}
+          file={file}
+          busy={busy}
+          onSwitch={switchFromAnswer}
+          onNavigate={onNavigate}
+          headingRef={heading}
+        />
       ) : (
         <GenreAnswer
           meta={meta}
@@ -330,8 +354,10 @@ export default function GenresPage({ meta, state, onChange, onNavigate, onHoldSc
           file={file}
           busy={busy}
           onChange={keepPlace}
+          onSwitch={switchFromAnswer}
           onNavigate={onNavigate}
           lastExplore={lastExplore}
+          headingRef={heading}
         />
       )}
     </section>

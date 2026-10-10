@@ -10,7 +10,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "../App.jsx";
 import { profileAnnouncement } from "../components/GenreProfile.jsx";
 import { clearCache } from "../lib/data.js";
-import { genreAgeNote, genreProfile, profileHeading, profileRowName, profileTakeaway, profileValues } from "../lib/genres.js";
+import { genreAgeNote, genreProfile, profileHeading, profileRowDescription, profileTakeaway, profileValues } from "../lib/genres.js";
 import { fixtureFetch, fixtureMeta, realMeta } from "./fixtures.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -142,9 +142,13 @@ describe("the lists", () => {
     const user = await openGenre("#/genres?view=genre&genre=romance&include=all");
     const row = document.querySelector(".profile-list .profile-row");
     expect(row.getAttribute("href")).toBe("#/genres?var=dlg_word_share&include=all&genre=romance");
-    expect(row.getAttribute("aria-label")).toMatch(
-      /^Dialogue share: Romance median \d+%, interquartile range \d+%–\d+%; all genres median \d+%, interquartile range \d+%–\d+%; clearly less dialogue\. Opens every genre’s numbers\.$/,
-    );
+    // the name starts with what is on screen (label in name, F76): the label and the values, then the description
+    expect(row.hasAttribute("aria-label")).toBe(false);
+    expect(
+      screen.getByRole("link", {
+        name: /^Dialogue share\s*\d+% · all \d+%\. Romance median \d+%, interquartile range \d+%–\d+%; all genres median \d+%, interquartile range \d+%–\d+%; clearly less dialogue\. Opens every genre’s numbers\.$/,
+      }),
+    ).toBe(row);
     await user.click(row);
     await waitFor(() => expect(window.location.hash).toBe("#/genres?var=dlg_word_share&include=all&genre=romance"));
     await waitFor(() => expect(document.querySelector(".genre-chart .row.highlight")).toBeTruthy());
@@ -177,7 +181,7 @@ describe("edge states", () => {
   it("says when a genre has too few stories for the option, and offers all stories", async () => {
     const user = await openGenre("#/genres?view=genre&genre=tiny&include=all");
     expect(heading()).toBe("Fewer than 10 stories in Tiny Genre match “All stories”: too few to compare.");
-    expect(screen.getByRole("button", { name: "Show all stories" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Show all stories" })).toBeNull(); // all stories are shown already
     expect(document.querySelector(".profile-topics")).toBeNull();
     window.location.hash = "#/genres?view=genre&genre=tiny&include=y2020";
     await waitFor(() => expect(heading()).toBe("Fewer than 10 stories in Tiny Genre match “Published 2020 or later”: too few to compare."));
@@ -203,7 +207,7 @@ describe("edge states", () => {
     expect(heading()).toBe("No characteristic clearly sets Romance apart from all genres");
     await user.click(document.querySelector(".profile-topic summary"));
     await waitFor(() => expect(document.querySelector(".profile-row.small")).toBeTruthy());
-    expect(document.querySelector(".profile-row.small").getAttribute("aria-label")).toMatch(/; too few stories to compare\. Opens/);
+    expect(document.querySelector(".profile-row.small .visually-hidden").textContent).toMatch(/; too few stories to compare\. Opens/);
   });
 
   it("notes the story age when the genre's and all genres' are 3 or more years apart, with All stories", async () => {
@@ -251,8 +255,8 @@ describe("one genre on the real data", () => {
     expect(profileValues(item("rel_romance_per_1k"))).toBe("73% above 0 · all 43%");
     const howTo = genreProfile(real, file, file.genres.indexOf("adult-how-to"));
     expect(profileValues(howTo.items.find((x) => x.id === "pov_class"))).toBe("Second person (you) 55% · all 2%");
-    expect(profileRowName(item("sex_terms_per_1k"), { name: "Romance" }, false)).toMatch(
-      /^Sexual language: Romance median 7\.79 per 1,000 words, interquartile range [\d.]+–[\d.]+; all genres median 19\.3 per 1,000 words, interquartile range [\d.]+–[\d.]+; clearly less\. Opens every genre’s numbers\.$/,
+    expect(profileRowDescription(item("sex_terms_per_1k"), { name: "Romance" }, false)).toMatch(
+      /^Romance median 7\.79 per 1,000 words, interquartile range [\d.]+–[\d.]+; all genres median 19\.3 per 1,000 words, interquartile range [\d.]+–[\d.]+; clearly less\. Opens every genre’s numbers\.$/,
     );
   });
 });

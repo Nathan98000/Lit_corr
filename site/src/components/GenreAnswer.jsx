@@ -6,6 +6,7 @@ import {
   chartHeading,
   chartQuestionText,
   genreRows,
+  nounOf,
   orderRows,
   takeawayLists,
 } from "../lib/genres.js";
@@ -143,7 +144,7 @@ export function AgeNote({ meta, variable, text, onCompare }) {
  * All genres), the story-age note when the genres' median ages are 5 or more years apart (All stories only), the
  * legend, the chart for the characteristic's form, its numbers and the actions.
  */
-export default function GenreAnswer({ meta, state, file, busy, onChange, onNavigate, lastExplore }) {
+export default function GenreAnswer({ meta, state, file, busy, onChange, onSwitch, onNavigate, lastExplore, headingRef }) {
   const [showNumbers, setShowNumbers] = useState(false);
   const numbersId = useId();
   const variable = meta.variables.find((v) => v.id === state.v);
@@ -187,7 +188,9 @@ export default function GenreAnswer({ meta, state, file, busy, onChange, onNavig
   return (
     <article className={`chart-panel genre-answer${busy ? " is-busy" : ""}`} aria-busy={busy}>
       <header className="chart-head">
-        <h2 className="chart-title">{heading}</h2>
+        <h2 className="chart-title" ref={headingRef} tabIndex={-1}>
+          {heading}
+        </h2>
       </header>
       {(lists.length > 0 || allLine) && (
         <div className="takeaway genre-takeaway">
@@ -207,7 +210,7 @@ export default function GenreAnswer({ meta, state, file, busy, onChange, onNavig
           )}
         </div>
       )}
-      {spread && <AgeNote meta={meta} variable={variable} text={ageNoteText(spread)} onCompare={(sub) => onChange({ ...state, sub })} />}
+      {spread && <AgeNote meta={meta} variable={variable} text={ageNoteText(spread)} onCompare={(sub) => onSwitch({ ...state, sub })} />}
       <GenreLegend kind={kind} anySmall={anySmall} smallN={meta.small_n} groups={groups} />
       <Chart key={`${variable.id}/${file.s}`} {...chartProps} />
       <GenreTable
@@ -230,7 +233,8 @@ export default function GenreAnswer({ meta, state, file, busy, onChange, onNavig
           {showNumbers ? "Hide the numbers" : "Show the numbers"}
         </button>
         <CopyLink />
-        <a className="btn primary" href={explore} aria-label={`Open ${variable.label} in Explore`}>
+        {/* the name starts with the visible words (label in name), then the noun as the question has it (F76) */}
+        <a className="btn primary" href={explore} aria-label={`Open in Explore: ${nounOf(variable)}`}>
           Open in Explore →
         </a>
       </div>

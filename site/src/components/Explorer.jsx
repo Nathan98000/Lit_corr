@@ -205,7 +205,7 @@ export function genresQuestion(meta, view, d) {
 
 /**
  * One list after the chart: every clear pattern with this measure, the Genres page's question for this view, then
- * three example questions.
+ * three example questions. A no-break space keeps each "→" with its last word.
  */
 function KeepExploring({ meta, view, d, onAsk }) {
   const headingId = useId();
@@ -224,13 +224,15 @@ function KeepExploring({ meta, view, d, onAsk }) {
             onFocus={PatternBrowser.preload}
           >
             Every clear pattern with {theMeasure(d.metric)}
-            {genre.id === "all" ? " across all genres" : ` in ${genre.name}`} →
+            {genre.id === "all" ? " across all genres" : ` in ${genre.name}`}
+            {"\u00a0→"}
           </a>
         </li>
         {genres && (
           <li>
             <a href={genres.hash} onPointerEnter={preloadGenres} onFocus={preloadGenres}>
-              {genres.text} →
+              {genres.text}
+              {"\u00a0→"}
             </a>
           </li>
         )}
@@ -244,7 +246,8 @@ function KeepExploring({ meta, view, d, onAsk }) {
                 onAsk(state);
               }}
             >
-              {question} →
+              {question}
+              {"\u00a0→"}
             </a>
           </li>
         ))}

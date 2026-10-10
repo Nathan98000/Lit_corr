@@ -45,7 +45,7 @@ describe("Keep exploring", () => {
   it("asks what stands out about the chosen genre's stories, after every clear pattern", async () => {
     const user = await renderApp("#/explore?genre=romance&var=dlg_word_share&include=y2020");
     const link = keepExploring()[1];
-    expect(link.textContent).toBe("What stands out about stories in Romance? →");
+    expect(link.textContent).toBe("What stands out about stories in Romance?\u00a0→"); // the arrow kept with its word
     expect(link.getAttribute("href")).toBe("#/genres?view=genre&genre=romance&include=y2020");
     await user.click(link);
     await waitFor(() => expect(document.querySelector(".genres-page .chart-panel[aria-busy='false']")).toBeTruthy());
@@ -55,7 +55,7 @@ describe("Keep exploring", () => {
   it("asks how the genres differ in the characteristic with All genres, and in compare mode", async () => {
     await renderApp("#/explore?mode=compare&var=dlg_has_dialogue");
     const link = keepExploring()[1];
-    expect(link.textContent).toBe("How common are stories with dialogue in each genre? →");
+    expect(link.textContent).toBe("How common are stories with dialogue in each genre?\u00a0→");
     expect(link.getAttribute("href")).toBe("#/genres?var=dlg_has_dialogue&include=all");
   });
 

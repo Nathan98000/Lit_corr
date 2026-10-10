@@ -111,9 +111,13 @@
   font-size: 12px;
 }
 
-/* the details card holds a link: once a tap keeps it, it takes the pointer */
+/* the details card holds a link: once a tap keeps it, it takes the pointer. Compact (F70): its width follows its
+   content, up to 420 px, and its numbers sit in two pairs of columns (label, value, label, value) */
 .genre-tip {
-  width: 264px;
+  width: max-content;
+  min-width: 0;
+  max-width: 420px;
+  padding: 8px 12px;
   pointer-events: none;
 }
 
@@ -121,14 +125,23 @@
   pointer-events: auto;
 }
 
+.genre-tip dl {
+  grid-template-columns: repeat(4, auto);
+  column-gap: 10px;
+}
+
 .genre-tip .tip-item {
   display: contents;
 }
 
+.genre-tip .tip-item:nth-child(odd) dd {
+  margin-right: 12px;
+}
+
 .genre-tip .stands-out {
   display: block;
-  margin-top: 8px;
-  padding-top: 6px;
+  margin-top: 6px;
+  padding-top: 4px;
   border-top: 1px solid var(--rule);
   font-size: 13.5px;
   line-height: 1.35;
@@ -204,7 +217,7 @@
 }
 
 .genre-tip .tip-compare {
-  margin: 6px 0 0;
+  margin: 4px 0 0;
   color: var(--ink-2);
 }
 

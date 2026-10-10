@@ -432,10 +432,11 @@ function profileComparison(item, small) {
 }
 
 /**
- * A row's accessible name in "One genre": "Sexual language: Romance median 7.79 per 1,000 words, interquartile range
- * 4.1–12.2; all genres median 19.3, interquartile range 9.82–31.4; clearly less. Opens every genre’s numbers."
+ * What a row in "One genre" says after its visible label and values, for screen readers (its accessible name starts
+ * with what is on screen, F76): "Romance median 7.79 per 1,000 words, interquartile range 4.1–12.2; all genres median
+ * 19.3, interquartile range 9.82–31.4; clearly less. Opens every genre’s numbers."
  */
-export function profileRowName(item, genre, small) {
+export function profileRowDescription(item, genre, small) {
   const { kind, stats: g, all: a, variable, entry } = item;
   const fmt = entry.fmt;
   const unit = plainUnit(variable, fmt);
@@ -456,10 +457,7 @@ export function profileRowName(item, genre, small) {
     }
     return variable.bins.labels.map((l, b) => `${l} ${formatPercent(s.shares[b])}`).join(", ");
   };
-  return (
-    `${variable.label}: ${genre.name} ${describe(g)}; all genres ${describe(a)}; ${profileComparison(item, small)}. ` +
-    "Opens every genre’s numbers."
-  );
+  return `${genre.name} ${describe(g)}; all genres ${describe(a)}; ${profileComparison(item, small)}. Opens every genre’s numbers.`;
 }
 
 // -------------------------------------------------------------------------------------------- the range chart

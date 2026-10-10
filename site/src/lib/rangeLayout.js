@@ -298,7 +298,8 @@ export function rangeLayout({
       nPos = { x: width, y: cy + 4.5, anchor: "end" };
       nT = formatCount(s.n);
     } else if (below) {
-      nPos = { x: labelW, y: first + 16 * (ls.length - 1) + 14, anchor: "end" };
+      // a pixel more than the label's line height, so a name's descenders and its count never touch
+      nPos = { x: labelW, y: first + 16 * (ls.length - 1) + 15, anchor: "end" };
       nT = `${formatCount(s.n)} stories`;
     }
     out.nPos = nPos;

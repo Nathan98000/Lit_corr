@@ -4,7 +4,7 @@ import {
   genreAgeNote,
   genreProfile,
   profileHeading,
-  profileRowName,
+  profileRowDescription,
   profileTakeaway,
   profileValues,
 } from "../lib/genres.js";
@@ -25,6 +25,17 @@ const characteristics = (n) => `${n} characteristic${n === 1 ? "" : "s"}`;
 function valuesText(item, mark, minN) {
   if (!item.stats) return `Fewer than ${minN} stories`;
   return `${mark ? `${mark} ` : ""}${profileValues(item)}`;
+}
+
+/** The values as drawn: the mark is for the eye (the description says the comparison in words). */
+function Values({ item, mark, minN }) {
+  if (!item.stats) return `Fewer than ${minN} stories`;
+  return (
+    <>
+      {mark && <span aria-hidden="true">{mark} </span>}
+      {profileValues(item)}
+    </>
+  );
 }
 
 /** The small plot of one row: the genre against all genres, on the row's own scale (aria-hidden). */
@@ -71,17 +82,15 @@ function RowPlot({ item, width, small, hatchId }) {
 function ProfileRow({ item, genre, sub, minN, smallN, mark, plotW, hatchId, onNavigate }) {
   const small = Boolean(item.stats) && item.stats.n < smallN;
   return (
-    <ViewLink
-      className={`profile-row${small ? " small" : ""}`}
-      to={{ v: item.id, sub, genre: genre.id }}
-      onNavigate={onNavigate}
-      aria-label={profileRowName(item, genre, small)}
-    >
+    <ViewLink className={`profile-row${small ? " small" : ""}`} to={{ v: item.id, sub, genre: genre.id }} onNavigate={onNavigate}>
       <span className="profile-label">{item.variable.label}</span>
       <span className="profile-plot-cell">
         <RowPlot item={item} width={plotW} small={small} hatchId={hatchId} />
       </span>
-      <span className="profile-values">{valuesText(item, mark, minN)}</span>
+      <span className="profile-values">
+        <Values item={item} mark={mark} minN={minN} />
+      </span>
+      <span className="visually-hidden">. {profileRowDescription(item, genre, small)}</span>
     </ViewLink>
   );
 }
@@ -170,7 +179,7 @@ export const tooFewText = (genre, subset, minN) =>
  * topic, folded (a topic's rows are drawn when it is opened). Every row opens that characteristic's chart with the
  * genre highlighted.
  */
-export default function GenreProfile({ meta, state, file, busy, onChange, onNavigate }) {
+export default function GenreProfile({ meta, state, file, busy, onSwitch, onNavigate, headingRef }) {
   const [ref, width] = useWidth(720, "genres");
   const [openTopics, setOpenTopics] = useState(() => new Set());
   const ids = useId();
@@ -185,13 +194,17 @@ export default function GenreProfile({ meta, state, file, busy, onChange, onNavi
     return (
       <article className={panel} aria-busy={busy} ref={ref}>
         <header className="chart-head">
-          <h2 className="chart-title">{tooFewText(genre, subset, minN)}</h2>
+          <h2 className="chart-title" ref={headingRef} tabIndex={-1}>
+            {tooFewText(genre, subset, minN)}
+          </h2>
         </header>
-        <p className="inline-actions">
-          <button type="button" className="btn" onClick={() => onChange({ ...state, sub: "all" })}>
-            Show all stories
-          </button>
-        </p>
+        {state.sub !== "all" && (
+          <p className="inline-actions">
+            <button type="button" className="btn" onClick={() => onSwitch({ ...state, sub: "all" })}>
+              Show all stories
+            </button>
+          </p>
+        )}
       </article>
     );
   }
@@ -221,7 +234,9 @@ export default function GenreProfile({ meta, state, file, busy, onChange, onNavi
         </defs>
       </svg>
       <header className="chart-head">
-        <h2 className="chart-title">{profileHeading(count, genre)}</h2>
+        <h2 className="chart-title" ref={headingRef} tabIndex={-1}>
+          {profileHeading(count, genre)}
+        </h2>
       </header>
       {count === 0 && (
         <p className="profile-none">
@@ -229,7 +244,7 @@ export default function GenreProfile({ meta, state, file, busy, onChange, onNavi
         </p>
       )}
       {takeaway && <p className="takeaway profile-takeaway">{takeaway}</p>}
-      {ageNote && <AgeNote meta={meta} variable={null} text={ageNote} onCompare={(sub) => onChange({ ...state, sub })} />}
+      {ageNote && <AgeNote meta={meta} variable={null} text={ageNote} onCompare={(sub) => onSwitch({ ...state, sub })} />}
       <ProfileLegend genre={genre} />
       {p.lower.length > 0 && (
         <ProfileList title={`Lower in ${genre.name} than in all genres`} items={p.lower} rowProps={rowProps} />

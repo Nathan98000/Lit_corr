@@ -330,7 +330,7 @@ describe("the numbers and the actions", () => {
     expect(rows.map((r) => within(r).getByRole("rowheader").textContent)).toEqual(["All genres", "Fetish", "Romance", "Tiny Genre"]);
     expect(rows[1].lastElementChild.textContent).toBe("▲ Clearly more dialogue");
     expect(rows[3].textContent).toBe("Tiny GenreFewer than 10 stories");
-    const explore = screen.getByRole("link", { name: "Open Dialogue share in Explore" });
+    const explore = screen.getByRole("link", { name: "Open in Explore: dialogue share" }) // starts with its visible words (F76);
     expect(explore.textContent).toBe("Open in Explore →");
     expect(explore.getAttribute("href")).toBe("#/explore?mode=one&genre=romance&var=dlg_word_share&include=all");
     window.location.hash = "#/genres?var=dlg_has_dialogue";

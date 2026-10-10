@@ -85,7 +85,7 @@ describe("the average rating first", () => {
     expect(within(sentence).getByRole("button", { name: /^Popularity measure:/ }).textContent).toBe("Popularity measure: average rating");
     expect(document.title).toBe("How the average rating varies with dialogue share across all genres");
     const nav = screen.getByRole("navigation", { name: "Keep exploring" });
-    expect(within(nav).getAllByRole("link")[0].textContent).toBe("Every clear pattern with the average rating across all genres →");
+    expect(within(nav).getAllByRole("link")[0].textContent).toBe("Every clear pattern with the average rating across all genres\u00a0→");
     await user.click(screen.getByRole("button", { name: /^Popularity measure:/ }));
     const dialog = screen.getByRole("dialog", { name: "Popularity measure" });
     const options = await within(dialog).findAllByRole("option");

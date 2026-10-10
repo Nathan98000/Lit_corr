@@ -44,11 +44,11 @@ describe("keep exploring", () => {
     const links = items();
     expect(links.length).toBeLessThanOrEqual(5);
     expect(links.map((a) => a.textContent)).toEqual([
-      "Every clear pattern with favorites per 1,000 views across all genres →",
-      "How do genres differ in dialogue share? →", // the Genres page, for All genres
-      "Q2: dialogue share in Romance, views per month? →", // Q1 is the chart shown
-      "Q3: anger, views? →",
-      "Q4: perspective, favorites? →",
+      "Every clear pattern with favorites per 1,000 views across all genres\u00a0→",
+      "How do genres differ in dialogue share?\u00a0→", // the Genres page, for All genres
+      "Q2: dialogue share in Romance, views per month?\u00a0→", // Q1 is the chart shown
+      "Q3: anger, views?\u00a0→",
+      "Q4: perspective, favorites?\u00a0→",
     ]);
     expect(links[0].getAttribute("href")).toBe("#/patterns?genre=all&metric=pop_fav_per_1k_views");
     expect(links[1].getAttribute("href")).toBe("#/genres?var=dlg_word_share&include=all");
@@ -62,9 +62,9 @@ describe("keep exploring", () => {
     await renderApp("#/explore?genre=romance&var=dlg_word_share&metric=pop_views");
     expect(screen.getByRole("button", { name: "Switch to views per month" })).toBeTruthy();
     const texts = items().map((a) => a.textContent);
-    expect(texts[0]).toBe("Every clear pattern with views in Romance →");
-    expect(texts[1]).toBe("What stands out about stories in Romance? →"); // the Genres page, for the genre chosen
-    expect(texts.slice(2)).toEqual(["Q1: dialogue share, favorites? →", "Q3: anger, views? →", "Q4: perspective, favorites? →"]);
+    expect(texts[0]).toBe("Every clear pattern with views in Romance\u00a0→");
+    expect(texts[1]).toBe("What stands out about stories in Romance?\u00a0→"); // the Genres page, for the genre chosen
+    expect(texts.slice(2)).toEqual(["Q1: dialogue share, favorites?\u00a0→", "Q3: anger, views?\u00a0→", "Q4: perspective, favorites?\u00a0→"]);
   });
 
   it("chooses by view only, never by a result", () => {
@@ -78,13 +78,13 @@ describe("keep exploring", () => {
 
   it("is there in compare mode, pointing to the Patterns page for all genres", async () => {
     await renderApp("#/explore?mode=compare&genre=romance&var=dlg_word_share");
-    expect(items()[0].textContent).toBe("Every clear pattern with favorites per 1,000 views across all genres →");
+    expect(items()[0].textContent).toBe("Every clear pattern with favorites per 1,000 views across all genres\u00a0→");
   });
 
   it("is there when no group has enough stories", async () => {
     await renderApp("#/explore?genre=tiny&var=dlg_word_share");
     expect(screen.getByText("No group has enough stories in this selection to show a chart.")).toBeTruthy();
-    expect(items()[0].textContent).toBe("Every clear pattern with favorites per 1,000 views in Tiny Genre →");
+    expect(items()[0].textContent).toBe("Every clear pattern with favorites per 1,000 views in Tiny Genre\u00a0→");
     expect(screen.queryByRole("navigation", { name: "Next questions" })).toBeNull();
     expect(screen.queryByRole("heading", { name: "Try another question" })).toBeNull();
   });

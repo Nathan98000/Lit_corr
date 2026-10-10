@@ -1,5 +1,5 @@
 import { useId, useRef } from "react";
-import { chartDomain, chartRows, printedFor, rowDetails, tickFormatFor } from "../lib/genres.js";
+import { chartDomain, chartRows, numberFormat, printedFor, rowDetails, tickFormatFor } from "../lib/genres.js";
 import { PHONE, rangeLayout } from "../lib/rangeLayout.js";
 import { GenreRowDetails, useGenreDetails } from "./GenreDetails.jsx";
 import useWidth from "./useWidth.js";
@@ -33,7 +33,7 @@ export default function GenreChart({ meta, variable, entry, rows, highlight, sub
     minN,
     domain: chartDomain(crow, kind),
     tickFormat: tickFormatFor(kind, entry.fmt),
-    printed: printedFor(kind, entry.fmt),
+    printed: printedFor(kind, numberFormat(variable, entry)),
     valueColumn: true,
     storiesColumn: true,
     phoneLabelW: 116,

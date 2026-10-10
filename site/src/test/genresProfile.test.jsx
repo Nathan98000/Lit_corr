@@ -283,12 +283,13 @@ describe("one genre on the real data", () => {
     const file = realFile();
     const p = genreProfile(real, file, file.genres.indexOf("adult-romance"));
     const item = (id) => p.items.find((x) => x.id === id);
-    expect(profileValues(item("sex_terms_per_1k"))).toBe("7.79 · all 19.3");
+    // one number of decimals per characteristic (F66): all genres' quartiles 10.1, 19.3, 30.1 give one decimal
+    expect(profileValues(item("sex_terms_per_1k"))).toBe("7.8 · all 19.3");
     expect(profileValues(item("rel_romance_per_1k"))).toBe("73% above 0 · all 43%");
     const howTo = genreProfile(real, file, file.genres.indexOf("adult-how-to"));
     expect(profileValues(howTo.items.find((x) => x.id === "pov_class"))).toBe("Second person (you) 55% · all 2%");
-    expect(profileRowDescription(item("sex_terms_per_1k"), { name: "Romance" }, false)).toMatch(
-      /^Romance median 7\.79 per 1,000 words, interquartile range [\d.]+–[\d.]+; all genres median 19\.3 per 1,000 words, interquartile range [\d.]+–[\d.]+; clearly less\. Opens every genre’s numbers\.$/,
+    expect(profileRowDescription(item("sex_terms_per_1k"), { name: "Romance" }, false, 10)).toMatch(
+      /^Romance median 7\.8 per 1,000 words, interquartile range \d+\.\d–\d+\.\d; all genres median 19\.3 per 1,000 words, interquartile range 10\.1–30\.1; clearly less\. Opens every genre’s numbers\.$/,
     );
   });
 });

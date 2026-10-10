@@ -10,7 +10,7 @@ import { splitRows } from "../components/GenreSplit.jsx";
 import { mixRows } from "../components/GenreMix.jsx";
 import { clearCache } from "../lib/data.js";
 import { SPLIT_SIDE, bandColors, inkOn, layoutProblems, mixColors, mixLayout, splitLayout } from "../lib/genreLayout.js";
-import { allGenresLine, bandQuartiles, chartDomain, comparison, formatNumber, genreRows, rowDetails, takeawayLists, tickFormatFor } from "../lib/genres.js";
+import { allGenresLine, bandQuartiles, chartDomain, comparison, genreRows, numberFormat, rowDetails, takeawayLists, tickFormatFor } from "../lib/genres.js";
 import { fixtureFetch, fixtureMeta, realMeta } from "./fixtures.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -256,7 +256,7 @@ describe("the forms on the real data", () => {
           if (entry.k === "zero") {
             const sRows = splitRows(rows, variable, real.min_n);
             const domain = chartDomain(sRows.map((r) => ({ stats: r.above })), "num");
-            const args = { rows: sRows, width, domain, printed: (v) => formatNumber(v, entry.fmt), tickFormat: tickFormatFor("zero", entry.fmt) };
+            const args = { rows: sRows, width, domain, printed: numberFormat(variable, entry).value, tickFormat: tickFormatFor("zero", entry.fmt) };
             layouts = width >= SPLIT_SIDE ? [splitLayout(args)] : [splitLayout({ ...args, half: "share" }), splitLayout({ ...args, half: "range" })];
           } else {
             layouts = [mixLayout({ rows: mixRows(rows, variable, entry.k, real.min_n), width })];
@@ -293,7 +293,8 @@ describe("the forms on the real data", () => {
     const file = realFile();
     const rows = genreRows(real, file, "pov_class");
     expect(text(allGenresLine(rows, real.variables.find((x) => x.id === "pov_class"), file.c.pov_class))).toBe(
-      "All genres: First person (I) 55%, First person plural (we) 0.1%, Second person (you) 2%, Third person 42%, Mixed 1%.",
+      // shares under 1% take a decimal (F66): "Mixed 0.8%", where the first copy said 1%
+      "All genres: First person (I) 55%, First person plural (we) 0.1%, Second person (you) 2%, Third person 42%, Mixed 0.8%.",
     );
     const romance = genreRows(real, file, "rel_romance_per_1k");
     expect(text(allGenresLine(romance, real.variables.find((x) => x.id === "rel_romance_per_1k"), file.c.rel_romance_per_1k))).toBe(

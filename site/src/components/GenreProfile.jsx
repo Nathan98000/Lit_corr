@@ -90,7 +90,7 @@ function ProfileRow({ item, genre, sub, minN, smallN, mark, plotW, hatchId, onNa
       <span className="profile-values">
         <Values item={item} mark={mark} minN={minN} />
       </span>
-      <span className="visually-hidden">. {profileRowDescription(item, genre, small)}</span>
+      <span className="visually-hidden">. {profileRowDescription(item, genre, small, minN)}</span>
     </ViewLink>
   );
 }

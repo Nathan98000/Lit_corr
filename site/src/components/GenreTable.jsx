@@ -1,20 +1,20 @@
 import { formatCount } from "../lib/format.js";
-import { comparison, formatNumber, formatPercent, formatSpan, formatYears } from "../lib/genres.js";
+import { comparison, formatPercent, formatYears, numberFormat } from "../lib/genres.js";
 
-/** The columns of one characteristic's numbers: [heading, cell(stats)] per form. */
-function columns(kind, variable, fmt) {
+/** The columns of one characteristic's numbers: [heading, cell(stats)] per form, as the chart prints them. */
+function columns(kind, variable, nf) {
   if (kind === "num") {
     return [
-      ["Median", (s) => formatNumber(s.median, fmt)],
-      ["Interquartile range", (s) => formatSpan(s.p25, s.p75, fmt)],
+      ["Median", (s) => nf.value(s.median)],
+      ["Interquartile range", (s) => nf.span(s.p25, s.p75)],
     ];
   }
   if (kind === "bin") return [["Share", (s) => formatPercent(s.share)]];
   if (kind === "zero") {
     return [
       ["Above 0", (s) => formatPercent(s.share)],
-      ["Median above 0", (s) => (s.median == null ? "–" : formatNumber(s.median, fmt))],
-      ["Interquartile range above 0", (s) => (s.median == null ? "–" : formatSpan(s.p25, s.p75, fmt))],
+      ["Median above 0", (s) => (s.median == null ? "–" : nf.value(s.median))],
+      ["Interquartile range above 0", (s) => (s.median == null ? "–" : nf.span(s.p25, s.p75))],
     ];
   }
   return variable.bins.labels.map((label, b) => [label, (s) => formatPercent(s.shares[b])]);
@@ -27,7 +27,7 @@ function columns(kind, variable, fmt) {
  */
 export default function GenreTable({ meta, variable, entry, rows, id, visible, caption }) {
   const kind = entry.k;
-  const cols = columns(kind, variable, entry.fmt);
+  const cols = columns(kind, variable, numberFormat(variable, entry));
   const span = cols.length + 3;
   return (
     <div id={id} className={visible ? "numbers-wrap genre-numbers" : "numbers-wrap genre-numbers visually-hidden"}>

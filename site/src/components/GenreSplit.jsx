@@ -1,5 +1,5 @@
 import { useId, useRef } from "react";
-import { chartDomain, comparison, formatNumber, formatPercent, plainUnit, rowDetails, tickFormatFor } from "../lib/genres.js";
+import { chartDomain, comparison, formatPercent, numberFormat, plainUnit, rowDetails, tickFormatFor } from "../lib/genres.js";
 import { SPLIT_SIDE, splitLayout } from "../lib/genreLayout.js";
 import { GenreRowDetails, useGenreDetails } from "./GenreDetails.jsx";
 import useWidth from "./useWidth.js";
@@ -75,7 +75,7 @@ function SplitPlot({ meta, variable, entry, rows, sRows, domain, highlight, sub,
     rows: sRows,
     width,
     domain,
-    printed: (v) => formatNumber(v, fmt),
+    printed: numberFormat(variable, entry).value,
     tickFormat: tickFormatFor("zero", fmt),
     half,
   });

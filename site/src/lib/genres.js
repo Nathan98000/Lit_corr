@@ -8,28 +8,88 @@ import { chartQuestion, chartQuestionText, lowerFirst, standsOutQuestion } from 
 export { chartQuestion, chartQuestionText, standsOutQuestion };
 
 // --------------------------------------------------------------------------------------------- numbers and units
-const sig3 = new Intl.NumberFormat("en-US", { maximumSignificantDigits: 3 });
-
-/** A share as a percentage: whole numbers, or one decimal when that would be 0 ("0.1%"). */
+/**
+ * A share as a percentage (yes/no characteristics, stories with any, named groups and bands): whole percents, one
+ * decimal under 1%, and "<0.1%" for a share above 0 that would read "0.0%": no percentage reads "0%" unless it is 0
+ * (F66).
+ */
 export function formatPercent(v) {
   if (v == null || !Number.isFinite(v)) return "–";
+  if (v === 0) return "0%";
   const p = v * 100;
-  const whole = Math.round(p);
-  if (whole !== 0 || p === 0) return `${whole}%`;
-  const one = Math.round(p * 10) / 10;
-  return one === 0 ? "0%" : `${one}%`;
+  if (Math.abs(p) >= 1) return `${formatFixed(p, 0)}%`;
+  if (Number(Math.abs(p).toFixed(1)) === 0) return p > 0 ? "<0.1%" : ">−0.1%";
+  return `${formatFixed(p, 1)}%`;
 }
 
-/** A characteristic's value as the file gives it (3 significant digits): percentages, whole years or numbers. */
-export function formatNumber(v, fmt = "num") {
-  if (v == null || !Number.isFinite(v)) return "–";
-  if (fmt === "percent") return formatPercent(v);
-  if (fmt === "year") return String(Math.round(v));
-  return v === 0 ? "0" : sig3.format(v).replace("-", "−");
+/** Decimals of a number as the file writes it: three significant digits, no trailing zeros (2050 → 0, 0.0588 → 4). */
+export function fileDecimals(v) {
+  if (v == null || !Number.isFinite(v) || v === 0) return 0;
+  const text = String(Math.abs(v));
+  if (text.includes("e")) {
+    const [mantissa, exp] = text.split("e");
+    return Math.max(0, (mantissa.split(".")[1]?.length ?? 0) - Number(exp));
+  }
+  const dot = text.indexOf(".");
+  return dot < 0 ? 0 : text.length - dot - 1;
 }
 
-/** "2,050–6,320", "24%–41%", "2008–2019". */
-export const formatSpan = (lo, hi, fmt) => `${formatNumber(lo, fmt)}–${formatNumber(hi, fmt)}`;
+/** A value with two significant digits ("0.088", "8.5", "0.0034"). */
+function twoDigits(v) {
+  const r = Number(v.toPrecision(2));
+  return formatFixed(r, Math.max(0, 1 - Math.floor(Math.log10(Math.abs(r)))));
+}
+
+const significantDigits = (text) => text.replace(/[^0-9]/g, "").replace(/^0+/, "").length;
+
+/** A percentage characteristic's value with `d` decimals, never "0%" above 0 (one decimal, then "<0.1%"). */
+function percentValue(v, d) {
+  const p = v * 100;
+  if (v === 0 || Number(p.toFixed(d)) !== 0) return `${formatFixed(p, d)}%`;
+  if (Number(p.toFixed(1)) !== 0) return `${formatFixed(p, 1)}%`;
+  return p > 0 ? "<0.1%" : ">−0.1%";
+}
+
+/**
+ * How one characteristic's chart prints its numbers, wherever they appear (F66): View 1's value column, the All genres
+ * line, the dashed line's label, the details, the row names and the table, and View 2's values, row names and table.
+ * - Numbers (fmt "num"): one number of decimals for the whole chart, the most among All genres' median and
+ *   quartiles as the file writes them (among the stories with any, for mostly-zero characteristics), at most 3 ("43.0
+ *   words, interquartile range 31.7–62.2"). A value above 0 that those decimals would round to 0, or to a single
+ *   significant digit, gets two significant digits instead ("0.088"); a whole value they write exactly keeps them
+ *   ("2 pages").
+ * - Percentages (fmt "percent"): whole percents, with one decimal when All genres' median is under 10%; never "0%"
+ *   above 0.
+ * - Years: whole. Minus signs are "−". Ranges take an en dash ("2,050–6,320"), or "to" when either end is negative
+ *   ("−0.333 to 0.059").
+ * Returns { value(v), span(lo, hi), unit (the plain unit, or ""), withUnit(v) }; shares use formatPercent().
+ */
+export function numberFormat(variable, entry) {
+  const fmt = entry.fmt || "num";
+  const all = cellStats(entry, 0);
+  const qs = all && all.median != null ? [all.p25, all.median, all.p75] : [];
+  const d =
+    fmt === "percent" ? (qs.length && Math.abs(all.median) < 0.1 ? 1 : 0) : Math.min(3, Math.max(0, ...qs.map(fileDecimals)));
+  const value = (v) => {
+    if (v == null || !Number.isFinite(v)) return "–";
+    if (fmt === "year") return String(Math.round(v));
+    if (fmt === "percent") return percentValue(v, d);
+    const text = formatFixed(v, d);
+    if (v === 0) return text;
+    const rounded = Number(v.toFixed(d));
+    const lost = Math.abs(rounded - v) > 1e-9 * Math.max(1, Math.abs(v));
+    return lost && (rounded === 0 || significantDigits(text) < 2) ? twoDigits(v) : text;
+  };
+  const unit = plainUnit(variable, fmt);
+  return {
+    fmt,
+    decimals: d,
+    value,
+    span: (lo, hi) => `${value(lo)}${lo < 0 || hi < 0 ? " to " : "–"}${value(hi)}`,
+    unit,
+    withUnit: (v) => withUnit(value(v), unit),
+  };
+}
 
 /** A genre's median age in this option: one decimal ("10.7 years"). */
 export const formatYears = (age) => (age == null ? "–" : `${formatFixed(age, 1)} years`);
@@ -47,10 +107,10 @@ export function plainUnit(variable, fmt = "num") {
   return /^per /.test(u) || /s$/.test(u) ? u : "";
 }
 
-/** A number with its unit: "3,610 words", "0.422 per 1,000 words", "1 page". */
-export function withUnit(text, value, unit) {
+/** A number as printed, with its unit: "3,610 words", "0.422 per 1,000 words", "1 page" (exactly "1": singular). */
+export function withUnit(text, unit) {
   if (!unit) return text;
-  const single = value === 1 && !unit.includes(" ") && unit.endsWith("s");
+  const single = text === "1" && !unit.includes(" ") && unit.endsWith("s");
   return `${text} ${single ? (unit.endsWith("ies") ? `${unit.slice(0, -3)}y` : unit.slice(0, -1)) : unit}`;
 }
 
@@ -236,14 +296,13 @@ export function allGenresLine(rows, variable, entry) {
   const all = rows[0].stats;
   if (!all) return null;
   const genres = rows.filter((r) => !r.all && r.stats);
+  const nf = numberFormat(variable, entry);
   if (kind === "num") {
-    const fmt = entry.fmt;
-    const unit = plainUnit(variable, fmt);
-    const segs = ["All genres: median ", { strong: formatNumber(all.median, fmt) }];
-    segs.push(`${unit ? withUnit("", all.median, unit) : ""}, interquartile range ${formatSpan(all.p25, all.p75, fmt)}.`);
+    const segs = ["All genres: median ", { strong: nf.value(all.median) }];
+    segs.push(`${nf.unit ? ` ${nf.unit}` : ""}, interquartile range ${nf.span(all.p25, all.p75)}.`);
     if (genres.length >= 2) {
       const meds = genres.map((r) => r.stats.median);
-      segs.push(` Genre medians run from ${formatNumber(Math.min(...meds), fmt)} to ${formatNumber(Math.max(...meds), fmt)}.`);
+      segs.push(` Genre medians run from ${nf.value(Math.min(...meds))} to ${nf.value(Math.max(...meds))}.`);
     }
     return segs;
   }
@@ -269,9 +328,7 @@ export function allGenresLine(rows, variable, entry) {
   if (kind === "zero") {
     const segs = ["All genres: ", { strong: formatPercent(all.share) }, " of stories are above 0"];
     if (all.median == null) return [...segs, "."];
-    const unit = plainUnit(variable, entry.fmt);
-    const med = withUnit(formatNumber(all.median, entry.fmt), all.median, unit);
-    segs.push(`; among those, median ${med}, interquartile range ${formatSpan(all.p25, all.p75, entry.fmt)}.`);
+    segs.push(`; among those, median ${nf.withUnit(all.median)}, interquartile range ${nf.span(all.p25, all.p75)}.`);
     return segs;
   }
   // named groups: every group's share
@@ -311,21 +368,20 @@ export function rowDetails(row, variable, entry, minN) {
   const s = row.stats;
   const name = row.genre.name;
   if (!s) return { items: [], comparison: null, name: `${name}: fewer than ${minN} stories`, line: `fewer than ${minN} stories.` };
-  const fmt = entry.fmt;
-  const unit = plainUnit(variable, fmt);
+  const nf = numberFormat(variable, entry);
   const numbers = [];
   const said = [];
   if (kind === "num") {
-    const med = withUnit(formatNumber(s.median, fmt), s.median, unit);
-    numbers.push(["Median", med], ["Interquartile range", formatSpan(s.p25, s.p75, fmt)]);
-    said.push(`median ${med}`, `interquartile range ${formatSpan(s.p25, s.p75, fmt)}`);
+    const med = nf.withUnit(s.median);
+    numbers.push(["Median", med], ["Interquartile range", nf.span(s.p25, s.p75)]);
+    said.push(`median ${med}`, `interquartile range ${nf.span(s.p25, s.p75)}`);
   } else if (kind === "zero") {
     numbers.push(["Above 0", formatPercent(s.share)]);
     said.push(`${formatPercent(s.share)} above 0`);
     if (s.median != null) {
-      const med = withUnit(formatNumber(s.median, fmt), s.median, unit);
-      numbers.push(["Median above 0", med], ["Interquartile range above 0", formatSpan(s.p25, s.p75, fmt)]);
-      said.push(`among those, median ${med}`, `interquartile range ${formatSpan(s.p25, s.p75, fmt)}`);
+      const med = nf.withUnit(s.median);
+      numbers.push(["Median above 0", med], ["Interquartile range above 0", nf.span(s.p25, s.p75)]);
+      said.push(`among those, median ${med}`, `interquartile range ${nf.span(s.p25, s.p75)}`);
     }
   } else if (kind === "bin") {
     numbers.push(["Share", formatPercent(s.share)]);
@@ -366,6 +422,7 @@ export function genreProfile(meta, file, gi) {
       pos,
       variable: byId.get(id),
       entry,
+      nf: numberFormat(byId.get(id), entry),
       kind: entry.k,
       stats: cellStats(entry, gi),
       all: cellStats(entry, 0),
@@ -432,9 +489,9 @@ export function biggestGap(stats, all) {
  * "73% above 0 · all 43%", "6–20 · all 2–5", "Second person (you) 55% · all 2%".
  */
 export function profileValues(item) {
-  const { kind, stats: g, all: a, variable, entry } = item;
+  const { kind, stats: g, all: a, variable } = item;
   if (!g || !a) return "";
-  if (kind === "num") return `${formatNumber(g.median, entry.fmt)} · all ${formatNumber(a.median, entry.fmt)}`;
+  if (kind === "num") return `${item.nf.value(g.median)} · all ${item.nf.value(a.median)}`;
   if (kind === "bin") return `${formatPercent(g.share)} · all ${formatPercent(a.share)}`;
   if (kind === "zero") return `${formatPercent(g.share)} above 0 · all ${formatPercent(a.share)}`;
   if (kind === "band") {
@@ -458,18 +515,14 @@ function profileComparison(item, small) {
  * with what is on screen, F76): "Romance median 7.79 per 1,000 words, interquartile range 4.1–12.2; all genres median
  * 19.3, interquartile range 9.82–31.4; clearly less. Opens every genre’s numbers."
  */
-export function profileRowDescription(item, genre, small) {
-  const { kind, stats: g, all: a, variable, entry } = item;
-  const fmt = entry.fmt;
-  const unit = plainUnit(variable, fmt);
+export function profileRowDescription(item, genre, small, minN) {
+  const { kind, stats: g, all: a, variable, nf } = item;
   const describe = (s) => {
-    if (!s) return "fewer than 10 stories";
-    if (kind === "num") {
-      return `median ${withUnit(formatNumber(s.median, fmt), s.median, unit)}, interquartile range ${formatSpan(s.p25, s.p75, fmt)}`;
-    }
+    if (!s) return `fewer than ${minN} stories`;
+    if (kind === "num") return `median ${nf.withUnit(s.median)}, interquartile range ${nf.span(s.p25, s.p75)}`;
     if (kind === "bin") return formatPercent(s.share);
     if (kind === "zero") {
-      const among = s.median == null ? "" : `, median ${withUnit(formatNumber(s.median, fmt), s.median, unit)} among them`;
+      const among = s.median == null ? "" : `, median ${nf.withUnit(s.median)} among them`;
       return `${formatPercent(s.share)} above 0${among}`;
     }
     if (kind === "band") {
@@ -520,8 +573,8 @@ export function tickFormatFor(kind, fmt) {
   return null;
 }
 
-/** The value printed in a row's column: the median, or the share. */
-export const printedFor = (kind, fmt) => (stats) => (kind === "bin" ? formatPercent(stats.median) : formatNumber(stats.median, fmt));
+/** The value printed in a row's column: the median (as the chart prints its numbers), or the share. */
+export const printedFor = (kind, nf) => (stats) => (kind === "bin" ? formatPercent(stats.median) : nf.value(stats.median));
 
 /** The heading of a characteristic's rows: the genres that clearly differ, of those compared (F63). */
 export const rowsHeading = (rows) => chartHeading(rows.filter((r) => !r.all && r.f).length, comparedRows(rows).length);

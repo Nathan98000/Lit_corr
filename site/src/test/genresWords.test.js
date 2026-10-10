@@ -45,7 +45,7 @@ function sentences(meta, file) {
     if (file.n[gi] < meta.min_n) continue;
     for (const item of genreProfile(meta, file, gi).items) {
       add(profileValues(item));
-      add(profileRowDescription(item, genre, Boolean(item.stats) && item.stats.n < meta.small_n));
+      add(profileRowDescription(item, genre, Boolean(item.stats) && item.stats.n < meta.small_n, meta.min_n));
     }
   }
   return out;

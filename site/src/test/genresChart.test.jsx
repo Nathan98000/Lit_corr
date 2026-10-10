@@ -14,9 +14,9 @@ import {
   chartQuestionText,
   comparison,
   directionWords,
-  formatNumber,
   formatPercent,
   genreRows,
+  numberFormat,
   orderRows,
   plainUnit,
   rowDetails,
@@ -201,20 +201,87 @@ describe("units and formats", () => {
     expect(plainUnit(r("part"))).toBe(""); // not a plural
     expect(plainUnit(r("−1 (all negative) to +1 (all positive)"))).toBe("");
     expect(plainUnit(r("words"), "percent")).toBe("");
-    expect(withUnit("3,610", 3610, "words")).toBe("3,610 words");
-    expect(withUnit("1", 1, "pages")).toBe("1 page");
-    expect(withUnit("1", 1, "stories")).toBe("1 story");
-    expect(withUnit("0.42", 0.42, "per 1,000 words")).toBe("0.42 per 1,000 words");
+    expect(withUnit("3,610", "words")).toBe("3,610 words");
+    expect(withUnit("1", "pages")).toBe("1 page");
+    expect(withUnit("1", "stories")).toBe("1 story");
+    expect(withUnit("1.0", "pages")).toBe("1.0 pages"); // singular only for exactly "1"
+    expect(withUnit("0.42", "per 1,000 words")).toBe("0.42 per 1,000 words");
   });
 
-  it("print numbers with their three digits, years whole and shares as percentages", () => {
-    expect(formatNumber(3610)).toBe("3,610");
-    expect(formatNumber(0.422)).toBe("0.422");
-    expect(formatNumber(-0.12)).toBe("−0.12");
-    expect(formatNumber(2013, "year")).toBe("2013");
+  // one chart's numbers: all genres first ([n, p10, p25, median, p75, p90]), then a genre ([n, p25, median, p75])
+  const nf = (fmt, all, unit = "words") =>
+    numberFormat({ unit, bins: { type: "ranges" } }, { k: "num", fmt, q: [[900, 0, ...all, 0], [300, 1, 2, 3]] });
+
+  it("print a chart's numbers with one number of decimals, the most of All genres' median and quartiles (F66)", () => {
+    const length = nf("num", [2050, 3610, 6320]);
+    expect([length.value(3610), length.span(2050, 6320), length.value(5060)]).toEqual(["3,610", "2,050–6,320", "5,060"]);
+    const paragraph = nf("num", [31.7, 43, 62.2]);
+    expect([paragraph.value(43), paragraph.span(31.7, 62.2), paragraph.value(18), paragraph.value(18.4)]).toEqual([
+      "43.0",
+      "31.7–62.2",
+      "18.0",
+      "18.4",
+    ]);
+    expect(nf("num", [0.227, 0.422, 0.768]).decimals).toBe(3);
+    expect(nf("num", [-0.333, -0.1, 0.0588]).decimals).toBe(3); // at most 3
+    // two significant digits where the chart's decimals would round a value to 0 or to one digit
+    const anatomy = nf("num", [6.5, 10, 15.2]);
+    expect(anatomy.decimals).toBe(1);
+    expect(anatomy.value(0.0876)).toBe("0.088");
+    expect(anatomy.value(0.04)).toBe("0.040");
+    const tags = nf("num", [5, 7, 10], "tags");
+    expect([tags.value(8.5), tags.value(8), tags.value(12)]).toEqual(["8.5", "8", "12"]); // whole values stay whole
+    expect(nf("num", [1, 1, 2], "pages").withUnit(1)).toBe("1 page");
+  });
+
+  it("use “−” and “to” where a range has a negative end, and write years whole", () => {
+    const tone = nf("num", [-0.333, -0.1, 0.0588], "");
+    expect(tone.span(-0.333, 0.0588)).toBe("−0.333 to 0.059");
+    expect(tone.value(-0.00794)).toBe("−0.0079"); // three decimals would leave one significant digit
+    expect(nf("year", [2008, 2013, 2019]).span(2008, 2019)).toBe("2008–2019");
+    expect(nf("year", [2008, 2013, 2019]).value(2013.4)).toBe("2013");
+  });
+
+  it("print percentages whole, with one decimal when All genres' median is under 10%, never “0%” above 0", () => {
+    const rare = nf("percent", [0.014, 0.023, 0.034]);
+    expect([rare.value(0.019), rare.value(0.023), rare.span(0.014, 0.034)]).toEqual(["1.9%", "2.3%", "1.4%–3.4%"]);
+    expect(rare.value(0.0004)).toBe("<0.1%");
+    expect(rare.value(0)).toBe("0.0%");
+    const common = nf("percent", [0.31, 0.45, 0.6]);
+    expect([common.value(0.45), common.value(0.004), common.value(0.0002)]).toEqual(["45%", "0.4%", "<0.1%"]);
+    const buildUp = nf("percent", [-0.07, 0.005, 0.11]);
+    expect(buildUp.span(-0.07, 0.11)).toBe("−7.0% to 11.0%");
+  });
+
+  it.skipIf(!real)("print the real data's numbers as one chart (F66)", () => {
+    const file = realFile();
+    const say = (id) => text(allGenresLine(genreRows(real, file, id), v(real, id), file.c[id]));
+    const details = (id, genre) => {
+      const row = genreRows(real, file, id).find((r) => r.genre.id === genre);
+      return rowDetails(row, v(real, id), file.c[id], real.min_n);
+    };
+    // rare words: How To no longer prints all genres' "2%"
+    expect(say("lex_rare_word_share")).toBe("All genres: median 2.4%, interquartile range 1.7%–3.4%. Genre medians run from 1.6% to 3.8%.");
+    expect(details("lex_rare_word_share", "adult-how-to").items[0]).toEqual(["Median", "1.8%"]);
+    // paragraph length: one number of decimals
+    expect(say("story_mean_paragraph_words")).toBe(
+      "All genres: median 43.0 words, interquartile range 31.7–62.2. Genre medians run from 36.3 to 64.0.",
+    );
+    // the build-up of dialogue: minus signs and "to"
+    expect(say("pace_dialogue_shift")).toBe("All genres: median 0.9%, interquartile range −6.7% to 11.1%. Genre medians run from −3.6% to 5.2%.");
+    // story length: unchanged
+    expect(say("story_words")).toBe("All genres: median 3,610 words, interquartile range 2,050–6,320. Genre medians run from 1,280 to 5,060.");
+    // unrecognized words: never "0%" for stories with any, in any genre
+    const unrecognized = genreRows(real, file, "lex_unrecognized_word_share");
+    const words = [say("lex_unrecognized_word_share"), ...unrecognized.map((r) => rowDetails(r, v(real, "lex_unrecognized_word_share"), file.c.lex_unrecognized_word_share, 10).line)];
+    for (const w of words) expect(w).not.toMatch(/(^|[^.\d])0%/);
+  });
+
+  it("print shares whole, with one decimal under 1%, and “<0.1%” for a share above 0 that would read 0", () => {
     expect(formatPercent(0.553)).toBe("55%");
+    expect(formatPercent(0.008)).toBe("0.8%");
     expect(formatPercent(0.001)).toBe("0.1%");
-    expect(formatPercent(0.008)).toBe("1%");
+    expect(formatPercent(0.0004)).toBe("<0.1%");
     expect(formatPercent(0)).toBe("0%");
   });
 });
@@ -402,7 +469,7 @@ describe("the numbers and the actions", () => {
 describe("details wording", () => {
   it("names every number of a genre, for numbers and yes/no characteristics", () => {
     const words = { id: "story_words", unit: "words", more_word: "Longer", less_word: "Shorter", bins: { type: "ranges" } };
-    const entry = { k: "num", fmt: "num" };
+    const entry = { k: "num", fmt: "num", q: [[8987, 1270, 2050, 3610, 6320, 10900]] }; // all genres' numbers set the decimals
     const row = { i: 5, genre: { id: "adult-romance", name: "Romance" }, all: false, small: false, f: 0, age: 10.7, stats: { n: 300, p25: 2250, median: 4390, p75: 8150 } };
     const d = rowDetails(row, words, entry, 10);
     expect(d.name).toBe(
@@ -412,7 +479,7 @@ describe("details wording", () => {
     expect(rowDetails({ ...row, f: -1 }, words, entry, 10).name).toMatch(/clearly shorter than all genres$/);
     expect(rowDetails({ ...row, stats: null }, words, entry, 10).name).toBe("Romance: fewer than 10 stories");
     const yes = { id: "pov_is_first_person", yes_subject: "First-person stories", bins: { type: "levels" } };
-    expect(rowDetails({ ...row, stats: { n: 283, share: 0.72 } }, yes, { k: "bin" }, 10).name).toBe(
+    expect(rowDetails({ ...row, stats: { n: 283, share: 0.72 } }, yes, { k: "bin", q: [[8447, 0.571]] }, 10).name).toBe(
       "Romance: 72% first-person stories, 283 stories, median age 10.7 years, no clear difference from all genres",
     );
   });

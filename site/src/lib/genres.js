@@ -3,7 +3,7 @@
 // nothing here ranks genres, except the "By median" order the reader asks for (D3).
 
 import { formatCount, formatFixed, stepDecimals } from "./format.js";
-import { chartQuestion, chartQuestionText, lowerFirst, standsOutQuestion } from "./wording.js";
+import { chartQuestion, chartQuestionText, lowerFirst, standsOutQuestion, upperFirst } from "./wording.js";
 
 export { chartQuestion, chartQuestionText, standsOutQuestion };
 
@@ -485,10 +485,19 @@ export function standOutWord(item) {
   return (item.f > 0 ? more : less).toLowerCase();
 }
 
-/** "Biggest differences: sexual language (less), …" for the three largest. */
+/**
+ * "Biggest differences: sexual language (less), …" for the three largest (F78). Story age is the publication year
+ * again, so it is skipped when publication year is among the three, and the next one is taken; a noun that ends in a
+ * parenthesis takes its word after a comma ("word variety (type–token ratio), higher").
+ */
 export function profileTakeaway(flagged) {
   if (!flagged.length) return null;
-  const top = flagged.slice(0, 3).map((x) => `${nounOf(x.variable)} (${standOutWord(x)})`);
+  const withYear = flagged.slice(0, 3).some((x) => x.id === "pub_year");
+  const list = withYear ? flagged.filter((x) => x.id !== "age_years") : flagged;
+  const top = list.slice(0, 3).map((x) => {
+    const noun = nounOf(x.variable);
+    return noun.endsWith(")") ? `${noun}, ${standOutWord(x)}` : `${noun} (${standOutWord(x)})`;
+  });
   return `${top.length === 1 ? "Biggest difference" : "Biggest differences"}: ${top.join(", ")}.`;
 }
 
@@ -502,21 +511,77 @@ export function biggestGap(stats, all) {
 }
 
 /**
- * A characteristic's values in one genre and in all genres, for "One genre": "7.79 · all 19.3", "24% · all 27%",
- * "73% with any · all 43%", "6–20 · all 2–5", "Second person (you) 55% · all 2%".
+ * A characteristic's values in one genre and in all genres, for "One genre", in two parts that a phone may put on two
+ * lines (F61b, F67): ["7.8", "all 19.3 per 1,000 words"] (the unit only when it is a plain one), ["24%", "all 27%"],
+ * ["76% with any, median 2.57", "all 83%, 1.19 per 1,000 words"], ["6–20", "all 2–5"], ["Second person (you) 55%",
+ * "all 2%"]. Null without the genre's numbers.
  */
-export function profileValues(item) {
-  const { kind, stats: g, all: a, variable } = item;
-  if (!g || !a) return "";
-  if (kind === "num") return `${item.nf.value(g.median)} · all ${item.nf.value(a.median)}`;
-  if (kind === "bin") return `${formatPercent(g.share)} · all ${formatPercent(a.share)}`;
-  if (kind === "zero") return `${formatPercent(g.share)} with any · all ${formatPercent(a.share)}`;
+export function profileValueParts(item) {
+  const { kind, stats: g, all: a, variable, nf } = item;
+  if (!g || !a) return null;
+  const unit = nf.unit ? ` ${nf.unit}` : "";
+  if (kind === "num") return [nf.value(g.median), `all ${nf.value(a.median)}${unit}`];
+  if (kind === "bin") return [formatPercent(g.share), `all ${formatPercent(a.share)}`];
+  if (kind === "zero") {
+    const genre = `${formatPercent(g.share)} with any${g.median != null ? `, median ${nf.value(g.median)}` : ""}`;
+    const among = a.median == null ? "" : `, ${g.median != null ? "" : "median "}${nf.value(a.median)}${unit}`;
+    return [genre, `all ${formatPercent(a.share)}${among}`];
+  }
   if (kind === "band") {
     const labels = variable.bins.labels;
-    return `${labels[bandQuartiles(g.shares).median]} · all ${labels[bandQuartiles(a.shares).median]}`;
+    return [labels[bandQuartiles(g.shares).median], `all ${labels[bandQuartiles(a.shares).median]}`];
   }
   const b = biggestGap(g, a);
-  return `${variable.bins.labels[b]} ${formatPercent(g.shares[b])} · all ${formatPercent(a.shares[b])}`;
+  return [`${variable.bins.labels[b]} ${formatPercent(g.shares[b])}`, `all ${formatPercent(a.shares[b])}`];
+}
+
+/** The values as one line: "7.8 · all 19.3 per 1,000 words". */
+export function profileValues(item) {
+  const parts = profileValueParts(item);
+  return parts ? parts.join(" · ") : "";
+}
+
+/**
+ * A row's bar in "One genre" (concept P2): how often the genre's story is the higher one against a story from all
+ * genres, out of 100: 50 × (1 + r), the rank-biserial r the rule decides by. The bar runs from 50 to there, its number
+ * rounded away from 50 (r of ±0.25 reads 63 and 37) and printed at its end, or inside it near the scale's ends. Null
+ * when r is null (fewer than the rule's min_n stories: nothing was compared).
+ */
+export function comparisonBar(r) {
+  if (r == null) return null;
+  const end = 50 * (1 + r);
+  return {
+    times: 50 + Math.sign(r) * Math.round(50 * Math.abs(r)),
+    from: Math.min(50, end),
+    to: Math.max(50, end),
+    end,
+    lower: r < 0,
+    inside: end <= 15 || end >= 85,
+  };
+}
+
+/** The zone of "no clear difference" on that scale, from the rule (40 to 60 in 100 for min_r 0.2). */
+export const noDifferenceZone = (rule) => [Math.round(50 * (1 - rule.min_r)), Math.round(50 * (1 + rule.min_r))];
+
+/** The comparison words of a row and of the table in "One genre": "Clearly less", "No clear difference", … */
+export const profileComparisonWords = (item, small) => upperFirst(profileComparison(item, small));
+
+/**
+ * One characteristic's cells in "One genre"'s table (F80), as View 2 writes its values: the genre's and all genres'
+ * (num: "7.8 per 1,000 words"; mostly zero: "76% with any, median 2.57 per 1,000 words"; named groups: every group's
+ * share), and the genre's stories.
+ */
+export function profileTableCells(item, minN) {
+  const { kind, stats: g, all: a, variable, nf } = item;
+  const cell = (s) => {
+    if (!s) return `Fewer than ${minN} stories`;
+    if (kind === "num") return nf.withUnit(s.median);
+    if (kind === "bin") return formatPercent(s.share);
+    if (kind === "zero") return `${formatPercent(s.share)} with any${s.median != null ? `, median ${nf.withUnit(s.median)}` : ""}`;
+    if (kind === "band") return variable.bins.labels[bandQuartiles(s.shares).median];
+    return variable.bins.labels.map((l, b) => `${l} ${formatPercent(s.shares[b])}`).join(", ");
+  };
+  return { genre: cell(g), all: cell(a), stories: g ? formatCount(g.n) : "–" };
 }
 
 /** How one stand-out compares, at the end of a row's name: "clearly lower", "no clear difference". */

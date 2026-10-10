@@ -24,9 +24,12 @@ export function Caret() {
   );
 }
 
-/** A slot's words with its caret; the last word and the caret never part, so the caret never starts a line (F59). */
+/**
+ * A slot's words with its caret; the last word and the caret never part, so the caret never starts a line (F59). A
+ * zero-width space counts as a word's end too (the Genres page puts one after a genre name's slash).
+ */
 export function SlotWords({ text }) {
-  const cut = text.lastIndexOf(" ") + 1;
+  const cut = Math.max(text.lastIndexOf(" "), text.lastIndexOf("\u200b")) + 1;
   return (
     <>
       {text.slice(0, cut)}

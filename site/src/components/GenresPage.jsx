@@ -68,6 +68,9 @@ function useAnnouncement(text, key, orderText = "", orderKey = "") {
   return said;
 }
 
+/** A genre's name that a narrow line may break after its slash ("Reluctance/NonConsent"): the slot's text is hidden from screen readers. */
+const breakable = (name) => name.replace(/\//g, "/\u200b");
+
 /** "Only include", with the options that cannot go with the characteristic turned off (as on the explorer). */
 function IncludeSelect({ meta, value, variable, onChange }) {
   const ids = useId();
@@ -205,7 +208,7 @@ export default function GenresPage({ meta, state, onChange, onNavigate, onHoldSc
           id={`${ids}-genre`}
           label="Genre"
           value={genre.id}
-          text={genre.name}
+          text={breakable(genre.name)}
           onChange={(g) => keepPlace({ ...state, genre: g })}
         >
           {genres.map((g) => (
@@ -251,7 +254,7 @@ export default function GenresPage({ meta, state, onChange, onNavigate, onHoldSc
             id={`${ids}-highlight`}
             label="Highlight"
             value={state.genre || ""}
-            text={state.genre ? meta.genres.find((g) => g.id === state.genre).name : "None"}
+            text={state.genre ? breakable(meta.genres.find((g) => g.id === state.genre).name) : "None"}
             onChange={(g) => keepPlace({ ...state, genre: g || undefined })}
           >
             <option value="">None</option>

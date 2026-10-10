@@ -10,7 +10,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "../App.jsx";
 import { profileAnnouncement } from "../components/GenreProfile.jsx";
 import { clearCache } from "../lib/data.js";
-import { genreAgeNote, genreProfile, profileHeading, profileRowDescription, profileTakeaway, profileValues } from "../lib/genres.js";
+import { comparisonBar, genreAgeNote, genreProfile, noDifferenceZone, profileHeading, profileRowDescription, profileTakeaway, profileValues } from "../lib/genres.js";
 import { fixtureFetch, fixtureMeta, realMeta } from "./fixtures.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -244,6 +244,122 @@ describe("edge states", () => {
   });
 });
 
+describe("one scale for every row (concept P2, F67)", () => {
+  it("draws how often the genre's story is the higher one: from 50 to 50 × (1 + r), its number at its end", () => {
+    expect(comparisonBar(-0.48)).toMatchObject({ times: 26, from: 26, to: 50, lower: true, inside: false });
+    expect(comparisonBar(0.4)).toMatchObject({ times: 70, from: 50, to: 70, lower: false, inside: false });
+    expect([comparisonBar(0.25).times, comparisonBar(-0.25).times]).toEqual([63, 37]); // rounded away from 50
+    expect(comparisonBar(-0.93)).toMatchObject({ times: 3, inside: true }); // near the scale's end: inside the bar
+    expect(comparisonBar(-0.93).end).toBeCloseTo(3.5);
+    expect(comparisonBar(0)).toMatchObject({ times: 50, from: 50, to: 50 });
+    expect(comparisonBar(null)).toBeNull(); // not compared: no bar
+    expect(noDifferenceZone({ min_r: 0.2 })).toEqual([40, 60]);
+  });
+
+  it("draws the zone of no clear difference with its edges, and the bar, on each row; named groups keep two bars", async () => {
+    // a wide screen: room for the five tick labels
+    vi.spyOn(Element.prototype, "getBoundingClientRect").mockReturnValue({ width: 1032, height: 0, top: 0, left: 0, right: 1032, bottom: 0 });
+    const user = await openGenre("#/genres?view=genre&genre=romance&include=all");
+    const row = document.querySelector(".profile-list .profile-row"); // dialogue share, r −0.32
+    expect(row.querySelector(".p2-zone").getAttribute("x")).toBe("40%");
+    expect(row.querySelector(".p2-zone").getAttribute("width")).toBe("20%");
+    expect([...row.querySelectorAll(".p2-edge")].map((l) => l.getAttribute("x1"))).toEqual(["40%", "60%"]);
+    expect(row.querySelector(".p2-bar").getAttribute("x")).toBe("34%");
+    expect(row.querySelector(".p2-bar").getAttribute("width")).toBe("16%");
+    expect(row.querySelector(".p2-num").textContent).toBe("34");
+    // each list has its scale: 0 to "100 in 100", and what the values are
+    const scale = document.querySelector(".profile-list .profile-scale");
+    expect([...scale.querySelectorAll("text")].map((t) => t.textContent)).toEqual(["0", "25", "50", "75", "100 in 100"]);
+    expect(scale.querySelector(".profile-values").textContent).toBe("Romance · all genres");
+    window.dispatchEvent(new Event("resize")); // (the width stays: a phone's scale is checked below)
+    // named groups: the genre's 100% bar over all genres'
+    const mix = [...document.querySelectorAll(".profile-list")].find((l) => l.querySelector("h3").textContent === "A different mix");
+    expect(mix.querySelector(".p2-bar")).toBeNull();
+    expect(mix.querySelectorAll(".profile-row .segment").length).toBeGreaterThan(2);
+    // the key: two items, and the third where named groups' rows can be shown
+    expect([...document.querySelectorAll(".profile-legend li")].map((li) => li.textContent.replace(/\s+/g, " ").trim())).toEqual([
+      "How often a Romance story is the higher one, against a story from all genres (times in 100)",
+      "No clear difference: 40 to 60 in 100 (how this is decided)",
+      "A different mix: Romance above, all genres below",
+    ]);
+    expect(within(document.querySelector(".profile-legend")).getByRole("link", { name: "how this is decided" }).getAttribute("href")).toBe(
+      "#/methodology/genres",
+    );
+    // a row not compared says so in its plot cell
+    await user.click(document.querySelector(".profile-topic summary"));
+    expect(document.querySelector(".profile-topic .p2-bar, .profile-topic .segment")).toBeTruthy();
+  });
+
+  it("puts three tick labels over a phone's narrower plots", async () => {
+    vi.spyOn(Element.prototype, "getBoundingClientRect").mockReturnValue({ width: 343, height: 0, top: 0, left: 0, right: 343, bottom: 0 });
+    await openGenre("#/genres?view=genre&genre=romance&include=all");
+    const scale = document.querySelector(".profile-list .profile-scale");
+    expect([...scale.querySelectorAll("text")].map((t) => t.textContent)).toEqual(["0", "50", "100"]);
+  });
+
+  it("says “Too few stories to compare” where a row has no r, with no bar", async () => {
+    const serve = fixtureFetch();
+    vi.stubGlobal("fetch", async (url) => {
+      const res = await serve(url);
+      if (!String(url).includes("genres/")) return res;
+      const body = await res.json();
+      body.c.dlg_word_share.q[2][0] = 24; // Romance: 24 stories with it
+      body.c.dlg_word_share.r[2] = null;
+      body.c.dlg_word_share.f[2] = 0;
+      return { ok: true, status: 200, json: async () => body };
+    });
+    const user = await openGenre("#/genres?view=genre&genre=romance&include=all");
+    await user.click(document.querySelector(".profile-topic:nth-of-type(2) summary") || document.querySelectorAll(".profile-topic summary")[1]);
+    const row = await waitFor(() => {
+      const r = [...document.querySelectorAll(".profile-topic .profile-row")].find((x) => x.querySelector(".profile-label").textContent === "Dialogue share");
+      expect(r).toBeTruthy();
+      return r;
+    });
+    expect(row.querySelector(".profile-few").textContent).toBe("Too few stories to compare");
+    expect(row.querySelector("svg")).toBeNull();
+    expect(row.classList.contains("small")).toBe(true);
+  });
+
+  it("names every row by what is on screen first (F76), then the description", async () => {
+    await openGenre("#/genres?view=genre&genre=romance&include=all");
+    for (const row of document.querySelectorAll(".profile-row")) {
+      const label = row.querySelector(".profile-label").textContent;
+      const name = screen.getByRole("link", { name: new RegExp(`^${label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\s*\\S`) });
+      expect(name).toBe(row);
+    }
+  });
+
+  it("gives every characteristic's numbers as a table, topic by topic, and a link to copy (F80)", async () => {
+    const user = await openGenre("#/genres?view=genre&genre=romance&include=all");
+    const button = screen.getByRole("button", { name: "Show the numbers" });
+    expect(button.getAttribute("aria-expanded")).toBe("false");
+    expect(screen.getByRole("button", { name: /Copy link/ })).toBeTruthy();
+    await user.click(button);
+    const table = screen.getByRole("table");
+    expect(table.querySelector("caption").textContent).toBe("The numbers behind the lists: What stands out about stories in Romance?");
+    expect([...table.querySelectorAll("thead th")].map((h) => h.textContent)).toEqual([
+      "Characteristic",
+      "Romance",
+      "All genres",
+      "Stories in Romance",
+      "Compared with all genres",
+    ]);
+    const groups = [...table.querySelectorAll("tbody")];
+    expect(groups.map((g) => g.querySelector(".topic-row th").textContent)).toEqual(fixtureMeta.topics.map((t) => t.label));
+    const dialogue = within(table).getByRole("rowheader", { name: "Dialogue share" }).closest("tr");
+    expect([...dialogue.querySelectorAll("td")].map((td) => td.textContent)).toEqual([
+      expect.stringMatching(/^\d+%$/),
+      expect.stringMatching(/^\d+%$/),
+      "120",
+      "Clearly less dialogue",
+    ]);
+    const mixRow = within(table).getByRole("rowheader", { name: "Narrative perspective" }).closest("tr");
+    expect(mixRow.querySelectorAll("td")[0].textContent).toMatch(/^First person \(I\) [\d.]+%, .*Mixed [\d.<]+%$/);
+    expect(mixRow.querySelectorAll("td")[3].textContent).toBe("A clearly different mix");
+    expect(screen.getByRole("button", { name: "Hide the numbers" }).getAttribute("aria-expanded")).toBe("true");
+  });
+});
+
 describe("one genre on the real data", () => {
   it.skipIf(!real)("reproduces the acceptance numbers", () => {
     const file = realFile();
@@ -281,15 +397,36 @@ describe("one genre on the real data", () => {
     expect(howTo.topics.reduce((sum, t) => sum + t.compared, 0)).toBe(howTo.compared);
   });
 
+  it.skipIf(!real)("skips story age in the takeaway when publication year is among the three (F78)", () => {
+    const file = realFile();
+    const chain = genreProfile(real, file, file.genres.indexOf("chain-stories"));
+    const top = chain.flagged.slice(0, 3).map((x) => x.id);
+    expect(top).toContain("pub_year");
+    const takeaway = profileTakeaway(chain.flagged);
+    expect(takeaway).toMatch(/publication year \(older\)/);
+    expect(takeaway).not.toMatch(/story age/);
+    expect(takeaway.split(", ")).toHaveLength(3); // the next one is taken
+    // a noun that ends in a parenthesis takes its word after a comma
+    const one = [{ id: "lex_ttr", variable: { noun: "word variety (type–token ratio)", bins: {} }, kind: "num", f: 1 }];
+    expect(profileTakeaway(one)).toBe("Biggest difference: word variety (type–token ratio), higher.");
+  });
+
   it.skipIf(!real)("writes the values as the copy does", () => {
     const file = realFile();
     const p = genreProfile(real, file, file.genres.indexOf("adult-romance"));
     const item = (id) => p.items.find((x) => x.id === id);
-    // one number of decimals per characteristic (F66): all genres' quartiles 10.1, 19.3, 30.1 give one decimal
-    expect(profileValues(item("sex_terms_per_1k"))).toBe("7.8 · all 19.3");
-    expect(profileValues(item("rel_romance_per_1k"))).toBe("73% with any · all 43%");
+    // one number of decimals per characteristic (F66): all genres' quartiles 10.1, 19.3, 30.1 give one decimal; the
+    // unit when it is a plain one, and both numbers of a mostly-zero characteristic (F61b, F67)
+    expect(profileValues(item("sex_terms_per_1k"))).toBe("7.8 · all 19.3 per 1,000 words");
+    expect(profileValues(item("rel_romance_per_1k"))).toBe("73% with any, median 0.709 · all 43%, 0.422 per 1,000 words");
+    expect(profileValues(item("sex_sentence_share"))).toBe("9% · all 20%");
     const howTo = genreProfile(real, file, file.genres.indexOf("adult-how-to"));
-    expect(profileValues(howTo.items.find((x) => x.id === "pov_class"))).toBe("Second person (you) 55% · all 2%");
+    const howToItem = (id) => howTo.items.find((x) => x.id === id);
+    expect(profileValues(howToItem("pov_class"))).toBe("Second person (you) 55% · all 2%");
+    // How To's repeated five-word phrases: lower in its share with any, higher among those with any, marked higher
+    expect(profileValues(howToItem("rep_repeated_5gram_per_1k"))).toBe("76% with any, median 2.570 · all 83%, 1.190 per 1,000 words");
+    expect(howToItem("rep_repeated_5gram_per_1k").f).toBe(1);
+    expect(profileValues(howToItem("author_stories_count"))).toMatch(/^[\d+–]+( stories?)? · all [\d–]+$/);
     expect(profileRowDescription(item("sex_terms_per_1k"), { name: "Romance" }, false, 10)).toMatch(
       /^Romance median 7\.8 per 1,000 words, interquartile range \d+\.\d–\d+\.\d; all genres median 19\.3 per 1,000 words, interquartile range 10\.1–30\.1; clearly less\. Opens every genre’s numbers\.$/,
     );

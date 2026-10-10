@@ -695,10 +695,6 @@
 }
 
 /* ------------------------------------------------------------------------ one genre (View 2) */
-.genre-profile .defs {
-  position: absolute;
-}
-
 .profile-none {
   margin: 4px 0 8px;
   max-width: 62ch;
@@ -709,18 +705,30 @@
   margin-bottom: 4px;
 }
 
-.profile-legend .key-all-range {
-  width: 22px;
-  height: 12px;
+/* the key (concept P2): the bar, the zone of no clear difference, the named groups' two bars */
+.profile-legend .key-p2-bar {
+  width: 18px;
+  height: 8px;
   border-radius: 2px;
-  background: #d9d5cc;
+  background: var(--accent-ink);
 }
 
-.profile-legend .key-all-median {
-  width: 0;
-  height: 14px;
-  border-left: 2px solid var(--ink-2);
-  vertical-align: -2px;
+.profile-legend .key-p2-zone {
+  width: 18px;
+  height: 12px;
+  background: #ece9e2;
+  border-left: 1px solid #8f8a80;
+  border-right: 1px solid #8f8a80;
+}
+
+.profile-legend .key-p2-mix {
+  width: 18px;
+  height: 11px;
+  background: linear-gradient(var(--group-0) 0 4px, transparent 4px 7px, var(--group-1) 7px 11px);
+}
+
+.profile-legend {
+  max-width: 74ch;
 }
 
 .profile-list {
@@ -759,12 +767,18 @@
   padding: 0;
 }
 
-/* a row: the name in a 250 px column, its small plot, the values at the right */
-.profile-row {
+/* a row: the name in a 250 px column, its plot, the values at the right; the values column is as wide for every row
+   of a list or a topic (their bars share the scale over them), and grows only where a part of its words is wider (a
+   wider font) */
+.profile-row,
+.profile-scale {
   display: grid;
-  grid-template-columns: 250px minmax(0, 1fr) var(--values-w, 150px);
+  grid-template-columns: 250px minmax(0, 1fr) minmax(var(--values-w, 150px), min-content);
   align-items: center;
   column-gap: 12px;
+}
+
+.profile-row {
   min-height: var(--target);
   padding: 4px 0;
   border-bottom: 1px solid var(--rule);
@@ -772,11 +786,11 @@
   text-decoration: none;
 }
 
-.profile-row:hover {
+a.profile-row:hover {
   background: rgb(74 137 243 / 0.05);
 }
 
-.profile-row:hover .profile-label {
+a.profile-row:hover .profile-label {
   text-decoration: underline;
   text-underline-offset: 2px;
 }
@@ -791,12 +805,35 @@
   line-height: 1.3;
 }
 
+/* the plot's geometry is in percent of its cell, inside 7 px of room at each end */
+.profile-plot-cell {
+  min-width: 0;
+  padding: 0 7px;
+}
+
+/* the values on one line, or on two at the point between the genre's and all genres' when their column is narrower */
 .profile-values {
   justify-self: end;
   font-size: 13px;
+  line-height: 1.35;
   color: var(--ink-2);
   font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.profile-values .v-part {
   white-space: nowrap;
+}
+
+/* not compared (fewer than the rule's stories): the values muted, the plot cell says so */
+.profile-row.small .profile-values {
+  color: var(--ink-3);
+}
+
+.profile-few {
+  font-size: 12.5px;
+  font-style: italic;
+  color: var(--ink-3);
 }
 
 .profile-plot {
@@ -804,37 +841,33 @@
   overflow: visible;
 }
 
-.profile-plot .baseline {
-  stroke: var(--rule);
+.p2-zone {
+  fill: #ece9e2;
 }
 
-.profile-plot .all-range {
-  fill: #d9d5cc;
+/* the zone's edges carry the rule's thresholds: 3.3:1 against the page */
+.p2-edge {
+  stroke: #8f8a80;
+  stroke-width: 1;
 }
 
-.profile-plot .all-median {
-  stroke: var(--ink-2);
-  stroke-width: 1.5;
+.p2-mid {
+  stroke: var(--ink-3);
+  stroke-width: 1;
 }
 
-.profile-plot .genre-range {
-  fill: var(--accent-bar);
-  stroke: var(--accent);
-}
-
-.profile-row.small .genre-range {
-  stroke-dasharray: 3 2;
-}
-
-.profile-plot .genre-dot {
+.p2-bar {
   fill: var(--accent-ink);
-  stroke: #fff;
-  stroke-width: 2;
 }
 
-.profile-plot .genre-dot.hollow {
+.p2-num {
+  fill: var(--ink-2);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.p2-num.inside {
   fill: #fff;
-  stroke: var(--accent-ink);
 }
 
 .profile-plot .segment {
@@ -842,10 +875,31 @@
   stroke-width: 1;
 }
 
-.profile-plot + .hatch-line,
-.genre-profile .hatch-line {
-  stroke: #b9d0fa;
-  stroke-width: 2.4;
+/* the scale over a list or an open topic: the ticks, and what the values are */
+.profile-scale {
+  padding: 6px 0 2px;
+}
+
+.profile-scale .profile-plot-cell {
+  grid-column: 2;
+}
+
+.profile-scale .profile-values {
+  grid-column: 3;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+
+.profile-ticks {
+  display: block;
+  overflow: visible;
+}
+
+.profile-ticks text {
+  fill: var(--ink-3);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
 }
 
 .show-all {
@@ -911,43 +965,89 @@
   content: "–" / "";
 }
 
-.profile-topic .profile-rows {
+.profile-topic .profile-block {
   margin-bottom: 12px;
 }
 
-/* phones: the name on its own line above the plot, the values at the right; rows about 56 px */
+/* the table's topics: a heading row for each */
+.profile-numbers .topic-row th {
+  padding-top: 14px;
+  text-align: left;
+  font-family: var(--serif);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.profile-numbers tbody th[scope="row"] {
+  text-align: left;
+  font-weight: 400;
+}
+
+/* a list's values that would not fit even in two parts break at their spaces too */
+.profile-block.wrap-words .profile-values .v-part {
+  white-space: normal;
+}
+
+/* the phone layout (a chart narrower than 560 px, as on the other forms): the name on its own line, then the plot and
+   the values (which may take two lines) */
+.genre-profile.phone .profile-row,
+.genre-profile.phone .profile-scale {
+  grid-template-columns: minmax(0, 1fr) minmax(var(--values-w, 120px), min-content);
+}
+
+.genre-profile.phone .profile-row {
+  grid-template-areas: "label label" "plot values";
+  row-gap: 2px;
+  min-height: 56px;
+  padding: 6px 0;
+}
+
+.genre-profile.phone .profile-label {
+  grid-area: label;
+}
+
+.genre-profile.phone .profile-plot-cell {
+  grid-area: plot;
+}
+
+.genre-profile.phone .profile-values {
+  grid-area: values;
+}
+
+.genre-profile.phone .profile-scale {
+  grid-template-areas: "plot values";
+}
+
+.genre-profile.phone .profile-scale .profile-plot-cell,
+.genre-profile.phone .profile-scale .profile-values {
+  grid-column: auto;
+}
+
+.genre-profile.phone .list-count .long {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.genre-profile.phone .list-count .short {
+  display: inline;
+}
+
+/* a long topic name, its count and the "+" share a narrow phone's line: the count may take two lines */
+.genre-profile.phone .profile-topic-count {
+  white-space: normal;
+  text-align: right;
+}
+
 @media (max-width: 559px) {
-  .profile-row {
-    grid-template-columns: minmax(0, 1fr) var(--values-w, 120px);
-    grid-template-areas: "label label" "plot values";
-    row-gap: 2px;
-    min-height: 56px;
-    padding: 6px 0;
-  }
-
-  .profile-label {
-    grid-area: label;
-  }
-
-  .profile-plot-cell {
-    grid-area: plot;
-  }
-
-  .profile-values {
-    grid-area: values;
-  }
-
-  .list-count .long {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip: rect(0 0 0 0);
-    white-space: nowrap;
-  }
-
-  .list-count .short {
-    display: inline;
+  /* the table's cards: a topic is a heading over its cards */
+  .profile-numbers tr.topic-row {
+    border: 0;
+    background: none;
+    padding: 6px 0 0;
   }
 }
 
@@ -956,47 +1056,55 @@
     forced-color-adjust: none;
   }
 
-  .profile-plot .baseline {
-    stroke: GrayText;
-  }
-
-  .profile-plot .all-range {
+  .p2-zone {
     fill: Canvas;
-    stroke: GrayText;
   }
 
-  .profile-plot .all-median {
+  .p2-edge {
     stroke: CanvasText;
   }
 
-  .profile-plot .genre-range {
-    fill: Canvas;
-    stroke: CanvasText;
+  .p2-mid {
+    stroke: GrayText;
   }
 
-  .profile-plot .genre-dot {
+  .p2-bar {
     fill: Highlight;
-    stroke: Canvas;
   }
 
-  .profile-plot .genre-dot.hollow {
-    fill: Canvas;
-    stroke: Highlight;
+  .p2-num {
+    fill: CanvasText;
+  }
+
+  .p2-num.inside {
+    fill: HighlightText;
   }
 
   .profile-plot .segment {
     stroke: CanvasText;
   }
 
-  .profile-legend .key-all-range {
+  .profile-ticks {
     forced-color-adjust: none;
-    background: Canvas;
-    border: 1px solid GrayText;
   }
 
-  .profile-legend .key-all-median {
+  .profile-ticks text {
+    fill: CanvasText;
+  }
+
+  .profile-legend .key-p2-bar,
+  .profile-legend .key-p2-zone,
+  .profile-legend .key-p2-mix {
     forced-color-adjust: none;
-    border-left-color: CanvasText;
+  }
+
+  .profile-legend .key-p2-bar {
+    background: Highlight;
+  }
+
+  .profile-legend .key-p2-zone {
+    background: Canvas;
+    border-color: CanvasText;
   }
 }
 

@@ -1,5 +1,28 @@
+import { useLayoutEffect, useRef, useState } from "react";
 import { formatCount } from "../lib/format.js";
 import { comparison, formatPercent, formatYears, numberFormat } from "../lib/genres.js";
+
+/**
+ * A shown table's box, and whether it scrolls sideways (a table wider than the box: many groups on a tablet). A box
+ * that scrolls takes a tab stop, named by the table's caption, so a keyboard can scroll it too.
+ */
+export function useScrollBox(visible, captionId) {
+  const ref = useRef(null);
+  const [scrolls, setScrolls] = useState(false);
+  useLayoutEffect(() => {
+    const box = ref.current;
+    if (!box || !visible) return undefined;
+    const check = () => setScrolls(box.scrollWidth > box.clientWidth + 1);
+    check();
+    if (typeof ResizeObserver === "undefined") return undefined;
+    const watch = new ResizeObserver(check);
+    watch.observe(box);
+    if (box.firstElementChild) watch.observe(box.firstElementChild);
+    return () => watch.disconnect();
+  }, [visible]);
+  const props = visible && scrolls ? { tabIndex: 0, role: "region", "aria-labelledby": captionId } : {};
+  return [ref, props];
+}
 
 /** The columns of one characteristic's numbers: [heading, cell(stats)] per form, as the chart prints them. */
 function columns(kind, variable, nf) {
@@ -29,10 +52,18 @@ export default function GenreTable({ meta, variable, entry, rows, id, visible, c
   const kind = entry.k;
   const cols = columns(kind, variable, numberFormat(variable, entry));
   const span = cols.length + 3;
+  const [box, scrollProps] = useScrollBox(visible, `${id}-caption`);
   return (
-    <div id={id} className={visible ? "numbers-wrap genre-numbers" : "numbers-wrap genre-numbers visually-hidden"}>
+    <div
+      ref={box}
+      id={id}
+      className={visible ? "numbers-wrap genre-numbers" : "numbers-wrap genre-numbers visually-hidden"}
+      {...scrollProps}
+    >
       <table className="numbers">
-        <caption className="visually-hidden">{caption}</caption>
+        <caption id={`${id}-caption`} className="visually-hidden">
+          {caption}
+        </caption>
         <thead>
           <tr>
             <th scope="col">Genre</th>

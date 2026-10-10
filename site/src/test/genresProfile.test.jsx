@@ -348,7 +348,7 @@ describe("one scale for every row (concept P2, F67)", () => {
       "Compared with all genres",
     ]);
     const groups = [...table.querySelectorAll("tbody")];
-    expect(groups.map((g) => g.querySelector(".topic-row th").textContent)).toEqual(fixtureMeta.topics.map((t) => t.label));
+    expect(groups.map((g) => g.querySelector(".profile-topic-row th").textContent)).toEqual(fixtureMeta.topics.map((t) => t.label));
     const dialogue = within(table).getByRole("rowheader", { name: "Dialogue share" }).closest("tr");
     expect([...dialogue.querySelectorAll("td")].map((td) => td.textContent)).toEqual([
       expect.stringMatching(/^\d+%$/),
@@ -357,9 +357,38 @@ describe("one scale for every row (concept P2, F67)", () => {
       "Clearly less dialogue",
     ]);
     const mixRow = within(table).getByRole("rowheader", { name: "Narrative perspective" }).closest("tr");
-    expect(mixRow.querySelectorAll("td")[0].textContent).toMatch(/^First person \(I\) [\d.]+%, .*Mixed [\d.<]+%$/);
+    // a group keeps its share on its line (a no-break space): the table wraps its cells to fit its box
+    expect(mixRow.querySelectorAll("td")[0].textContent).toMatch(/^First person \(I\)\u00a0[\d.]+%, .*Mixed\u00a0[\d.<]+%$/);
     expect(mixRow.querySelectorAll("td")[3].textContent).toBe("A clearly different mix");
     expect(screen.getByRole("button", { name: "Hide the numbers" }).getAttribute("aria-expanded")).toBe("true");
+    // the table fits its box here: the box takes no tab stop
+    expect(table.closest(".genre-numbers").hasAttribute("tabindex")).toBe(false);
+  });
+
+  it("gives a table box that scrolls sideways a tab stop, named by the table's caption (View 2 and View 1)", async () => {
+    // jsdom lays nothing out: the tables' boxes say they are narrower than their tables
+    const box = (el) => el.classList?.contains("genre-numbers");
+    vi.spyOn(HTMLElement.prototype, "scrollWidth", "get").mockImplementation(function () {
+      return box(this) ? 900 : 0;
+    });
+    vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockImplementation(function () {
+      return box(this) ? 700 : 0;
+    });
+    const user = await openGenre("#/genres?view=genre&genre=romance&include=all");
+    await user.click(screen.getByRole("button", { name: "Show the numbers" }));
+    const region = screen.getByRole("region", { name: "The numbers behind the lists: What stands out about stories in Romance?" });
+    expect(region.getAttribute("tabindex")).toBe("0");
+    expect(within(region).getByRole("table")).toBeTruthy();
+    await user.click(screen.getByRole("link", { name: /^Narrative perspective/ }));
+    await waitFor(() => expect(document.querySelector(".genre-answer")).toBeTruthy());
+    // View 1's table is in the page while hidden, without a tab stop; shown, its box takes one
+    const hidden = document.querySelector(".genre-answer .genre-numbers");
+    expect(hidden.hasAttribute("tabindex")).toBe(false);
+    await user.click(screen.getByRole("button", { name: "Show the numbers" }));
+    const shown = document.querySelector(".genre-answer .genre-numbers");
+    expect(shown.getAttribute("tabindex")).toBe("0");
+    expect(shown.getAttribute("role")).toBe("region");
+    expect(document.getElementById(shown.getAttribute("aria-labelledby")).tagName).toBe("CAPTION");
   });
 });
 

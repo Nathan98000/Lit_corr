@@ -17,6 +17,7 @@ import { PHONE, textWidth } from "../lib/rangeLayout.js";
 import CopyLink from "./CopyLink.jsx";
 import { AgeNote, HOW_DECIDED } from "./GenreAnswer.jsx";
 import { ViewLink } from "./GenreDetails.jsx";
+import { useScrollBox } from "./GenreTable.jsx";
 import useWidth from "./useWidth.js";
 
 const SHOWN = 7; // rows of a list before "Show all"
@@ -231,11 +232,14 @@ function ProfileLegend({ genre, zone, mix }) {
  * switching to this view more than twice as slow (the rows' names say every number meanwhile).
  */
 function ProfileTable({ genre, topics, minN, id, visible }) {
-  if (!visible) return <div id={id} className="numbers-wrap genre-numbers" hidden />;
+  const [box, scrollProps] = useScrollBox(visible, `${id}-caption`);
+  if (!visible) return <div ref={box} id={id} className="numbers-wrap genre-numbers" hidden />;
   return (
-    <div id={id} className="numbers-wrap genre-numbers">
+    <div ref={box} id={id} className="numbers-wrap genre-numbers" {...scrollProps}>
       <table className="numbers profile-numbers">
-        <caption className="visually-hidden">The numbers behind the lists: {standsOutQuestion(genre)}</caption>
+        <caption id={`${id}-caption`} className="visually-hidden">
+          The numbers behind the lists: {standsOutQuestion(genre)}
+        </caption>
         <thead>
           <tr>
             <th scope="col">Characteristic</th>
@@ -247,7 +251,7 @@ function ProfileTable({ genre, topics, minN, id, visible }) {
         </thead>
         {topics.map(({ topic, items }) => (
           <tbody key={topic.id}>
-            <tr className="topic-row">
+            <tr className="profile-topic-row">
               <th scope="colgroup" colSpan={5}>
                 {topic.label}
               </th>

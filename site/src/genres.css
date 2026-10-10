@@ -970,7 +970,7 @@ a.profile-row:hover .profile-label {
 }
 
 /* the table's topics: a heading row for each */
-.profile-numbers .topic-row th {
+.profile-numbers .profile-topic-row th {
   padding-top: 14px;
   text-align: left;
   font-family: var(--serif);
@@ -981,6 +981,24 @@ a.profile-row:hover .profile-label {
 .profile-numbers tbody th[scope="row"] {
   text-align: left;
   font-weight: 400;
+}
+
+/* the table fits its box where it can: its cells wrap (a number keeps its unit, a group its share: profileTableCells) */
+.profile-numbers th,
+.profile-numbers td {
+  white-space: normal;
+}
+
+.profile-numbers th:last-child,
+.profile-numbers td:last-child {
+  padding-right: 0;
+}
+
+/* where there is room, the comparison words keep their line (the groups' lists wrap first) */
+@media (min-width: 768px) {
+  .profile-numbers td:last-child {
+    white-space: nowrap;
+  }
 }
 
 /* a list's values that would not fit even in two parts break at their spaces too */
@@ -1043,8 +1061,13 @@ a.profile-row:hover .profile-label {
 }
 
 @media (max-width: 559px) {
+  /* a card's labels keep their line; its values wrap */
+  .profile-numbers td::before {
+    flex: none;
+  }
+
   /* the table's cards: a topic is a heading over its cards */
-  .profile-numbers tr.topic-row {
+  .profile-numbers tr.profile-topic-row {
     border: 0;
     background: none;
     padding: 6px 0 0;
@@ -1108,7 +1131,8 @@ a.profile-row:hover .profile-label {
   }
 }
 
-/* a characteristic with many groups makes a wide table: it scrolls in its own box, never the page */
+/* a characteristic with many groups makes a wide table: it scrolls in its own box, never the page (and the box then
+   takes a tab stop: useScrollBox) */
 .genre-numbers:not(.visually-hidden) {
   overflow-x: auto;
 }

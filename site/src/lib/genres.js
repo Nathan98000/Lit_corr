@@ -569,17 +569,19 @@ export const profileComparisonWords = (item, small) => upperFirst(profileCompari
 /**
  * One characteristic's cells in "One genre"'s table (F80), as View 2 writes its values: the genre's and all genres'
  * (num: "7.8 per 1,000 words"; mostly zero: "76% with any, median 2.57 per 1,000 words"; named groups: every group's
- * share), and the genre's stories.
+ * share), and the genre's stories. The table wraps its cells to fit its box, so a number keeps its unit's first word,
+ * and a group its share, on its line (no-break spaces).
  */
 export function profileTableCells(item, minN) {
   const { kind, stats: g, all: a, variable, nf } = item;
+  const glue = (text) => text.replace(" ", "\u00a0");
   const cell = (s) => {
     if (!s) return `Fewer than ${minN} stories`;
-    if (kind === "num") return nf.withUnit(s.median);
+    if (kind === "num") return glue(nf.withUnit(s.median));
     if (kind === "bin") return formatPercent(s.share);
-    if (kind === "zero") return `${formatPercent(s.share)} with any${s.median != null ? `, median ${nf.withUnit(s.median)}` : ""}`;
+    if (kind === "zero") return `${formatPercent(s.share)}\u00a0with any${s.median != null ? `, median\u00a0${glue(nf.withUnit(s.median))}` : ""}`;
     if (kind === "band") return variable.bins.labels[bandQuartiles(s.shares).median];
-    return variable.bins.labels.map((l, b) => `${l} ${formatPercent(s.shares[b])}`).join(", ");
+    return variable.bins.labels.map((l, b) => `${l}\u00a0${formatPercent(s.shares[b])}`).join(", ");
   };
   return { genre: cell(g), all: cell(a), stories: g ? formatCount(g.n) : "–" };
 }

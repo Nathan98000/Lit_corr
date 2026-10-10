@@ -351,7 +351,12 @@ export default function GenreProfile({ meta, state, file, busy, onSwitch, onNavi
         </h2>
       </header>
       {few ? (
-        showAll
+        <>
+          {/* the story-age note shows whenever the ages differ by 3 years or more, in any option (F71); never with
+              its button here, as a small sample is never one of All stories */}
+          {ageNote && <AgeNote meta={meta} variable={null} sub={state.sub} text={ageNote} onCompare={(sub) => onSwitch({ ...state, sub })} />}
+          {showAll}
+        </>
       ) : (
         <>
           {count === 0 && (

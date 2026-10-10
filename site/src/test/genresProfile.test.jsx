@@ -225,6 +225,25 @@ describe("edge states", () => {
     await waitFor(() => expect(window.location.hash).toBe("#/genres?view=genre&genre=romance&include=all"));
   });
 
+  it("notes the story age in the small-sample state too, without its button (F60, F71)", async () => {
+    // the test data's "5,000 words or more": Romance has 15 stories; its stories are 6 years older than all genres'
+    const serve = fixtureFetch();
+    vi.stubGlobal("fetch", async (url) => {
+      const res = await serve(url);
+      if (!String(url).includes("genres/")) return res;
+      const body = await res.json();
+      body.age = [11, 10.8, 17, null];
+      return { ok: true, status: 200, json: async () => body };
+    });
+    await openGenre("#/genres?view=genre&genre=romance&include=long");
+    expect(heading()).toBe("Fewer than 30 stories in Romance match “5,000 words or more”: too few to compare.");
+    expect(document.querySelector(".genre-age").textContent).toBe(
+      "Story age. Stories in Romance have a median age of 17.0 years; stories in all genres, 11.0 years.",
+    );
+    expect(screen.queryByRole("button", { name: /^Compare stories/ })).toBeNull();
+    expect(screen.getByRole("button", { name: "Show all stories" })).toBeTruthy();
+  });
+
   it("notes the story age when the genre's and all genres' are 3 or more years apart, in any option", async () => {
     const user = await openGenre("#/genres?view=genre&genre=romance&include=all");
     expect(document.querySelector(".genre-age").textContent).toBe(

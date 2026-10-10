@@ -10,7 +10,7 @@ import { splitRows } from "../components/GenreSplit.jsx";
 import { mixRows } from "../components/GenreMix.jsx";
 import { clearCache } from "../lib/data.js";
 import { SPLIT_SIDE, bandColors, inkOn, layoutProblems, mixColors, mixLayout, splitLayout } from "../lib/genreLayout.js";
-import { allGenresLine, bandQuartiles, chartDomain, formatNumber, genreRows, rowDetails, tickFormatFor } from "../lib/genres.js";
+import { allGenresLine, bandQuartiles, chartDomain, comparison, formatNumber, genreRows, rowDetails, takeawayLists, tickFormatFor } from "../lib/genres.js";
 import { fixtureFetch, fixtureMeta, realMeta } from "./fixtures.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -141,6 +141,8 @@ describe("ordered bands: 100% bars from light to dark", () => {
       "Romance: median 6–20, 1 story 10%, 2–5 20%, 6–20 30%, 21–50 40%, 120 stories, median age 11.5 years, clearly higher than all genres",
     );
     expect(screen.queryByRole("radiogroup", { name: "Order" })).toBeNull(); // bands are not put in order
+    // the legend keeps the general words, whatever the band's own words (Later / Earlier for the peak positions)
+    expect(document.querySelector(".genre-legend").textContent).toMatch(/▲▼ Clearly higher or lower than all genres/);
   });
 
   it("go from light to dark, with text that reaches 4.5:1 on every color", () => {
@@ -267,6 +269,24 @@ describe("the forms on the real data", () => {
       }
     }
     expect(problems).toEqual([]);
+  });
+
+  it.skipIf(!real)("say where a characteristic peaks with Later / Earlier (F72, an addition to D10)", () => {
+    const file = realFile();
+    const peak = real.variables.find((x) => x.id === "pace_sex_peak_position");
+    const rows = genreRows(real, file, "pace_sex_peak_position");
+    expect(takeawayLists(rows, peak, "band").map((l) => `${l.mark} ${l.word}: ${l.names.join(", ")}.`)).toEqual([
+      "▼ Earlier: Non-Erotic, Reviews & Essays, How To.",
+    ]);
+    const howTo = rows.find((r) => r.genre.id === "adult-how-to");
+    expect(rowDetails(howTo, peak, file.c.pace_sex_peak_position, 10).name).toMatch(/, clearly earlier than all genres$/);
+    expect(comparison(howTo, peak, "band").short).toBe("Clearly earlier"); // the table's words
+    // the five peak positions and the 20 of D10 have their own words
+    const own = real.variables.filter((x) => x.more_word && x.less_word);
+    expect(own).toHaveLength(25);
+    expect(own.filter((x) => /_peak_position$/.test(x.id)).map((x) => [x.more_word, x.less_word])).toEqual(
+      Array(5).fill(["Later", "Earlier"]),
+    );
   });
 
   it.skipIf(!real)("say the All genres line of narrative perspective as the copy does", () => {

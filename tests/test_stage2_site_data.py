@@ -347,6 +347,10 @@ def test_genres_meta_has_the_rule_and_the_direction_words(built_genres):
     words = {v["id"]: (v.get("more_word"), v.get("less_word")) for v in meta["variables"]}
     assert words["story_words"] == ("Longer", "Shorter") and words["sex_terms_per_1k"] == ("More", "Less")
     assert all((w == W.DIRECTION_WORDS[i]) if i in W.DIRECTION_WORDS else w == (None, None) for i, w in words.items())
+    # the 20 of D10 and the five "where ... peaks" positions (Later / Earlier, the review's F72)
+    assert len(W.DIRECTION_WORDS) == 25
+    peaks = [k for k in W.DIRECTION_WORDS if k.endswith("_peak_position")]
+    assert len(peaks) == 5 and all(W.DIRECTION_WORDS[k] == ("Later", "Earlier") for k in peaks)
 
 
 def test_genres_arrays_cells_and_shares(built_genres):

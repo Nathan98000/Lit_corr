@@ -338,7 +338,8 @@ for _part, (_noun, _plural) in _PACE_NOUNS.items():
 # twelve and seven groups can't be compared genre by genre in one chart.
 GENRE_PAGE_EXCLUDED = {"pub_month", "pub_weekday"}
 # Words for a genre that clearly differs, higher then lower ("▲ Longer: …", "▼ Shorter: …"; "clearly shorter than all
-# genres"). Characteristics not listed say Higher / Lower (yes/no ones: More common / Less common).
+# genres"). Characteristics not listed say Higher / Lower (yes/no ones: More common / Less common). The five "where …
+# peaks" positions say Later / Earlier, as where the first sex scene starts does.
 DIRECTION_WORDS = {
     "story_words": ("Longer", "Shorter"),
     "dlg_word_share": ("More dialogue", "Less dialogue"),
@@ -360,6 +361,11 @@ DIRECTION_WORDS = {
     "sex_scenes_per_10k": ("More", "Fewer"),
     "rel_romance_per_1k": ("More", "Less"),
     "style_profanity_per_1k": ("More", "Less"),
+    "pace_sex_peak_position": ("Later", "Earlier"),
+    "pace_emotion_peak_position": ("Later", "Earlier"),
+    "pace_dialogue_peak_position": ("Later", "Earlier"),
+    "pace_action_peak_position": ("Later", "Earlier"),
+    "pace_descriptive_peak_position": ("Later", "Earlier"),
 }
 
 FEATURED = [  # example questions under the chart: (question, settings). Each opens the measure it names; none

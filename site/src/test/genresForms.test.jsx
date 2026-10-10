@@ -310,6 +310,27 @@ describe("mostly zero: one chart (D6, concept M1)", () => {
   });
 });
 
+describe("the highlighted genre at the top, in every form (I9)", () => {
+  it("draws its row a second time right under All genres, for the eye only", async () => {
+    for (const [v, cls] of [["pov_class", "genre-mix"], ["author_stories_count", "genre-mix"], ["emo_anger_per_1k", "genre-any"]]) {
+      window.history.replaceState(null, "", "/");
+      clearCache();
+      vi.stubGlobal("fetch", formsFetch());
+      const { unmount } = render(<App />);
+      window.location.hash = `#/genres?var=${v}&genre=romance`;
+      await waitFor(() => expect(document.querySelector(`.${cls} .row.repeat`)).toBeTruthy());
+      const rows = [...document.querySelectorAll(`.${cls} .row`)];
+      expect(rows[0].classList.contains("all")).toBe(true);
+      expect(rows[1].classList.contains("repeat")).toBe(true);
+      expect(rows[1].getAttribute("aria-hidden")).toBe("true");
+      expect(rows[1].hasAttribute("tabindex")).toBe(false);
+      expect(rows[1].querySelector(".glabel").textContent).toBe("Romance");
+      expect(rows.filter((r) => r.querySelector(".glabel")?.textContent === "Romance")).toHaveLength(2); // its own row stays
+      unmount();
+    }
+  });
+});
+
 describe("the forms on the real data", () => {
   it.skipIf(!real)("never overlap or leave the chart, for every named-group, band and mostly-zero characteristic", () => {
     const problems = [];

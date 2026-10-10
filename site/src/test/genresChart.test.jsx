@@ -79,7 +79,7 @@ async function openGenres(hash) {
 }
 
 const heading = () => document.querySelector(".genres-page .chart-title").textContent;
-const rowNames = () => [...document.querySelectorAll(".genre-chart .row")].map((r) => r.getAttribute("aria-label"));
+const rowNames = () => [...document.querySelectorAll(".genre-chart .row:not(.repeat)")].map((r) => r.getAttribute("aria-label"));
 
 describe("headings and lists", () => {
   it("say how many genres clearly differ: 0, 1 or k", () => {
@@ -405,10 +405,41 @@ describe("the chart", () => {
     const user = await openGenres("#/genres?var=dlg_word_share");
     await user.selectOptions(screen.getByLabelText("Highlight"), "romance");
     await waitFor(() => expect(window.location.hash).toBe("#/genres?var=dlg_word_share&include=all&genre=romance"));
-    const hl = document.querySelector(".genre-chart .row.highlight");
+    const hl = document.querySelector(".genre-chart .row.highlight:not(.repeat)");
     expect(hl.getAttribute("aria-label")).toMatch(/^Romance:/);
     expect(rowNames().map((n) => n.split(":")[0])).toEqual(["All genres", "Fetish", "Romance", "Tiny Genre"]);
     expect(document.querySelector(".band-highlight")).toBeTruthy();
+  });
+
+  it("draws the highlighted genre a second time right under All genres, for the eye only (I9)", async () => {
+    const user = await openGenres("#/genres?var=dlg_word_share");
+    expect(document.querySelector(".genre-chart .row.repeat")).toBeNull(); // no highlight, nothing changes
+    await user.selectOptions(screen.getByLabelText("Highlight"), "romance");
+    await waitFor(() => expect(document.querySelector(".genre-chart .row.repeat")).toBeTruthy());
+    const rows = [...document.querySelectorAll(".genre-chart .row")];
+    const repeat = rows[1];
+    expect(repeat.classList.contains("repeat")).toBe(true); // right under All genres
+    expect(repeat.getAttribute("aria-hidden")).toBe("true");
+    expect(repeat.hasAttribute("tabindex")).toBe(false); // not in the keyboard's sequence
+    expect(repeat.querySelector(".glabel").textContent).toBe("Romance");
+    expect(repeat.querySelector(".gmark").textContent).toBe("▼"); // its mark and its value
+    expect(repeat.querySelector(".gval").textContent).toBe(rows[3].querySelector(".gval").textContent);
+    expect(document.querySelectorAll(".genre-chart .band-highlight")).toHaveLength(2); // its own row stays as it is
+    // in either order
+    await user.click(screen.getByRole("radio", { name: "By median" }));
+    await waitFor(() => expect(window.location.hash).toMatch(/sort=value/));
+    expect(document.querySelectorAll(".genre-chart .row")[1].classList.contains("repeat")).toBe(true);
+    // hovering or tapping it shows the genre's details, as its own row does
+    fireEvent.click(document.querySelector(".genre-chart .row.repeat"));
+    expect(document.querySelector(".genre-tip strong").textContent).toBe("Romance");
+    // the keyboard steps over it
+    const first = document.querySelector(".genre-chart .row[tabindex='0']");
+    first.focus();
+    fireEvent.keyDown(first, { key: "ArrowDown" });
+    expect(document.activeElement.classList.contains("repeat")).toBe(false);
+    expect(document.activeElement.getAttribute("aria-label")).not.toMatch(/^All genres/);
+    // the heading's counts are the same
+    expect(heading()).toBe("2 of 2 genres clearly differ from all genres");
   });
 });
 

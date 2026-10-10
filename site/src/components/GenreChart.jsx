@@ -1,6 +1,6 @@
 import { useId, useRef } from "react";
 import useOrderGlide from "./GenreGlide.jsx";
-import { chartDomain, chartRows, numberFormat, printedFor, rowDetails, tickFormatFor } from "../lib/genres.js";
+import { REPEAT, chartDomain, chartRows, numberFormat, printedFor, rowDetails, tickFormatFor, withRepeat } from "../lib/genres.js";
 import { PHONE, rangeLayout } from "../lib/rangeLayout.js";
 import { GenreRowDetails, useGenreDetails } from "./GenreDetails.jsx";
 import useWidth from "./useWidth.js";
@@ -25,7 +25,9 @@ export default function GenreChart({ meta, variable, entry, rows, highlight, sub
   const ids = useId();
   const titleId = `${ids}-title`;
   const hatchId = `${ids}-hatch`.replace(/:/g, "");
-  const crow = chartRows(rows, variable, kind);
+  // the highlighted genre's row, drawn a second time under All genres (I9)
+  const hl = highlight ? rows.find((r) => r.genre.id === highlight) : null;
+  const crow = withRepeat(chartRows(rows, variable, kind), hl?.i);
   const layout = rangeLayout({
     rows: crow,
     overall: crow[0].stats,
@@ -47,9 +49,12 @@ export default function GenreChart({ meta, variable, entry, rows, highlight, sub
   });
   const phone = layout.width < PHONE;
   const byIndex = new Map(rows.map((r) => [r.i, r]));
-  const d = useGenreDetails({ ids: layout.rows.map((r) => r.index), frame, phone, byIndex, variable, entry, minN });
+  const rowOf = (r) => byIndex.get(r.index === REPEAT ? hl.i : r.index); // the copy is the highlighted genre's
+  const realIds = layout.rows.filter((r) => r.index !== REPEAT).map((r) => r.index);
+  const d = useGenreDetails({ ids: realIds, frame, phone, byIndex, variable, entry, minN });
   const { active, rowProps } = d;
-  const activeRow = active == null ? null : layout.rows.find((r) => r.index === active);
+  const activeRow = active == null ? null : layout.rows.find((r) => r.index === (d.shown?.repeat ? REPEAT : active));
+  const repeat = layout.rows.find((r) => r.index === REPEAT);
   const x = layout.x;
   const svgClass = active != null ? "has-active" : undefined;
   // a new order glides the rows to their places (I10)
@@ -75,13 +80,13 @@ export default function GenreChart({ meta, variable, entry, rows, highlight, sub
           </defs>
           <g aria-hidden="true">
             {layout.rows.map((r) => {
-              const row = byIndex.get(r.index);
+              const row = rowOf(r);
               if (!row.all && row.genre.id !== highlight) return null;
               return (
                 <rect
                   key={r.index}
                   className={row.all ? "band-all" : "band-highlight"}
-                  data-glide={row.all ? undefined : String(r.index)}
+                  data-glide={row.all || r.index === REPEAT ? undefined : String(r.index)}
                   x={0}
                   y={r.y0 + 1}
                   width={layout.width}
@@ -93,6 +98,7 @@ export default function GenreChart({ meta, variable, entry, rows, highlight, sub
             {layout.rows.length > 1 && (
               <line className="all-rule" x1={0} x2={layout.width} y1={layout.rows[1].y0} y2={layout.rows[1].y0} />
             )}
+            {repeat && <line className="all-rule" x1={0} x2={layout.width} y1={repeat.y1} y2={repeat.y1} />}
             {layout.ticks.map((t) => (
               <g key={t.v} className="tick-mark" data-v={t.v}>
                 <line className="grid" x1={t.x} x2={t.x} y1={layout.top - 4} y2={layout.height - (layout.ref ? 22 : 6)} />
@@ -120,75 +126,36 @@ export default function GenreChart({ meta, variable, entry, rows, highlight, sub
               </g>
             )}
           </g>
-          {layout.rows.map((r, ri) => {
-            const row = byIndex.get(r.index);
-            const d = rowDetails(row, variable, entry, minN);
+          {layout.rows.map((r) => {
+            const row = rowOf(r);
+            const parts = <RowParts r={r} kind={kind} x={x} width={layout.width} hatchId={hatchId} />;
+            const state = [r.small && "small", !r.ok && "hidden-group"];
+            if (r.index === REPEAT) {
+              // the copy: for the eye only, outside the keyboard's sequence; hovering or tapping it shows the genre's details
+              const cls = ["row", "repeat", "highlight", ...state, d.shown?.repeat && "active"].filter(Boolean);
+              return (
+                <g key={REPEAT} {...d.repeatProps(hl.i)} className={cls.join(" ")} aria-hidden="true">
+                  {parts}
+                </g>
+              );
+            }
             const cls = [
               "row",
-              r.small && "small",
-              !r.ok && "hidden-group",
+              ...state,
               row.all && "all",
               row.genre.id === highlight && "highlight",
-              active === r.index && "active",
+              active === r.index && !d.shown?.repeat && "active",
             ].filter(Boolean);
             return (
               <g
                 key={r.index}
-                {...rowProps(ri, r.index)}
+                {...rowProps(realIds.indexOf(r.index), r.index)}
                 className={cls.join(" ")}
                 role="img"
-                aria-label={d.name}
+                aria-label={rowDetails(row, variable, entry, minN).name}
                 data-glide={row.all ? undefined : String(r.index)}
               >
-                <rect className="row-hit" x={0} y={r.y0} width={layout.width} height={r.y1 - r.y0} />
-                {r.labelLines.map((l, k) => (
-                  <text key={k} className="glabel" x={l.x} y={l.y} textAnchor="end">
-                    {l.text}
-                  </text>
-                ))}
-                {r.nPos && (
-                  <text className="gn" x={r.nPos.x} y={r.nPos.y} textAnchor="end">
-                    {r.nText}
-                  </text>
-                )}
-                {r.markPos && (
-                  <text className="gmark" x={r.markPos.x} y={r.markPos.y} textAnchor="middle">
-                    {r.mark}
-                  </text>
-                )}
-                {r.ok ? (
-                  <>
-                    {kind === "bin" ? (
-                      <rect
-                        className="share-bar"
-                        x={x(0)}
-                        y={r.cy - 5}
-                        width={Math.max(1, r.dotX - x(0))}
-                        height={10}
-                        rx={5}
-                        fill={r.small ? `url(#${hatchId})` : undefined}
-                      />
-                    ) : (
-                      <rect
-                        className="iqr"
-                        x={r.bar.x}
-                        y={r.cy - 5}
-                        width={r.bar.width}
-                        height={10}
-                        rx={5}
-                        fill={r.small ? `url(#${hatchId})` : undefined}
-                      />
-                    )}
-                    <circle className="median" cx={r.dotX} cy={r.cy} r={6} />
-                    <text className="gval" x={r.value.x} y={r.value.y} textAnchor="end">
-                      {r.value.text}
-                    </text>
-                  </>
-                ) : (
-                  <text className="gnone" x={r.none.x} y={r.none.y}>
-                    {r.none.text}
-                  </text>
-                )}
+                {parts}
               </g>
             );
           })}
@@ -205,5 +172,54 @@ export default function GenreChart({ meta, variable, entry, rows, highlight, sub
         />
       </div>
     </div>
+  );
+}
+
+/** What a row draws: its name and stories, its mark, its range (or share) and median, and its value. */
+function RowParts({ r, kind, x, width, hatchId }) {
+  return (
+    <>
+      <rect className="row-hit" x={0} y={r.y0} width={width} height={r.y1 - r.y0} />
+      {r.labelLines.map((l, k) => (
+        <text key={k} className="glabel" x={l.x} y={l.y} textAnchor="end">
+          {l.text}
+        </text>
+      ))}
+      {r.nPos && (
+        <text className="gn" x={r.nPos.x} y={r.nPos.y} textAnchor="end">
+          {r.nText}
+        </text>
+      )}
+      {r.markPos && (
+        <text className="gmark" x={r.markPos.x} y={r.markPos.y} textAnchor="middle">
+          {r.mark}
+        </text>
+      )}
+      {r.ok ? (
+        <>
+          {kind === "bin" ? (
+            <rect
+              className="share-bar"
+              x={x(0)}
+              y={r.cy - 5}
+              width={Math.max(1, r.dotX - x(0))}
+              height={10}
+              rx={5}
+              fill={r.small ? `url(#${hatchId})` : undefined}
+            />
+          ) : (
+            <rect className="iqr" x={r.bar.x} y={r.cy - 5} width={r.bar.width} height={10} rx={5} fill={r.small ? `url(#${hatchId})` : undefined} />
+          )}
+          <circle className="median" cx={r.dotX} cy={r.cy} r={6} />
+          <text className="gval" x={r.value.x} y={r.value.y} textAnchor="end">
+            {r.value.text}
+          </text>
+        </>
+      ) : (
+        <text className="gnone" x={r.none.x} y={r.none.y}>
+          {r.none.text}
+        </text>
+      )}
+    </>
   );
 }

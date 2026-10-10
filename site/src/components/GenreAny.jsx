@@ -1,6 +1,6 @@
 import { useId, useRef } from "react";
 import useOrderGlide from "./GenreGlide.jsx";
-import { chartDomain, comparison, formatPercent, numberFormat, rowDetails, tickFormatFor } from "../lib/genres.js";
+import { REPEAT, chartDomain, comparison, formatPercent, numberFormat, rowDetails, tickFormatFor, withRepeat } from "../lib/genres.js";
 import { anyLayout } from "../lib/genreLayout.js";
 import { GenreRowDetails, useGenreDetails } from "./GenreDetails.jsx";
 import useWidth from "./useWidth.js";
@@ -41,7 +41,9 @@ export default function GenreAny({ meta, variable, entry, rows, highlight, sub, 
   const titleId = `${ids}-title`;
   const hatchId = `${ids}-hatch`.replace(/:/g, "");
   const nf = numberFormat(variable, entry);
-  const aRows = anyRows(rows, variable, meta.min_n);
+  // the highlighted genre's row, drawn a second time under All genres (I9)
+  const hl = highlight ? rows.find((r) => r.genre.id === highlight) : null;
+  const aRows = withRepeat(anyRows(rows, variable, meta.min_n), hl?.i);
   const layout = anyLayout({
     rows: aRows,
     width,
@@ -51,8 +53,11 @@ export default function GenreAny({ meta, variable, entry, rows, highlight, sub, 
     tickFormat: tickFormatFor("zero", entry.fmt),
   });
   const byIndex = new Map(rows.map((r) => [r.i, r]));
-  const d = useGenreDetails({ ids: layout.rows.map((r) => r.index), frame, phone: layout.phone, byIndex, variable, entry, minN: meta.min_n });
-  const activeRow = d.active == null ? null : layout.rows.find((r) => r.index === d.active);
+  const rowOf = (r) => byIndex.get(r.index === REPEAT ? hl.i : r.index);
+  const realIds = layout.rows.filter((r) => r.index !== REPEAT).map((r) => r.index);
+  const repeat = layout.rows.find((r) => r.index === REPEAT);
+  const d = useGenreDetails({ ids: realIds, frame, phone: layout.phone, byIndex, variable, entry, minN: meta.min_n });
+  const activeRow = d.active == null ? null : layout.rows.find((r) => r.index === (d.shown?.repeat ? REPEAT : d.active));
   // a new order glides the rows to their places (I10)
   useOrderGlide(
     frame,
@@ -78,13 +83,13 @@ export default function GenreAny({ meta, variable, entry, rows, highlight, sub, 
           </defs>
           <g aria-hidden="true">
             {layout.rows.map((r) => {
-              const row = byIndex.get(r.index);
+              const row = rowOf(r);
               if (!row.all && row.genre.id !== highlight) return null;
               return (
                 <rect
                   key={r.index}
                   className={row.all ? "band-all" : "band-highlight"}
-                  data-glide={row.all ? undefined : String(r.index)}
+                  data-glide={row.all || r.index === REPEAT ? undefined : String(r.index)}
                   x={0}
                   y={r.y0 + 1}
                   width={layout.width}
@@ -94,6 +99,7 @@ export default function GenreAny({ meta, variable, entry, rows, highlight, sub, 
               );
             })}
             {layout.rows.length > 1 && <line className="all-rule" x1={0} x2={layout.width} y1={layout.rows[1].y0} y2={layout.rows[1].y0} />}
+            {repeat && <line className="all-rule" x1={0} x2={layout.width} y1={repeat.y1} y2={repeat.y1} />}
             {layout.ticks.map((t) => (
               <g key={t.v} className="tick-mark">
                 <line className="grid" x1={t.x} x2={t.x} y1={layout.top - 4} y2={layout.height - (layout.ref ? 22 : 6)} />
@@ -121,21 +127,29 @@ export default function GenreAny({ meta, variable, entry, rows, highlight, sub, 
               </g>
             )}
           </g>
-          {layout.rows.map((r, ri) => {
-            const row = byIndex.get(r.index);
+          {layout.rows.map((r) => {
+            const row = rowOf(r);
+            const fill = row.small ? `url(#${hatchId})` : undefined;
+            const state = [row.small && "small", !row.stats && "hidden-group"];
+            if (r.index === REPEAT) {
+              const cls = ["row", "repeat", "highlight", ...state, d.shown?.repeat && "active"].filter(Boolean);
+              return (
+                <g key={REPEAT} {...d.repeatProps(hl.i)} className={cls.join(" ")} aria-hidden="true">
+                  <AnyRow r={r} layout={layout} fill={fill} />
+                </g>
+              );
+            }
             const cls = [
               "row",
-              row.small && "small",
-              !row.stats && "hidden-group",
+              ...state,
               row.all && "all",
               row.genre.id === highlight && "highlight",
-              d.active === r.index && "active",
+              d.active === r.index && !d.shown?.repeat && "active",
             ].filter(Boolean);
-            const fill = row.small ? `url(#${hatchId})` : undefined;
             return (
               <g
                 key={r.index}
-                {...d.rowProps(ri, r.index)}
+                {...d.rowProps(realIds.indexOf(r.index), r.index)}
                 className={cls.join(" ")}
                 role="img"
                 aria-label={rowDetails(row, variable, entry, meta.min_n).name}

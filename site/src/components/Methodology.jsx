@@ -61,11 +61,17 @@ const pct = (share) => `${Math.round(share * 1000) / 10}%`;
 
 /**
  * "Comparing genres": the Genres page's rule (meta.genre_rule) in plain words. The numbers come from the data: the
- * genres' typical sample, the rule's thresholds and level, and the stories a genre needs.
+ * genres' typical sample, the largest genre's share of all genres, the rule's thresholds and level, and the stories a
+ * genre needs.
  */
 function ComparingGenres({ meta }) {
   const rule = meta.genre_rule || { min_r: 0.2, level: 0.999, min_tvd: 0.2, min_n: meta.small_n };
   const times = Math.round(50 * (1 + rule.min_r));
+  // the largest genre's share of all genres, from the genres' sizes on Literotica (F74)
+  const genres = meta.genres.filter((g) => g.id !== "all" && g.size);
+  const total = genres.reduce((sum, g) => sum + g.size, 0);
+  const top = genres.reduce((best, g) => (!best || g.size > best.size ? g : best), null);
+  const largest = top && total ? { name: top.name, share: Math.round((100 * top.size) / total) } : null;
   return (
     <>
       <h2 id="genres" tabIndex={-1}>
@@ -75,6 +81,13 @@ function ComparingGenres({ meta }) {
         The Genres page compares each genre’s stories with the stories of all genres. All genres counts each genre by
         its size on Literotica, as everywhere on this site. Each genre is a random sample of about{" "}
         {formatCount(typicalSample(meta))} stories.
+        {largest && (
+          <>
+            {" "}
+            All genres includes each genre’s own stories; the largest genre, {largest.name}, is about {largest.share}% of
+            it.
+          </>
+        )}
       </p>
       <p>
         A genre clearly differs on a characteristic when, picking one of its stories and one story from all genres at
@@ -84,7 +97,10 @@ function ComparingGenres({ meta }) {
         characteristics with named groups, such as narrative perspective, at least {Math.round(rule.min_tvd * 100)}% of
         the genre’s stories would have to change group to match the mix of all genres. The page makes thousands of
         such comparisons, so a difference must also be clear at the {pct(rule.level)} level, stricter than the 99% used
-        for “tend to”, and the genre needs at least {rule.min_n} stories with the characteristic.
+        for “tend to”, and the genre needs at least {rule.min_n} stories with the characteristic. The comparison uses
+        every story, not only the medians, so a genre can clearly differ while its median is close to that of all
+        genres, or the reverse. The lists above a chart name the genres in order of the size of their difference,
+        largest first.
       </p>
       <p>
         When most stories score 0 on a characteristic, the page shows how many stories have any, and the median and

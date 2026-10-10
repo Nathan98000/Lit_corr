@@ -224,6 +224,8 @@ describe("loading", () => {
       return serve(url);
     });
     const user = await renderApp();
+    // the title is set by an effect after the chart is drawn
+    await waitFor(() => expect(fullTitle()).not.toBe("What do popular Literotica stories have in common?"));
     const before = fullTitle();
     await pickCharacteristic(user, "anger");
     // the new file is still on its way: the old chart stays, marked busy, and nothing is worded from missing data

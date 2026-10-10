@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { loadGenres } from "../lib/data.js";
-import { chartAnnouncement, chartQuestion, orderWords } from "../lib/genres.js";
-import { GENRE_PAGE_EXCLUDED, defaultGenre, onGenresPage, sortable, subsetConflict } from "../lib/urlState.js";
+import { chartAnnouncement, chartQuestion, chartQuestionText, orderWords, standsOutQuestion } from "../lib/genres.js";
+import { GENRE_PAGE_EXCLUDED, defaultGenre, onGenresPage, sortable, subsetConflict, toHash } from "../lib/urlState.js";
 import { BodyPlaceholder, CharacteristicPicker, SlotButton } from "./Controls.jsx";
 import { ChartPlaceholder } from "./Explorer.jsx";
 import GenreAnswer from "./GenreAnswer.jsx";
@@ -174,6 +174,12 @@ export default function GenresPage({ meta, state, onChange, onNavigate, onHoldSc
     profile ? "" : state.sort || "",
   );
 
+  // the tab's title is the question on screen, once its file is (F73), as Explore's is its chart's heading
+  const question = profile ? standsOutQuestion(genre) : chartQuestionText(shownVariable);
+  useEffect(() => {
+    if (file && !busy && !error) document.title = question;
+  }, [question, file, busy, error]);
+
   // the view switch carries the genre across: the highlighted genre becomes "one genre", and back (D8 when none)
   const switchView = (to) => {
     if (to === "genre") {
@@ -298,6 +304,10 @@ export default function GenresPage({ meta, state, onChange, onNavigate, onHoldSc
               meta={meta}
               value={state.v}
               exclude={GENRE_PAGE_EXCLUDED}
+              excludedNote="Publication month and weekday aren’t compared on this page."
+              metricHref={(metric) =>
+                toHash("explore", { mode: "one", genre: state.genre || "all", metric, v: state.v, sub: state.sub })
+              }
               focusRef={pickerFocus}
               scrollRef={pickerBody}
               onClose={() => setMenu(false)}

@@ -1,6 +1,7 @@
 import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { keepInView } from "../lib/listScroll.js";
 import { highlight, measureNamed, oneLine, searchCharacteristics } from "../lib/search.js";
+import { lowerFirst } from "../lib/wording.js";
 
 /** A label with the matched part marked. */
 function Marked({ label, query }) {
@@ -15,15 +16,26 @@ function Marked({ label, query }) {
   );
 }
 
-/** The data without the characteristics a page leaves out: in Popular, the topics and search alike. */
+/**
+ * The data without the characteristics a page leaves out: in Popular, the topics and search alike. A topic that loses
+ * some lists its remaining characteristics' labels as its blurb ("Publication year, published on a weekend, years
+ * online"), since its own blurb names the others too (F77).
+ */
 function withoutExcluded(meta, exclude) {
   if (!exclude?.length) return meta;
   const keep = (id) => !exclude.includes(id);
+  const label = new Map(meta.variables.map((v) => [v.id, v.label]));
+  const blurb = (ids) => ids.map((id, k) => (k ? lowerFirst(label.get(id)) : label.get(id))).join(", ");
   return {
     ...meta,
     variables: meta.variables.filter((v) => keep(v.id)),
     popular: meta.popular.filter(keep),
-    topics: meta.topics.map((t) => ({ ...t, ids: t.ids.filter(keep) })).filter((t) => t.ids.length),
+    topics: meta.topics
+      .map((t) => {
+        const ids = t.ids.filter(keep);
+        return ids.length === t.ids.length ? t : { ...t, ids, blurb: blurb(ids) };
+      })
+      .filter((t) => t.ids.length),
   };
 }
 
@@ -33,7 +45,9 @@ function withoutExcluded(meta, exclude) {
  * its list (browsing never changes the chart); typing searches labels, descriptions, topics and synonyms.
  *
  * A query that names a popularity measure ("rating") says so above any results, with a button that switches the
- * measure instead (F45), where the page has measures (`onPickMetric`).
+ * measure instead (F45), where the page has measures (`onPickMetric`), or a link to see it on another page
+ * (`metricHref(id)`, the Genres page's "See it in Explore →", F77). A query that names a characteristic the page leaves
+ * out says so (`excludedNote`).
  *
  * While a query is typed in the phone's sheet, results are one line each (the label, then the topic) and Close moves
  * into the search row, so that more results stay above the on-screen keyboard (F57; styles.css does the folding).
@@ -51,6 +65,8 @@ export default function CharacteristicPicker({
   value,
   onPick,
   onPickMetric,
+  metricHref,
+  excludedNote = "",
   onPreview,
   onClose,
   focusRef,
@@ -71,7 +87,18 @@ export default function CharacteristicPicker({
 
   // The options on screen, in order, as { kind: "var" | "topic" | "back", id, group }.
   const results = useMemo(() => searchCharacteristics(meta, query), [meta, query]);
-  const named = useMemo(() => (onPickMetric ? measureNamed(meta, query) : null), [meta, query, onPickMetric]);
+  // a measure is named against every characteristic, the page's left-out ones included ("month" stays a characteristic)
+  const named = useMemo(
+    () => (onPickMetric || metricHref ? measureNamed(fullMeta, query) : null),
+    [fullMeta, query, onPickMetric, metricHref],
+  );
+  const excludedHit = useMemo(
+    () =>
+      Boolean(excludedNote) &&
+      Boolean(query.trim()) &&
+      searchCharacteristics(fullMeta, query).some((r) => r.rank >= 2 && exclude.includes(r.variable.id)),
+    [fullMeta, query, exclude, excludedNote],
+  );
   const topic = topicId ? meta.topics.find((t) => t.id === topicId) : null;
   let options;
   let mode;
@@ -307,11 +334,16 @@ export default function CharacteristicPicker({
         {named && (
           <p className="pick-measure">
             “{named.label}” is a popularity measure, not a story characteristic.{" "}
-            <button type="button" className="link-button" onClick={() => onPickMetric(named.id)}>
-              Show {named.label.toLowerCase()}
-            </button>
+            {metricHref ? (
+              <a href={metricHref(named.id)}>See it in Explore{"\u00a0"}→</a>
+            ) : (
+              <button type="button" className="link-button" onClick={() => onPickMetric(named.id)}>
+                Show {named.label.toLowerCase()}
+              </button>
+            )}
           </p>
         )}
+        {excludedHit && <p className="pick-measure">{excludedNote}</p>}
       </div>
       <div id={`${base}-list`} role="listbox" aria-label="Story characteristics" className="pick-list">
         {content}

@@ -17,7 +17,7 @@ export const SITE_NAME = "Story Patterns"; // the masthead name: change it here
 const PAGE_TITLES = {
   methodology: `How it works · ${TITLE}`,
   patterns: `Patterns · ${TITLE}`,
-  genres: `Genres · ${TITLE}`,
+  genres: GENRES_TITLE, // while the page or its file loads; then the question on screen (GenresPage, F73)
 };
 const DEFAULT_QUESTION = "In All genres, how does the average rating vary with story length in words?";
 

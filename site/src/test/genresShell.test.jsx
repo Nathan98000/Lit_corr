@@ -150,14 +150,26 @@ describe("the masthead (D4, D9)", () => {
 
 describe("the page shell", () => {
   it("has its own title, kicker and page marker, and the skip link goes to the question", async () => {
-    const user = await openGenres();
-    expect(document.title).toBe("Genres · What do popular Literotica stories have in common?");
+    window.history.replaceState(null, "", "/#/genres");
+    render(<App />);
+    expect(document.title).toBe("How do the genres’ stories differ?"); // while the page and its file load (F73)
+    await waitFor(() => expect(document.querySelector(".genres-page .chart-panel[aria-busy='false']")).toBeTruthy());
+    const user = userEvent.setup();
+    // then the question on screen
+    await waitFor(() => expect(document.title).toBe("How do genres differ in dialogue share?"));
     expect(document.documentElement.dataset.page).toBe("genres");
     expect(screen.getByRole("heading", { level: 1 }).textContent).toBe(
       `How do the genres’ stories differ? · ${fixtureMeta.counts.included} stories · 3 genres`,
     );
     await user.click(screen.getByRole("link", { name: "Skip to content" }));
     expect(document.activeElement).toBe(document.getElementById("question"));
+  });
+
+  it("names the tab after the question on screen, in both views (F73)", async () => {
+    await openGenres("#/genres?var=dlg_has_dialogue");
+    await waitFor(() => expect(document.title).toBe("How common are stories with dialogue in each genre?"));
+    window.location.hash = "#/genres?view=genre&genre=romance&include=all";
+    await waitFor(() => expect(document.title).toBe("What stands out about stories in Romance?"));
   });
 
   it("loads the page's code on demand, holding its place meanwhile", async () => {

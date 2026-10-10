@@ -228,8 +228,8 @@ function ProfileLegend({ genre, zone, mix }) {
 
 /**
  * Every characteristic's numbers in one genre and in all genres (F80), topic by topic, each topic heading its rows,
- * with the comparison in the rows' words. Drawn when "Show the numbers" opens it: its 185 rows always in the page made
- * switching to this view more than twice as slow (the rows' names say every number meanwhile).
+ * with the comparison in the rows' words. Drawn when "Show the numbers" opens it, under the button: its 185 rows
+ * always in the page made switching to this view more than twice as slow (the rows' names say every number meanwhile).
  */
 function ProfileTable({ genre, topics, minN, id, visible }) {
   const [box, scrollProps] = useScrollBox(visible, `${id}-caption`);
@@ -289,8 +289,8 @@ export const tooFewText = (genre, subset, minN) =>
  * characteristics within one genre, never genres), the named groups with a different mix, and every characteristic by
  * topic, folded (a topic's rows are drawn when it is opened). Every row opens that characteristic's chart with the
  * genre highlighted. With fewer stories than the rule needs, nothing is compared: the heading says so, then "Show all
- * stories" and the topics, whose rows give the numbers. Under the topics, every characteristic's numbers as a table
- * and Copy link (F80).
+ * stories" and the topics, whose rows give the numbers. Under the topics, "Show the numbers" (every characteristic's
+ * numbers as a table, which opens under it) and Copy link (F80).
  */
 export default function GenreProfile({ meta, state, file, busy, onSwitch, onNavigate, headingRef }) {
   const [ref, width] = useWidth(720, "genres");
@@ -386,7 +386,6 @@ export default function GenreProfile({ meta, state, file, busy, onSwitch, onNavi
           );
         })}
       </section>
-      <ProfileTable genre={genre} topics={p.topics} minN={minN} id={`${ids}-numbers`} visible={showNumbers} />
       <div className="chart-actions">
         <button
           type="button"
@@ -399,6 +398,8 @@ export default function GenreProfile({ meta, state, file, busy, onSwitch, onNavi
         </button>
         <CopyLink />
       </div>
+      {/* under its buttons, unlike View 1's: at 8,000 px or more, a table above them would send the button out of sight */}
+      <ProfileTable genre={genre} topics={p.topics} minN={minN} id={`${ids}-numbers`} visible={showNumbers} />
     </article>
   );
 }

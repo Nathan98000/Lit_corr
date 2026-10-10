@@ -102,6 +102,25 @@ describe("focus after a button that changes the answer (F64)", () => {
   });
 });
 
+describe("focus after “Try again”", () => {
+  it("moves to the heading of the answer it brings", async () => {
+    const serve = agedFetch();
+    let fail = true;
+    vi.stubGlobal("fetch", async (url) => {
+      if (fail && String(url).includes("genres/")) throw new Error("Failed to fetch");
+      return serve(url);
+    });
+    window.history.replaceState(null, "", "/#/genres?var=dlg_word_share");
+    const user = userEvent.setup();
+    render(<App />);
+    const again = await screen.findByRole("button", { name: "Try again" });
+    fail = false;
+    await user.click(again);
+    await settled();
+    await waitFor(() => expect(document.activeElement).toBe(answerHeading()));
+  });
+});
+
 describe("a visit that starts on the Genres page (F68)", () => {
   it("fetches the page's file before meta.json has arrived", async () => {
     const asked = [];

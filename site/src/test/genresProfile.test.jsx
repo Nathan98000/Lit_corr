@@ -339,6 +339,8 @@ describe("one scale for every row (concept P2, F67)", () => {
     expect(screen.getByRole("button", { name: /Copy link/ })).toBeTruthy();
     await user.click(button);
     const table = screen.getByRole("table");
+    // it opens under its button, which stays where it was
+    expect(button.compareDocumentPosition(table) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(table.querySelector("caption").textContent).toBe("The numbers behind the lists: What stands out about stories in Romance?");
     expect([...table.querySelectorAll("thead th")].map((h) => h.textContent)).toEqual([
       "Characteristic",

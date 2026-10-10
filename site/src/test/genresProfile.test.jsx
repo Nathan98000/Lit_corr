@@ -333,6 +333,9 @@ describe("one scale for every row (concept P2, F67)", () => {
     const user = await openGenre("#/genres?view=genre&genre=romance&include=all");
     const button = screen.getByRole("button", { name: "Show the numbers" });
     expect(button.getAttribute("aria-expanded")).toBe("false");
+    // drawn when shown (its rows made the view switch twice as slow); the box it controls is there, hidden
+    expect(document.getElementById(button.getAttribute("aria-controls")).hidden).toBe(true);
+    expect(screen.queryByRole("table", { hidden: true })).toBeNull();
     expect(screen.getByRole("button", { name: /Copy link/ })).toBeTruthy();
     await user.click(button);
     const table = screen.getByRole("table");

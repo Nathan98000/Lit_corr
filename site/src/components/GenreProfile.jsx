@@ -227,12 +227,13 @@ function ProfileLegend({ genre, zone, mix }) {
 
 /**
  * Every characteristic's numbers in one genre and in all genres (F80), topic by topic, each topic heading its rows,
- * with the comparison in the rows' words. Always in the page after the lists (screen readers find it there); "Show the
- * numbers" shows it.
+ * with the comparison in the rows' words. Drawn when "Show the numbers" opens it: its 185 rows always in the page made
+ * switching to this view more than twice as slow (the rows' names say every number meanwhile).
  */
 function ProfileTable({ genre, topics, minN, id, visible }) {
+  if (!visible) return <div id={id} className="numbers-wrap genre-numbers" hidden />;
   return (
-    <div id={id} className={visible ? "numbers-wrap genre-numbers" : "numbers-wrap genre-numbers visually-hidden"}>
+    <div id={id} className="numbers-wrap genre-numbers">
       <table className="numbers profile-numbers">
         <caption className="visually-hidden">The numbers behind the lists: {standsOutQuestion(genre)}</caption>
         <thead>

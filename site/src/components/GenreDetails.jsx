@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useLayoutEffect, useRef } from "react";
 import { rowDetails, standsOutQuestion } from "../lib/genres.js";
 import { textWidth } from "../lib/rangeLayout.js";
 import { toHash } from "../lib/urlState.js";
@@ -76,7 +76,8 @@ export function DetailsCard({ row, details, pinned, above, style, cardRef, onLea
 
 /**
  * A genre's details in the phone layout (concept K1): a line under the chart with the same numbers as the row's name,
- * then the link. A tap's details are announced; a focused row's name already says the same, so its line is not.
+ * then the link; while the chart is on screen it sticks to the screen's bottom (concept Q1, genres.css). A tap's
+ * details are announced; a focused row's name already says the same, so its line is not.
  */
 export function DetailsLine({ row, details, by, lineRef, onLeave, onEscape, sub, onNavigate }) {
   const text = row && (
@@ -144,6 +145,18 @@ export function useGenreDetails({ ids, frame, phone, byIndex, variable, entry, m
   const detailsRef = useRef(null);
   const { shown, setShown, rowProps } = useRowDetails({ ids, frame, phone, within: detailsRef });
   const active = shown?.i ?? null;
+  // on phones the line sticks to the bottom of the screen: a row focused from the keyboard is never left under it
+  // (WCAG 2.4.11); a tap leaves the page where it is
+  useLayoutEffect(() => {
+    if (!phone || shown?.by !== "focus") return;
+    const row = document.activeElement;
+    const line = detailsRef.current;
+    if (!row || !line || !frame.current?.contains(row)) return;
+    const box = line.getBoundingClientRect();
+    if (!box.height || box.top >= window.innerHeight) return;
+    const covered = row.getBoundingClientRect().bottom + 4 - box.top;
+    if (covered > 0) window.scrollBy?.(0, covered);
+  }, [phone, shown?.i, shown?.by]); // eslint-disable-line react-hooks/exhaustive-deps
   const row = active == null ? null : byIndex.get(active);
   return {
     shown,

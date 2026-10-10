@@ -190,3 +190,40 @@ describe("a genre's name and its count on phones", () => {
     expect(anal.y1 - anal.y0).toBe(44);
   });
 });
+
+describe("a tapped genre on a phone (F62, concept Q1)", () => {
+  it("keeps its line at the bottom of the screen while the chart is on screen", () => {
+    const css = readFileSync(path.join(here, "..", "genres.css"), "utf8");
+    const rule = css.match(/\.row-details\.genre-line:not\(\.empty\) \{([^}]*)\}/)[1];
+    expect(rule).toMatch(/position: sticky;/);
+    expect(rule).toMatch(/bottom: 0;/);
+    expect(rule).toMatch(/box-shadow:/);
+  });
+
+  it("is the chart's last part, so it can stick for the whole chart, and stays after it in the document", async () => {
+    vi.spyOn(Element.prototype, "getBoundingClientRect").mockReturnValue({ width: 343, height: 0, top: 0, left: 0, right: 343, bottom: 0 });
+    await openGenres("#/genres?var=dlg_word_share");
+    const frame = document.querySelector(".genre-chart .chart-frame");
+    expect(frame.lastElementChild.classList.contains("genre-line")).toBe(true);
+  });
+
+  it("never covers a row focused from the keyboard", async () => {
+    await openGenres("#/genres?var=dlg_word_share");
+    vi.restoreAllMocks();
+    const scrolled = [];
+    window.scrollBy = (x, y) => scrolled.push(y);
+    vi.spyOn(Element.prototype, "getBoundingClientRect").mockImplementation(function rect() {
+      if (this.classList?.contains("genre-line")) return { width: 343, height: 120, top: 547, bottom: 667, left: 0, right: 343 };
+      if (this.classList?.contains("row")) return { width: 343, height: 44, top: 520, bottom: 564, left: 0, right: 343 };
+      return { width: 343, height: 0, top: 0, bottom: 0, left: 0, right: 343 };
+    });
+    window.innerHeight = 667;
+    window.dispatchEvent(new Event("resize"));
+    await waitFor(() => expect(document.querySelector(".genre-chart.mode-side")).toBeTruthy());
+    const row = document.querySelector(".genre-chart .row[tabindex='0']");
+    row.focus();
+    await waitFor(() => expect(document.querySelector(".genre-line:not(.empty)")).toBeTruthy());
+    await waitFor(() => expect(scrolled).toContain(564 + 4 - 547));
+    delete window.scrollBy;
+  });
+});

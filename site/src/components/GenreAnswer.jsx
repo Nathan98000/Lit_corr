@@ -16,7 +16,7 @@ import {
   tooFewLine,
 } from "../lib/genres.js";
 import { subsetConflict, toHash } from "../lib/urlState.js";
-import { mixColors } from "../lib/genreLayout.js";
+import { bandPalette, mixColors } from "../lib/genreLayout.js";
 import CopyLink from "./CopyLink.jsx";
 import GenreChart from "./GenreChart.jsx";
 import GenreMix from "./GenreMix.jsx";
@@ -29,7 +29,7 @@ const RECENT = "y2020"; // "Published 2020 or later", the age notes' comparison
 
 /**
  * The key of the forms: what the marks and lines mean, and the link to how a difference is decided; for named groups
- * and bands, the groups' swatches (`groups`: [{ label, fill }]).
+ * and bands, the groups' swatches (`groups`: [{ label, cls }], a palette class of genres.css).
  */
 export function GenreLegend({ kind, anySmall, smallN, groups = null }) {
   const decided = (
@@ -45,13 +45,13 @@ export function GenreLegend({ kind, anySmall, smallN, groups = null }) {
   );
   if (kind === "grp" || kind === "band") {
     return (
-      <ul className="legend genre-legend">
+      <ul className={`legend genre-legend${kind === "band" ? ` bands-${bandPalette(groups.length)}` : ""}`}>
         {groups.map((g) => (
           <li key={g.label}>
-            <span className="key key-swatch" aria-hidden="true" style={{ background: g.fill }} /> {g.label}
+            <span className={`key key-swatch ${g.cls}`} aria-hidden="true" /> {g.label}
           </li>
         ))}
-        <li>
+        <li className="legend-text">
           <span>
             {kind === "grp" ? (
               <>
@@ -72,11 +72,11 @@ export function GenreLegend({ kind, anySmall, smallN, groups = null }) {
   if (kind === "zero") {
     return (
       <ul className="legend genre-legend">
-        <li>
+        <li className="legend-text">
           <span className="key key-median" aria-hidden="true" />
           <span className="key key-iqr" aria-hidden="true" /> Median and interquartile range among stories with any
         </li>
-        <li>
+        <li className="legend-text">
           <span>
             <span aria-hidden="true">▲▼</span> Clearly higher or lower than all genres{decided}
           </span>
@@ -94,7 +94,7 @@ export function GenreLegend({ kind, anySmall, smallN, groups = null }) {
         <li>
           <span className="key key-ref" aria-hidden="true" /> All genres
         </li>
-        <li>
+        <li className="legend-text">
           <span>
             <span aria-hidden="true">▲▼</span> Clearly more or less common than in all genres{decided}
           </span>
@@ -114,7 +114,7 @@ export function GenreLegend({ kind, anySmall, smallN, groups = null }) {
       <li className="legend-ref">
         <span className="key key-ref" aria-hidden="true" /> Median of all genres
       </li>
-      <li>
+      <li className="legend-text">
         <span>
           <span aria-hidden="true">▲▼</span> Clearly higher or lower than all genres{decided}
         </span>
@@ -214,7 +214,7 @@ export default function GenreAnswer({ meta, state, file, busy, onChange, onSwitc
     kind === "grp" || kind === "band"
       ? mixColors(kind, rows[0].stats?.shares || variable.bins.labels.map(() => 0)).map((c, b) => ({
           label: variable.bins.labels[b],
-          fill: c.fill,
+          cls: c.cls,
         }))
       : null;
 

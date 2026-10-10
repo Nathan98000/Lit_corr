@@ -9,9 +9,9 @@ import App from "../App.jsx";
 import { anyHeading, anyRows } from "../components/GenreAny.jsx";
 import { mixRows } from "../components/GenreMix.jsx";
 import { clearCache } from "../lib/data.js";
-import { anyLayout, bandColors, inkOn, layoutProblems, mixColors, mixLayout } from "../lib/genreLayout.js";
+import { BAND_INKS, GROUP_INKS, anyLayout, bandPalette, layoutProblems, mixColors, mixLayout } from "../lib/genreLayout.js";
 import { allGenresLine, bandQuartiles, chartDomain, comparison, formatPercent, genreRows, numberFormat, rowDetails, takeawayLists, tickFormatFor } from "../lib/genres.js";
-import { fixtureFetch, fixtureMeta, realMeta } from "./fixtures.js";
+import { fixtureFetch, fixtureFile, fixtureMeta, realMeta } from "./fixtures.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const real = realMeta();
@@ -121,11 +121,58 @@ describe("named groups: 100% bars", () => {
 
   it("give the darkest color to the group that is largest across all genres", () => {
     const c = mixColors("grp", [0.1, 0.55, 0.3, 0.05]);
-    expect(c[1].fill).toBe("#2b63c6");
-    expect(c[1].ink).toBe("#fff");
-    expect(new Set(c.map((x) => x.fill)).size).toBe(4);
+    expect(c[1]).toEqual({ cls: "pal-group-0", ink: "white" });
+    expect(new Set(c.map((x) => x.cls)).size).toBe(4);
+    expect(palette().group[0]).toBe("#2b63c6"); // the palette is in genres.css (F72)
+  });
+
+  it("name each group over All genres' bar where its segment has room, and outline the near-white group (F72)", async () => {
+    await openGenres("#/genres?var=pov_class", 1032);
+    const names = [...document.querySelectorAll(".genre-mix .group-name")].map((t) => t.textContent);
+    expect(names.length).toBeGreaterThan(0);
+    const labels = fixtureMeta.variables.find((x) => x.id === "pov_class").bins.labels;
+    for (const n of names) expect(labels).toContain(n);
+    // each name sits over the middle of its own segment of the All genres row
+    const all = document.querySelector(".genre-mix .row.all");
+    for (const t of document.querySelectorAll(".genre-mix .group-name")) {
+      const b = labels.indexOf(t.textContent);
+      const seg = [...all.querySelectorAll(".segment")].find((r) => r.classList.contains(mixColors("grp", fixtureFile("genres/all.json").c.pov_class.q[0].slice(1))[b].cls));
+      expect(Math.abs(Number(seg.getAttribute("x")) + Number(seg.getAttribute("width")) / 2 - Number(t.getAttribute("x")))).toBeLessThan(0.01);
+    }
+    const css = readFileSync(path.join(here, "..", "genres.css"), "utf8");
+    expect(css).toMatch(/\.genre-mix \.segment\.pal-group-4,\s*\.profile-plot \.segment\.pal-group-4 \{\s*stroke: #a5a29a;/);
+  });
+
+  it("leave names out where their segments are too narrow, and never let them overlap, at every width", () => {
+    const labels = ["First person (I)", "First person plural (we)", "Second person (you)", "Third person", "Mixed"];
+    const rows = [
+      { index: 0, label: "All genres", n: 900, shares: [0.553, 0.001, 0.022, 0.416, 0.008], mark: "" },
+      { index: 1, label: "Romance", n: 300, shares: [0.2, 0.0, 0.05, 0.7, 0.05], mark: "≠" },
+    ];
+    for (const width of [288, 343, 600, 768, 1032]) {
+      const layout = mixLayout({ rows, width, labels });
+      expect(layoutProblems(layout)).toEqual([]);
+      for (const nm of layout.names) expect(["First person (I)", "Third person"]).toContain(nm.text); // the small ones never fit
+    }
   });
 });
+
+/** The palettes as genres.css writes them: { group: [hex…], bands: { 5: [hex…], 7: [hex…], … } }. */
+function palette() {
+  const css = readFileSync(path.join(here, "..", "genres.css"), "utf8");
+  const vars = (block, name) => [...block.matchAll(new RegExp(`--${name}-(\\d+): (#[0-9a-f]{6});`, "g"))].map((m) => m[2]);
+  const group = vars(css.match(/\.genres-page \{([^}]*)\}/)[1], "group");
+  const bands = {};
+  for (const m of css.matchAll(/\.bands-(\d+) \{([^}]*)\}/g)) bands[m[1]] = vars(m[2], "band");
+  return { group, bands };
+}
+
+const luminance = (hex) => {
+  const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255).map((v) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4));
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+};
+const contrast = (a, b) => (Math.max(luminance(a), luminance(b)) + 0.05) / (Math.min(luminance(a), luminance(b)) + 0.05);
+const INK_HEX = { white: "#ffffff", dark: "#1c1c22" };
 
 describe("ordered bands: 100% bars from light to dark", () => {
   it("mark a genre higher or lower with ▲ ▼, and say the median band", async () => {
@@ -145,27 +192,28 @@ describe("ordered bands: 100% bars from light to dark", () => {
     expect(document.querySelector(".genre-legend").textContent).toMatch(/▲▼ Clearly higher or lower than all genres/);
   });
 
-  it("go from light to dark, with text that reaches 4.5:1 on every color", () => {
-    for (const n of [2, 5, 7]) {
-      const fills = bandColors(n);
-      expect(fills).toHaveLength(n);
-      const lum = fills.map((f) => f.match(/\d+/g).slice(0, 3).reduce((a, b) => a + Number(b), 0));
-      expect([...lum].sort((a, b) => b - a)).toEqual(lum); // darker and darker
+  it("go from light to dark on an even scale of contrast, with shares printed only in an ink that reaches 4.5:1 (F72)", () => {
+    const { group, bands } = palette();
+    expect(Object.keys(bands).map(Number)).toEqual([3, 4, 5, 6, 7, 8]);
+    for (const [n, colors] of Object.entries(bands)) {
+      expect(colors).toHaveLength(Number(n));
+      expect([colors[0], colors[colors.length - 1]]).toEqual(["#e1ebfd", "#1d4a99"]);
+      const steps = colors.slice(1).map((c, i) => contrast(colors[i], c));
+      for (const step of steps) expect(step).toBeGreaterThanOrEqual(1.3); // neighbors stay apart
+      expect(Math.max(...steps) / Math.min(...steps)).toBeLessThan(1.04); // and differ equally
+      colors.forEach((c, i) => {
+        const ink = BAND_INKS[n][i];
+        if (ink) expect(contrast(c, INK_HEX[ink])).toBeGreaterThanOrEqual(4.5);
+        else expect(Math.max(contrast(c, INK_HEX.white), contrast(c, INK_HEX.dark))).toBeLessThan(4.5);
+      });
     }
-    const contrast = (a, b) => (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
-    const L = (color) => {
-      const c = color === "#fff" ? "#ffffff" : color;
-      const m = c.startsWith("#") ? [1, 3, 5].map((i) => parseInt(c.slice(i, i + 2), 16)) : c.match(/\d+/g).slice(0, 3).map(Number);
-      const [r, g, b] = m.map((x) => (x / 255 <= 0.03928 ? x / 255 / 12.92 : ((x / 255 + 0.055) / 1.055) ** 2.4));
-      return 0.2126 * r + 0.7152 * g + 0.0722 * b;
-    };
-    for (const kind of ["band", "grp"]) {
-      for (const n of [3, 4, 5, 7]) {
-        for (const { fill, ink } of mixColors(kind, Array.from({ length: n }, (_, i) => (i + 1) / 10))) {
-          expect(contrast(L(fill), L(ink))).toBeGreaterThanOrEqual(4.5);
-          expect(inkOn(fill)).toBe(ink);
-        }
-      }
+    expect(bands[7].slice(1).map((c, i) => contrast(bands[7][i], c).toFixed(2))).toEqual(["1.39", "1.38", "1.37", "1.40", "1.36", "1.40"]);
+    group.forEach((c, i) => expect(contrast(c, INK_HEX[GROUP_INKS[i]])).toBeGreaterThanOrEqual(4.5));
+    // every band of a chart has its palette's color and ink
+    for (const n of [4, 5, 7]) {
+      const colors = mixColors("band", Array(n).fill(1 / n));
+      expect(colors.map((c) => c.cls)).toEqual(Array.from({ length: n }, (_, b) => `pal-band-${b}`));
+      expect(colors.map((c) => c.ink)).toEqual(BAND_INKS[bandPalette(n)]);
     }
   });
 
@@ -325,6 +373,17 @@ describe("the forms on the real data", () => {
       expect(howTo.median.text).toBe("2.570"); // all genres' quartiles among those with any (0.641, 1.19, 2.17) give three decimals
     }
     expect(anyHeading(nf)).toBe("Among stories with any (per 1,000 words)");
+  });
+
+  it.skipIf(!real)("leave out “Genre medians run from X to X” when both ends are the same (F72)", () => {
+    const file = realFile();
+    const line = (id) => text(allGenresLine(genreRows(real, file, id), real.variables.find((x) => x.id === id), file.c[id]));
+    expect(line("pace_descriptive_peak_position")).toBe("All genres: median middle, interquartile range 2nd fifth to 4th fifth.");
+    expect(line("pace_sex_peak_position")).toMatch(/ Genre medians run from .* to .*\.$/);
+    for (const [id, entry] of Object.entries(file.c)) {
+      if (entry.k !== "num" && entry.k !== "band") continue;
+      expect(line(id)).not.toMatch(/run from (\S+) to \1\./);
+    }
   });
 
   it.skipIf(!real)("say the All genres line of narrative perspective as the copy does", () => {

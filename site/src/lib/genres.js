@@ -316,7 +316,8 @@ export function allGenresLine(rows, variable, entry) {
     segs.push(`${nf.unit ? ` ${nf.unit}` : ""}, interquartile range ${nf.span(all.p25, all.p75)}.`);
     if (genres.length >= 2) {
       const meds = genres.map((r) => r.stats.median);
-      segs.push(` Genre medians run from ${nf.value(Math.min(...meds))} to ${nf.value(Math.max(...meds))}.`);
+      const [lo, hi] = [nf.value(Math.min(...meds)), nf.value(Math.max(...meds))];
+      if (lo !== hi) segs.push(` Genre medians run from ${lo} to ${hi}.`); // never "from 1 to 1" (F72)
     }
     return segs;
   }
@@ -327,7 +328,8 @@ export function allGenresLine(rows, variable, entry) {
     segs.push(`, interquartile range ${bandWord(variable, q.p25)} to ${bandWord(variable, q.p75)}.`);
     if (genres.length >= 2) {
       const meds = genres.map((r) => bandQuartiles(r.stats.shares).median);
-      segs.push(` Genre medians run from ${bandWord(variable, Math.min(...meds))} to ${bandWord(variable, Math.max(...meds))}.`);
+      const [lo, hi] = [Math.min(...meds), Math.max(...meds)];
+      if (lo !== hi) segs.push(` Genre medians run from ${bandWord(variable, lo)} to ${bandWord(variable, hi)}.`);
     }
     return segs;
   }

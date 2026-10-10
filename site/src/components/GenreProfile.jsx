@@ -47,7 +47,7 @@ function RowPlot({ item, width, small, hatchId }) {
     const colors = mixColors("grp", item.all.shares);
     const bars = (segs, y) =>
       segs.map((seg) =>
-        seg.width > 0 ? <rect key={seg.b} x={seg.x} y={y} width={seg.width} height={7} fill={colors[seg.b].fill} className="segment" /> : null,
+        seg.width > 0 ? <rect key={seg.b} x={seg.x} y={y} width={seg.width} height={7} className={`segment ${colors[seg.b].cls}`} /> : null,
       );
     return (
       <svg width={width} height={height} aria-hidden="true" className="profile-plot">

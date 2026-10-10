@@ -1,6 +1,6 @@
 import { useId, useRef } from "react";
 import { comparison, formatPercent, rowDetails } from "../lib/genres.js";
-import { mixColors, mixLayout } from "../lib/genreLayout.js";
+import { bandPalette, mixColors, mixLayout } from "../lib/genreLayout.js";
 import { GenreRowDetails, useGenreDetails } from "./GenreDetails.jsx";
 import useWidth from "./useWidth.js";
 
@@ -19,10 +19,12 @@ export function mixRows(rows, variable, kind, minN) {
 
 /**
  * Named groups (grp) and ordered bands (band) in every genre: one 100% bar per genre, the groups in their own order,
- * each genre's shares printed in segments at least 34 px wide (every share is in the details and the table). Named
- * groups take five colors, the darkest for the group that is largest across all genres, and ≠ marks a genre whose mix
- * clearly differs; ordered bands go from light to dark blue, with ▲ ▼ as for numbers. The mark has its own column.
- * Genres with fewer than SMALL_N stories are hatched and never marked. Details and keyboard as on the range chart.
+ * each genre's shares printed in segments at least 34 px wide where their ink reaches 4.5:1 (every share is in the
+ * details and the table). Named groups take the groups' palette, the darkest for the group that is largest across all
+ * genres, and ≠ marks a genre whose mix clearly differs; ordered bands go from light to dark blue on an even scale of
+ * contrast, with ▲ ▼ as for numbers (the palettes are in genres.css). Each group's name sits over its segment of All
+ * genres' bar where it fits. The mark has its own column. Genres with fewer than SMALL_N stories are hatched and never
+ * marked. Details and keyboard as on the range chart.
  */
 export default function GenreMix({ meta, variable, entry, rows, highlight, sub, title, onNavigate }) {
   const kind = entry.k;
@@ -33,7 +35,7 @@ export default function GenreMix({ meta, variable, entry, rows, highlight, sub, 
   const hatchId = `${ids}-hatch`.replace(/:/g, "");
   const labels = variable.bins.labels;
   const colors = mixColors(kind, rows[0].stats?.shares || labels.map(() => 0));
-  const layout = mixLayout({ rows: mixRows(rows, variable, kind, meta.min_n), width });
+  const layout = mixLayout({ rows: mixRows(rows, variable, kind, meta.min_n), width, labels });
   const byIndex = new Map(rows.map((r) => [r.i, r]));
   const d = useGenreDetails({
     ids: layout.rows.map((r) => r.index),
@@ -47,7 +49,7 @@ export default function GenreMix({ meta, variable, entry, rows, highlight, sub, 
   const activeRow = d.active == null ? null : layout.rows.find((r) => r.index === d.active);
 
   return (
-    <div ref={ref} className={`genre-mix kind-${kind}`}>
+    <div ref={ref} className={`genre-mix kind-${kind}${kind === "band" ? ` bands-${bandPalette(labels.length)}` : ""}`}>
       <div className="chart-frame" ref={frame}>
         <span id={titleId} hidden>
           {title}
@@ -88,6 +90,11 @@ export default function GenreMix({ meta, variable, entry, rows, highlight, sub, 
                 {layout.storiesHead.text}
               </text>
             )}
+            {layout.names.map((nm) => (
+              <text key={nm.b} className="group-name" x={nm.x} y={nm.y} textAnchor="middle">
+                {nm.text}
+              </text>
+            ))}
           </g>
           {layout.rows.map((r, ri) => {
             const row = byIndex.get(r.index);
@@ -151,7 +158,7 @@ function MixRow({ r, row, layout, colors, hatchId }) {
         <>
           {r.segments.map((s) =>
             s.width > 0 ? (
-              <rect key={s.b} className="segment" x={s.x} y={r.cy - 9} width={s.width} height={18} fill={colors[s.b].fill} />
+              <rect key={s.b} className={`segment ${colors[s.b].cls}`} x={s.x} y={r.cy - 9} width={s.width} height={18} />
             ) : null,
           )}
           {row.small && (
@@ -159,8 +166,8 @@ function MixRow({ r, row, layout, colors, hatchId }) {
           )}
           <rect className="bar-outline" x={layout.barX} y={r.cy - 9} width={layout.barW} height={18} />
           {r.segments.map((s) =>
-            s.width >= 34 ? (
-              <text key={`t${s.b}`} className="seglab" x={s.labelX} y={r.cy + 4} textAnchor="middle" fill={colors[s.b].ink}>
+            s.width >= 34 && colors[s.b].ink ? (
+              <text key={`t${s.b}`} className={`seglab seg-ink-${colors[s.b].ink}`} x={s.labelX} y={r.cy + 4} textAnchor="middle">
                 {formatPercent(s.share)}
               </text>
             ) : null,

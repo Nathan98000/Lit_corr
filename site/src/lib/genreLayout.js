@@ -50,71 +50,67 @@ export function rowGrid({ rows, width, top = TOP }) {
   return { phone, labelW, storiesW, rows: laid, bottom: y, storiesHead: storiesW ? { x: width, y: top - 10, text: "Stories" } : null };
 }
 
-const INK = "#1c1c22";
-
-/** The relative luminance of a color written as #rrggbb or rgb(r g b) (WCAG). */
-function luminance(color) {
-  const m = color.startsWith("#")
-    ? [1, 3, 5].map((i) => parseInt(color.slice(i, i + 2), 16))
-    : color.match(/\d+/g).slice(0, 3).map(Number);
-  const [r, g, b] = m.map((c) => {
-    const v = c / 255;
-    return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
-  });
-  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
-}
-
-/** The ink for a share printed on a fill: white where it has a contrast of 4.5:1 or more, else the page's ink. */
-export function inkOn(fill) {
-  return 1.05 / (luminance(fill) + 0.05) >= 4.5 ? "#fff" : INK;
-}
-
-const mix = (from, to, t) => `rgb(${from.map((a, k) => Math.round(a + (to[k] - a) * t)).join(" ")})`;
+// The palettes of the 100% bars are custom properties in genres.css (F72): named groups --group-0 … --group-5, the
+// largest group across all genres darkest; ordered bands --band-0 … in a palette per number of bands (.bands-3 to
+// .bands-8), light to dark blue on an even scale of contrast. Here: which ink a share printed on each color takes,
+// "white" or "dark" where it reaches 4.5:1 there, "" where neither does (the share is then only in the details and
+// the table). A test reads genres.css and checks these.
+export const GROUP_INKS = ["white", "dark", "dark", "dark", "dark", "dark"];
+export const BAND_INKS = {
+  3: ["dark", "dark", "white"],
+  4: ["dark", "dark", "", "white"],
+  5: ["dark", "dark", "dark", "white", "white"],
+  6: ["dark", "dark", "dark", "", "white", "white"],
+  7: ["dark", "dark", "dark", "dark", "", "white", "white"],
+  8: ["dark", "dark", "dark", "dark", "dark", "white", "white", "white"],
+};
+export const bandPalette = (count) => Math.min(8, Math.max(3, count)); // the palettes run from 3 to 8 bands
 
 /**
- * Blues from light to dark, one per ordered band (the ordered bands' sequential palette): the first half light (dark
- * text on them), the second half dark (white text), skipping the middle blues, where neither reaches 4.5:1.
- */
-export function bandColors(count) {
-  const light = [[225, 235, 253], [143, 180, 244]]; // #e1ebfd to #8fb4f4
-  const dark = [[61, 108, 192], [29, 74, 153]]; // #3d6cc0 to #1d4a99
-  const nLight = Math.ceil(count / 2);
-  const nDark = count - nLight;
-  const step = (n, i) => (n === 1 ? 0 : i / (n - 1));
-  return [
-    ...Array.from({ length: nLight }, (_, i) => mix(light[0], light[1], step(nLight, i))),
-    ...Array.from({ length: nDark }, (_, i) => mix(dark[0], dark[1], step(nDark, i))),
-  ];
-}
-
-// named groups: the darkest color for the group that is largest across all genres, then the others by size
-const GROUP_COLORS = ["#2b63c6", "#c9c3b8", "#d98a52", "#8fb4f4", "#efece6", "#a5a29a"];
-
-/**
- * Each group's fill and the ink of its printed share: named groups by their size across all genres (the largest
- * darkest), ordered bands from light to dark in their order.
+ * Each group's color class and the ink of its printed share: named groups by their size across all genres (the
+ * largest darkest), ordered bands from light to dark in their order. [{ cls, ink }] per group.
  */
 export function mixColors(kind, allShares) {
-  if (kind === "band") return bandColors(allShares.length).map((fill) => ({ fill, ink: inkOn(fill) }));
+  if (kind === "band") {
+    const inks = BAND_INKS[bandPalette(allShares.length)];
+    return allShares.map((_, b) => ({ cls: `pal-band-${b}`, ink: inks[b] ?? "" }));
+  }
   const rank = allShares.map((s, b) => ({ s, b })).sort((a, c) => c.s - a.s || a.b - c.b);
   const out = [];
   rank.forEach(({ b }, k) => {
-    const fill = GROUP_COLORS[Math.min(k, GROUP_COLORS.length - 1)];
-    out[b] = { fill, ink: inkOn(fill) };
+    const i = Math.min(k, GROUP_INKS.length - 1);
+    out[b] = { cls: `pal-group-${i}`, ink: GROUP_INKS[i] };
   });
   return out;
 }
 
 /**
  * The 100% bars: per genre (rows: { index, label, n, shares, mark }), one bar of the groups' shares in their order,
- * after a column for the mark (≠ for named groups, ▲ ▼ for bands). Shares are printed in segments at least 34 px wide.
+ * after a column for the mark (≠ for named groups, ▲ ▼ for bands). Shares are printed in segments at least 34 px wide
+ * (where their ink reaches 4.5:1: mixColors). Over All genres' bar, each group's name sits over the middle of its
+ * segment when the segment is at least the name's width and 8 px (`labels`; F72): position as well as color says which
+ * group a segment is; names that do not fit are left to the legend.
  */
-export function mixLayout({ rows, width }) {
-  const top = width < PHONE ? 8 : 24; // room for the Stories heading on wider charts
-  const grid = rowGrid({ rows, width, top });
-  const x0 = grid.labelW + MARK_GAP + MARK_W + 6;
-  const x1 = width - (grid.storiesW ? grid.storiesW : 0);
+export function mixLayout({ rows, width, labels = [] }) {
+  const phone = width < PHONE;
+  const probe = rowGrid({ rows, width, top: 24 });
+  const x0 = probe.labelW + MARK_GAP + MARK_W + 6;
+  const x1 = width - (probe.storiesW ? probe.storiesW : 0);
   const barW = Math.max(40, x1 - x0);
+  const allShares = rows[0]?.shares;
+  const names = [];
+  if (allShares) {
+    let x = x0;
+    allShares.forEach((share, b) => {
+      const w = share * barW;
+      const text = labels[b];
+      if (text && w >= textWidth(text, 12) + 8) names.push({ b, x: x + w / 2, text });
+      x += w;
+    });
+  }
+  // room above the rows for the Stories heading (wider charts) and the groups' names
+  const top = phone && !names.length ? 8 : 24;
+  const grid = top === 24 ? probe : rowGrid({ rows, width, top });
   const laid = grid.rows.map((g, i) => {
     const r = rows[i];
     const out = { ...g, mark: r.mark ? { x: grid.labelW + MARK_GAP + MARK_W / 2, y: g.cy + 4.5, text: r.mark } : null };
@@ -133,7 +129,8 @@ export function mixLayout({ rows, width }) {
     if (out.mark) out.boxes = [...g.boxes, { kind: "mark", ...box(out.mark.x, out.mark.y, out.mark.text, 13, 700, "middle") }];
     return out;
   });
-  return { ...grid, width, height: grid.bottom + 8, top, barX: x0, barW, rows: laid };
+  const groupNames = names.map((nm) => ({ ...nm, y: top - 10, box: box(nm.x, top - 10, nm.text, 12, 400, "middle") }));
+  return { ...grid, width, height: grid.bottom + 8, top, barX: x0, barW, rows: laid, names: groupNames };
 }
 
 /** Ticks for a plot on [lo, hi]: nice steps, fewer when their labels would touch (`tickFormat(v, step)` writes them). */
@@ -278,6 +275,7 @@ export function layoutProblems(layout, pad = 1) {
   const boxes = layout.rows.flatMap((r) => r.boxes.map((b) => ({ ...b, row: r.index })));
   if (layout.ref) boxes.push({ kind: "ref", row: -1, ...layout.ref.box });
   for (const h of layout.heads || []) boxes.push({ kind: "head", row: -3, ...h.box });
+  for (const nm of layout.names || []) boxes.push({ kind: "name", row: -4, ...nm.box });
   if (layout.storiesHead) {
     const w = textWidth(layout.storiesHead.text, 12);
     boxes.push({ kind: "head", row: -3, x0: layout.storiesHead.x - w, x1: layout.storiesHead.x, y0: layout.storiesHead.y - 9.6, y1: layout.storiesHead.y + 3 });

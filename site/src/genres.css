@@ -104,9 +104,14 @@
     line-height: 1.45;
   }
 
+  /* a key stays whole (the lines break between keys); the long items, sentences really, wrap as text */
   .genre-answer .genre-legend li {
-    display: inline;
+    display: inline-block;
     margin-right: 12px;
+  }
+
+  .genre-answer .genre-legend li.legend-text {
+    display: inline;
   }
 
   .genre-answer .genre-legend li:last-child {
@@ -348,6 +353,161 @@
   color: var(--ink);
 }
 
+/* ------------------------------------------------------------------ the palettes of the 100% bars (F72) */
+/* Named groups by their size across all genres, the largest darkest. Ordered bands from light to dark blue on an even
+   scale of contrast, a palette per number of bands (neighbors 1.62:1 apart with 5 bands, 1.39:1 with 7). Segments and
+   swatches take a color by index; a share printed on a segment takes the ink class that reaches 4.5:1 there
+   (GROUP_INKS and BAND_INKS in genreLayout.js; a test reads this file and checks them). */
+.genres-page {
+  --group-0: #2b63c6;
+  --group-1: #c9c3b8;
+  --group-2: #d98a52;
+  --group-3: #8fb4f4;
+  --group-4: #efece6;
+  --group-5: #a5a29a;
+}
+
+.bands-3 {
+  --band-0: #e1ebfd;
+  --band-1: #7592c4;
+  --band-2: #1d4a99;
+}
+
+.bands-4 {
+  --band-0: #e1ebfd;
+  --band-1: #95acd5;
+  --band-2: #5678b5;
+  --band-3: #1d4a99;
+}
+
+.bands-5 {
+  --band-0: #e1ebfd;
+  --band-1: #a7bbde;
+  --band-2: #7592c4;
+  --band-3: #486cad;
+  --band-4: #1d4a99;
+}
+
+.bands-6 {
+  --band-0: #e1ebfd;
+  --band-1: #b2c3e3;
+  --band-2: #88a1cd;
+  --band-3: #6282bb;
+  --band-4: #3f65a9;
+  --band-5: #1d4a99;
+}
+
+.bands-7 {
+  --band-0: #e1ebfd;
+  --band-1: #b9c9e7;
+  --band-2: #95acd5;
+  --band-3: #7592c4;
+  --band-4: #5678b5;
+  --band-5: #3a62a7;
+  --band-6: #1d4a99;
+}
+
+.bands-8 {
+  --band-0: #e1ebfd;
+  --band-1: #bfcfea;
+  --band-2: #9fb5da;
+  --band-3: #829dcb;
+  --band-4: #6886bd;
+  --band-5: #4e71b0;
+  --band-6: #365ea4;
+  --band-7: #1d4a99;
+}
+
+.pal-group-0 {
+  fill: var(--group-0);
+  background: var(--group-0);
+}
+
+.pal-group-1 {
+  fill: var(--group-1);
+  background: var(--group-1);
+}
+
+.pal-group-2 {
+  fill: var(--group-2);
+  background: var(--group-2);
+}
+
+.pal-group-3 {
+  fill: var(--group-3);
+  background: var(--group-3);
+}
+
+.pal-group-4 {
+  fill: var(--group-4);
+  background: var(--group-4);
+}
+
+.pal-group-5 {
+  fill: var(--group-5);
+  background: var(--group-5);
+}
+
+.pal-band-0 {
+  fill: var(--band-0);
+  background: var(--band-0);
+}
+
+.pal-band-1 {
+  fill: var(--band-1);
+  background: var(--band-1);
+}
+
+.pal-band-2 {
+  fill: var(--band-2);
+  background: var(--band-2);
+}
+
+.pal-band-3 {
+  fill: var(--band-3);
+  background: var(--band-3);
+}
+
+.pal-band-4 {
+  fill: var(--band-4);
+  background: var(--band-4);
+}
+
+.pal-band-5 {
+  fill: var(--band-5);
+  background: var(--band-5);
+}
+
+.pal-band-6 {
+  fill: var(--band-6);
+  background: var(--band-6);
+}
+
+.pal-band-7 {
+  fill: var(--band-7);
+  background: var(--band-7);
+}
+
+.seg-ink-white {
+  fill: #fff;
+}
+
+.seg-ink-dark {
+  fill: var(--ink);
+}
+
+/* the near-white group: a 1 px outline on its segments (1.13:1 against the page without it) */
+.genre-mix .segment.pal-group-4,
+.profile-plot .segment.pal-group-4 {
+  stroke: #a5a29a;
+}
+
+/* each group's name over All genres' bar, where its segment has room */
+.genre-mix .group-name {
+  fill: var(--ink-2);
+  font-size: 12px;
+}
+
 /* ------------------------------------------------------------------ named groups and bands: 100% bars */
 .genre-mix svg {
   display: block;
@@ -499,7 +659,8 @@
   .genre-mix .gn,
   .genre-mix .gmark,
   .genre-mix .gnone,
-  .genre-mix .stories-head {
+  .genre-mix .stories-head,
+  .genre-mix .group-name {
     fill: CanvasText;
   }
 

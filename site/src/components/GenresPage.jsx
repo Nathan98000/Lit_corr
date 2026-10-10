@@ -1,11 +1,12 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { loadGenres } from "../lib/data.js";
-import { chartAnnouncement, chartQuestion, orderLabel } from "../lib/genres.js";
+import { chartAnnouncement, chartQuestion, orderWords } from "../lib/genres.js";
 import { GENRE_PAGE_EXCLUDED, defaultGenre, onGenresPage, sortable, subsetConflict } from "../lib/urlState.js";
 import { BodyPlaceholder, CharacteristicPicker, SlotButton } from "./Controls.jsx";
 import { ChartPlaceholder } from "./Explorer.jsx";
 import GenreAnswer from "./GenreAnswer.jsx";
 import GenreProfile, { profileAnnouncement } from "./GenreProfile.jsx";
+import Segmented from "./GenreSwitch.jsx";
 import InlineSelect, { SlotWords } from "./InlineSelect.jsx";
 import { PartBoundary } from "./lazyPart.jsx";
 import LoadError from "./LoadError.jsx";
@@ -41,39 +42,30 @@ function useShownGenres(sub) {
 }
 
 /**
- * What the polite live region says: `text` once the file is on screen, said again when `key` changes even if the words
- * are the same (another order of the genres keeps the heading and the takeaway).
+ * What the polite live region says: `text` once the file is on screen, said again when `key` (the question shown)
+ * changes even if the words are the same; when only the order of the genres changes (`orderKey`), only its words,
+ * `orderText` ("Genres by median, highest first.", F75).
  */
-function useAnnouncement(text, key) {
+function useAnnouncement(text, key, orderText = "", orderKey = "") {
   const [said, setSaid] = useState("");
-  const lastKey = useRef(null);
+  const last = useRef({ key: null, orderKey: null });
   useEffect(() => {
     if (!text) return undefined;
-    if (lastKey.current === key) {
-      setSaid(text);
-      return undefined;
+    const prev = last.current;
+    last.current = { key, orderKey };
+    let say = text;
+    if (prev.key === key) {
+      if (prev.orderKey === orderKey || !orderText) {
+        setSaid((s) => (s === "" ? s : text));
+        return undefined;
+      }
+      say = orderText;
     }
-    lastKey.current = key;
     setSaid("");
-    const t = setTimeout(() => setSaid(text), 60);
+    const t = setTimeout(() => setSaid(say), 60);
     return () => clearTimeout(t);
-  }, [text, key]);
+  }, [text, key, orderKey]); // eslint-disable-line react-hooks/exhaustive-deps
   return said;
-}
-
-/** A two-option segmented control: a radio group (the view switch, the order). */
-export function Segmented({ label, options, value, onChange, className = "" }) {
-  const name = useId();
-  return (
-    <div role="radiogroup" aria-label={label} className={`segmented ${className}`}>
-      {options.map(([id, text]) => (
-        <label key={id} className={value === id ? "on" : undefined}>
-          <input type="radio" name={name} value={id} checked={value === id} onChange={() => onChange(id)} />
-          <span>{text}</span>
-        </label>
-      ))}
-    </div>
-  );
 }
 
 /** "Only include", with the options that cannot go with the characteristic turned off (as on the explorer). */
@@ -167,13 +159,16 @@ export default function GenresPage({ meta, state, onChange, onNavigate, onHoldSc
   if (file?.c[state.v]) shownV.current = state.v;
   const view = file ? { ...state, sub: file.s, v: file.c[state.v] ? state.v : shownV.current } : state;
   const shownVariable = meta.variables.find((v) => v.id === view.v);
+  const shownKind = file?.c[view.v]?.k;
   const announcement = useAnnouncement(
     !file || busy || error
       ? ""
       : profile
         ? profileAnnouncement(meta, file, state)
         : chartAnnouncement(meta, file, shownVariable),
-    profile ? `genre|${state.genre}|${state.sub}` : `${view.v}|${state.sub}|${state.sort || ""}`,
+    profile ? `genre|${state.genre}|${state.sub}` : `${view.v}|${state.sub}`,
+    profile || !shownKind ? "" : `${orderWords(shownKind, state.sort)}.`,
+    profile ? "" : state.sort || "",
   );
 
   // the view switch carries the genre across: the highlighted genre becomes "one genre", and back (D8 when none)
@@ -230,7 +225,6 @@ export default function GenresPage({ meta, state, onChange, onNavigate, onHoldSc
     );
   } else {
     const q = chartQuestion(variable);
-    const fileKind = file?.c[state.v]?.k;
     sentence = (
       <p className="sentence">
         {q.before}
@@ -268,18 +262,6 @@ export default function GenresPage({ meta, state, onChange, onNavigate, onHoldSc
             ))}
           </InlineSelect>
         </span>
-        {sortable(variable) && (
-          <Segmented
-            label="Order"
-            className="order-switch"
-            options={[
-              ["az", "A–Z"],
-              ["value", orderLabel(fileKind || (variable.yes_subject ? "bin" : "num"))],
-            ]}
-            value={state.sort === "value" ? "value" : "az"}
-            onChange={(o) => keepPlace({ ...state, sort: o === "value" ? "value" : undefined })}
-          />
-        )}
       </>
     );
   }

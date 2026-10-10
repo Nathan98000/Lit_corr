@@ -83,7 +83,8 @@ describe("the average rating first", () => {
     const sentence = document.querySelector(".sentence");
     expect(shown(sentence)).toBe("In All genres, how does the average rating vary with dialogue share?");
     expect(within(sentence).getByRole("button", { name: /^Popularity measure:/ }).textContent).toBe("Popularity measure: average rating");
-    expect(document.title).toBe("How the average rating varies with dialogue share across all genres");
+    // the title is set by an effect after the chart is drawn
+    await waitFor(() => expect(document.title).toBe("How the average rating varies with dialogue share across all genres"));
     const nav = screen.getByRole("navigation", { name: "Keep exploring" });
     expect(within(nav).getAllByRole("link")[0].textContent).toBe("Every clear pattern with the average rating across all genres\u00a0→");
     await user.click(screen.getByRole("button", { name: /^Popularity measure:/ }));

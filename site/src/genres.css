@@ -21,13 +21,109 @@
   font-weight: 650;
 }
 
+/* the story-age note in one paragraph, its comparison an inline link-style button (F69) whose target is 44 px tall */
 .genre-age {
   max-width: 62ch;
   margin: 12px 0 4px;
+  line-height: 1.45;
+}
+
+.agebox .genre-age-button {
+  position: relative;
+  display: inline-block;
+  min-height: 0;
+  font-size: inherit;
+  line-height: inherit;
+}
+
+.agebox .genre-age-button::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: max(100%, var(--target));
+  transform: translateY(-50%);
+}
+
+/* what order the rows are in, on a line of its own above the chart, with the order's switch at its right (F75) */
+.order-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px 12px;
+  margin: 12px 0 0;
+}
+
+.order-words {
+  flex: 1 1 9em;
+  margin: 0;
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--ink-2);
+}
+
+/* the compact switch: 36 px to the eye, a 44 px target (its labels reach 4 px above and below) */
+.segmented.compact {
+  overflow: visible;
+}
+
+.segmented.compact label {
+  min-height: 36px;
+  padding: 0 12px;
+  font-size: 13.5px;
+}
+
+.segmented.compact label:first-child {
+  border-radius: 999px 0 0 999px;
+}
+
+.segmented.compact label:last-child {
+  border-radius: 0 999px 999px 0;
+}
+
+.segmented.compact label::after {
+  content: "";
+  position: absolute;
+  inset: -4px 0;
 }
 
 .genre-legend a {
   white-space: nowrap;
+}
+
+/* phones: the legend's keys flow as text, so it takes two lines for numbers and yes/no (F69); the dashed line's key is
+   left out there, since the line is labeled under the chart and runs through All genres' dot */
+@media (max-width: 559px) {
+  .genre-answer .genre-legend {
+    display: block;
+    margin: 10px 0 0;
+    font-size: 12.5px;
+    line-height: 1.45;
+  }
+
+  .genre-answer .genre-legend li {
+    display: inline;
+    margin-right: 12px;
+  }
+
+  .genre-answer .genre-legend li:last-child {
+    margin-right: 0;
+  }
+
+  .genre-answer .genre-legend .key {
+    vertical-align: -1px;
+  }
+
+  .genre-answer .genre-legend .key + .key {
+    margin-left: 4px;
+  }
+
+  .genre-answer .genre-legend .legend-ref {
+    display: none;
+  }
 }
 
 .genre-legend .key-median {

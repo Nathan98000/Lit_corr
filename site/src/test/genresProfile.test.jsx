@@ -225,15 +225,17 @@ describe("edge states", () => {
     await waitFor(() => expect(window.location.hash).toBe("#/genres?view=genre&genre=romance&include=all"));
   });
 
-  it("notes the story age when the genre's and all genres' are 3 or more years apart, with All stories", async () => {
+  it("notes the story age when the genre's and all genres' are 3 or more years apart, in any option", async () => {
     const user = await openGenre("#/genres?view=genre&genre=romance&include=all");
-    expect(document.querySelector(".genre-age").textContent).toMatch(
-      /^Story age\. Stories in Romance have a median age of 17\.0 years; stories in all genres, 11\.0 years\.Compare stories published 2020 or later$/,
+    expect(document.querySelector(".genre-age").textContent).toBe(
+      "Story age. Stories in Romance have a median age of 17.0 years; stories in all genres, 11.0 years. Compare stories published 2020 or later",
     );
     await user.click(screen.getByRole("button", { name: "Compare stories published 2020 or later" }));
     await waitFor(() => expect(window.location.hash).toBe("#/genres?view=genre&genre=romance&include=y2020"));
     await waitFor(() => expect(document.querySelector(".genres-page .chart-panel[aria-busy='false']")).toBeTruthy());
-    expect(document.querySelector(".genre-age")).toBeNull();
+    // whatever the option while the ages are 3 or more years apart (F71); the button only with All stories
+    expect(document.querySelector(".genre-age").textContent).toMatch(/^Story age\. Stories in Romance have a median age of [\d.]+ years; stories in all genres, [\d.]+ years\.$/);
+    expect(screen.queryByRole("button", { name: "Compare stories published 2020 or later" })).toBeNull();
     const file = { age: [9.3, 19.5, 10.1] };
     expect(genreAgeNote(file, 1, { name: "Chain Stories" })).toBe(
       "Stories in Chain Stories have a median age of 19.5 years; stories in all genres, 9.3 years.",

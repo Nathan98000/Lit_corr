@@ -203,6 +203,20 @@ export function orderRows(rows, kind, sort) {
 /** The order toggle's second option. */
 export const orderLabel = (kind) => (kind === "bin" ? "By share" : kind === "zero" ? "By share with any" : "By median");
 
+/** Can a form's genres be put in order of their values (D3)? Numbers, yes/no and mostly zero; not named groups or bands. */
+export const sortableKind = (kind) => kind === "num" || kind === "bin" || kind === "zero";
+
+/**
+ * The order line's words (F75): "Genres in alphabetical order", or by the toggle's value "Genres by median, highest
+ * first" (yes/no: "by share"; mostly zero: "by share with any"). Named groups and bands are always A–Z.
+ */
+export function orderWords(kind, sort) {
+  if (sort !== "value" || !sortableKind(kind)) return "Genres in alphabetical order";
+  if (kind === "bin") return "Genres by share, highest first";
+  if (kind === "zero") return "Genres by share with any, highest first";
+  return "Genres by median, highest first";
+}
+
 // ----------------------------------------------------------------------------------------------- comparisons, words
 /** The words for a genre that clearly differs (D10): the characteristic's own, else Higher / Lower (yes/no: More / Less common). */
 export function directionWords(variable, kind) {
@@ -344,9 +358,10 @@ export function ageSpread(file, gap = 5) {
   return hi - lo >= gap - 1e-9 ? { lo, hi } : null;
 }
 
-export const ageNoteText = ({ lo, hi }) =>
-  `The genres’ stories were published at different times: their median age runs from ${formatFixed(lo, 1)} to ` +
-  `${formatFixed(hi, 1)} years.`;
+export const ageNoteText = ({ lo, hi }) => `The genres’ median ages run from ${formatFixed(lo, 1)} to ${formatFixed(hi, 1)} years.`;
+
+/** Characteristics that are the stories' age themselves: the story-age note would repeat their chart (F71). */
+export const AGE_CHARACTERISTICS = ["pub_year", "age_years"];
 
 /** The story-age note of one genre, when its median age and all genres' differ by `gap` years or more. */
 export function genreAgeNote(file, i, genre, gap = 3) {

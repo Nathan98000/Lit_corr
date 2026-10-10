@@ -176,8 +176,8 @@ export const tooFewText = (genre, subset, minN) =>
 
 /**
  * One genre against all genres (View 2): how many characteristics clearly set the genre apart, the three biggest
- * differences, the story-age note when its stories' median age and all genres' are 3 or more years apart (All stories
- * only), the characteristics lower and higher in the genre (ordered by the size of the difference: this ranks
+ * differences, the story-age note when its stories' median age and all genres' are 3 or more years apart (any option,
+ * F71), the characteristics lower and higher in the genre (ordered by the size of the difference: this ranks
  * characteristics within one genre, never genres), the named groups with a different mix, and every characteristic by
  * topic, folded (a topic's rows are drawn when it is opened). Every row opens that characteristic's chart with the
  * genre highlighted. With fewer stories than the rule needs, nothing is compared: the heading says so, then "Show all
@@ -220,7 +220,7 @@ export default function GenreProfile({ meta, state, file, busy, onSwitch, onNavi
   const p = genreProfile(meta, file, gi);
   const count = p.flagged.length;
   const takeaway = profileTakeaway(p.flagged);
-  const ageNote = state.sub === "all" ? genreAgeNote(file, gi, genre, 3) : null;
+  const ageNote = genreAgeNote(file, gi, genre, 3); // whatever the option (F71); its button only with All stories
   const rowProps = { genre, sub: state.sub, minN, smallN, hatchId, onNavigate, width, phone: width < PHONE };
   const setTopic = (id, isOpen) =>
     setOpenTopics((prev) => {
@@ -256,7 +256,7 @@ export default function GenreProfile({ meta, state, file, busy, onSwitch, onNavi
             </p>
           )}
           {takeaway && <p className="takeaway profile-takeaway">{takeaway}</p>}
-          {ageNote && <AgeNote meta={meta} variable={null} text={ageNote} onCompare={(sub) => onSwitch({ ...state, sub })} />}
+          {ageNote && <AgeNote meta={meta} variable={null} sub={state.sub} text={ageNote} onCompare={(sub) => onSwitch({ ...state, sub })} />}
           <ProfileLegend genre={genre} />
           {p.lower.length > 0 && (
             <ProfileList title={`Lower in ${genre.name} than in all genres`} items={p.lower} rowProps={rowProps} />

@@ -9,6 +9,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "../App.jsx";
 import { clearCache } from "../lib/data.js";
 import {
+  AGE_CHARACTERISTICS,
+  ageNoteText,
+  ageSpread,
   allGenresLine,
   chartHeading,
   chartQuestionText,
@@ -341,6 +344,63 @@ describe("the chart", () => {
     expect(orderRows(rows, "num", undefined)).toBe(rows);
   });
 
+  it("says the order on a line of its own between the legend and the chart, with the toggle at its right (F75)", async () => {
+    const user = await openGenres("#/genres?var=dlg_word_share");
+    const line = () => document.querySelector(".order-line");
+    expect(line().querySelector(".order-words").textContent).toBe("Genres in alphabetical order");
+    expect(line().querySelector("[role=radiogroup]").getAttribute("aria-label")).toBe("Order");
+    expect(document.querySelector(".genres-controls [role=radiogroup][aria-label='Order']")).toBeNull(); // not in the controls
+    // between the legend and the chart
+    expect(line().previousElementSibling.classList.contains("genre-legend")).toBe(true);
+    expect(line().nextElementSibling.classList.contains("genre-chart")).toBe(true);
+    await user.click(screen.getByRole("radio", { name: "By median" }));
+    await waitFor(() => expect(line().querySelector(".order-words").textContent).toBe("Genres by median, highest first"));
+    window.location.hash = "#/genres?var=dlg_has_dialogue&sort=value";
+    await waitFor(() => expect(line().querySelector(".order-words").textContent).toBe("Genres by share, highest first"));
+    window.location.hash = "#/genres?var=emo_anger_per_1k&sort=value";
+    await waitFor(() => expect(line().querySelector(".order-words").textContent).toBe("Genres by share with any, highest first"));
+    // named groups: the line without a toggle
+    window.location.hash = "#/genres?var=pov_class";
+    await waitFor(() => expect(line().querySelector(".order-words").textContent).toBe("Genres in alphabetical order"));
+    expect(line().querySelector("[role=radiogroup]")).toBeNull();
+    const css = readFileSync(path.join(here, "..", "genres.css"), "utf8");
+    expect(css).toMatch(/\.segmented\.compact label \{[^}]*min-height: 36px;/);
+    expect(css).toMatch(/\.segmented\.compact label::after \{[^}]*inset: -4px 0;/); // a 44 px target
+  });
+
+  it("heads the value column like the Stories column: Median, or Share (F74)", async () => {
+    await openGenres("#/genres?var=dlg_word_share");
+    const heads = () => [...document.querySelectorAll(".genre-chart .col-head, .genre-chart .stories-head")].map((t) => t.textContent);
+    expect(heads()).toEqual(["Median", "Stories"]);
+    window.location.hash = "#/genres?var=dlg_has_dialogue";
+    await waitFor(() => expect(heads()).toEqual(["Share", "Stories"]));
+  });
+
+  it("glides the rows to their new places when the order changes, and only then (I10)", async () => {
+    const frames = [];
+    vi.stubGlobal("requestAnimationFrame", (f) => frames.push(f) && frames.length);
+    vi.stubGlobal("cancelAnimationFrame", () => {});
+    const user = await openGenres("#/genres?var=dlg_word_share");
+    const moved = () => [...document.querySelectorAll(".genre-chart [data-glide]")].filter((el) => el.getAttribute("transform"));
+    expect(moved()).toHaveLength(0);
+    await user.click(screen.getByRole("radio", { name: "By median" }));
+    await waitFor(() => expect(window.location.hash).toMatch(/sort=value/));
+    const file = fixtureFile("genres/all.json");
+    const swapped = file.c.dlg_word_share.q[2][2] > file.c.dlg_word_share.q[1][2]; // Romance's median above Fetish's
+    if (swapped) {
+      expect(moved().length).toBeGreaterThan(0); // drawn at their old places first
+      expect(moved()[0].getAttribute("transform")).toMatch(/^translate\(0 -?\d+(\.\d)?\)$/);
+      let t = 0;
+      while (frames.length) frames.shift()((t += 100));
+      expect(moved()).toHaveLength(0); // at their new places after 300 ms
+    }
+    // reduced motion: the rows jump
+    vi.stubGlobal("matchMedia", (q) => ({ matches: q.includes("reduce"), addEventListener() {}, removeEventListener() {} }));
+    await user.click(screen.getByRole("radio", { name: "A–Z" }));
+    await waitFor(() => expect(window.location.hash).not.toMatch(/sort=value/));
+    expect(moved()).toHaveLength(0);
+  });
+
   it("highlights a genre without moving it", async () => {
     const user = await openGenres("#/genres?var=dlg_word_share");
     await user.selectOptions(screen.getByLabelText("Highlight"), "romance");
@@ -353,22 +413,34 @@ describe("the chart", () => {
 });
 
 describe("the story-age note", () => {
-  it("shows with All stories when the genres' median ages are 5 or more years apart, and compares 2020 or later", async () => {
+  it("says the genres' median ages in one paragraph, with the comparison as an inline button (F69)", async () => {
     const user = await openGenres("#/genres?var=dlg_word_share");
     const box = document.querySelector(".genre-age");
-    expect(box.textContent).toMatch(
-      /^Story age\. The genres’ stories were published at different times: their median age runs from 4\.1 to 16\.2 years\./,
-    );
+    expect(box.tagName).toBe("P");
+    expect(box.textContent).toBe("Story age. The genres’ median ages run from 4.1 to 16.2 years. Compare stories published 2020 or later");
     await user.click(screen.getByRole("button", { name: "Compare stories published 2020 or later" }));
     await waitFor(() => expect(window.location.hash).toBe("#/genres?var=dlg_word_share&include=y2020"));
     await waitFor(() => expect(document.querySelector(".genres-page .chart-panel[aria-busy='false']")).toBeTruthy());
-    expect(document.querySelector(".genre-age")).toBeNull(); // not with another option
+    // with another option the note stays while the ages are 5 or more years apart (F71), without its button
+    expect(document.querySelector(".genre-age").textContent).toBe("Story age. The genres’ median ages run from 4.1 to 16.2 years.");
+    expect(screen.queryByRole("button", { name: "Compare stories published 2020 or later" })).toBeNull();
   });
 
-  it("is left out when the ages are close", async () => {
+  it("is left out when the ages are close, and on the story's age itself (F71)", async () => {
     vi.stubGlobal("fetch", flaggedFetch({ ages: [11, 9.1, 13.9, null] }));
     await openGenres("#/genres?var=dlg_word_share");
     expect(document.querySelector(".genre-age")).toBeNull();
+  });
+
+  it.skipIf(!real)("shows on the real data whenever the genres' ages span 5 years, except for publication year and story age", () => {
+    const shows = (sub) => {
+      const file = realFile(sub);
+      return Object.keys(file.c).filter((id) => !AGE_CHARACTERISTICS.includes(id) && ageSpread(file)).length;
+    };
+    expect(shows("all")).toBe(183);
+    expect(AGE_CHARACTERISTICS).toEqual(["pub_year", "age_years"]);
+    expect(ageSpread(realFile("short"))).toEqual({ lo: 6.1, hi: 20.2 }); // the review's example: no note before
+    expect(ageNoteText(ageSpread(realFile()))).toBe("The genres’ median ages run from 4.7 to 19.5 years.");
   });
 });
 
@@ -452,7 +524,7 @@ describe("the numbers and the actions", () => {
     await waitFor(() => expect(within(screen.getByRole("table")).getAllByRole("columnheader")[2].textContent).toBe("Share"));
   });
 
-  it("announces the heading and the takeaway, again when the order changes", async () => {
+  it("announces the heading and the takeaway, and only the order's words when the order changes (F75)", async () => {
     const user = await openGenres("#/genres?var=dlg_word_share");
     const live = () => document.querySelector(".genres-page > [aria-live='polite']").textContent;
     await waitFor(() =>
@@ -460,10 +532,10 @@ describe("the numbers and the actions", () => {
         /^2 of 2 genres clearly differ from all genres\. ▲ More dialogue: Fetish\. ▼ Less dialogue: Romance\. All genres: median .* Too few stories to compare: Tiny Genre \(fewer than 10\)\.$/,
       ),
     );
-    const said = live();
     await user.click(screen.getByRole("radio", { name: "By median" }));
-    await waitFor(() => expect(live()).toBe(""));
-    await waitFor(() => expect(live()).toBe(said));
+    await waitFor(() => expect(live()).toBe("Genres by median, highest first."));
+    await user.click(screen.getByRole("radio", { name: "A–Z" }));
+    await waitFor(() => expect(live()).toBe("Genres in alphabetical order."));
   });
 });
 

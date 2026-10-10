@@ -1,4 +1,5 @@
 import { useId, useRef } from "react";
+import useOrderGlide from "./GenreGlide.jsx";
 import { chartDomain, comparison, formatPercent, numberFormat, rowDetails, tickFormatFor } from "../lib/genres.js";
 import { anyLayout } from "../lib/genreLayout.js";
 import { GenreRowDetails, useGenreDetails } from "./GenreDetails.jsx";
@@ -52,6 +53,13 @@ export default function GenreAny({ meta, variable, entry, rows, highlight, sub, 
   const byIndex = new Map(rows.map((r) => [r.i, r]));
   const d = useGenreDetails({ ids: layout.rows.map((r) => r.index), frame, phone: layout.phone, byIndex, variable, entry, minN: meta.min_n });
   const activeRow = d.active == null ? null : layout.rows.find((r) => r.index === d.active);
+  // a new order glides the rows to their places (I10)
+  useOrderGlide(
+    frame,
+    new Map(layout.rows.map((r) => [String(r.index), r.y0])),
+    rows.map((r) => r.i).join(","),
+    `${variable.id}|${sub}|${layout.width}|${highlight || ""}`,
+  );
   return (
     <div ref={ref} className="range-chart genre-chart genre-any">
       <p className="axis-title any-head" aria-hidden="true" style={layout.phone ? undefined : { paddingLeft: layout.x0 }}>
@@ -76,6 +84,7 @@ export default function GenreAny({ meta, variable, entry, rows, highlight, sub, 
                 <rect
                   key={r.index}
                   className={row.all ? "band-all" : "band-highlight"}
+                  data-glide={row.all ? undefined : String(r.index)}
                   x={0}
                   y={r.y0 + 1}
                   width={layout.width}
@@ -124,7 +133,14 @@ export default function GenreAny({ meta, variable, entry, rows, highlight, sub, 
             ].filter(Boolean);
             const fill = row.small ? `url(#${hatchId})` : undefined;
             return (
-              <g key={r.index} {...d.rowProps(ri, r.index)} className={cls.join(" ")} role="img" aria-label={rowDetails(row, variable, entry, meta.min_n).name}>
+              <g
+                key={r.index}
+                {...d.rowProps(ri, r.index)}
+                className={cls.join(" ")}
+                role="img"
+                aria-label={rowDetails(row, variable, entry, meta.min_n).name}
+                data-glide={row.all ? undefined : String(r.index)}
+              >
                 <AnyRow r={r} layout={layout} fill={fill} />
               </g>
             );

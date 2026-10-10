@@ -114,8 +114,8 @@ export function chartValueText(rows, overall, format) {
  * (the stories in a muted column at the right; in the phone layout under the label, below `storiesBelow` stories),
  * `phoneLabelW` (in the phone layout, the labels in a column this wide, wrapped to two lines, instead of above the
  * bars), `rowHeight` (of rows beside their labels), `refText(value)` (the dashed line's label), `noneText` (a row
- * with too few stories) and `markColumn` (the marks in an 18 px column right after the labels, the values without
- * them, F61a).
+ * with too few stories), `markColumn` (the marks in an 18 px column right after the labels, the values without
+ * them, F61a) and `valueHead` (the value column's heading, beside the ticks like the Stories heading, F74).
  */
 export function rangeLayout({
   rows,
@@ -135,6 +135,7 @@ export function rangeLayout({
   refText = null,
   noneText = "Too few stories to show",
   markColumn = false,
+  valueHead = "",
 }) {
   const phone = width < PHONE;
   const longest = Math.max(0, ...rows.map((r) => r.label.length));
@@ -165,7 +166,7 @@ export function rangeLayout({
   const tops = heights.map((_, i) => heights.slice(0, i).reduce((a, b) => a + b, 0));
   const valueText = chartValueText(rows, overall, format);
   const shownValue = (r) => `${r.mark && !markColumn ? `${r.mark} ` : ""}${printed ? printed(r.stats) : valueText(r.stats.median)}`;
-  const valueW = Math.max(30, ...shown.map((r) => textWidth(shownValue(r), 13, 600)));
+  const valueW = Math.max(30, ...shown.map((r) => textWidth(shownValue(r), 13, 600)), valueHead ? textWidth(valueHead, 12) : 0);
   // the stories column (wider screens): its heading and the longest count
   const storiesW =
     storiesColumn && !phone
@@ -202,6 +203,13 @@ export function rangeLayout({
     const firstTickW = textWidth(tickText(ticks[0] ?? lo), 12);
     left = mode === "stacked" ? Math.max(4, Math.ceil(firstTickW / 2) + 2) : labelW + (markColumn ? MARK_GAP + MARK_W + 6 : 14);
     plotW = Math.max(40, width - left - right);
+    if (valueHead && ticks.length) {
+      // the last tick's label keeps clear of the value column's heading, which shares its line
+      const last = ticks[ticks.length - 1];
+      const lastX = left + ((last - lo) / (hi - lo || 1)) * plotW;
+      const over = lastX + textWidth(tickText(last), 12) / 2 + 10 - (width - storiesW - textWidth(valueHead, 12));
+      if (over > 0) plotW = Math.max(40, plotW - over);
+    }
     const widest = Math.max(...ticks.map((t) => textWidth(tickText(t), 12)));
     const spacing = (plotW * step) / (hi - lo || 1);
     if (widest + 10 <= spacing || count <= 2) break;
@@ -356,6 +364,7 @@ export function rangeLayout({
     valueDecimals: valueD,
   };
   if (storiesW) out.storiesHead = { x: width, y: top - 10, text: "Stories" };
+  if (valueHead) out.valueHead = { x: width - storiesW, y: top - 10, text: valueHead };
   return out;
 }
 
@@ -364,6 +373,10 @@ export function overlaps(layout, pad = 1) {
   const boxes = [];
   layout.rows.forEach((r) => r.boxes.forEach((b) => boxes.push({ ...b, row: r.index })));
   if (layout.ref) boxes.push({ kind: "ref", row: -1, ...layout.ref.box });
+  for (const h of [layout.valueHead, layout.storiesHead].filter(Boolean)) {
+    const w = textWidth(h.text, 12);
+    boxes.push({ kind: "head", row: -3, x0: h.x - w, x1: h.x, y0: h.y - 9.6, y1: h.y + 3 });
+  }
   const tickBoxes = layout.ticks.map((t) => {
     const w = textWidth(t.text, 12);
     return { kind: "tick", row: -2, x0: t.x - w / 2, x1: t.x + w / 2, y0: layout.top - 20, y1: layout.top - 7 };

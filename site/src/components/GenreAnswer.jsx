@@ -1,13 +1,17 @@
 import { useId, useState } from "react";
 import {
+  AGE_CHARACTERISTICS,
   ageNoteText,
   ageSpread,
   allGenresLine,
   chartQuestionText,
   genreRows,
   nounOf,
+  orderLabel,
   orderRows,
+  orderWords,
   rowsHeading,
+  sortableKind,
   takeawayLists,
   tooFewLine,
 } from "../lib/genres.js";
@@ -17,6 +21,7 @@ import CopyLink from "./CopyLink.jsx";
 import GenreChart from "./GenreChart.jsx";
 import GenreMix from "./GenreMix.jsx";
 import GenreAny from "./GenreAny.jsx";
+import Segmented from "./GenreSwitch.jsx";
 import GenreTable from "./GenreTable.jsx";
 
 export const HOW_DECIDED = toHash("methodology", { section: "genres" });
@@ -106,7 +111,7 @@ export function GenreLegend({ kind, anySmall, smallN, groups = null }) {
       <li>
         <span className="key key-iqr" aria-hidden="true" /> Interquartile range
       </li>
-      <li>
+      <li className="legend-ref">
         <span className="key key-ref" aria-hidden="true" /> Median of all genres
       </li>
       <li>
@@ -119,19 +124,47 @@ export function GenreLegend({ kind, anySmall, smallN, groups = null }) {
   );
 }
 
-/** "Story age." and its one-tap comparison with stories published 2020 or later (left out where it conflicts). */
-export function AgeNote({ meta, variable, text, onCompare }) {
+/**
+ * "Story age." in one paragraph, with its one-tap comparison with stories published 2020 or later as an inline button
+ * (F69): only with All stories, and only where the characteristic allows that option (F71).
+ */
+export function AgeNote({ meta, variable, sub, text, onCompare }) {
   const recent = meta.subsets.find((s) => s.id === RECENT);
-  const canCompare = recent && !(variable && subsetConflict(recent, variable));
+  const canCompare = sub === "all" && recent && !(variable && subsetConflict(recent, variable));
   return (
-    <div className="agebox genre-age">
-      <p>
-        <b>Story age.</b> {text}
-      </p>
+    <p className="agebox genre-age">
+      <b>Story age.</b> {text}
       {canCompare && (
-        <button type="button" className="link-button" onClick={() => onCompare(RECENT)}>
-          Compare stories published 2020 or later
-        </button>
+        <>
+          {" "}
+          <button type="button" className="link-button genre-age-button" onClick={() => onCompare(RECENT)}>
+            Compare stories published 2020 or later
+          </button>
+        </>
+      )}
+    </p>
+  );
+}
+
+/**
+ * What order the rows are in, on a line of its own between the legend and the chart (F75), with the A–Z / By …
+ * toggle at its right for the forms that can be put in order (D3).
+ */
+function OrderLine({ kind, sort, onSort }) {
+  return (
+    <div className="order-line">
+      <p className="order-words">{orderWords(kind, sort)}</p>
+      {sortableKind(kind) && (
+        <Segmented
+          label="Order"
+          className="order-switch compact"
+          options={[
+            ["az", "A–Z"],
+            ["value", orderLabel(kind)],
+          ]}
+          value={sort === "value" ? "value" : "az"}
+          onChange={onSort}
+        />
       )}
     </div>
   );
@@ -139,8 +172,9 @@ export function AgeNote({ meta, variable, text, onCompare }) {
 
 /**
  * One characteristic in every genre (View 1): the verdict heading, the takeaway (▲/▼ lists in the D10 words, then
- * All genres), the story-age note when the genres' median ages are 5 or more years apart (All stories only), the
- * legend, the chart for the characteristic's form, its numbers and the actions.
+ * All genres, then the genres with too few stories to compare), the story-age note when the genres' median ages are 5
+ * or more years apart (any option; not for the age itself, F71), the legend, the line that says the order (with the
+ * toggle), the chart for the characteristic's form, its numbers and the actions.
  */
 export default function GenreAnswer({ meta, state, file, busy, onChange, onSwitch, onNavigate, lastExplore, headingRef }) {
   const [showNumbers, setShowNumbers] = useState(false);
@@ -154,7 +188,7 @@ export default function GenreAnswer({ meta, state, file, busy, onChange, onSwitc
   const lists = takeawayLists(rows, variable, kind);
   const allLine = allGenresLine(rows, variable, entry);
   const tooFew = tooFewLine(rows, meta.min_n);
-  const spread = state.sub === "all" ? ageSpread(file) : null;
+  const spread = AGE_CHARACTERISTICS.includes(variable.id) ? null : ageSpread(file);
   const anySmall = rows.some((r) => r.small);
   const question = chartQuestionText(variable);
   const explore = toHash("explore", {
@@ -210,8 +244,11 @@ export default function GenreAnswer({ meta, state, file, busy, onChange, onSwitc
           {tooFew && <p className="too-few muted">{tooFew}</p>}
         </div>
       )}
-      {spread && <AgeNote meta={meta} variable={variable} text={ageNoteText(spread)} onCompare={(sub) => onSwitch({ ...state, sub })} />}
+      {spread && (
+        <AgeNote meta={meta} variable={variable} sub={state.sub} text={ageNoteText(spread)} onCompare={(sub) => onSwitch({ ...state, sub })} />
+      )}
       <GenreLegend kind={kind} anySmall={anySmall} smallN={meta.small_n} groups={groups} />
+      <OrderLine kind={kind} sort={state.sort} onSort={(o) => onChange({ ...state, sort: o === "value" ? "value" : undefined })} />
       <Chart key={`${variable.id}/${file.s}`} {...chartProps} />
       <GenreTable
         meta={meta}

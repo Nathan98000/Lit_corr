@@ -1,4 +1,5 @@
 import { useId, useRef } from "react";
+import useOrderGlide from "./GenreGlide.jsx";
 import { chartDomain, chartRows, numberFormat, printedFor, rowDetails, tickFormatFor } from "../lib/genres.js";
 import { PHONE, rangeLayout } from "../lib/rangeLayout.js";
 import { GenreRowDetails, useGenreDetails } from "./GenreDetails.jsx";
@@ -38,6 +39,7 @@ export default function GenreChart({ meta, variable, entry, rows, highlight, sub
     valueColumn: true,
     storiesColumn: true,
     markColumn: true,
+    valueHead: kind === "bin" ? "Share" : "Median",
     phoneLabelW: 116,
     rowHeight: 31,
     refText: (v) => `All genres: ${v}`,
@@ -50,6 +52,13 @@ export default function GenreChart({ meta, variable, entry, rows, highlight, sub
   const activeRow = active == null ? null : layout.rows.find((r) => r.index === active);
   const x = layout.x;
   const svgClass = active != null ? "has-active" : undefined;
+  // a new order glides the rows to their places (I10)
+  useOrderGlide(
+    frame,
+    new Map(layout.rows.map((r) => [String(r.index), r.y0])),
+    rows.map((r) => r.i).join(","),
+    `${variable.id}|${sub}|${layout.width}|${highlight || ""}`,
+  );
 
   return (
     <div ref={ref} className={`range-chart genre-chart kind-${kind} mode-${layout.mode}`}>
@@ -72,6 +81,7 @@ export default function GenreChart({ meta, variable, entry, rows, highlight, sub
                 <rect
                   key={r.index}
                   className={row.all ? "band-all" : "band-highlight"}
+                  data-glide={row.all ? undefined : String(r.index)}
                   x={0}
                   y={r.y0 + 1}
                   width={layout.width}
@@ -91,6 +101,11 @@ export default function GenreChart({ meta, variable, entry, rows, highlight, sub
                 </text>
               </g>
             ))}
+            {layout.valueHead && (
+              <text className="tick col-head" x={layout.valueHead.x} y={layout.valueHead.y} textAnchor="end">
+                {layout.valueHead.text}
+              </text>
+            )}
             {layout.storiesHead && (
               <text className="tick stories-head" x={layout.storiesHead.x} y={layout.storiesHead.y} textAnchor="end">
                 {layout.storiesHead.text}
@@ -117,7 +132,14 @@ export default function GenreChart({ meta, variable, entry, rows, highlight, sub
               active === r.index && "active",
             ].filter(Boolean);
             return (
-              <g key={r.index} {...rowProps(ri, r.index)} className={cls.join(" ")} role="img" aria-label={d.name}>
+              <g
+                key={r.index}
+                {...rowProps(ri, r.index)}
+                className={cls.join(" ")}
+                role="img"
+                aria-label={d.name}
+                data-glide={row.all ? undefined : String(r.index)}
+              >
                 <rect className="row-hit" x={0} y={r.y0} width={layout.width} height={r.y1 - r.y0} />
                 {r.labelLines.map((l, k) => (
                   <text key={k} className="glabel" x={l.x} y={l.y} textAnchor="end">

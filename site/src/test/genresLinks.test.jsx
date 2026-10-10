@@ -94,7 +94,7 @@ describe("How it works", () => {
         "used for “tend to”, and the genre needs at least 30 stories with the characteristic.",
     );
     expect(section[2]).toBe(
-      "When most stories score 0 on a characteristic, the page shows how many stories are above 0, and the median and " +
+      "When most stories score 0 on a characteristic, the page shows how many stories have any, and the median and " +
         "interquartile range among them. Publication month and weekday are left out: their twelve and seven groups " +
         "can’t be compared genre by genre in one chart.",
     );

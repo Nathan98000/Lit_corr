@@ -1,12 +1,11 @@
 // Layouts of the Genres page's other forms (pure functions, so the geometry can be tested without a browser): the
-// 100% bars of named groups and ordered bands, and the split chart of mostly-zero characteristics. They share the
+// 100% bars of named groups and ordered bands, and the chart of mostly-zero characteristics (M1). They share the
 // range chart's rows: a label column (two-line names in a 116 px column on phones), the stories in a column on wider
 // screens or under the name on phones (below 250), rows 31 px tall on wider screens and at least 44 px on phones.
 
 import { formatCount, stepDecimals, formatFixed } from "./format.js";
-import { PHONE, niceTicks, textWidth, wrapLabel } from "./rangeLayout.js";
+import { MARK_GAP, MARK_W, PHONE, niceTicks, textWidth, wrapLabel } from "./rangeLayout.js";
 
-export const SPLIT_SIDE = 728; // the mostly-zero chart's plots sit side by side from a 760 px screen (less its margins)
 const ROW = 31;
 const PHONE_LABEL = 116;
 const LABEL_SIZE = 14;
@@ -113,13 +112,12 @@ export function mixColors(kind, allShares) {
 export function mixLayout({ rows, width }) {
   const top = width < PHONE ? 8 : 24; // room for the Stories heading on wider charts
   const grid = rowGrid({ rows, width, top });
-  const markW = 18;
-  const x0 = grid.labelW + 8 + markW + 6;
+  const x0 = grid.labelW + MARK_GAP + MARK_W + 6;
   const x1 = width - (grid.storiesW ? grid.storiesW : 0);
   const barW = Math.max(40, x1 - x0);
   const laid = grid.rows.map((g, i) => {
     const r = rows[i];
-    const out = { ...g, mark: r.mark ? { x: grid.labelW + 8 + markW / 2, y: g.cy + 4.5, text: r.mark } : null };
+    const out = { ...g, mark: r.mark ? { x: grid.labelW + MARK_GAP + MARK_W / 2, y: g.cy + 4.5, text: r.mark } : null };
     if (!r.shares) {
       out.none = { x: x0 + 2, y: g.cy + 4, text: r.noneText };
       out.boxes = [...g.boxes, { kind: "none", ...box(x0 + 2, g.cy + 4, r.noneText, 12.5) }];
@@ -138,114 +136,155 @@ export function mixLayout({ rows, width }) {
   return { ...grid, width, height: grid.bottom + 8, top, barX: x0, barW, rows: laid };
 }
 
-/** Ticks for a share axis from 0 to 100% (fewer when the plot is narrow). */
-function shareTicks(plotW) {
-  const values = plotW >= 160 ? [0, 0.25, 0.5, 0.75, 1] : [0, 0.5, 1];
-  return values.map((v) => ({ v, text: `${Math.round(v * 100)}%` }));
+/** Ticks for a plot on [lo, hi]: nice steps, fewer when their labels would touch (`tickFormat(v, step)` writes them). */
+function plotTicks(lo, hi, x, plotW, phone, tickFormat) {
+  let count = phone ? 4 : 5;
+  for (;;) {
+    const { step, ticks } = niceTicks(lo, hi, count);
+    const text = tickFormat ? (v) => tickFormat(v, step) : (v) => formatFixed(v, stepDecimals(step));
+    const out = ticks.filter((t) => t >= lo - 1e-9 && t <= hi + 1e-9).map((v) => ({ v, x: x(v), text: text(v) }));
+    const widest = Math.max(0, ...out.map((t) => textWidth(t.text, 12)));
+    if (count <= 2 || widest + 10 <= (plotW * step) / (hi - lo || 1)) return out;
+    count -= 1;
+  }
+}
+
+const SHARE_BAR = 40; // the "With any" column's small bar on wider charts
+
+/** Words wrapped into lines at most `maxW` wide (greedy; a word wider than the line keeps a line of its own). */
+export function wrapText(text, maxW, size) {
+  const lines = [];
+  for (const word of text.split(" ")) {
+    const last = lines[lines.length - 1];
+    if (last != null && textWidth(`${last} ${word}`, size) <= maxW) lines[lines.length - 1] = `${last} ${word}`;
+    else lines.push(word);
+  }
+  return lines;
 }
 
 /**
- * The split chart of a mostly-zero characteristic: the share of each genre's stories above 0 (a bar from 0 to 100%,
- * the share printed with ▲ ▼), and the interquartile range and median among those stories (its own scale and
- * ticks, the median printed). From SPLIT_SIDE px the two plots sit side by side; below, `half` ("share" or "range")
- * lays out one of them, stacked one after the other. rows: { index, label, n, share, shareText (with its mark),
- * above: { n, p25, median, p75 } | null, noneText, fewAboveText }; `domain` is the range plot's [lo, hi];
- * `printed(v)` writes a value of the range plot. All genres (the first row) is each plot's dashed line.
+ * The chart of a mostly-zero characteristic (concept M1, F65): one row per genre, its name, its mark (F61a), then a plot
+ * of the interquartile range and median among its stories with any, on the plot's own scale with ticks; then the
+ * values. Wider charts: a "Median" column (among the stories with any), a "With any" column (a 40 px bar and the share
+ * of stories with any) and the Stories column. Phones: one cell with the median over the share, under the heading
+ * "Median" over "with any". All genres (the first row) is the plot's dashed line, labeled under the plot.
+ *
+ * rows: { index, label, n, share (null: fewer than meta.min_n stories), above: { n, p25, median, p75 } | null (fewer
+ * than min_n stories with any), mark, noneText, fewAboveText }; `domain` is the plot's [lo, hi]; `printed(v)` writes a
+ * median, `shareText(v)` a share, `tickFormat(v, step)` a tick.
  */
-export function splitLayout({ rows, width, domain, printed, tickFormat = null, half = null }) {
-  const side = !half;
-  const grid = rowGrid({ rows, width });
-  const shareValW = Math.ceil(Math.max(36, ...rows.filter((r) => r.share != null).map((r) => textWidth(r.shareText, 13, 600))) + 12);
-  const medValW = Math.ceil(Math.max(36, ...rows.filter((r) => r.above).map((r) => textWidth(printed(r.above.median), 13, 600))) + 12);
-  const start = grid.labelW + 14;
-  const end = width - grid.storiesW;
+export function anyLayout({ rows, width, domain, printed, shareText, tickFormat = null }) {
+  const phone = width < PHONE;
+  const top = phone ? 44 : 30; // the columns' headings (two lines on phones) and the tick labels
+  const grid = rowGrid({ rows, width, top });
+  const x0 = grid.labelW + MARK_GAP + MARK_W + 6;
+  const medTexts = rows.filter((r) => r.above).map((r) => printed(r.above.median));
+  const shareTexts = rows.filter((r) => r.share != null).map((r) => shareText(r.share));
+  const widest = (texts, size, weight) => Math.ceil(Math.max(0, ...texts.map((t) => textWidth(t, size, weight))));
+  const heads = [];
+  let medianX;
+  let x1;
   let share = null;
-  let range = null;
-  if (side) {
-    const room = end - start - shareValW - medValW - 28;
-    const shareW = Math.max(80, Math.min(240, Math.round(room * 0.38)));
-    share = { x0: start, x1: start + shareW, valueX: start + shareW + shareValW };
-    range = { x0: share.valueX + 28, x1: end - medValW, valueX: end };
-  } else if (half === "share") {
-    share = { x0: start, x1: end - shareValW, valueX: end };
+  if (phone) {
+    const valueW = Math.max(widest(medTexts, 13, 600), widest(shareTexts, 12), widest(["Median", "with any"], 12));
+    medianX = width;
+    x1 = width - valueW - 12;
+    heads.push({ x: width, y: top - 24, text: "Median" }, { x: width, y: top - 10, text: "with any" });
   } else {
-    range = { x0: start, x1: end - medValW, valueX: end };
+    const right = width - grid.storiesW;
+    const textW = Math.max(widest(shareTexts, 13, 600), widest(["100%"], 13, 600));
+    const left = right - textW - 6 - SHARE_BAR;
+    share = { barX: left, textX: right };
+    medianX = left - 16;
+    const medW = Math.max(widest(medTexts, 13, 600), widest(["Median"], 12));
+    x1 = medianX - medW - 14;
+    heads.push({ x: medianX, y: top - 10, text: "Median" }, { x: right, y: top - 10, text: "With any" });
   }
-  const out = { ...grid, width, top: TOP, side, half, share, range };
-  if (share) {
-    const w = share.x1 - share.x0;
-    share.x = (v) => share.x0 + Math.min(Math.max(v, 0), 1) * w;
-    share.ticks = shareTicks(w).map((t) => ({ ...t, x: share.x(t.v) }));
+  const [lo, hi] = domain;
+  let plotW;
+  let x;
+  let ticks;
+  // the last tick's label stays clear of the columns' headings (they share the band above the rows)
+  const headsLeft = Math.min(...heads.map((h) => h.x - textWidth(h.text, 12)));
+  for (let k = 0; k < 2; k += 1) {
+    plotW = Math.max(40, x1 - x0);
+    const pw = plotW;
+    x = (v) => x0 + ((Math.min(Math.max(v, lo), hi) - lo) / (hi - lo || 1)) * pw;
+    ticks = plotTicks(lo, hi, x, plotW, phone, tickFormat);
+    const last = ticks[ticks.length - 1];
+    const over = last ? last.x + textWidth(last.text, 12) / 2 + 10 - headsLeft : 0;
+    if (over <= 0) break;
+    x1 -= over;
   }
-  if (range) {
-    const [lo, hi] = domain;
-    const w = Math.max(40, range.x1 - range.x0);
-    range.x = (v) => range.x0 + ((Math.min(Math.max(v, lo), hi) - lo) / (hi - lo || 1)) * w;
-    let count = width < PHONE ? 4 : 5;
-    for (;;) {
-      const { step, ticks } = niceTicks(lo, hi, count);
-      const text = tickFormat ? (v) => tickFormat(v, step) : (v) => formatFixed(v, stepDecimals(step));
-      range.ticks = ticks.filter((t) => t >= lo - 1e-9 && t <= hi + 1e-9).map((v) => ({ v, x: range.x(v), text: text(v) }));
-      const widest = Math.max(0, ...range.ticks.map((t) => textWidth(t.text, 12)));
-      if (count <= 2 || widest + 10 <= (w * step) / (hi - lo || 1)) break;
-      count -= 1;
-    }
-  }
-  out.rows = grid.rows.map((g, i) => {
+  const markX = grid.labelW + MARK_GAP + MARK_W / 2;
+  const laid = grid.rows.map((g, i) => {
     const r = rows[i];
     const row = { ...g, boxes: [...g.boxes] };
+    if (r.mark && r.share != null) {
+      row.mark = { x: markX, y: g.cy + 4.5, text: r.mark };
+      row.boxes.push({ kind: "mark", ...box(markX, g.cy + 4.5, r.mark, 13, 700, "middle") });
+    }
     if (r.share == null) {
-      const x = (share || range).x0 + 2;
-      row.none = { x, y: g.cy + 4, text: r.noneText };
-      row.boxes.push({ kind: "none", ...box(x, g.cy + 4, r.noneText, 12.5) });
+      row.none = { x: x0 + 2, y: g.cy + 4, text: r.noneText };
+      row.boxes.push({ kind: "none", ...box(x0 + 2, g.cy + 4, r.noneText, 12.5) });
       return row;
     }
-    if (share) {
-      row.shareX = share.x(r.share);
-      row.shareValue = { x: share.valueX, y: g.cy + 4.5, text: r.shareText };
-      row.boxes.push({ kind: "value", ...box(share.valueX, g.cy + 4.5, r.shareText, 13, 600, "end") });
+    if (r.above) {
+      const a = x(r.above.p25);
+      const b = x(r.above.p75);
+      const mid = (a + b) / 2;
+      const w = Math.max(12, b - a);
+      row.bar = { x: Math.min(a, mid - w / 2), width: w };
+      row.dotX = x(r.above.median);
+      const y = phone ? g.cy - 1 : g.cy + 4.5;
+      row.median = { x: medianX, y, text: printed(r.above.median) };
+      row.boxes.push({ kind: "median", ...box(medianX, y, row.median.text, 13, 600, "end") });
+    } else {
+      // "Fewer than 10 stories with any": in the plot (on phones also over the empty median line), on two lines if need be
+      const avail = phone ? width - textWidth(shareText(r.share), 12) - 10 - x0 : x1 - x0;
+      const lines = wrapText(r.fewAboveText, avail - 2, 12.5).slice(0, 3);
+      const y = g.cy + 4 - ((lines.length - 1) * 14) / 2;
+      row.fewAbove = { x: x0 + 2, y, lines, text: r.fewAboveText };
+      lines.forEach((t, k) => row.boxes.push({ kind: "few", ...box(x0 + 2, y + 14 * k, t, 12.5) }));
     }
-    if (range) {
-      if (r.above) {
-        const a = range.x(r.above.p25);
-        const b = range.x(r.above.p75);
-        const mid = (a + b) / 2;
-        const w = Math.max(12, b - a);
-        row.bar = { x: Math.min(a, mid - w / 2), width: w };
-        row.dotX = range.x(r.above.median);
-        row.median = { x: range.valueX, y: g.cy + 4.5, text: printed(r.above.median) };
-        row.boxes.push({ kind: "median", ...box(range.valueX, g.cy + 4.5, row.median.text, 13, 600, "end") });
-      } else {
-        row.fewAbove = { x: range.x0 + 2, y: g.cy + 4, text: r.fewAboveText };
-        row.boxes.push({ kind: "few", ...box(range.x0 + 2, g.cy + 4, r.fewAboveText, 12.5) });
-      }
+    const text = shareText(r.share);
+    if (phone) {
+      const y = r.above ? g.cy + 13 : g.cy + 4.5;
+      row.share = { text, x: width, y };
+      row.boxes.push({ kind: "share", ...box(width, y, text, 12, 400, "end") });
+    } else {
+      row.share = { text, x: share.textX, y: g.cy + 4.5, bar: { x: share.barX, width: Math.max(1, SHARE_BAR * Math.min(1, r.share)) } };
+      row.boxes.push({ kind: "share", ...box(share.textX, g.cy + 4.5, text, 13, 600, "end") });
     }
     return row;
   });
-  // All genres as each plot's dashed line, labeled under the plot ("All genres: 43%"), the label kept in its plot
+  const out = { ...grid, width, top, phone, x0, x1, x, lo, hi, ticks, rows: laid, medianX, shareCol: share, shareBarW: SHARE_BAR };
   const all = rows[0];
-  const refs = [];
-  if (share && all.share != null) refs.push({ plot: share, v: all.share, text: `All genres: ${all.allShareText}` });
-  if (range && all.above) refs.push({ plot: range, v: all.above.median, text: `All genres: ${printed(all.above.median)}` });
-  out.height = grid.bottom + (refs.length ? 30 : 10);
-  out.refs = refs.map(({ plot, v, text }) => {
-    const x = plot.x(v);
+  out.height = grid.bottom + (all.above ? 30 : 10);
+  out.ref = null;
+  if (all.above) {
+    const rx = x(all.above.median);
+    const text = `All genres: ${printed(all.above.median)}`;
     const w = textWidth(text, 12);
-    const labelX = Math.min(Math.max(x, plot.x0 + w / 2), Math.max(plot.x0 + w / 2, plot.x1 - w / 2));
-    return { x, labelX, labelY: out.height - 8, text, box: box(labelX, out.height - 8, text, 12, 400, "middle") };
-  });
+    const labelX = Math.min(Math.max(rx, x0 + w / 2), Math.max(x0 + w / 2, x1 - w / 2));
+    out.ref = { x: rx, labelX, labelY: out.height - 8, text, box: box(labelX, out.height - 8, text, 12, 400, "middle") };
+  }
+  out.heads = heads.map((h) => ({ ...h, box: box(h.x, h.y, h.text, 12, 400, "end") }));
   return out;
 }
 
 /** Text boxes of a layout that overlap each other or leave the chart (for tests). */
 export function layoutProblems(layout, pad = 1) {
   const boxes = layout.rows.flatMap((r) => r.boxes.map((b) => ({ ...b, row: r.index })));
-  for (const ref of layout.refs || []) boxes.push({ kind: "ref", row: -1, ...ref.box });
-  for (const plot of [layout.share, layout.range].filter(Boolean)) {
-    for (const t of plot.ticks) {
-      const w = textWidth(t.text, 12);
-      boxes.push({ kind: "tick", row: -2, x0: t.x - w / 2, x1: t.x + w / 2, y0: layout.top - 20, y1: layout.top - 7 });
-    }
+  if (layout.ref) boxes.push({ kind: "ref", row: -1, ...layout.ref.box });
+  for (const h of layout.heads || []) boxes.push({ kind: "head", row: -3, ...h.box });
+  if (layout.storiesHead) {
+    const w = textWidth(layout.storiesHead.text, 12);
+    boxes.push({ kind: "head", row: -3, x0: layout.storiesHead.x - w, x1: layout.storiesHead.x, y0: layout.storiesHead.y - 9.6, y1: layout.storiesHead.y + 3 });
+  }
+  for (const t of layout.ticks || []) {
+    const w = textWidth(t.text, 12);
+    boxes.push({ kind: "tick", row: -2, x0: t.x - w / 2, x1: t.x + w / 2, y0: layout.top - 20, y1: layout.top - 7 });
   }
   const problems = [];
   for (const b of boxes) if (b.x0 < -0.5 || b.x1 > layout.width + 0.5) problems.push(["outside", b]);

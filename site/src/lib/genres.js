@@ -181,7 +181,7 @@ export function genreRows(meta, file, id) {
   });
 }
 
-/** The value genres are put in order by (D3): the median, the share, or the share above 0. */
+/** The value genres are put in order by (D3): the median, the share, or the share of stories with any. */
 export function orderValue(kind, stats) {
   if (!stats) return null;
   if (kind === "num") return stats.median;
@@ -201,7 +201,7 @@ export function orderRows(rows, kind, sort) {
 }
 
 /** The order toggle's second option. */
-export const orderLabel = (kind) => (kind === "bin" ? "By share" : kind === "zero" ? "By share above 0" : "By median");
+export const orderLabel = (kind) => (kind === "bin" ? "By share" : kind === "zero" ? "By share with any" : "By median");
 
 // ----------------------------------------------------------------------------------------------- comparisons, words
 /** The words for a genre that clearly differs (D10): the characteristic's own, else Higher / Lower (yes/no: More / Less common). */
@@ -326,7 +326,7 @@ export function allGenresLine(rows, variable, entry) {
     return segs;
   }
   if (kind === "zero") {
-    const segs = ["All genres: ", { strong: formatPercent(all.share) }, " of stories are above 0"];
+    const segs = ["All genres: ", { strong: formatPercent(all.share) }, " of stories have any"];
     if (all.median == null) return [...segs, "."];
     segs.push(`; among those, median ${nf.withUnit(all.median)}, interquartile range ${nf.span(all.p25, all.p75)}.`);
     return segs;
@@ -376,11 +376,11 @@ export function rowDetails(row, variable, entry, minN) {
     numbers.push(["Median", med], ["Interquartile range", nf.span(s.p25, s.p75)]);
     said.push(`median ${med}`, `interquartile range ${nf.span(s.p25, s.p75)}`);
   } else if (kind === "zero") {
-    numbers.push(["Above 0", formatPercent(s.share)]);
-    said.push(`${formatPercent(s.share)} above 0`);
+    numbers.push(["With any", formatPercent(s.share)]);
+    said.push(`${formatPercent(s.share)} with any`);
     if (s.median != null) {
       const med = nf.withUnit(s.median);
-      numbers.push(["Median above 0", med], ["Interquartile range above 0", nf.span(s.p25, s.p75)]);
+      numbers.push(["Median among those", med], ["Interquartile range among those", nf.span(s.p25, s.p75)]);
       said.push(`among those, median ${med}`, `interquartile range ${nf.span(s.p25, s.p75)}`);
     }
   } else if (kind === "bin") {
@@ -486,14 +486,14 @@ export function biggestGap(stats, all) {
 
 /**
  * A characteristic's values in one genre and in all genres, for "One genre": "7.79 · all 19.3", "24% · all 27%",
- * "73% above 0 · all 43%", "6–20 · all 2–5", "Second person (you) 55% · all 2%".
+ * "73% with any · all 43%", "6–20 · all 2–5", "Second person (you) 55% · all 2%".
  */
 export function profileValues(item) {
   const { kind, stats: g, all: a, variable } = item;
   if (!g || !a) return "";
   if (kind === "num") return `${item.nf.value(g.median)} · all ${item.nf.value(a.median)}`;
   if (kind === "bin") return `${formatPercent(g.share)} · all ${formatPercent(a.share)}`;
-  if (kind === "zero") return `${formatPercent(g.share)} above 0 · all ${formatPercent(a.share)}`;
+  if (kind === "zero") return `${formatPercent(g.share)} with any · all ${formatPercent(a.share)}`;
   if (kind === "band") {
     const labels = variable.bins.labels;
     return `${labels[bandQuartiles(g.shares).median]} · all ${labels[bandQuartiles(a.shares).median]}`;
@@ -523,7 +523,7 @@ export function profileRowDescription(item, genre, small, minN) {
     if (kind === "bin") return formatPercent(s.share);
     if (kind === "zero") {
       const among = s.median == null ? "" : `, median ${nf.withUnit(s.median)} among them`;
-      return `${formatPercent(s.share)} above 0${among}`;
+      return `${formatPercent(s.share)} with any${among}`;
     }
     if (kind === "band") {
       const q = bandQuartiles(s.shares);

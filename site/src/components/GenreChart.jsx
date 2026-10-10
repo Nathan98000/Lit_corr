@@ -8,8 +8,9 @@ import useWidth from "./useWidth.js";
  * One characteristic in every genre, for numbers (num: each genre's interquartile range as a capsule and its median as
  * a dot) and yes/no characteristics (bin: a bar from 0 to the share of stories that have it, with a dot at its end),
  * built on the explorer's row layout (rangeLayout). All genres comes first, on a shaded band, and its median (or
- * share) is the dashed line. Each value is printed in a column, after ▲ or ▼ when the genre clearly differs; wider
- * charts have a Stories column, phones the stories under a genre's name when there are fewer than 250. Genres with
+ * share) is the dashed line. ▲ or ▼ marks a genre that clearly differs in a column of its own after its name (F61a);
+ * each value is printed in a column at the right; wider charts have a Stories column, phones the stories under a
+ * genre's name when there are fewer than 250. Genres with
  * fewer than SMALL_N stories are hatched with a hollow dot and never marked; fewer than MIN_N: "Fewer than 10 stories".
  *
  * One tab stop: ↑/↓, Home and End move between genres; the focused or hovered genre's details show as a card (wider
@@ -36,6 +37,7 @@ export default function GenreChart({ meta, variable, entry, rows, highlight, sub
     printed: printedFor(kind, numberFormat(variable, entry)),
     valueColumn: true,
     storiesColumn: true,
+    markColumn: true,
     phoneLabelW: 116,
     rowHeight: 31,
     refText: (v) => `All genres: ${v}`,
@@ -125,6 +127,11 @@ export default function GenreChart({ meta, variable, entry, rows, highlight, sub
                 {r.nPos && (
                   <text className="gn" x={r.nPos.x} y={r.nPos.y} textAnchor="end">
                     {r.nText}
+                  </text>
+                )}
+                {r.markPos && (
+                  <text className="gmark" x={r.markPos.x} y={r.markPos.y} textAnchor="middle">
+                    {r.mark}
                   </text>
                 )}
                 {r.ok ? (

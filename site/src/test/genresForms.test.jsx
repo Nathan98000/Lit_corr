@@ -6,11 +6,11 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "../App.jsx";
-import { splitRows } from "../components/GenreSplit.jsx";
+import { anyHeading, anyRows } from "../components/GenreAny.jsx";
 import { mixRows } from "../components/GenreMix.jsx";
 import { clearCache } from "../lib/data.js";
-import { SPLIT_SIDE, bandColors, inkOn, layoutProblems, mixColors, mixLayout, splitLayout } from "../lib/genreLayout.js";
-import { allGenresLine, bandQuartiles, chartDomain, comparison, genreRows, numberFormat, rowDetails, takeawayLists, tickFormatFor } from "../lib/genres.js";
+import { anyLayout, bandColors, inkOn, layoutProblems, mixColors, mixLayout } from "../lib/genreLayout.js";
+import { allGenresLine, bandQuartiles, chartDomain, comparison, formatPercent, genreRows, numberFormat, rowDetails, takeawayLists, tickFormatFor } from "../lib/genres.js";
 import { fixtureFetch, fixtureMeta, realMeta } from "./fixtures.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -176,59 +176,79 @@ describe("ordered bands: 100% bars from light to dark", () => {
   });
 });
 
-describe("mostly zero: the split chart (D6)", () => {
-  it("stacks the two halves below a 760 px screen: the share above 0 first, then the range under its heading", async () => {
-    await openGenres("#/genres?var=emo_anger_per_1k", 727);
-    const halves = [...document.querySelectorAll(".genre-split .split-plot")];
-    expect(halves.map((h) => h.className.match(/half-(\w+)/)[1])).toEqual(["share", "range"]);
-    expect([...document.querySelectorAll(".split-head")].map((p) => p.textContent)).toEqual([
-      "Stories above 0",
-      "Among stories above 0 (per 1,000 words)",
-    ]);
-    expect(halves[0].querySelectorAll(".share-bar").length).toBe(3);
-    expect(halves[1].querySelectorAll(".iqr").length).toBe(3);
-    const values = [...halves[0].querySelectorAll(".gval")].map((t) => t.textContent);
-    expect(values[2]).toMatch(/^▲ \d+%$/); // Romance, marked on its share
+describe("mostly zero: one chart (D6, concept M1)", () => {
+  it("draws one row per genre: its mark beside its name, the range among stories with any, the median and the share", async () => {
+    await openGenres("#/genres?var=emo_anger_per_1k", 1032);
+    const chart = document.querySelector(".genre-any");
+    expect(chart.querySelectorAll("svg[role=group]")).toHaveLength(1); // one chart, one tab stop
+    expect(chart.querySelectorAll(".row[tabindex='0']")).toHaveLength(1);
+    expect(document.querySelector(".any-head").textContent).toBe("Among stories with any (per 1,000 words)");
+    expect([...chart.querySelectorAll(".col-head, .stories-head")].map((t) => t.textContent)).toEqual(["Median", "With any", "Stories"]);
+    const rows = [...chart.querySelectorAll(".row")];
+    expect(rows).toHaveLength(4);
+    const romance = rows[2];
+    expect(romance.querySelector(".gmark").textContent).toBe("▲"); // in the mark column, beside the name (F61a)
+    expect(Number(romance.querySelector(".gmark").getAttribute("x"))).toBeLessThan(Number(romance.querySelector(".iqr").getAttribute("x")));
+    expect([...romance.querySelectorAll(".gval")].map((t) => t.textContent)).toEqual([expect.stringMatching(/^[\d.]+$/), expect.stringMatching(/^\d+%$/)]);
+    expect(romance.querySelector(".share-bar")).toBeTruthy();
+    expect(romance.getAttribute("aria-label")).toMatch(
+      /^Romance: \d+% with any, among those, median [\d.]+ per 1,000 words, interquartile range [\d.]+–[\d.]+, 120 stories, median age [\d.]+ years, clearly higher than all genres$/,
+    );
+    expect(rows[3].querySelector(".gnone").textContent).toBe("Fewer than 10 stories");
+    expect(chart.querySelector(".reflab").textContent).toMatch(/^All genres: [\d.]+$/);
+    // the words: "with any" everywhere (F79)
     expect(document.querySelector(".genre-list").textContent).toBe("▲ Higher: Romance.");
     expect(document.querySelector(".all-line").textContent).toMatch(
-      /^All genres: \d+% of stories are above 0; among those, median [\d.]+ per 1,000 words, interquartile range [\d.]+–[\d.]+\.$/,
+      /^All genres: \d+% of stories have any; among those, median [\d.]+ per 1,000 words, interquartile range [\d.]+–[\d.]+\.$/,
     );
+    expect(document.querySelector(".genre-legend").textContent).toMatch(/^\s*Median and interquartile range among stories with any▲▼ Clearly higher/);
+    expect(document.querySelector(".genre-legend").textContent).not.toMatch(/Share of stories/);
+    expect(screen.getByRole("radio", { name: "By share with any" })).toBeTruthy();
     expect(columns()).toEqual([
       "Genre",
       "Stories",
-      "Above 0",
-      "Median above 0",
-      "Interquartile range above 0",
+      "With any",
+      "Median among those",
+      "Interquartile range among those",
       "Median age",
       "Compared with all genres",
     ]);
-  });
-
-  it("puts the two plots side by side from a 760 px screen (a 728 px chart), one row per genre", async () => {
-    await openGenres("#/genres?var=emo_anger_per_1k", 728);
-    const plots = document.querySelectorAll(".genre-split .split-plot");
-    expect(plots).toHaveLength(1);
-    expect(document.querySelector(".split-heads").textContent).toBe("Stories above 0Among stories above 0 (per 1,000 words)");
-    const rows = [...plots[0].querySelectorAll(".row")];
-    expect(rows).toHaveLength(4);
-    expect(rows[2].querySelector(".share-bar")).toBeTruthy();
-    expect(rows[2].querySelector(".iqr")).toBeTruthy();
-    expect(rows[2].getAttribute("aria-label")).toMatch(
-      /^Romance: \d+% above 0, among those, median [\d.]+ per 1,000 words, interquartile range [\d.]+–[\d.]+, 120 stories, median age [\d.]+ years, clearly higher than all genres$/,
-    );
-    expect([...plots[0].querySelectorAll(".reflab")].map((t) => t.textContent)).toEqual([
-      expect.stringMatching(/^All genres: \d+%$/),
-      expect.stringMatching(/^All genres: [\d.]+$/),
-    ]);
-    fireEvent.click(rows[2]);
+    fireEvent.click(romance);
     const card = document.querySelector(".genre-tip");
     expect([...card.querySelectorAll("dt")].map((d) => d.textContent)).toEqual([
-      "Above 0",
-      "Median above 0",
-      "Interquartile range above 0",
+      "With any",
+      "Median among those",
+      "Interquartile range among those",
       "Stories",
       "Median age",
     ]);
+  });
+
+  it("puts the median over the share on phones, under “Median” over “with any”", async () => {
+    await openGenres("#/genres?var=emo_anger_per_1k", 343);
+    const chart = document.querySelector(".genre-any");
+    expect([...chart.querySelectorAll(".col-head")].map((t) => t.textContent)).toEqual(["Median", "with any"]);
+    expect(chart.querySelector(".stories-head")).toBeNull();
+    const romance = [...chart.querySelectorAll(".row")][2];
+    const [median, share] = [...romance.querySelectorAll(".gval")];
+    expect(Number(median.getAttribute("y"))).toBeLessThan(Number(share.getAttribute("y")));
+    expect(share.classList.contains("any-share")).toBe(true);
+    expect(romance.querySelector(".share-bar")).toBeNull();
+    expect(document.querySelector(".any-head").style.paddingLeft).toBe(""); // from the chart's left edge
+  });
+
+  it("says when a genre has stories but too few with any", () => {
+    const rows = [
+      { index: 0, label: "All genres", n: 900, share: 0.4, above: { n: 360, p25: 1, median: 2, p75: 3 }, mark: "", noneText: "x", fewAboveText: "Fewer than 10 stories with any" },
+      { index: 1, label: "Fetish", n: 300, share: 0.02, above: null, mark: "▼", noneText: "x", fewAboveText: "Fewer than 10 stories with any" },
+    ];
+    for (const width of [288, 343, 728, 1032]) {
+      const layout = anyLayout({ rows, width, domain: [0, 3.2], printed: String, shareText: formatPercent });
+      expect(layout.rows[1].fewAbove.text).toBe("Fewer than 10 stories with any");
+      expect(layout.rows[1].share.text).toBe("2%");
+      expect(layout.rows[1].mark.text).toBe("▼");
+      expect(layoutProblems(layout)).toEqual([]);
+    }
   });
 
   it("works out a genre's share above 0 from its two counts (the file leaves it out)", () => {
@@ -254,10 +274,10 @@ describe("the forms on the real data", () => {
         for (const width of [288, 343, 600, 727, 728, 736, 1032]) {
           let layouts;
           if (entry.k === "zero") {
-            const sRows = splitRows(rows, variable, real.min_n);
-            const domain = chartDomain(sRows.map((r) => ({ stats: r.above })), "num");
-            const args = { rows: sRows, width, domain, printed: numberFormat(variable, entry).value, tickFormat: tickFormatFor("zero", entry.fmt) };
-            layouts = width >= SPLIT_SIDE ? [splitLayout(args)] : [splitLayout({ ...args, half: "share" }), splitLayout({ ...args, half: "range" })];
+            const aRows = anyRows(rows, variable, real.min_n);
+            const domain = chartDomain(aRows.map((r) => ({ stats: r.above })), "num");
+            const nf = numberFormat(variable, entry);
+            layouts = [anyLayout({ rows: aRows, width, domain, printed: nf.value, shareText: formatPercent, tickFormat: tickFormatFor("zero", entry.fmt) })];
           } else {
             layouts = [mixLayout({ rows: mixRows(rows, variable, entry.k, real.min_n), width })];
           }
@@ -289,6 +309,24 @@ describe("the forms on the real data", () => {
     );
   });
 
+  it.skipIf(!real)("put How To's ▲ for repeated five-word phrases beside its name, not beside its share (F61)", () => {
+    const file = realFile();
+    const variable = real.variables.find((x) => x.id === "rep_repeated_5gram_per_1k");
+    const entry = file.c.rep_repeated_5gram_per_1k;
+    const rows = genreRows(real, file, "rep_repeated_5gram_per_1k");
+    const nf = numberFormat(variable, entry);
+    const aRows = anyRows(rows, variable, real.min_n);
+    for (const width of [343, 1032]) {
+      const layout = anyLayout({ rows: aRows, width, domain: chartDomain(aRows.map((r) => ({ stats: r.above })), "num"), printed: nf.value, shareText: formatPercent });
+      const howTo = layout.rows[rows.findIndex((r) => r.genre.id === "adult-how-to")];
+      expect(howTo.mark.text).toBe("▲");
+      expect(howTo.mark.x).toBeLessThan(layout.x0); // the mark column, before the plot
+      expect(howTo.share.text).toBe("76%"); // the share alone
+      expect(howTo.median.text).toBe("2.570"); // all genres' quartiles among those with any (0.641, 1.19, 2.17) give three decimals
+    }
+    expect(anyHeading(nf)).toBe("Among stories with any (per 1,000 words)");
+  });
+
   it.skipIf(!real)("say the All genres line of narrative perspective as the copy does", () => {
     const file = realFile();
     const rows = genreRows(real, file, "pov_class");
@@ -298,9 +336,10 @@ describe("the forms on the real data", () => {
     );
     const romance = genreRows(real, file, "rel_romance_per_1k");
     expect(text(allGenresLine(romance, real.variables.find((x) => x.id === "rel_romance_per_1k"), file.c.rel_romance_per_1k))).toBe(
-      "All genres: 43% of stories are above 0; among those, median 0.422 per 1,000 words, interquartile range 0.227–0.768.",
+      "All genres: 43% of stories have any; among those, median 0.422 per 1,000 words, interquartile range 0.227–0.768.",
     );
     const d = rowDetails(romance.find((r) => r.genre.id === "adult-romance"), real.variables.find((x) => x.id === "rel_romance_per_1k"), file.c.rel_romance_per_1k, 10);
-    expect(d.name).toMatch(/^Romance: 73% above 0, among those, median 0\.709 per 1,000 words, interquartile range .*, clearly more than all genres$/);
+    expect(d.name).toMatch(/^Romance: 73% with any, among those, median 0\.709 per 1,000 words, interquartile range .*, clearly more than all genres$/);
+    expect(d.line).toMatch(/^73% with any · among those, median 0\.709 per 1,000 words · interquartile range /);
   });
 });

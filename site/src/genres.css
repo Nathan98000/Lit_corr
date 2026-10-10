@@ -194,6 +194,15 @@
     stroke: Canvas;
   }
 
+  .genre-chart .gmark {
+    fill: CanvasText;
+  }
+
+  .genre-any .share-track {
+    fill: Canvas;
+    stroke: GrayText;
+  }
+
   .genre-legend .key {
     forced-color-adjust: none;
   }
@@ -257,7 +266,9 @@
   font-style: italic;
 }
 
-.genre-mix .gmark {
+/* ▲ ▼ ≠ in their own column after a genre's name, in every form (F61a) */
+.genre-mix .gmark,
+.genre-chart .gmark {
   fill: var(--ink);
   font-size: 13px;
   font-weight: 700;
@@ -339,29 +350,36 @@
   border: 1px solid var(--control);
 }
 
-/* ------------------------------------------------------------------ mostly zero: the split chart */
-.split-heads {
-  display: grid;
-  margin: 14px 0 -4px;
-  font-size: 12.5px;
-  font-weight: 600;
-  line-height: 1.3;
-  color: var(--ink-2);
+/* ------------------------------------------------------------------ mostly zero: one chart (M1) */
+/* the plot's heading, in the axis-title style, from where the plot starts (phones: the chart's left edge) */
+.genre-any .any-head {
+  margin: 12px 0 -6px;
 }
 
-.split-heads span + span {
-  padding-right: 12px;
+.genre-any .col-head,
+.genre-chart .col-head {
+  font-size: 12px;
 }
 
-.split-head {
-  margin: 14px 0 -2px;
-  font-size: 12.5px;
-  font-weight: 600;
-  color: var(--ink-2);
+/* "With any": a 40 px bar on wider charts */
+.genre-any .share-track {
+  fill: #ece9e2;
 }
 
-.genre-split .split-plot {
-  margin-top: 4px;
+.genre-any .share-bar {
+  stroke: var(--accent);
+  stroke-width: 1;
+}
+
+.genre-any .row.small .share-bar {
+  stroke-dasharray: 3 2;
+}
+
+/* phones: the share under the median, muted */
+.genre-any .any-share {
+  font-size: 12px;
+  font-weight: 400;
+  fill: var(--ink-3);
 }
 
 @media (forced-colors: active) {

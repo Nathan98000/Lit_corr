@@ -5,6 +5,8 @@
 import { columnDecimals, formatCompact, formatCount, formatFixed, stepDecimals } from "./format.js";
 
 export const PHONE = 560; // below this width the labels move above the bars (or into a narrow column)
+export const MARK_W = 18; // the Genres page's mark column (▲ ▼ ≠), after a gap from the labels
+export const MARK_GAP = 8;
 export const SHORT_LABEL = 7; // labels this short (months, weekdays, short ranges) fit in a 64 px column
 
 /** Estimated width of a line of text in px (system sans; generous, so estimated boxes never undershoot). */
@@ -111,8 +113,9 @@ export function chartValueText(rows, overall, format) {
  * `valueColumn` (values right-aligned in a column at the right, each after its row's `mark`, ▲ or ▼), `storiesColumn`
  * (the stories in a muted column at the right; in the phone layout under the label, below `storiesBelow` stories),
  * `phoneLabelW` (in the phone layout, the labels in a column this wide, wrapped to two lines, instead of above the
- * bars), `rowHeight` (of rows beside their labels), `refText(value)` (the dashed line's label) and `noneText` (a row
- * with too few stories).
+ * bars), `rowHeight` (of rows beside their labels), `refText(value)` (the dashed line's label), `noneText` (a row
+ * with too few stories) and `markColumn` (the marks in an 18 px column right after the labels, the values without
+ * them, F61a).
  */
 export function rangeLayout({
   rows,
@@ -131,6 +134,7 @@ export function rangeLayout({
   rowHeight = null,
   refText = null,
   noneText = "Too few stories to show",
+  markColumn = false,
 }) {
   const phone = width < PHONE;
   const longest = Math.max(0, ...rows.map((r) => r.label.length));
@@ -160,7 +164,7 @@ export function rangeLayout({
   );
   const tops = heights.map((_, i) => heights.slice(0, i).reduce((a, b) => a + b, 0));
   const valueText = chartValueText(rows, overall, format);
-  const shownValue = (r) => `${r.mark ? `${r.mark} ` : ""}${printed ? printed(r.stats) : valueText(r.stats.median)}`;
+  const shownValue = (r) => `${r.mark && !markColumn ? `${r.mark} ` : ""}${printed ? printed(r.stats) : valueText(r.stats.median)}`;
   const valueW = Math.max(30, ...shown.map((r) => textWidth(shownValue(r), 13, 600)));
   // the stories column (wider screens): its heading and the longest count
   const storiesW =
@@ -196,7 +200,7 @@ export function rangeLayout({
     const st = step;
     tickText = tickFormat ? (v) => tickFormat(v, st) : (v) => (compact ? formatCompact(v, d) : formatFixed(v, d));
     const firstTickW = textWidth(tickText(ticks[0] ?? lo), 12);
-    left = mode === "stacked" ? Math.max(4, Math.ceil(firstTickW / 2) + 2) : labelW + 14;
+    left = mode === "stacked" ? Math.max(4, Math.ceil(firstTickW / 2) + 2) : labelW + (markColumn ? MARK_GAP + MARK_W + 6 : 14);
     plotW = Math.max(40, width - left - right);
     const widest = Math.max(...ticks.map((t) => textWidth(tickText(t), 12)));
     const spacing = (plotW * step) / (hi - lo || 1);
@@ -305,6 +309,10 @@ export function rangeLayout({
     out.nPos = nPos;
     out.nText = nT;
     if (nPos) out.boxes.push({ kind: "n", ...box(nPos.x, nPos.y, nT, phone ? 12 : nSize, 400, "end") });
+    if (markColumn && ok && r.mark) {
+      out.markPos = { x: labelW + MARK_GAP + MARK_W / 2, y: cy + 4.5 };
+      out.boxes.push({ kind: "mark", ...box(out.markPos.x, out.markPos.y, r.mark, 13, 700, "middle") });
+    }
     if (ok) {
       out.bar = capsule(x(s.p25), x(s.p75));
       out.dotX = x(s.median);

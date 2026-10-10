@@ -87,7 +87,7 @@ function ComparingGenres({ meta }) {
         for “tend to”, and the genre needs at least {rule.min_n} stories with the characteristic.
       </p>
       <p>
-        When most stories score 0 on a characteristic, the page shows how many stories are above 0, and the median and
+        When most stories score 0 on a characteristic, the page shows how many stories have any, and the median and
         interquartile range among them. Publication month and weekday are left out: their twelve and seven groups
         can’t be compared genre by genre in one chart.
       </p>

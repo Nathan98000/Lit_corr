@@ -12,9 +12,9 @@ function columns(kind, variable, nf) {
   if (kind === "bin") return [["Share", (s) => formatPercent(s.share)]];
   if (kind === "zero") {
     return [
-      ["Above 0", (s) => formatPercent(s.share)],
-      ["Median above 0", (s) => (s.median == null ? "–" : nf.value(s.median))],
-      ["Interquartile range above 0", (s) => (s.median == null ? "–" : nf.span(s.p25, s.p75))],
+      ["With any", (s) => formatPercent(s.share)],
+      ["Median among those", (s) => (s.median == null ? "–" : nf.value(s.median))],
+      ["Interquartile range among those", (s) => (s.median == null ? "–" : nf.span(s.p25, s.p75))],
     ];
   }
   return variable.bins.labels.map((label, b) => [label, (s) => formatPercent(s.shares[b])]);

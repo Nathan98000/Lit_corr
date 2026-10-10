@@ -16,7 +16,7 @@ import { mixColors } from "../lib/genreLayout.js";
 import CopyLink from "./CopyLink.jsx";
 import GenreChart from "./GenreChart.jsx";
 import GenreMix from "./GenreMix.jsx";
-import GenreSplit from "./GenreSplit.jsx";
+import GenreAny from "./GenreAny.jsx";
 import GenreTable from "./GenreTable.jsx";
 
 export const HOW_DECIDED = toHash("methodology", { section: "genres" });
@@ -68,11 +68,8 @@ export function GenreLegend({ kind, anySmall, smallN, groups = null }) {
     return (
       <ul className="legend genre-legend">
         <li>
-          <span className="key key-share" aria-hidden="true" /> Share of stories above 0
-        </li>
-        <li>
           <span className="key key-median" aria-hidden="true" />
-          <span className="key key-iqr" aria-hidden="true" /> Median and interquartile range among stories above 0
+          <span className="key key-iqr" aria-hidden="true" /> Median and interquartile range among stories with any
         </li>
         <li>
           <span>
@@ -178,7 +175,7 @@ export default function GenreAnswer({ meta, state, file, busy, onChange, onSwitc
     title: `${question} ${heading}`,
     onNavigate,
   };
-  const Chart = kind === "zero" ? GenreSplit : kind === "grp" || kind === "band" ? GenreMix : GenreChart;
+  const Chart = kind === "zero" ? GenreAny : kind === "grp" || kind === "band" ? GenreMix : GenreChart;
   const groups =
     kind === "grp" || kind === "band"
       ? mixColors(kind, rows[0].stats?.shares || variable.bins.labels.map(() => 0)).map((c, b) => ({

@@ -308,10 +308,11 @@ describe("the chart", () => {
 
   it("marks and names the genres that clearly differ", async () => {
     await openGenres("#/genres?var=dlg_word_share");
+    // the marks in their own column after the names (F61a), the values alone
+    const marks = [...document.querySelectorAll(".genre-chart .row")].map((r) => r.querySelector(".gmark")?.textContent ?? "");
+    expect(marks).toEqual(["", "▲", "▼", ""]); // All genres, Fetish, Romance, Tiny Genre
     const values = [...document.querySelectorAll(".genre-chart .gval")].map((t) => t.textContent);
-    expect(values[1]).toMatch(/^▲ \d+%$/); // Fetish
-    expect(values[2]).toMatch(/^▼ \d+%$/); // Romance
-    expect(values[0]).toMatch(/^\d+%$/);
+    expect(values.slice(0, 3).every((v) => /^\d+%$/.test(v))).toBe(true);
     expect(rowNames()[1]).toMatch(
       /^Fetish: median \d+%, interquartile range \d+%–\d+%, 150 stories, median age 4\.1 years, clearly more dialogue than all genres$/,
     );

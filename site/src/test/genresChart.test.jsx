@@ -265,6 +265,8 @@ describe("units and formats", () => {
     };
     // rare words: How To no longer prints all genres' "2%"
     expect(say("lex_rare_word_share")).toBe("All genres: median 2.4%, interquartile range 1.7%–3.4%. Genre medians run from 1.6% to 3.8%.");
+    // a median of exactly 1 takes the singular, as the rows' names do
+    expect(say("story_pages")).toBe("All genres: median 1 page, interquartile range 1–2. Genre medians run from 1 to 2.");
     expect(details("lex_rare_word_share", "adult-how-to").items[0]).toEqual(["Median", "1.8%"]);
     // paragraph length: one number of decimals
     expect(say("story_mean_paragraph_words")).toBe(

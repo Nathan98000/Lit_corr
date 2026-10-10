@@ -312,8 +312,10 @@ export function allGenresLine(rows, variable, entry) {
   const genres = rows.filter((r) => !r.all && r.stats);
   const nf = numberFormat(variable, entry);
   if (kind === "num") {
-    const segs = ["All genres: median ", { strong: nf.value(all.median) }];
-    segs.push(`${nf.unit ? ` ${nf.unit}` : ""}, interquartile range ${nf.span(all.p25, all.p75)}.`);
+    const median = nf.value(all.median);
+    const segs = ["All genres: median ", { strong: median }];
+    // the unit after the number in bold, singular after exactly "1" ("median 1 page")
+    segs.push(`${withUnit(median, nf.unit).slice(median.length)}, interquartile range ${nf.span(all.p25, all.p75)}.`);
     if (genres.length >= 2) {
       const meds = genres.map((r) => r.stats.median);
       const [lo, hi] = [nf.value(Math.min(...meds)), nf.value(Math.max(...meds))];

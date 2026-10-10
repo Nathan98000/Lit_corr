@@ -1,17 +1,24 @@
 # The Genres page: an independent design review
 
 *Phases 0–3 of `STAGE2_GENRES_PAGE_REVIEW_PROMPT.md`, October 9, 2026. Reviewed: branch `genres-page` at `c1ea0f5`
-(10 commits on `main` at `a5118ce`; not merged, not pushed). **Status: waiting for the owner's decisions** (section 8).*
+(10 commits on `main` at `a5118ce`; not merged, not pushed). **Status: approved and implemented** on branch
+`genres-review` (October 10, 2026; not merged, not pushed), following `STAGE2_GENRES_REVIEW_IMPLEMENTATION_PROMPT.md`,
+with the owner's decisions on section 8: keep the order toggle, with the order line (F75); r stays at two decimals
+(a measurement since the review); View 2's Copy link and Show the numbers; titles from the question; concepts M1, P2
+(with P1's units, key and mix label) and Q1; ideas I9 and I10, not I11; the wording as approved; the story-age note's
+new coverage; one mark column beside the genre's name for every form. Sections 1–8 are the review as written; what
+changed, with before and after numbers, is in section 10.*
 
 - The design is in [`GENRES_PAGE_PROPOSAL.md`](GENRES_PAGE_PROPOSAL.md) (sections 1–12, mock-ups g01–g08) and what was
   built in its section 13. Rounds 1 and 2 of the site's review are [`DESIGN_REVIEW.md`](DESIGN_REVIEW.md) and
   [`DESIGN_REVIEW_2.md`](DESIGN_REVIEW_2.md); this review links to them rather than repeating them.
-- **Screenshots** are in [`genres-review/`](genres-review/): `b…` the page as built, `m…` mock-ups. Phones at full
-  size, 1440 px at half size, palette-compressed.
+- **Screenshots** are in [`genres-review/`](genres-review/): `b…` the page as built, `m…` mock-ups, `a…` the page
+  after the implementation (section 10). Phones at full size, 1440 px at half size, palette-compressed.
 - **Mock-ups** draw the real aggregates. The static ones are in `Claude outputs/genres-review-mockups/` (`mock.html`
   and a README); the others inject CSS into the built page, or are a scratch build outside the repository. The
   measuring scripts I added, their raw outputs and every generated sentence are in
-  `Claude outputs/design-review-2-tools/genres-review/` (listed at the end of the folder's `README.txt`).
+  `Claude outputs/design-review-2-tools/genres-review/` (listed at the end of the folder's `README.txt`); the
+  implementation's scripts are in its `after/` subfolder.
 - **Finding IDs** start at F60. Concepts use M, P and Q; ideas start at I9.
 - "Measured" means a script or a screenshot backs it. Everything else is my judgment, and says so.
 
@@ -964,3 +971,255 @@ Q3). Q1 and the compact card are CSS on the built page; Q3 is a scratch build.
    - With VoiceOver, swipe through three rows of the narrative perspective chart: are the names useful?
 9. **Git.** As before, git needs to delete its lock files when it commits. I'll request deletion for the project
    folder before the first commit on `genres-review`.
+
+---
+
+## 10. Before and after
+
+Implemented on branch `genres-review`, made from `genres-page` at `c1ea0f5` (the review itself is its first commit,
+`cce206f`), following `STAGE2_GENRES_REVIEW_IMPLEMENTATION_PROMPT.md`: 18 commits after the review's own, the last one
+this write-up, not pushed. The section is numbered as in `DESIGN_REVIEW_2.md`. At the last commit all three checks
+pass: `npm test` (276 tests in 28 files, was 226 in 27), `npm run build`, and `python -m pytest
+tests/test_stage2_site_data.py` (30 tests, as before). `site-data` ran once, offline, for phase 2's direction words:
+only `meta.json` changed (the five word pairs and `generated_at`), and the fixtures' `meta.json` (`generated_at`).
+
+**How it was measured.** Copies of the review's scripts and of round 2's, run from a scratch folder outside the
+repository with playwright-core 1.56, axe-core 4.10.3 and Lighthouse 12.8, in the headless Chromium (build 1243,
+Chrome 153) cached on this Mac, against frozen builds served with gzip. In the copies, the paths are this Mac's, and
+`fan-fiction-and-celebrities` is `celebrity-stories` (in `tapsgenres`, `labelsgenres`, `taps` and `labelsfont`). This
+Mac's `system-ui` is San Francisco, not the review's Inter, and the machine is faster than the review's container, so
+the table gives three columns where it matters: the review's number, **`c1ea0f5` measured again on this Mac** with
+the same scripts, and after. The wide font is Verdana, standing in for DejaVu Sans, which is not installed here. The
+new scripts, and the copies I changed, are in `Claude outputs/design-review-2-tools/genres-review/after/`, listed in
+the folder's `README.txt`.
+
+### 10.1 Headline numbers
+
+| Measure | Review (Linux) | `c1ea0f5` on this Mac | After |
+|---|---|---|---|
+| First load (HTML, JS, CSS, font, `meta.json`, first chart), gzip bodies; budget 155 KiB | | 152.3 KiB, 6 requests | **152.5 KiB, 6 requests** |
+| A visit that starts on `#/genres` | 203.5 KiB, 8 requests | 203.6 KiB, 8 requests | 207.9 KiB, 8 requests: the page's code 17.9 KiB (was 14.9), its CSS 3.4 (2.2); `genres/all.json` is requested before `meta.json` |
+| The Genres chunk, as Vite counts it | 49.7 kB, 15.4 kB gzipped | | 60.5 kB, 18.5 kB gzipped (its CSS 13.9 kB, 3.5 kB) |
+| First chart, View 1: local / fast 4G / slow 4G / 3G | 0.58 / 0.89 / 2.63 / 6.62 s | 0.40 / 0.83 / 2.06 / 6.00 s | **0.08 / 0.49 / 1.68 / 5.46 s** |
+| First chart, View 2 (Romance) | 0.55 / 0.90 / 2.50 / 6.38 s | 0.39 / 0.87 / 2.03 / 5.97 s | **0.08 / 0.45 / 1.67 / 5.45 s** |
+| Largest paint, View 2, same profiles | the takeaway | 0.34 / 0.70 / 1.58 / 4.55 s (the question) | 0.05 / 0.41 / 1.49 / 4.76 s: on 3G the file now shares the line with `meta.json`, so the question paints 0.2 s later and the chart arrives 0.5 s sooner |
+| Lighthouse (mobile), View 1 | 93 / 100 / 100 / 100; largest paint 2.6 s; blocking 200 ms; label-in-name fails | 97 / 100 / 100 / 100; 2.6 s; 0 ms; fails | **97 / 100 / 100 / 100; 2.4 s; 0 ms; passes** |
+| Lighthouse, View 2 | 97 / 100 / 100 / 100; 2.6 s; fails | 97 / 100 / 100 / 100; 2.6 s; fails | **97 / 100 / 100 / 100; 2.4 s; no failure** (no row has an `aria-label` left to check) |
+| Another characteristic / another option / the view switch (`perfgenres`), fast 4G | 0.03 / 0.14 / 0.11 s | 21 / 139 / 56 ms | 22 / 135 / 50 ms |
+| The same on slow 4G (4× CPU) | 0.15 / 0.62 / 0.35 s | 25 / 458 / 100 ms | 28 / 463 / 121 ms |
+| Layout shift (`clsgenres`): first load / another option at 375 px / at 1440 px | 0.000 / / | 0.000 / 0.091 / | 0.000 / **0.058** / 0.009 |
+| The page moving after a control (`snapgenres`) | 0 px in 64 of 64 | the same | 0 px in 64 of 64, the order switch in its new place and Highlight with I9's row included |
+| First genre row, 375 × 667 / 320 × 568 | 925 / 1,047 px | 925 / 1,047 px | **861 / 948 px** |
+| Controls at 320 px; the age note and the legend at 375 px (numbers) | 4 lines (198 px); 133 px and 93 px | the same | 3 lines; 85 px and 36 px (two lines) |
+| Page height at 375 / 1440 px: story length | 2,502 / 1,803 | 2,502 / 1,803 | 2,437 / 1,806 |
+| The same: romance language (the split chart, then M1) | 3,933 / 1,773 | 3,933 / 1,773 | **2,409 / 1,768** |
+| The same: View 2, Romance / How To, topics closed, 375 px | 2,194 / 2,566 | the same | 2,461 / 2,801: P2's key, the lists' scale rows and two-line values |
+| A tapped genre's numbers, 375 × 667, the row tapped 300 px from the top | Anal: 1,356 px below the row | the same | **on screen** for every form (Anal: 548–667 px); a second tap or Escape closes them; the page never moves |
+| The desktop card | 208–297 px tall, covers 7–10 rows | | numbers and yes/no 138 px, 5 rows; named groups 202 px, 7; mostly zero 220 px, 8 |
+| Stepping with ↓ at 1440 × 900 | the card below the screen in 3 of 4 positions | | 2 of 4; never over the focused row |
+| The live region after an order change | the heading and the takeaway again, about 45 words | | "Genres by median, highest first." |
+| Focus after the age note's button / after "Try again" | the body / the page's main area | the body / the body (a click on the sentence above the button gives the main area) | **the answer's heading / the heading of the answer it brings** |
+| "of 30 genres" when fewer were compared | in 595 of the 1,656 charts | | none: the heading counts the genres compared |
+| Marked genres printing the same median as all genres | 14 (All stories) | | 4 (pages on site, where both medians are exactly 1) |
+| Real glyph boxes, the site font | 3,698 contacts in 2,613 charts (a one-line name and its count line, 2 px) | | **0 problems** in 1,472 charts (every characteristic with All stories and 2020 or later, at 320, 375, 768 and 1440 px), also with Romance highlighted; View 2: 0 in 18,485 rows |
+| The same, the wide font | DejaVu Sans: 8 one-pixel contacts in View 2 | Verdana: 431 (304 in View 2, a plot over its values; 127 names and count lines 2 px apart) | **0** in the same 1,472 charts and in View 2 |
+| axe-core (WCAG 2.0–2.2 A/AA and best practice) | none in 32 runs | 3 at 768 px: View 1's wide tables scroll in a box without a tab stop | **none in 84 runs** (28 states at 375, 768 and 1440 px: M1, I9's row, the order line, the small-sample View 2, View 2's table and the picker's notes included) |
+| Forced colors, light and dark | readable | | readable; every mark draws, P2's zone as its two edges, the group names, the sticky line with its border |
+| Tap targets | rows 44 px, 100% of their box; View 2's rows 56 px; controls 94–100% | | the same; View 2's rows 56–86 px, 100%; the order switch and the age note's button 45 px, 96–100% |
+| Time to the next paint at 4× CPU, 375 px (`respgenres`): another characteristic; the view switch; the picker, per key | 108 ms; 93 ms; 115–257 ms | 46 ms; 12 ms; 49–66 ms | 46 ms; 11 ms; 49–63 ms |
+| Every topic of a genre opened at once (271 rows): worst frame at 4× / 6× CPU | 267 / 400 ms (8 long tasks) | 67 / 117 ms | 117 / 167 ms (one 61 ms task at 6×); opening one topic (62 rows) at 6×: 72 ms to paint, no long task (54 before) |
+| Every generated sentence, read | 5,148 lines; 15 that read badly | | 4,124 lines (the same coverage, written differently): one regression, "median 1 pages", fixed (`ba876ae`); every printed "0%" is an exact 0 (172 of them); four of the review's 15 remain (10.5) |
+
+On this Mac the review's Linux numbers for time and responsiveness don't compare: the same build measured again
+(the middle column) is what each change is set against.
+
+### 10.2 Every finding, concept and idea
+
+| ID | What changed | Commit | Before → after |
+|---|---|---|---|
+| F60 | View 2 with 10–29 stories in the option: "Fewer than 30 stories in Chain Stories match “Published 2020 or later”: too few to compare.", then the story-age note where it is due, "Show all stories" and the topics with every number; no lists, no sub-line. "Close to all genres" counts the characteristics compared | 55cc3e3, 47bcd7d | "close to those of all genres on each of the 183 characteristics" for 12 stories → "too few to compare" |
+| F61 | (a) ▲ ▼ ≠ in an 18 px column beside the genre's name, on every form; the value column holds only the number. (b) View 2's mostly-zero rows give both numbers, with units | f142a1a, 9bde82b | the mark beside a share that can go the other way → beside the name ([a03](genres-review/a03-mostly-zero-M1-375-1440.png)) |
+| F62 | Concept Q1: on phones a tapped genre's line sticks to the bottom of the screen while its chart is in view, and stays a line under the chart in the document; a row focused from the keyboard is scrolled clear of it | 5c87e4e | 1,356 px below the tap → on screen ([a04](genres-review/a04-tapped-row-375.png)) |
+| F63 | The heading counts the genres compared (at least 30 stories with the characteristic in the option); "Too few stories to compare: Chain Stories (12)." after the All genres line; the chart's name and the live region say the same | 55cc3e3 | "of 30" in 595 charts → the genres compared |
+| F64 | Focus moves to the answer's heading, without scrolling, after the age note's button and "Show all stories"; also after "Try again" | 4079701, 4713b08 | the body → the heading |
+| F65 | Concept M1: one chart for mostly-zero characteristics at every width | f142a1a | 3,933 → 2,409 px at 375 px; a genre's two halves 1,459 px apart → one row |
+| F66 | One number format per chart (`numberFormat`): one number of decimals; percentages whole, or with one decimal when All genres' median is under 10%; shares with one decimal under 1% and "<0.1%" above 0; "−" everywhere; "to" in a range with a negative end | 0e46e4a, ba876ae | "2%" against "2%" → "1.8%" against "2.4%"; "18" above "18.4" → "18.0"; marked genres printing all genres' median 14 → 4 |
+| F67 | Concept P2, with P1's units, key and mix-row label: every row but named groups draws how often the genre's story is the higher one, out of 100, on one scale with the 40–60 zone; the key says so | 9bde82b | rows that looked comparable and weren't → one scale ([a07](genres-review/a07-one-genre-romance-375-1440.png)) |
+| F68 | A visit that starts on the page fetches its code and its file while the app starts, before `meta.json` | 4079701 | first chart on fast 4G 0.83 → 0.49 s (this Mac) |
+| F69 | The age note in one paragraph with an inline button; the legend in two lines on phones; the order switch on the order line | 72f8bea | first genre row 925 → 861 px; controls 4 → 3 lines at 320 px ([a01](genres-review/a01-first-screens-320-375.png)) |
+| F70 | The compact desktop card: two pairs of columns, as wide as its content up to 420 px; shares two to a line | 4079701 | 230 px and 8 rows → 138 px and 5 rows for numbers ([a05](genres-review/a05-compact-card-1440.png)) |
+| F71 | The age note wherever the genres' median ages span 5 years or more, in any option, but not on publication year and story age; in View 2 wherever the genre's and all genres' differ by 3 years; its button only with All stories | 72f8bea, 47bcd7d | the same 25 words on every chart, the age charts included → only where it adds something |
+| F72 | The groups' names over All genres' bar; a 1 px outline on the near-white group; band palettes on even steps of contrast (3 to 8 bands); "Later / Earlier" for the five peak positions; no "Genre medians run from X to X" | 75c4b3e, 7cae52e | band neighbors 1.19–2.44:1 → 1.61–1.66:1 (5 bands), 1.36–1.40:1 (7); "▼ Lower" → "▼ Earlier" ([a06](genres-review/a06-named-groups-and-bands.png)) |
+| F73 | The tab is named after the question on screen | 16c08ac | "Genres · What do popular Literotica stories have in common?" everywhere → the question |
+| F74 | The value column's heading ("Median", "Share"; M1 "Median" and "With any"); How it works: the largest genre's share of All genres, and that the comparison uses every story | 72f8bea, 16c08ac | no heading → headed columns |
+| F75 | The order line above the chart, with its switch; an order change announces only its words; How it works says the lists' order | 72f8bea, 16c08ac | about 45 words re-read → 6 ([a10](genres-review/a10-order-line-by-median-375-1440.png)) |
+| F76 | "Open in Explore →" is named "Open in Explore: story length in words"; View 2's rows are named from their visible text, the description after it | 4079701 | label-in-name fails → passes in both views |
+| F77 | The picker's notes for month and weekday, and for a measure, with "See it in Explore →"; topic blurbs without the left-out characteristics | 16c08ac, 423c3d0 | nothing → a note ([a11](genres-review/a11-picker-month-rating.png)) |
+| F78 | View 2's takeaway skips story age when publication year is among the three; a noun ending in a parenthesis takes its word after a comma | 9bde82b | "publication year (older), story age (older)" → the next difference |
+| F79 | "with any" for mostly-zero characteristics everywhere, How it works included | f142a1a, 16c08ac | "above 0" → "with any" |
+| F80 | View 2's "Show the numbers" (every characteristic, topic by topic, in a table that opens under its button) and "Copy link" | 9bde82b, 62d7279, 8fc09cf, 4713b08 | neither → both ([a09](genres-review/a09-one-genre-table-375-1440.png)) |
+| Quick wins | 1 F64; 2 F68; 3 F61a; 4 F66; 5 F70; 6 F76; 7 moot (P2 replaces the gray band and the capsule; named groups' bars keep their 1 px strokes); 8 the count line 15 px under a genre's name; 9 a no-break space before Keep exploring's "→" on Explore (lone arrows 10 and 17 → 0 at 320 and 375 px); 10 a 30 s timeout on the real-data sentence scan | 4079701, 0e46e4a, f142a1a | |
+| M1 | One row per genre: name, mark, the range and median among stories with any on the plot's own scale, then "Median" and "With any" (a 40 px bar on wider charts) and Stories | f142a1a | [a03](genres-review/a03-mostly-zero-M1-375-1440.png) |
+| P2 | As F67; values with units; the key; Show the numbers and Copy link | 9bde82b | [a07](genres-review/a07-one-genre-romance-375-1440.png), [a08](genres-review/a08-one-genre-small-sample-and-a-topic-375.png) |
+| Q1 | As F62 | 5c87e4e | [a04](genres-review/a04-tapped-row-375.png) |
+| I9 | A highlighted genre drawn again right under All genres, on every form, for the eye only (hidden from screen readers, outside the keyboard's sequence; a tap shows its details) | 4150467 | [a02](genres-review/a02-story-length-romance-375-1440.png) |
+| I10 | Rows glide to a new order in 300 ms; they jump under reduced motion | 72f8bea | |
+| I11 | Not built (the owner's no) | | |
+| Decision 2 | r stays at two decimals; the file format doesn't change | | |
+| Found in the final checks | View 2's table drawn when shown (view switch 36 → 17 ms); the picker's left-out check searches only those two (per key back to the baseline's 33 ms); View 2's table fits its box, and a box that scrolls takes a tab stop; the table opens under its button; focus after "Try again"; "median 1 page"; the age note in the small-sample state | 62d7279, 423c3d0, 8fc09cf, 4713b08, ba876ae, 47bcd7d | |
+
+### 10.3 After screenshots
+
+Phones at full size; 1440 px at half size (View 2's table at 0.6). Palette-compressed.
+
+| View | Screenshot |
+|---|---|
+| First screens at 320 and 375 px | [a01](genres-review/a01-first-screens-320-375.png) |
+| Story length with Romance highlighted: the mark column, the order line, the value heading, I9 | [a02](genres-review/a02-story-length-romance-375-1440.png) |
+| M1: romance language (Romance) and repeated five-word phrases (How To's ▲ beside its name) | [a03](genres-review/a03-mostly-zero-M1-375-1440.png) |
+| A tapped genre on a phone (Q1) | [a04](genres-review/a04-tapped-row-375.png) |
+| The compact desktop card | [a05](genres-review/a05-compact-card-1440.png) |
+| Named groups with their names; bands (where sexual language peaks; the author's story count) | [a06](genres-review/a06-named-groups-and-bands.png) |
+| View 2 for Romance (P2) | [a07](genres-review/a07-one-genre-romance-375-1440.png) |
+| View 2 for Chain Stories with 2020 or later; How To with a topic open | [a08](genres-review/a08-one-genre-small-sample-and-a-topic-375.png) |
+| View 2's table | [a09](genres-review/a09-one-genre-table-375-1440.png) |
+| The order line after "By median" | [a10](genres-review/a10-order-line-by-median-375-1440.png) |
+| The picker for "month" and "rating" | [a11](genres-review/a11-picker-month-rating.png) |
+
+![First screens after the review](genres-review/a01-first-screens-320-375.png)
+
+![One genre after the review (P2)](genres-review/a07-one-genre-romance-375-1440.png)
+
+### 10.4 Judgment calls
+
+Decisions the implementation prompt left open, with one line of reasoning each.
+
+1. **Open in Explore's name** uses the characteristic's noun, or for a yes/no characteristic the subject its question
+   uses ("Open in Explore: first-person stories"), so the name reads as the question does.
+2. **"Show all stories"** is left out when all stories are shown already: it did nothing there.
+3. **A genre whose count the file leaves out** (fewer than 10 stories) reads "(fewer than 10)" in the too-few line, as
+   there is no count to print; the real data never has one.
+4. **F63 with All stories** changes two charts, not one: the adverbs in speech tags ("of 28", as the prompt said) and
+   where the first sex scene starts ("6 of 29": one genre has fewer than 30 stories with a sex scene).
+5. **View 2's small-sample state** has no key and no lists, since nothing was compared; it keeps the story-age note
+   where the rule asks for it (without its button, as a small sample is never one of All stories).
+6. **F66's two significant digits** apply only where the chart's decimals would lose a value (one that would round to
+   0 or to one significant digit); a value written exactly keeps the chart's format ("1 page"). Read literally ("any
+   value with one significant digit"), the rule would change 644 values with All stories instead of 36.
+7. **The copy's examples follow the rules** where they differ: "7.8 · all 19.3" (the copy said 7.79, but all genres'
+   quartiles give one decimal), "Mixed 0.8%" (1%), "76% with any, median 2.570 · all 83%, 1.190" (2.57, 1.19: the
+   chart's three decimals come from all genres' quartiles).
+8. **"Median under 10%"** in the percentage rule uses the median's absolute value, so negative build-ups get one
+   decimal too ("−6.7% to 11.1%").
+9. **M1's heading** is HTML over the plot, not SVG text, so it wraps on a narrow phone; "Fewer than 10 stories with
+   any" wraps inside the plot where it must.
+10. **M1's page is 2,409 px at 375 px**, not the prompt's "about 1,730": that was the review's mock-up page, without
+    the controls, the takeaway, the age note, the legend and the footer.
+11. **The legend on phones** leaves out "Median of all genres" below 560 px, the prompt's fallback: with it, numbers
+    took three lines; the dashed line is labeled under the chart and runs through All genres' dot.
+12. **View 2's age note** became one paragraph with an inline button, like View 1's (its sentence is unchanged), so
+    the two views read alike.
+13. **The age note's inline button** gets its 44 px target from an invisible extension, so the paragraph keeps its
+    line height.
+14. **The order switch** is 36 px to the eye with a 44 px target, as specified; its labels have rounded corners, so the
+    compact switch still reads as the view switch's sibling.
+15. **Order-only announcements**: the live region keys its text by characteristic and option; when only the order
+    changes it says the order line's words, with a period.
+16. **I10's glide** sets transforms on the rows' elements directly, with the explorer's easing, so nothing renders or
+    lays out again per frame; All genres and I9's copy stay put.
+17. **The value column's heading** widens the column to fit "Median" or "Share", and the plot gives way so its last
+    tick keeps 10 px from the heading.
+18. **Band palettes** for every band count from 3 to 8 (the data has 5 and 7), so a characteristic added later keeps
+    even steps; the middle colors follow an OKLCH path, so they stay blue.
+19. **Group names on bands too**: the prompt named the groups; bands get the same rule (a name only where its
+    segment is wide enough), since position helps there as much.
+20. **P2's number** is rounded away from 50 (a bar never reads 50), and printed inside the bar near the scale's ends
+    (at 15 or below, 85 or above) so it never leaves the plot.
+21. **P2's mix line** always shows in the key: every genre's topics hold named groups, which open there.
+22. **P2's values column** is sized per list and per open topic: one line when the plot keeps 200 px, else two lines
+    (at the point between the genre's and all genres'), else words wrap. A column grows only where a word is wider
+    than its estimate (a wider font).
+23. **P2 on phones**: the label on its own line, then the plot and the values; values take at most 58% of the row, so
+    a plot keeps about 110–150 px.
+24. **P2's ticks** show only over a list or topic with bars ("0 25 50 75 100 in 100"; on phones, or a plot under 320
+    px, "0 50 100"); a list of mixes has the values heading alone.
+25. **P2's geometry** is in percent of the plot cell, so the plot takes whatever width its grid cell gets, with no
+    measuring.
+26. **Rows not compared** keep their values, muted, as small groups are elsewhere.
+27. **View 2's table, named groups**: each cell gives every group's share (the copy gave the columns); a number keeps
+    its unit and a group its share on its line (no-break spaces), so the table wraps to fit its box at every width.
+28. **View 2's table is drawn when shown** (`62d7279`): with its 185 rows always in the page, switching to View 2 took
+    twice as long; the rows' names give every number meanwhile. View 1's 31-row table stays in the page, as before.
+29. **View 2's table opens under its buttons** (`4713b08`), unlike View 1's: at 8,000 px or more, a table above them
+    sent the focused button out of sight.
+30. **A table box that scrolls sideways takes a tab stop** named by its caption (`8fc09cf`): View 1's tables with many
+    groups already scrolled between 560 and 1,024 px, and axe flagged it at 768 px in `c1ea0f5` too.
+31. **View 2's phone layout** follows the chart's own width (under 560 px), like the other forms, not the window's.
+32. **Genre names break after "/"** in the Genres page's selects (a zero-width space), so "Reluctance/NonConsent" fits a
+    narrow phone; `SlotWords`, shared with Explore, cuts at a space or that character, and Explore's names have none.
+33. **Q1 and the keyboard**: a row focused from the keyboard is scrolled clear of the sticky line; a tap never scrolls.
+34. **Titles** are the question alone, without the site's name, as the copy gives them.
+35. **The picker's measure note** matches against every characteristic (so "month" stays a characteristic search
+    even here, where month is left out), and its link keeps the current characteristic, highlighted genre and option.
+    The left-out note searches only the two left-out characteristics (`423c3d0`), which gives the same answer.
+36. **How it works**: the largest genre's sentence ends the first paragraph, and the two new sentences the second.
+37. **I9 on every form**, named groups and bands included, as the idea describes View 1's rows in general; the copy
+    does not glide with a new order.
+38. **"Try again"** (`4713b08`) moves focus to the heading it brings, by F64's mechanism: the button goes away when
+    the file arrives, which left focus on the body in `c1ea0f5` too.
+39. **Two test races** fixed in the tests only: `ratingsFirst` and `App.test` read the page's title before the effect
+    that sets it, so they now wait for it.
+40. **Tests**: the D10 count goes from 20 to 25 in pytest and in `genresForms`; the real-data sentence scan has its
+    30 s timeout.
+41. **The tools**: copies of the review's scripts were changed to this Mac's paths, the right genre id and the
+    page's new selectors; new scripts are in the tools folder's `genres-review/after/`, never in the repository.
+
+### 10.5 Still open
+
+- **A real phone and screen readers**: everything was checked in headless Chromium (touch emulation, emulated forced
+  colors) and with Testing Library; not on an iPhone or Android phone, and not with VoiceOver, TalkBack or NVDA. The
+  owner will try a phone separately (decision 8).
+- **Wide fonts and a highlighted long name**: in Verdana, standing in for DejaVu Sans, a highlighted long genre name
+  runs past the chart's left edge at 640–768 px, where the SVG clips it (Fan Fiction & Celebrities by 23 px at 640,
+  Reluctance/NonConsent by 22). It does exactly the same in `c1ea0f5`; I9's copy repeats it. The label column is sized
+  from San Francisco's and Inter's estimates; with the site font nothing touches.
+- **Trailing zeros**: one number of decimals per chart, as the prompt's rule sets it, writes "2.570 · all 1.190" and
+  "Genre medians run from 0.00 to 3.02" where all genres' quartiles have three or two decimals. Dropping them would
+  need a per-number rule.
+- **Four marked genres** still print the same median as all genres (pages on site: both medians are exactly 1); the
+  comparison uses every story, as How it works now says.
+- **M1's desktop card** is 220 px tall and covers 8 rows; for a row low on a 900 px screen it can end 9 px below it.
+  Stepping with ↓, the card is below the screen in 2 of 4 sampled positions (3 of 4 before); it never covers the row.
+- **View 2 on phones**: plots are about 110–150 px wide beside two-line values.
+- **Opening every topic at once** (271 rows): worst frame 117 ms at 4× CPU (67 before), 150–167 ms at 6× with one
+  61 ms task, since P2's rows hold about five more elements each (4,473 nodes, 3,045 before). Readers open one topic
+  at a time, which stays smooth.
+- **View 2's question on 3G** paints 0.2 s later than before (4.76 s), since the genres file now loads beside
+  `meta.json` (F68); the chart arrives 0.5 s sooner, and on fast and slow 4G both come earlier.
+- **The near-white group's outline** (#a5a29a, as specified) is 2.4:1 against the page, under 3:1; its segments also
+  carry their shares and, where they fit, their names.
+- **Four of the review's sentences that read badly** were outside every finding and are unchanged: "interquartile
+  range 1–1" (How To's pages); "median 21–50, interquartile range 6–20 to 51–100" (the author's story count: the
+  bands have no unit); "median 0.200 words" for subordinate clauses per sentence (the unit `wording.py` gives it, now
+  with three decimals); and Loving Wives' takeaway naming "we / us / our" twice, overall and in the narration (F78's
+  fix, as specified, treats only publication year and story age as one fact). The hidden note "Options that would
+  leave only one group of word count are turned off." still uses the label, as Explore's does.
+- **Band rows' names** say "median Middle" with the label's capital (the All genres line says "median middle"), as
+  in `c1ea0f5`.
+- **View 2's topic headings** are still `h4` elements inside `<summary>`, whose button role flattens them in some
+  screen readers, as the review noted.
+- **`generated_at`** in `meta.json` changed with phase 2's `site-data` run, as in round 2.
+
+### 10.6 Not done, on purpose
+
+- **Decision 2: r stays at two decimals.** A third decimal would add 2.8–3.2 KB to each gzipped genres file, bringing
+  "At least 10,000 views" to 59.8 KB of its 60 KB cap. Ties keep their deterministic order (the topics', then A–Z),
+  and the file format doesn't change.
+- **I11**: the names in the ▲▼ lists don't set Highlight. It would turn the answer's lists into up to 16 extra tab
+  stops for a small gain (the owner's no).
+- **Q1 on Explore**: Explore's K1 line stays as it is; Q1 is for the Genres page only (the owner's decision).
+- **A history entry for the age note's button**: it keeps `replaceState`, as Explore's "Switch to …" does; only
+  focus changed (the owner's decision).
+- **Quick win 7** (outlines for View 2's gray band and the genre's capsule): P2 replaced both; named groups' two bars
+  keep their 1 px strokes.
+- **M2, M3, P1 beyond its units, key and mix label, Q2 and Q3**: not chosen.

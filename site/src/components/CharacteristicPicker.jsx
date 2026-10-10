@@ -92,12 +92,14 @@ export default function CharacteristicPicker({
     () => (onPickMetric || metricHref ? measureNamed(fullMeta, query) : null),
     [fullMeta, query, onPickMetric, metricHref],
   );
+  // does the query name a left-out characteristic? (searched among those alone, so typing stays as quick as before)
+  const leftOut = useMemo(
+    () => (excludedNote && exclude?.length ? { ...fullMeta, variables: fullMeta.variables.filter((v) => exclude.includes(v.id)) } : null),
+    [fullMeta, exclude, excludedNote],
+  );
   const excludedHit = useMemo(
-    () =>
-      Boolean(excludedNote) &&
-      Boolean(query.trim()) &&
-      searchCharacteristics(fullMeta, query).some((r) => r.rank >= 2 && exclude.includes(r.variable.id)),
-    [fullMeta, query, exclude, excludedNote],
+    () => Boolean(leftOut) && Boolean(query.trim()) && searchCharacteristics(leftOut, query).some((r) => r.rank >= 2),
+    [leftOut, query],
   );
   const topic = topicId ? meta.topics.find((t) => t.id === topicId) : null;
   let options;

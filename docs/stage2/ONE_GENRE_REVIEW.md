@@ -3,7 +3,8 @@
 *Phases 0–3 of `STAGE2_ONE_GENRE_REVIEW_PROMPT.md`, October 10, 2026. Reviewed: `main` at `692939e` ("Stage 2 genres
 review: before and after, the README and the prompt"). **Status: approved and implemented** on branch `one-genre` (from
 `main` at `0d8611d`, October 10–11, 2026), following `STAGE2_ONE_GENRE_IMPLEMENTATION_PROMPT.md`: R3, S1 and T1 with the
-quick wins. Not pushed. What was built, measured and left open is in section 10.*
+quick wins. Not pushed. What was built, measured and left open is in section 10; your follow-up on the mix line
+(October 11) is in 10.8.*
 
 - **A branch to know about.** While I wrote this, your working copy moved to `simplify-png`: eleven commits after
   `692939e`, since merged into `main` as `0d8611d`. On View 2 it removes three things this review covers:
@@ -1044,7 +1045,8 @@ table that no longer exists and isn't scored.
   Every stand-in rated the page 3 of 5, as in all 60 earlier runs.
 - **New: the mix line over an open topic** confused 6/6. "In the Dialogue topic, 'A different mix: Romance above, all
   genres below' sits at the top but seems to describe only the last row's multicolored bars." The approved design puts
-  it over a topic whose named-group row is compared; the review's "after" never showed it there. See 10.6.
+  it over a topic whose named-group row is compared; the review's "after" never showed it there. See 10.6. *(After
+  your follow-up, 0/6: 10.8.)*
 - Still, as in the review's "after": "23% vs 17% looks like a real gap" while "Everyday vocabulary 5.86 vs 5.79" stands
   out (6/6), "medians" is an unfamiliar word (4/6), "Zipf scale" and "ratio (1 = random order)" are jargon (6/6).
 - New smaller remarks: the decimals look uneven once trailing zeros go ("10 against 3.79", 4/6); on phones the ticks
@@ -1084,7 +1086,7 @@ table that no longer exists and isn't scored.
 16. **The first list with dots** carries the axis title and the note (Lower, else Higher); a genre whose only list is
     "A different mix" (none in the data) would have them in its open topics.
 17. **With no list, an open topic** with a compared named-group row has the axis title, then the mix line: the prompt
-    asks for both.
+    asks for both. *(Since October 11 the mix line sits over the named-group row itself: 10.8.)*
 18. **The story-age skip works across the lines**: story age goes when publication year is among any line's shown items,
     and a line left with nothing goes (Transgender with "Under 2,000 words", Fetish with "5,000 words or more").
 19. **The scroll position is kept** when scrolling stops (300 ms), on each change and just before a link inside the
@@ -1118,9 +1120,9 @@ table that no longer exists and isn't scored.
 - **A real phone and VoiceOver** (decision 10): everything was checked in headless Chromium with touch emulation and
   emulated forced colors, and with Testing Library; not on an iPhone, and not with VoiceOver, TalkBack or NVDA. Safari
   and Firefox are untested too (`text-wrap: balance` needs Safari 17.5 or Firefox 121; older ones wrap normally).
-- **The mix line in an open topic confused 6/6 stand-ins** (10.4): it sits over the topic's first row, while only one
-  row, the named groups', has the two bars, whose colors have no key on this page. Putting the line right over that
-  row, or keying its groups' colors, would need your yes: the prompt places it over the topic.
+- ~~**The mix line in an open topic confused 6/6 stand-ins** (10.4): it sits over the topic's first row, while only
+  one row, the named groups', has the two bars, whose colors have no key on this page.~~ Changed on October 11 at your
+  word: the line over each named-group row, shorter in topics, and a swatch for the printed group (10.8).
 - **What the stand-ins still trip on**, all outside "Copy": the rule judges every story, so "23% vs 17%" can show no
   clear difference while "5.86 vs 5.79" stands out (6/6); "medians" (4/6); the data's own unit texts "Zipf scale" and
   "ratio (1 = random order)" (6/6, decision 7 keeps them); uneven decimals once trailing zeros go (4/6); the ticks
@@ -1145,3 +1147,87 @@ table that no longer exists and isn't scored.
 - **R1, R2's bars and S2**: not chosen.
 - **The D10 word in the unit line** ("later · of the way through the story"): the review's second test found it
   harder to read, and the mock-up shown dropped it.
+
+### 10.8 Your follow-up: the mix line over its row, and a swatch (October 11)
+
+After the stand-ins' reading (10.4, 10.6), you chose three changes: the mix line moves from the top of an open topic
+to right over each named-group row; in topics it says only "Romance above, all genres below"; and a swatch of the
+printed group's color goes before its name under the label. Built in `4668a12`; this write-up and the redone
+screenshots are the commit after it. Not pushed.
+
+**What changed**
+
+- **The line in a topic** sits in the named-group row's list item, right over the row: wide, from where the row's
+  bars start (264 px in: the label's 250, the gap and the plot's 2); stacked, from the row's edge, with the page's
+  other captions. Romance has four such rows: "Length & structure"'s 22nd of 28, "Narration"'s 1st and 3rd of 13
+  (so two lines there), "Dialogue & characters"' 18th of 18. A topic with no list above it (Fetish) keeps its axis
+  title at the top and its note at the end, as before.
+- **The "A different mix" list** keeps "A different mix: Romance above, all genres below" over its rows (12 of the 30
+  genres have one with All stories). Only the topics' line is shorter.
+- **The swatch**: 10 px, outlined in `--control` (3.3:1 on the page whatever its color, as View 1's legend swatches
+  are), kept on one line with the group name's first word; its color is that group's in both bars (`mixColors`: the
+  largest group across all genres darkest). Where a named group has no bars (too few stories to compare) there is no
+  swatch and no line: the forced-colors check found swatches there, fixed before the commit.
+- **Screen readers**: the row's name already gives every group's share in both ("Pronoun composition: Romance Mostly
+  she/her 36%, Both he and she 44%, …"), and the swatch is in the hidden unit line; the topic's line is read before
+  its row, as the list's line is.
+
+**Measured** on the final build, frozen and served with gzip, with copies of the checks that add the line and the
+swatch (`v2glyphs-mix.mjs`, `v2wraps-mix.mjs`, `forcedgenres-mix.mjs`; with `mixshots.mjs`, `mixlist.mjs`,
+`fewshot.mjs`, `aftershots-mix.mjs` and `freshshots-mix.mjs`), kept with the others in
+`Claude outputs/design-review-2-tools/one-genre-review/after/` and their outputs in its `out/mix/`:
+
+| Measure | `ef1e7a1` | Now |
+|---|---|---|
+| Glyph boxes: 30 genres × 3 options × 320, 375, 768, 1440 px, each font | 0 problems | **0 with the site font and 0 with Verdana**, the same 76,328 rows; plus 1,424 topic lines (each over its own row, on neither it nor what is above, starting where it should, inside the row) and 1,680 swatches (on their word's line, inside the label's cell, on no number) |
+| Bad breaks, every genre, both fonts, 4 widths | 0 | **0**: the check's whole output is the same line for line (only the known one-word last lines of labels, topics and notes) |
+| axe-core (30 runs) / label in name | 0 / passes | **0 / passes** |
+| Forced colors, light and dark | every mark draws | every mark draws, and the swatches (their color, a CanvasText outline) and the lines |
+| First load | 148.5 KiB, 6 requests | **148.5 KiB**: the main script is the same but for the chunks' names |
+| A visit that starts on View 2 | 204.1 KiB, 8 requests | 204.3 KiB, 8 requests |
+| The Genres chunk, as Vite counts it | 58.06 kB, 18.59 kB gzipped; CSS 13.86 kB, 3.48 kB | 58.52 kB, 18.74 kB gzipped; CSS 14.21 kB, 3.54 kB |
+| Tests | 356 in 29 files | 359 in 29 files; `npm run build` and the 204 pytest tests pass |
+
+**Screenshots**: a03, a04, a05, a06, a08, a09 and a10 are redone from the final build (a04 and a08 because the open
+topic's rows moved up by the line's height); the others are unchanged.
+
+![An open topic, after the follow-up](one-genre-review/a03-open-topic-375-1440.png)
+
+**Fresh eyes again**: the six stand-ins of 10.4 (the same situation lines, questions and rubric) on screens from the
+final build. The phone's topic screens now run to the topic's end: in 10.4 they stopped two rows short of "Pronoun
+composition", so its phone stand-ins saw the line but never the bars. After Q10 each got one more question, Q11: what
+the two bars show and which is which, and what "44%" and "30%" go with. Answers in `fresh-eyes/built-mix.md`, scored
+in `scores.md` ("built-mix").
+
+| | The mix line confused them | Q11: which bar is which | Q11: what 44% and 30% go with | Q11: what the other colors are | Q4, Q5, Q7, Q9b; gray dots read right |
+|---|---|---|---|---|---|
+| Built (10.4) | 6/6 | not asked | not asked | not asked | 6/6 each |
+| **Now** | **0/6** | **6/6**, from the line | **6/6**: the gray "Both he and she" part, from the swatch | 0/6 | 6/6 each |
+
+- No answer to Q1–Q10 mentions the line. In Q11: "The label 'Romance above, all genres below' tells me the top bar is
+  Romance and the bottom bar is all genres", and "44% and 30% go with the gray 'Both he and she' part, because its
+  legend square matches".
+- **New, 6/6: the other three colors have no label** ("four colors but a legend for only one"), and in Q11 none can
+  tell what they are, or whether the bars split stories or pronouns ("the page doesn't say '% of' what"). The swatch
+  keys the one group the row prints, so readers now ask for the rest. See "Still open" below.
+- The rest as in 10.4: "23% vs 17%" against "5.86 vs 5.79" (6/6), "medians" (6/6), "Zipf scale" (6/6), the dot
+  score explained once (6/6), an open topic "a long wall" of gray rows (3/3 desktop). Five rated the page 3 of 5; one
+  said 4 for the gist and 3 for the charts (every earlier run said 3).
+
+**Still open (each needs your yes)**
+
+- **The named groups' other colors**: a key for all of a row's groups, as View 1's legend has ("■ Mostly she/her
+  ■ Both he and she ■ Mostly he/him ■ Few he/she"), under the bars or in place of the one name; it would add a line
+  to each such row, and its words are new.
+- **What the bars split**: "% of stories" somewhere on the row (each story counts once, in the group its pronouns put
+  it in), e.g. in the unit line after the group's name. New words too.
+
+**My calls here**
+
+1. **The topic's line is read by screen readers**, as the list's line is, though it is about bars they don't get;
+   the row's name right after it has every share.
+2. **Wide, the line starts where the bars do; stacked, at the row's edge** (2 px left of the bars), where the axis
+   title and the list's line start.
+3. **Each named-group row gets its own line**, so "Narration" has two, two rows apart.
+4. **No swatch where the bars aren't drawn** (too few stories to compare), since there would be nothing for it to
+   key; the group's name stays.

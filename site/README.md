@@ -5,27 +5,25 @@ characteristics, overall and within each of Literotica's genres. The controls ar
 genres], how does the [average rating] vary with [story length in words]?" (the default view; the average rating is
 the default measure and leads the measure menu). For each group of stories the chart shows the median (with its
 value printed) and the interquartile range, with the number of stories behind every figure; the mean is in each
-group's details and in "Show the numbers". Above the chart a line of its own says what the rows are and in what unit
-("Stories grouped by story length in words"; yes/no characteristics, whose two rows name themselves, have none), and
-the measure's name sits over the plot, on its ticks. "See this pattern in every genre" shows the same relationship
-for every genre as small charts, and the Patterns page lists every clear pattern for a genre and a measure, topic by
-topic.
+group's details. Above the chart a line of its own says what the rows are and in what unit ("Stories grouped by story
+length in words"; yes/no characteristics, whose two rows name themselves, have none), and the measure's name sits over
+the plot, on its ticks. "Download PNG" saves the chart on screen as an image: its title, subtitle and key, the chart,
+and the credit. The Patterns page lists every clear pattern for a genre and a measure, topic by topic.
 
 The **Genres** page compares the stories themselves, not their popularity, genre by genre. "How do genres differ in
-[story length in words]?" draws one characteristic in every genre (All genres first), in one of four forms: range
-rows for numbers, share bars for yes/no characteristics, 100% bars for named groups and ordered bands (the groups'
-names over All genres' bar), and, for characteristics where most stories score 0, one row per genre with the range
-and median among its stories with any, then that median and how many have any. ▲ ▼ ≠ mark a genre that clearly
-differs, in a column beside its name; the line above the chart says the order ("Genres in alphabetical order", or by
-median or share with its A–Z / By … switch), and a highlighted genre is drawn a second time under All genres. "What
-stands out about stories in [Romance]?" lists the characteristics that set one genre apart from all genres, the
-largest differences first, each row on one scale (how often the genre's story is the higher one against a story
-from all genres, out of 100, with the no-difference zone at 40–60) and with both genres' values; then every
-characteristic by topic, and "Show the numbers" and "Copy link". On phones a tapped genre's numbers stay at the
-bottom of the screen while its chart is in view. The tab is named after the question on screen. A genre "clearly
-differs" only by the rule in How it works (`meta.genre_rule`): a rank-biserial correlation of at least 0.2 against
-all genres (for named groups, a total variation distance of at least 0.2), clear at the 99.9% level, with at least
-30 stories; a genre with fewer is named as too few to compare.
+[story length in words]?" draws one characteristic in every genre (All genres first), in one of four forms: range rows
+for numbers, share bars for yes/no characteristics, 100% bars for named groups and ordered bands (the groups' names
+over All genres' bar), and, for characteristics where most stories score 0, one row per genre with the range and
+median among its stories with any, then that median and how many have any. ▲ ▼ ≠ mark a genre that clearly differs, in
+a column beside its name; the line above the chart says the order ("Genres in alphabetical order", or by median or
+share with its A–Z / By … switch); under the chart, "Download PNG" and "Open in Explore →". "What stands out about
+stories in [Romance]?" lists the characteristics that set one genre apart from all genres, the largest differences
+first, each row on one scale (how often the genre's story is the higher one against a story from all genres, out of
+100, with the no-difference zone at 40–60) and with both genres' values; then every characteristic by topic, and "Copy
+link". On phones a tapped genre's numbers stay at the bottom of the screen while its chart is in view. The tab is
+named after the question on screen. A genre "clearly differs" only by the rule in How it works (`meta.genre_rule`): a
+rank-biserial correlation of at least 0.2 against all genres (for named groups, a total variation distance of at least
+0.2), clear at the 99.9% level, with at least 30 stories; a genre with fewer is named as too few to compare.
 
 The site shows **descriptive associations only**, never causes, and it ships **only precomputed summaries of
 groups of stories**: no story text, titles, authors, addresses or story-by-story records.
@@ -45,10 +43,10 @@ site/public/aggregates/genres/<included>.json          the Genres page: every ge
 site/dist/                                             the static site
 ```
 
-`python -m litcorr site-data` (code in `litcorr/stage2/`) reads only the handoff zip and writes, for every
-genre × characteristic × group of stories × popularity measure, the number of stories, their median age, and
-the median, quartiles and mean of the measure, plus a pattern summary used to word chart titles. "All genres"
-weights each story by its genre's size on Literotica. Groups of fewer than 10 stories are left out. The output
+`python -m litcorr site-data` (code in `litcorr/stage2/`) reads only the handoff zip and writes, for every genre ×
+characteristic × group of stories × popularity measure, the number of stories, their median age (no longer shown on
+the site), and the median, quartiles and mean of the measure, plus a pattern summary used to word chart titles. "All
+genres" weights each story by its genre's size on Literotica. Groups of fewer than 10 stories are left out. The output
 is committed, so the website builds without Python and without the private data.
 
 `patterns.json` re-packages the pattern results already in the per-characteristic files ("All stories" only): for
@@ -56,15 +54,14 @@ every genre and measure, one character per characteristic giving the direction a
 moderate, strong) of the existing effect. No medians, no counts; about 11 KB gzipped.
 
 `genres/<included>.json` (one per "Only include" option, 53–57 KB gzipped) holds, for every characteristic but
-publication month and weekday, and for every genre (All genres first): the number of stories with it, their
-quartiles (All genres also the 10th and 90th percentiles) or their shares, and the comparison with all genres (the
-rank-biserial correlation, or for named groups the total variation distance) with whether the genre clearly differs.
-For mostly-zero characteristics it gives the stories above 0 and their quartiles instead; a genre's share above 0 is
-worked out on the page from its two counts. Each genre's median story age and number of stories in the option come
+publication month and weekday, and for every genre (All genres first): the number of stories with it, their quartiles
+(All genres also the 10th and 90th percentiles) or their shares, and the comparison with all genres (the rank-biserial
+correlation, or for named groups the total variation distance) with whether the genre clearly differs. For mostly-zero
+characteristics it gives the stories above 0 and their quartiles instead; a genre's share above 0 is worked out on the
+page from its two counts. Each genre's median story age (no longer shown) and number of stories in the option come
 with it. Genres with fewer than 10 stories are left out, as everywhere. `loadGenres(include)` and
-`prefetchGenres(include)` in `src/lib/data.js` read it, through the same cache as the other files; a visit that
-starts on the Genres page fetches it, and the page's code, while the app starts, before `meta.json` arrives
-(`App.jsx`).
+`prefetchGenres(include)` in `src/lib/data.js` read it, through the same cache as the other files; a visit that starts
+on the Genres page fetches it, and the page's code, while the app starts, before `meta.json` arrives (`App.jsx`).
 
 The aggregates are about 68 MB uncompressed (1,694 small files; git and web hosts compress them to roughly a
 third). A chart loads one file of about 15–20 KB; the Genres page one file of about 55 KB gzipped per option.
@@ -72,8 +69,9 @@ third). A chart loads one file of about 15–20 KB; the Genres page one file of 
 ## First-load budget and lazy parts
 
 The **first load** is the HTML, the main script, the CSS, the heading font, `meta.json` and the first chart file:
-**152.5 KiB of gzip response bodies in 6 requests** (October 10, 2026, after the Genres page's review; the page's own
-code, styles and files load only when it is opened: a visit that starts on it is 207.9 KiB in 8 requests). The budget is **155 KiB of gzip response
+**148.5 KiB of gzip response bodies in 6 requests** (October 10, 2026, after the simplification and "Download PNG";
+the Genres page's own code, styles and files load only when it is opened: a visit that starts on it is 201.8 KiB in 8
+requests; no layout shift). The budget is **155 KiB of gzip response
 bodies** for that set, measured on the built site served with gzip (the design review's `firstload.mjs` with
 `serve.mjs`; response headers are not counted).
 
@@ -84,8 +82,7 @@ Parts that the first chart does not need load their code when first used (`React
 |---|---|---|
 | Characteristic picker (and the search code) | `CharacteristicPicker-*.js`, `search-*.js` | when the browser is idle after the first chart; when its word is hovered or focused |
 | Measure menu | `MetricMenu-*.js` | the same |
-| Genre cards and the compare table | `CompareGrid-*.js`, `CompareTable-*.js` | when "See this pattern in every genre" is hovered or focused |
-| Stories of similar age (its chart) | `AgeCheckCharts-*.js` | when "Check stories of similar age" is hovered or focused |
+| "Download PNG" (the code that makes the image) | `chartImage-*.js` | when the button is hovered or focused (or pressed) |
 | Patterns page | `PatternBrowser-*.js` | when a link to it is hovered or focused |
 | Genres page (its components, helpers and styles) | `GenresPage-*.js`, `GenresPage-*.css` | when a link to it is hovered or focused (the masthead's link also fetches `genres/all.json`); a visit that starts on it fetches both while the app starts |
 | How it works | `Methodology-*.js` (shares `search-*.js`) | when a link to it is hovered or focused |
@@ -139,7 +136,7 @@ src/
   genres.css              the Genres page's styles, loaded with its code
   components/
     Explorer.jsx          the explorer: keeps the shown chart until the next one loads, answer heading, takeaway,
-                          the compare view, "Keep exploring"
+                          "Download PNG", "Keep exploring"
     Controls.jsx          the question sentence, "Only include", the sheets of the picker and the measure menu, and
                           the question bar on phones
     CharacteristicPicker.jsx  (lazy) search-first picker body (combobox with listbox): Popular, eight topics, search,
@@ -153,35 +150,28 @@ src/
                           tab stop with arrow keys; details as a card, or a line under the chart in the phone layout;
                           the genre-change glide on one scale
     useRowDetails.js      a chart's rows as one tab stop with details on demand (RangeChart and the Genres page)
-    GenresPage.jsx        (lazy) the Genres page: the question, the view switch, "Only include" and Highlight; keeps
+    GenresPage.jsx        (lazy) the Genres page: the question, the view switch and "Only include"; keeps
                           the shown file until the next one has loaded; the live region (only the order's words after
                           an order change); the tab's title; focus to the answer's heading after a button that changes it
     GenreAnswer.jsx       (lazy) one characteristic in every genre: heading (the genres compared), ▲/▼ lists, All
-                          genres line, the genres too few to compare, story-age note, legend, the order line with its
-                          A–Z / By … switch, the chart for its form, the numbers and the actions
+                          genres line, the genres too few to compare, legend, the order line with its A–Z / By …
+                          switch, the chart for its form and the actions ("Download PNG", "Open in Explore →")
     GenreChart.jsx        (lazy) range rows (numbers) and share bars (yes/no), built on rangeLayout: the mark column,
-                          the value column's heading, a highlighted genre's second row under All genres
+                          the value column's heading
     GenreAny.jsx          (lazy) mostly-zero characteristics: one row per genre with the range and median among its
                           stories with any, then that median and how many have any
     GenreMix.jsx          (lazy) 100% bars for named groups and ordered bands, the groups' names over All genres' bar
     GenreGlide.jsx        (lazy) the rows' glide to a new order (transforms only; none under reduced motion)
     GenreSwitch.jsx       (lazy) the two-option switches (the view; the order, drawn compact)
-    GenreTable.jsx        (lazy) every genre's numbers for one characteristic; useScrollBox gives a table box that
-                          scrolls sideways a tab stop
     GenreDetails.jsx      (lazy) a genre's details: a compact card on wider charts, or on phones a line that sticks to
                           the bottom of the screen while its chart is in view; the link to the genre's own view
     GenreProfile.jsx      (lazy) one genre against all genres: stand-outs, the key, lists and topics with each row on
-                          one 0–100 scale, every characteristic by topic, "Show the numbers" (a table that opens under
-                          its button) and "Copy link"; the small-sample and too-few states
-    ChartNotes.jsx        story-age warnings and the three explanations (disclosures at every width)
-    AgeCheck.jsx          "Stories of similar age": the panel, its heading, Close, caption and one-line legend
-    AgeCheckCharts.jsx    (lazy) the same chart within 2000–2009, 2010–2019 and 2020 or later as one aligned chart:
-                          the group labels once, a column per period (heading with its stories and verdict) with a
-                          dot per group on one shared scale; details as on the main chart; a hidden table of the
-                          numbers for screen readers
-    NumbersTable.jsx      the chart's numbers (always in the page; cards on phones)
-    CompareGrid.jsx       (lazy) every genre as a small chart, alphabetical
-    CompareTable.jsx      (lazy) the numbers behind the genre cards
+                          one 0–100 scale, every characteristic by topic, and "Copy link"; the small-sample and
+                          too-few states
+    ChartNotes.jsx        the totals box (story age) with its switch, and the three explanations (disclosures at every
+                          width)
+    DownloadPng.jsx       "Download PNG": the button, its lazy code and its failure message (Explore and "One
+                          characteristic")
     PatternBrowser.jsx    (lazy) the Patterns page: topics folded with their counts, one row per pattern
     Methodology.jsx       (lazy) How it works, with the sticky section bar below 1,000 px
     lazyPart.jsx          lazy parts with preload, their error boundary, and whenIdle
@@ -197,12 +187,12 @@ src/
                           (one number format per chart)
     genreLayout.js        (lazy) the geometry of the 100% bars (with the groups' names and their inks) and of the
                           mostly-zero chart, and their overlap checks
-    compare.js            verdicts, the compare summary and the genre cards' geometry
     search.js             characteristic search (picker and glossary)
     wording.js            titles, answer headings, takeaway, notes, the question sentence (no causal language)
     format.js             number formats (one number of decimals per axis and column)
     listScroll.js         keeps a menu's active option in view by scrolling the menu, never the page
-    ageLayout.js          (lazy) the similar-age chart's geometry: columns side by side or stacked, the shared scale
+    chartImage.js         (lazy) the PNG: the chart's <svg> cloned at rest with its computed styles, the title,
+                          subtitle, key and credit drawn on a canvas at 2×, and the file saved
     motion.js             reduced-motion checks
     urlState.js           settings in the address, so views can be shared (the Genres page's too)
   styles.css              all styling; colors are CSS variables at the top (ready for a dark theme later), and a
@@ -232,19 +222,20 @@ License 1.1 (`public/fonts/OFL.txt`, taken from `@fontsource/source-serif-4` 5.3
   of zero at the 99% level, groups of at least 30 stories at both ends, and a gap of at least 10% between their
   medians (0.1 stars for ratings). Otherwise it says "No clear pattern" (or "Too few stories to judge a pattern");
   characteristics without an order say "Each group on its own".
-- Story age is never hidden: totals carry a warning with a switch to a per-month or per-1,000-views measure, every
-  group shows its median age, groups that differ in age get a warning and a one-tap check within three periods
-  (one chart, a column per period, its number of stories in each column's heading).
+- Story age: totals carry a warning with a switch to a per-month or per-1,000-views measure, and “Only include” can
+  limit any chart to stories published in one period.
 - Genres are listed alphabetically, never ranked, except where the reader asks for it: the Genres page's "By median"
-  (or "By share") order (owner's decision D3), which the line above the chart says. A highlighted genre's second row
-  under All genres is for the eye only. "One genre" orders characteristics by the size of their difference
-  within that genre, never genres. The Patterns page is grouped by topic and alphabetical, never sorted by strength,
-  and always gives the count of characteristics without a clear pattern.
+  (or "By share") order (owner's decision D3), which the line above the chart says. "One genre" orders characteristics
+  by the size of their difference within that genre, never genres. The Patterns page is grouped by topic and
+  alphabetical, never sorted by strength, and always gives the count of characteristics without a clear pattern.
 - Motion is switched off under "reduce motion": another genre glides the marks and the axis together (one scale
   in every frame; the printed values fade in at the end), another measure or characteristic cross-fades, the Genres
   page's rows glide to a new order, and scrolling is smooth.
 - Opening a menu, moving through it or choosing from it never moves the page: the menus scroll inside themselves,
   every focus change prevents scrolling, and a shorter chart keeps the scroll position.
+- "Download PNG" draws the chart as the page shows it, at rest (no hover, tap or glide), from its own `<svg>` and the
+  page's computed styles, at 2× pixels, with "Chart by Nathan Nguyen, @NathanDNguyen" at the bottom right; nothing
+  leaves the browser.
 - Keyboard: each chart is one tab stop (arrow keys, Home and End move between rows; Escape hides the details).
   Windows contrast themes get system colors on the charts (`@media (forced-colors: active)`).
 - Nothing on the site reminds visitors that correlation is not causation (an owner's decision of October 2026);

@@ -92,35 +92,12 @@ export const RATE_FOR = {
 };
 
 /**
- * Story-age warnings, shown as boxes: { kind: "total" } when the measure is a total that grows with time online,
- * and { kind: "groups" } when the end groups differ a lot in age. Each has a bold lead and a sentence.
+ * The story-age warning of a measure that is a total, which grows with time online: a bold lead and a sentence, shown
+ * as a box with its switch to the per-month or per-1,000-views measure. Null for every other measure.
  */
-export function ageNotes({ metric, ends }) {
-  const notes = [];
-  if (ends) {
-    const [a, b] = ends.map((r) => r.stats.age);
-    if (a != null && b != null) {
-      const lo = Math.min(a, b);
-      const hi = Math.max(a, b);
-      if (hi - lo >= 2 && hi >= 1.4 * Math.max(lo, 0.5)) {
-        notes.push({
-          kind: "groups",
-          lead: "Story age.",
-          text:
-            `The groups also differ in age: stories in “${ends[0].label}” have a median age of ${fmtYears(a)}, ` +
-            `those in “${ends[1].label}” ${fmtYears(b)}. Age goes with popularity too, so it can shape this chart.`,
-        });
-      }
-    }
-  }
-  if (metric.age) {
-    notes.push({
-      kind: "total",
-      lead: "Totals grow with time online.",
-      text: `Older stories have had longer to collect ${metric.noun}.`,
-    });
-  }
-  return notes;
+export function totalsNote(metric) {
+  if (!metric.age) return null;
+  return { lead: "Totals grow with time online.", text: `Older stories have had longer to collect ${metric.noun}.` };
 }
 
 /** The section of “How it works” that explains how a characteristic was measured. */
@@ -164,11 +141,6 @@ export function howToRead({ smallN }) {
     "interquartile range. The dashed line is the median of all stories shown. Hatched bars with hollow dots hold " +
     `fewer than ${smallN} stories and deserve less trust.`
   );
-}
-
-function fmtYears(y) {
-  const v = y >= 10 ? Math.round(y) : Math.round(y * 10) / 10;
-  return v < 1 ? "under a year" : `${v} year${v === 1 ? "" : "s"}`;
 }
 
 /**

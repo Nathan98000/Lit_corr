@@ -46,7 +46,7 @@ describe("Genres addresses", () => {
     expect(parseHash("#/genres")).toEqual({ page: "genres", state: {} });
     expect(toHash("genres", {})).toBe("#/genres");
     // the other pages' addresses are unchanged
-    expect(parseHash("#/explore?var=story_words&check=age").state).toEqual({ v: "story_words", check: "age" });
+    expect(parseHash("#/explore?var=story_words").state).toEqual({ v: "story_words" });
     expect(parseHash("#/patterns?genre=all&metric=pop_views").page).toBe("patterns");
     expect(parseHash("#/methodology/genres")).toMatchObject({ page: "methodology", section: "genres" });
   });

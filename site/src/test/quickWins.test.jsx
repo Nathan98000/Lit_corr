@@ -1,4 +1,4 @@
-// Round 2's quick wins (section 6 of DESIGN_REVIEW_2.md): F37, F39, F47, F52, F53, F54 and F59.
+// Round 2's quick wins (section 6 of DESIGN_REVIEW_2.md): F39, F47, F52, F53, F54 and F59 (F37's similar-age check is gone).
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { readFileSync } from "node:fs";
@@ -27,50 +27,6 @@ async function renderApp(hash = "") {
   await waitFor(() => expect(document.querySelector(".chart-panel[aria-busy='false']")).toBeTruthy());
   return user;
 }
-
-/** The fixtures, with the end groups of dialogue share made 15 and 3 years old (so the age box offers the check). */
-function agedFetch() {
-  const serve = fixtureFetch();
-  const fn = async (url) => {
-    const res = await serve(url);
-    if (!String(url).includes("v/dlg_word_share/")) return res;
-    const body = await res.json();
-    for (const gd of Object.values(body.g)) {
-      const cells = gd.b.filter(Boolean);
-      if (cells.length >= 2) {
-        cells[0][1] = 15;
-        cells[cells.length - 1][1] = 3;
-      }
-    }
-    return { ok: true, status: 200, json: async () => body };
-  };
-  fn.calls = serve.calls;
-  return fn;
-}
-
-describe("F37: checking stories of similar age", () => {
-  it("scrolls the panel's heading into view and focuses it; Close gives focus back to the button", async () => {
-    vi.stubGlobal("fetch", agedFetch());
-    const scroll = vi.spyOn(Element.prototype, "scrollIntoView");
-    const user = await renderApp("#/explore?var=dlg_word_share");
-    await user.click(screen.getByRole("button", { name: "Check stories of similar age" }));
-    const heading = await screen.findByRole("heading", { name: "Stories of similar age" });
-    await waitFor(() => expect(document.activeElement).toBe(heading));
-    expect(scroll.mock.contexts).toContain(heading);
-    expect(scroll.mock.calls[scroll.mock.contexts.indexOf(heading)][0]).toMatchObject({ block: "start" });
-    await user.click(screen.getByRole("button", { name: "Close" }));
-    await waitFor(() => expect(document.activeElement).toBe(screen.getByRole("button", { name: "Check stories of similar age" })));
-  });
-
-  it("leaves the scroll alone when the address already asks for the check", async () => {
-    vi.stubGlobal("fetch", agedFetch());
-    const scroll = vi.spyOn(Element.prototype, "scrollIntoView");
-    await renderApp("#/explore?var=dlg_word_share&check=age");
-    const heading = await screen.findByRole("heading", { name: "Stories of similar age" });
-    expect(scroll.mock.contexts).not.toContain(heading);
-    expect(document.activeElement).not.toBe(heading);
-  });
-});
 
 describe("F39: comparing a total", () => {
   it("puts the story-age box with its switch above the genre cards", async () => {

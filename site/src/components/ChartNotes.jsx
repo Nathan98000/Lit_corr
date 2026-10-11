@@ -1,50 +1,15 @@
 import { toHash } from "../lib/urlState.js";
 import { RATE_FOR, howToRead, methodSection } from "../lib/wording.js";
 
-/** A story-age warning as a visible box, with its one-tap action. */
-function AgeBox({ note, action }) {
-  return (
-    <div className="agebox">
-      <p>
-        <b>{note.lead}</b> {note.text}
-      </p>
-      {action}
-    </div>
-  );
-}
-
 /**
- * The notes beside (wide screens, E2) or under (narrow screens, E1) a one-genre chart: story-age warnings first, as
- * open boxes with an action; then how to read the chart, what the characteristic measures and what the measure means,
- * as one-line disclosures at every width (concept N1 of the second review), so the margin is about the chart shown.
+ * The notes beside (wide screens, E2) or under (narrow screens, E1) a one-genre chart: for a total, the story-age box
+ * first, open, with its one-tap switch to the per-month or per-1,000-views measure; then how to read the chart, what
+ * the characteristic measures and what the measure means, as one-line disclosures at every width (concept N1 of the
+ * second review), so the margin is about the chart shown.
  */
-export default function ChartNotes({ meta, d, view, wide, onChange, ageCheckOpen, onCheckAge, onAgeCheckHint, ageButton }) {
-  const { variable, metric } = d;
+export default function ChartNotes({ meta, d, view, wide, onChange }) {
+  const { variable, metric, totalsNote: note } = d;
   const rate = RATE_FOR[metric.id] && meta.metrics.find((m) => m.id === RATE_FOR[metric.id]);
-  const boxes = d.ageNotes.map((note) => {
-    let action = null;
-    if (note.kind === "groups" && view.sub === "all" && !ageCheckOpen) {
-      action = (
-        <button
-          type="button"
-          className="link-button"
-          ref={ageButton}
-          onPointerEnter={onAgeCheckHint}
-          onFocus={onAgeCheckHint}
-          onClick={onCheckAge}
-        >
-          Check stories of similar age
-        </button>
-      );
-    } else if (note.kind === "total" && rate) {
-      action = (
-        <button type="button" className="link-button" onClick={() => onChange({ ...view, metric: rate.id })}>
-          Switch to {rate.label.toLowerCase()}
-        </button>
-      );
-    }
-    return <AgeBox key={note.kind} note={note} action={action} />;
-  });
 
   const measured = (
     <>
@@ -65,7 +30,18 @@ export default function ChartNotes({ meta, d, view, wide, onChange, ageCheckOpen
 
   return (
     <div className={wide ? "notes notes-margin" : "notes notes-stack"}>
-      {boxes}
+      {note && (
+        <div className="agebox">
+          <p>
+            <b>{note.lead}</b> {note.text}
+          </p>
+          {rate && (
+            <button type="button" className="link-button" onClick={() => onChange({ ...view, metric: rate.id })}>
+              Switch to {rate.label.toLowerCase()}
+            </button>
+          )}
+        </div>
+      )}
       {sections.map((s) => (
         <details key={s.id} className="disclosure">
           <summary>{s.title}</summary>

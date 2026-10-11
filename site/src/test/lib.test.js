@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cellStats, endGroups, groupRows, relativeMedian } from "../lib/data.js";
+import { cellStats, relativeMedian } from "../lib/data.js";
 import {
   columnDecimals,
   formatAge,
@@ -11,8 +11,8 @@ import {
   formatValue,
   stepDecimals,
 } from "../lib/format.js";
-import { DEFAULT_STATE, defaultMetric, parseHash, sanitize, toHash } from "../lib/urlState.js";
-import { aboutCount, ageNotes, chartTitle, howToRead, patternNote, segmentsText, strengthWord } from "../lib/wording.js";
+import { DEFAULT_STATE, defaultMetric, parseHash, sanitize, settledHash, toHash } from "../lib/urlState.js";
+import { aboutCount, chartTitle, howToRead, patternNote, segmentsText, strengthWord, totalsNote } from "../lib/wording.js";
 import { fixtureMeta, realMeta } from "./fixtures.js";
 
 describe("formatting", () => {
@@ -66,11 +66,6 @@ describe("reading the aggregates", () => {
     expect(relativeMedian({ suppressed: true }, { median: 0.4 })).toBeNull();
     expect(relativeMedian({ median: 1 }, { median: 0 })).toBeNull();
   });
-  it("finds the end groups that are shown", () => {
-    const variable = { bins: { labels: ["a", "b", "c"] } };
-    const rows = groupRows(variable, { b: [null, [50, 3, [1, 1, 1, 1]], [60, 9, [2, 2, 2, 2]]] }, 0);
-    expect(endGroups(rows).map((r) => r.label)).toEqual(["b", "c"]);
-  });
 });
 
 describe("addresses", () => {
@@ -85,8 +80,18 @@ describe("addresses", () => {
     });
     expect(toHash("methodology", { section: "explicitness" })).toBe("#/methodology/explicitness");
     expect(toHash("patterns", { genre: "all", metric: "pop_views", v: "x" })).toBe("#/patterns?genre=all&metric=pop_views");
-    expect(parseHash("#/explore?var=story_words&check=age").state.check).toBe("age");
     expect(parseHash("").page).toBe("explore");
+  });
+  it("no longer reads or writes the similar-age check, and settles an old link without it", () => {
+    expect(parseHash("#/explore?var=story_words&check=age").state).toEqual({ v: "story_words" });
+    const s = sanitize({ v: "dlg_word_share", check: "age" }, fixtureMeta);
+    expect(toHash("explore", s)).not.toMatch(/check/);
+    expect(toHash("explore", { ...s, check: "age" })).not.toMatch(/check/);
+    expect(settledHash("#/explore?var=dlg_word_share&check=age", "explore", s)).toBe(toHash("explore", s));
+    // an address that leaves nothing out stays as it is, even one without settings
+    expect(settledHash(toHash("explore", s), "explore", s)).toBeNull();
+    expect(settledHash("#/explore", "explore", s)).toBeNull();
+    expect(settledHash("#/explore?var=dlg_word_share", "explore", s)).toBeNull();
   });
   it("replaces anything the data does not know about", () => {
     const s = sanitize({ mode: "weird", genre: "nope", metric: "nope", v: "nope", sub: "nope" }, fixtureMeta);
@@ -194,22 +199,12 @@ describe("chart titles", () => {
     expect(aboutCount(278)).toBe("278");
   });
 
-  it("warns about story age for totals and when groups differ in age", () => {
-    const views = m("pop_views");
-    expect(ageNotes({ metric: views, ends: null })[0]).toMatchObject({ kind: "total", lead: "Totals grow with time online." });
-    expect(ageNotes({ metric: views, ends: null })[0].text).toBe("Older stories have had longer to collect views.");
-    const ends = [
-      { label: "Low", stats: { age: 12 } },
-      { label: "High", stats: { age: 4 } },
-    ];
-    const notes = ageNotes({ metric: m("pop_fav_per_1k_views"), ends });
-    expect(notes).toHaveLength(1);
-    expect(notes[0].kind).toBe("groups");
-    expect(notes[0].text).toBe(
-      "The groups also differ in age: stories in “Low” have a median age of 12 years, those in “High” 4 years. Age " +
-        "goes with popularity too, so it can shape this chart.",
-    );
-    expect(ageNotes({ metric: m("pop_fav_per_1k_views"), ends: [ends[0], { label: "x", stats: { age: 11 } }] })).toEqual([]);
+  it("warns about story age for totals only", () => {
+    expect(totalsNote(m("pop_views"))).toEqual({
+      lead: "Totals grow with time online.",
+      text: "Older stories have had longer to collect views.",
+    });
+    expect(totalsNote(m("pop_fav_per_1k_views"))).toBeNull();
   });
 });
 

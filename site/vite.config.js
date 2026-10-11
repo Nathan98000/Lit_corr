@@ -5,7 +5,7 @@ import react from "@vitejs/plugin-react";
 // Everything else, including React and the code the first chart needs, stays in the main chunk, so the first load is
 // one script.
 const LAZY =
-  /[\\/]src[\\/](components[\\/](AgeCheckCharts|CharacteristicPicker|CompareGrid|CompareTable|Methodology|MetricMenu|PatternBrowser|Genre\w*)\.jsx|lib[\\/](search|ageLayout|genres|genreLayout)\.js|genres\.css)$/;
+  /[\\/]src[\\/](components[\\/](CharacteristicPicker|CompareGrid|CompareTable|Methodology|MetricMenu|PatternBrowser|Genre\w*)\.jsx|lib[\\/](search|genres|genreLayout)\.js|genres\.css)$/;
 
 export default defineConfig({
   plugins: [react()],

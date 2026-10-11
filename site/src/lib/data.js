@@ -105,9 +105,3 @@ export function relativeMedian(stats, overall) {
   if (!stats || stats.suppressed || !overall || overall.suppressed || !overall.median) return null;
   return stats.median / overall.median;
 }
-
-/** Visible (not hidden) groups at the two ends, for age notes. */
-export function endGroups(rows) {
-  const shown = rows.filter((r) => r.stats && !r.stats.suppressed);
-  return shown.length >= 2 ? [shown[0], shown[shown.length - 1]] : null;
-}

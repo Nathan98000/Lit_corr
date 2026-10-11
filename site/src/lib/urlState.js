@@ -9,7 +9,7 @@ export const DEFAULT_STATE = {
   sub: "all",
 };
 
-const PARAMS = { mode: "mode", genre: "genre", metric: "metric", v: "var", sub: "include", check: "check" };
+const PARAMS = { mode: "mode", genre: "genre", metric: "metric", v: "var", sub: "include" };
 const PATTERN_PARAMS = { genre: "genre", metric: "metric" };
 // the Genres page: one characteristic in every genre (#/genres?var=…&include=…&genre=…&sort=value, the genre being the
 // highlighted one), or one genre against all genres (#/genres?view=genre&genre=…&include=…)
@@ -59,6 +59,20 @@ export function toHash(page, state = {}) {
   return q ? `${base}?${q}` : base;
 }
 
+// Settings that old links carry and the pages no longer have: the similar-age check.
+const RETIRED = ["check"];
+
+/**
+ * The address to settle on when `hash` carries a setting its page no longer has (an old link's `check=age`): the
+ * page's own address for `state`; null otherwise (any other address stays as it is, even one the page sanitizes).
+ */
+export function settledHash(hash, page, state) {
+  const keys = (h) => [...new URLSearchParams((h || "").split("?")[1] || "").keys()];
+  const own = toHash(page, state);
+  const kept = new Set(keys(own));
+  return keys(hash).some((k) => RETIRED.includes(k) && !kept.has(k)) ? own : null;
+}
+
 /**
  * "Only include" options that cannot go with a characteristic: a length option while the chart is about word
  * count, a "Published …" option while it is about publication year or years online. Returns the reason, or null.
@@ -87,7 +101,6 @@ export function sanitize(state, meta) {
   if (!has(meta.subsets, s.sub)) s.sub = "all";
   const variable = meta.variables.find((v) => v.id === s.v);
   if (subsetConflict(meta.subsets.find((x) => x.id === s.sub), variable)) s.sub = "all";
-  if (s.check !== "age" || s.mode !== "one" || s.sub !== "all") delete s.check;
   return s;
 }
 

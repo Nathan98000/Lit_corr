@@ -261,7 +261,7 @@ describe("loading", () => {
   });
 });
 
-describe("notes and the age check", () => {
+describe("notes", () => {
   /** Serve the fixtures, with the end groups of dialogue share made 15 and 3 years old. */
   function agedFetch() {
     const serve = fixtureFetch();
@@ -299,21 +299,22 @@ describe("notes and the age check", () => {
     expect(screen.getByRole("link", { name: "How was this measured?" }).getAttribute("href")).toBe("#/methodology/measures");
   });
 
-  it("checks stories of similar age in three periods, with the state in the address", async () => {
-    fetchMock = agedFetch();
-    vi.stubGlobal("fetch", fetchMock);
-    const user = await renderApp("#/explore?var=dlg_word_share");
-    expect(screen.getByText("Story age.")).toBeTruthy();
-    await user.click(screen.getByRole("button", { name: "Check stories of similar age" }));
-    await waitFor(() => expect(window.location.hash).toMatch(/check=age/));
-    expect(await screen.findByRole("heading", { name: "Stories of similar age" })).toBeTruthy();
-    for (const p of ["y2000", "y2010", "y2020"]) {
-      await waitFor(() => expect(fetchMock.calls.some((u) => u.endsWith(`v/dlg_word_share/${p}.json`))).toBe(true));
-    }
-    expect(await screen.findByRole("heading", { level: 4, name: "Published 2000–2009" })).toBeTruthy();
-    expect(screen.getByText(/so the stories compared are of similar age/)).toBeTruthy();
-    await user.click(screen.getByRole("button", { name: "Close" }));
-    await waitFor(() => expect(window.location.hash).not.toMatch(/check=age/));
+  it("has no story-age box when the end groups differ in age, and no check of stories of similar age", async () => {
+    vi.stubGlobal("fetch", agedFetch());
+    await renderApp("#/explore?var=dlg_word_share");
+    expect(document.querySelector(".agebox")).toBeNull();
+    expect(screen.queryByText(/Story age/)).toBeNull();
+    expect(screen.queryByRole("button", { name: /similar age/ })).toBeNull();
+  });
+
+  it("opens an old link to the similar-age check as the plain chart, and the address drops the check", async () => {
+    vi.stubGlobal("fetch", agedFetch());
+    await renderApp("#/explore?var=dlg_word_share&check=age");
+    expect(chartTitle().textContent).toBe("Stories with more dialogue tend to get more favorites per 1,000 views");
+    expect(screen.queryByRole("heading", { name: /similar age/ })).toBeNull();
+    expect(screen.queryByText(/Story age/)).toBeNull();
+    await waitFor(() => expect(window.location.hash).not.toMatch(/check/));
+    expect(window.location.hash).toMatch(/^#\/explore\?.*var=dlg_word_share/);
   });
 
   it("switches to comparing all genres", async () => {

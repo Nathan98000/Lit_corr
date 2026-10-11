@@ -6,7 +6,7 @@ import { GenresPage, Methodology, PatternBrowser } from "./components/pages.js";
 import useScrollFloor from "./components/useScrollFloor.js";
 import { clearCache, loadMeta, prefetchGenres } from "./lib/data.js";
 import { scrollBehavior } from "./lib/motion.js";
-import { parseHash, sanitize, sanitizeGenres, toHash } from "./lib/urlState.js";
+import { parseHash, sanitize, sanitizeGenres, settledHash, toHash } from "./lib/urlState.js";
 import { aboutCount } from "./lib/wording.js";
 
 const PAGE_PLACEHOLDER = <div className="page-placeholder" aria-busy="true" />;
@@ -113,6 +113,13 @@ export default function App() {
     if (genresState.genre) chosenGenre.current = genresState.genre;
     if (genresState.view !== "genre") lastChart.current = { v: genresState.v, sort: genresState.sort };
   }, [genresState]);
+
+  // an old link's setting that the page no longer has leaves the address, in place (no new history entry)
+  useEffect(() => {
+    const shown = route.page === "explore" ? state : route.page === "genres" ? genresState : null;
+    const settled = shown && settledHash(window.location.hash, route.page, shown);
+    if (settled) window.history.replaceState(null, "", settled);
+  }, [route.page, state, genresState]);
   // a control (characteristic, option, highlight, order) replaces the address; another view adds one, so Back returns
   const updateGenres = useCallback((next) => {
     window.history.replaceState(null, "", toHash("genres", next));

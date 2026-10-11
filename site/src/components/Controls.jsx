@@ -217,7 +217,7 @@ export default function Controls({ meta, state, onChange }) {
             label="Only include"
             value={state.sub}
             text={subset.label}
-            onChange={(sub) => set({ sub, check: undefined })}
+            onChange={(sub) => set({ sub })}
             describedBy={anyConflict ? `${ids}-include-note` : undefined}
           >
             {[...subsetGroups.entries()].map(([grp, subs]) =>
@@ -291,7 +291,7 @@ export default function Controls({ meta, state, onChange }) {
             }}
             onPick={(id) => {
               setMenu(null);
-              const next = { ...state, v: id, check: undefined };
+              const next = { ...state, v: id };
               const nextVar = meta.variables.find((v) => v.id === id);
               if (subsetConflict(meta.subsets.find((s) => s.id === state.sub), nextVar)) next.sub = "all";
               onChange(next);

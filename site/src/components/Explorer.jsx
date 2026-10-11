@@ -1,9 +1,8 @@
-import { useEffect, useId, useRef, useState } from "react";
-import { cellStats, endGroups, groupRows, loadVariable, pattern } from "../lib/data.js";
+import { useEffect, useId, useState } from "react";
+import { cellStats, groupRows, loadVariable, pattern } from "../lib/data.js";
 import { chartValueText } from "../lib/rangeLayout.js";
 import {
   RATE_FOR,
-  ageNotes,
   announcement,
   answerHeading,
   chartQuestionText,
@@ -14,9 +13,9 @@ import {
   subtitleParts,
   takeawaySegments,
   theMeasure,
+  totalsNote,
 } from "../lib/wording.js";
 import { onGenresPage, sanitize, toHash } from "../lib/urlState.js";
-import AgeCheck, { preloadAgeCheck } from "./AgeCheck.jsx";
 import ChartNotes from "./ChartNotes.jsx";
 import { compareRows, compareSummary, gridColumns } from "../lib/compare.js";
 import Controls, { preloadMenus } from "./Controls.jsx";
@@ -100,7 +99,6 @@ export function describeView(meta, view, data) {
   const shownRows = rows.filter((r) => r.stats && !r.stats.suppressed);
   const shownCount = shownRows.length;
   const pNote = patternNote({ variable, direction, effect, compare, shown: shownCount, smallN: meta.small_n });
-  const ageWarnings = ageNotes({ metric, ends: !compare && readable ? endGroups(rows) : null });
   const valueText = chartValueText(rows, overall, metric.format);
   const cRows = compare ? compareRows({ meta, variable, varData: data, k, smallN: meta.small_n }) : null;
   const answer = compare
@@ -122,7 +120,7 @@ export function describeView(meta, view, data) {
     effect,
     title,
     sub,
-    ageNotes: ageWarnings,
+    totalsNote: totalsNote(metric),
     compareRows: cRows,
     readable,
     pNote,
@@ -175,7 +173,7 @@ const sameView = (a, b) =>
 
 /**
  * "Keep exploring" (concept J2 of the second review): the first three example questions, in their fixed order, that
- * open a view other than the one shown and other than the age box's "Switch to …". Never chosen or ordered by a
+ * open a view other than the one shown and other than the totals box's "Switch to …". Never chosen or ordered by a
  * result. Returns [{ question, state }].
  */
 export function keepExploring(meta, view) {
@@ -258,7 +256,7 @@ function KeepExploring({ meta, view, d, onAsk }) {
 
 /** The story-age box for totals in compare mode, with its one-tap switch to the per-month or per-1,000-views measure. */
 function TotalsBox({ meta, d, onSwitch }) {
-  const note = d.ageNotes.find((n) => n.kind === "total");
+  const note = d.totalsNote;
   if (!note) return null;
   const rate = RATE_FOR[d.metric.id] && meta.metrics.find((m) => m.id === RATE_FOR[d.metric.id]);
   return (
@@ -282,44 +280,20 @@ export default function Explorer({ meta, state, onChange, onAsk, onHoldScroll })
   const numbersId = useId();
   const wide = useMediaQuery("(min-width: 900px)");
   const genreCount = meta.genres.length - 1;
-  // "Check stories of similar age": the panel takes focus when the button opened it (not when the address did), and
-  // "Close" gives focus back to the button
-  const [ageCheckAsked, setAgeCheckAsked] = useState(false);
-  const ageButton = useRef(null);
-  const focusAgeButton = useRef(false);
 
   useEffect(() => {
     if (d && !busy) document.title = d.title;
   }, [d?.title, busy]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => {
-    if (focusAgeButton.current && ageButton.current) {
-      focusAgeButton.current = false;
-      ageButton.current.focus();
-    }
-  });
-
   // once the first chart is on screen, fetch the picker's and the measure menu's code while the browser is idle
   const ready = Boolean(d && !busy);
   useEffect(() => (ready ? whenIdle(preloadMenus) : undefined), [ready]);
 
-  const ageCheckOpen = Boolean(
-    d && !d.compare && view.check === "age" && view.sub === "all" && d.ageNotes.some((n) => n.kind === "groups"),
-  );
-  const checkAge = () => {
-    setAgeCheckAsked(true);
-    onChange({ ...view, check: "age" });
-  };
-  // a new measure or characteristic, from the sentence or an age box's "Switch to …", keeps the scroll position even
+  // a new measure or characteristic, from the sentence or the totals box's "Switch to …", keeps the scroll position even
   // when the new chart is shorter (round 3)
   const keepPlace = (next) => {
     onHoldScroll?.();
     onChange(next);
-  };
-  const closeAgeCheck = () => {
-    setAgeCheckAsked(false);
-    focusAgeButton.current = true;
-    onChange({ ...state, check: undefined });
   };
   // ways out of a selection that leaves one group or none: back to All genres or All stories (only those that change
   // something)
@@ -449,17 +423,7 @@ export default function Explorer({ meta, state, onChange, onAsk, onHoldScroll })
                   caption={`The numbers behind the chart: ${d.title}`}
                 />
               </div>
-              <ChartNotes
-                meta={meta}
-                d={d}
-                view={view}
-                wide={wide}
-                onChange={keepPlace}
-                ageCheckOpen={ageCheckOpen}
-                onCheckAge={checkAge}
-                onAgeCheckHint={preloadAgeCheck}
-                ageButton={ageButton}
-              />
+              <ChartNotes meta={meta} d={d} view={view} wide={wide} onChange={keepPlace} />
               <div className="chart-actions">
                 <button
                   type="button"
@@ -476,22 +440,12 @@ export default function Explorer({ meta, state, onChange, onAsk, onHoldScroll })
                   className="btn primary"
                   onPointerEnter={preloadCompare}
                   onFocus={preloadCompare}
-                  onClick={() => onChange({ ...state, mode: "compare", check: undefined })}
+                  onClick={() => onChange({ ...state, mode: "compare" })}
                 >
                   See this pattern in every genre →
                 </button>
               </div>
             </div>
-          )}
-          {ageCheckOpen && (
-            <AgeCheck
-              meta={meta}
-              view={view}
-              d={d}
-              takeFocus={ageCheckAsked}
-              onFocused={() => setAgeCheckAsked(false)}
-              onClose={closeAgeCheck}
-            />
           )}
           <KeepExploring meta={meta} view={view} d={d} onAsk={onAsk} />
         </article>

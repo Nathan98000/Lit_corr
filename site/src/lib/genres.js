@@ -653,6 +653,12 @@ export function profileRowName(item, genre, minN) {
 export const sampleLine = (n, genre, subset) =>
   `${formatCount(n)} stories in ${genre.name}${subset.id === "all" ? "" : ` match “${subset.label}”`}.`;
 
+/**
+ * A genre's name that a narrow line may break after its slash ("Reluctance/" "NonConsent"), with a zero-width space,
+ * which screen readers don't say: the genre select's word, "One genre"'s list titles and its wide heads.
+ */
+export const breakable = (name) => name.replace(/\//g, "/\u200b");
+
 /** The axis title over the first list's rows (F86): what a dot's number is, with "out of 100" kept on one line. */
 export const axisTitle = (genre) => `How often a story in ${genre.name} is the higher one, out\u00a0of\u00a0100`;
 

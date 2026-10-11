@@ -1,6 +1,7 @@
 import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import {
   axisTitle,
+  breakable,
   comparisonBar,
   genreProfile,
   mixLine,
@@ -499,7 +500,7 @@ export default function GenreProfile({ meta, state, file, busy, onSwitch, onNavi
           )}
           {p.lower.length > 0 && (
             <ProfileList
-              title={`Lower in ${genre.name} than in all genres`}
+              title={`Lower in ${breakable(genre.name)} than in all genres`}
               items={p.lower}
               caption={lead === "lower" && <AxisTitle genre={genre} />}
               note={lead === "lower" && <Note genre={genre} />}
@@ -508,7 +509,7 @@ export default function GenreProfile({ meta, state, file, busy, onSwitch, onNavi
           )}
           {p.higher.length > 0 && (
             <ProfileList
-              title={`Higher in ${genre.name} than in all genres`}
+              title={`Higher in ${breakable(genre.name)} than in all genres`}
               items={p.higher}
               caption={lead === "higher" && <AxisTitle genre={genre} />}
               note={lead === "higher" && <Note genre={genre} />}

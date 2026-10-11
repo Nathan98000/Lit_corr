@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { loadGenres } from "../lib/data.js";
-import { chartAnnouncement, chartQuestion, chartQuestionText, orderWords, standsOutQuestion } from "../lib/genres.js";
+import { breakable, chartAnnouncement, chartQuestion, chartQuestionText, orderWords, standsOutQuestion } from "../lib/genres.js";
 import { GENRE_PAGE_EXCLUDED, defaultGenre, onGenresPage, sortable, subsetConflict, toHash } from "../lib/urlState.js";
 import { BodyPlaceholder, CharacteristicPicker, SlotButton } from "./Controls.jsx";
 import { ChartPlaceholder } from "./Explorer.jsx";
@@ -67,9 +67,6 @@ function useAnnouncement(text, key, orderText = "", orderKey = "") {
   }, [text, key, orderKey]); // eslint-disable-line react-hooks/exhaustive-deps
   return said;
 }
-
-/** A genre's name that a narrow line may break after its slash ("Reluctance/NonConsent"): the slot's text is hidden from screen readers. */
-const breakable = (name) => name.replace(/\//g, "/\u200b");
 
 /** "Only include", with the options that cannot go with the characteristic turned off (as on the explorer). */
 function IncludeSelect({ meta, value, variable, onChange }) {

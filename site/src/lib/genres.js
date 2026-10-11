@@ -3,6 +3,7 @@
 // nothing here ranks genres, except the "By median" order the reader asks for (D3).
 
 import { formatCount, formatFixed, stepDecimals } from "./format.js";
+import { textWidth } from "./rangeLayout.js";
 import { chartQuestion, chartQuestionText, lowerFirst, standsOutQuestion } from "./wording.js";
 
 export { chartQuestion, chartQuestionText, standsOutQuestion };
@@ -484,41 +485,79 @@ export function biggestGap(stats, all) {
 }
 
 /**
- * A characteristic's values in one genre and in all genres, for "One genre", in two parts that a phone may put on two
- * lines (F61b, F67): ["7.8", "all 19.3 per 1,000 words"] (the unit only when it is a plain one), ["24%", "all 27%"],
- * ["76% with any, median 2.57", "all 83%, 1.19 per 1,000 words"], ["6–20", "all 2–5"], ["Second person (you) 55%",
- * "all 2%"]. Null without the genre's numbers.
+ * A number with the trailing zeros of its decimals dropped, on its own ("1.720" → "1.72", "10.0" → "10", "2.0%" →
+ * "2%"; "4,390" and "0.05" stay): "One genre"'s columns and row names only (F85, quick win 3). View 1 keeps one number
+ * of decimals per chart (F66).
  */
-export function profileValueParts(item) {
-  const { kind, stats: g, all: a, variable, nf } = item;
-  if (!g || !a) return null;
-  const unit = nf.unit ? ` ${nf.unit}` : "";
-  if (kind === "num") return [nf.value(g.median), `all ${nf.value(a.median)}${unit}`];
-  if (kind === "bin") return [formatPercent(g.share), `all ${formatPercent(a.share)}`];
-  if (kind === "zero") {
-    const genre = `${formatPercent(g.share)} with any${g.median != null ? `, median ${nf.value(g.median)}` : ""}`;
-    const among = a.median == null ? "" : `, ${g.median != null ? "" : "median "}${nf.value(a.median)}${unit}`;
-    return [genre, `all ${formatPercent(a.share)}${among}`];
-  }
-  if (kind === "band") {
-    const labels = variable.bins.labels;
-    return [labels[bandQuartiles(g.shares).median], `all ${labels[bandQuartiles(a.shares).median]}`];
-  }
-  const b = biggestGap(g, a);
-  return [`${variable.bins.labels[b]} ${formatPercent(g.shares[b])}`, `all ${formatPercent(a.shares[b])}`];
-}
+export const trimZeros = (text) => text.replace(/(\d)\.(\d*?)0+(?=\D|$)/g, (_, d, kept) => (kept ? `${d}.${kept}` : d));
 
-/** The values as one line: "7.8 · all 19.3 per 1,000 words". */
-export function profileValues(item) {
-  const parts = profileValueParts(item);
-  return parts ? parts.join(" · ") : "";
+// unit texts that are not a unit to print under a label: shares, yes/no, "1 = …", and publication month and weekday
+const NOT_A_UNIT = /^(share|yes\/no|1 =|month \(|0 = Monday)/;
+
+/**
+ * The unit under a number's label in "One genre" (decision 7): the plain unit ("per 1,000 words", "words"), else the
+ * data's own unit text where it explains a scale ("Zipf scale (higher = more common)", "ratio (1 = random order)"),
+ * with "position (0 = start, 1 = end)" as "of the way through the story"; never a share, yes/no, "1 =", a list of
+ * groups (" / ") or the month and weekday units, and never a unit the label names already ("Sex scenes per 10,000
+ * words", "Years online", "Publication year", "Part number"). "" for none.
+ */
+export function profileUnit(item) {
+  const { variable, nf } = item;
+  const text = variable.unit || "";
+  let unit = nf.unit;
+  if (!unit && text && !NOT_A_UNIT.test(text) && !text.includes(" / ")) {
+    unit = text === "position (0 = start, 1 = end)" ? "of the way through the story" : text;
+  }
+  return unit && !variable.label.toLowerCase().includes(unit.toLowerCase()) ? unit : "";
 }
 
 /**
- * A row's bar in "One genre" (concept P2): how often the genre's story is the higher one against a story from all
- * genres, out of 100: 50 × (1 + r), the rank-biserial r the rule decides by. The bar runs from 50 to there, its number
- * rounded away from 50 (r of ±0.25 reads 63 and 37) and printed at its end, or inside it near the scale's ends. Null
- * when r is null (fewer than the rule's min_n stories: nothing was compared).
+ * Does a stand-out with most stories at 0 have a share with any on the other side of all genres' from its dot? (F61b,
+ * decision 6): its columns then add the medians among those with any, so the share can't mislead.
+ */
+const otherWay = (item) =>
+  item.kind === "zero" && Boolean(item.f) && Math.sign(item.stats.share - item.all.share) !== Math.sign(item.r);
+
+/**
+ * The two number columns of a row in "One genre" (concept R3, F85): { genre, all, unit }, `genre` and `all` each [main,
+ * second?] (null without the genre's numbers: fewer than meta.min_n stories with it), and the unit line under the
+ * label.
+ * - Numbers: the medians, each trimmed of trailing zeros on its own ("7.8", "19.3"), with profileUnit().
+ * - Yes/no: the shares, no unit line.
+ * - Mostly zero: the shares with any, "stories with any"; a stand-out whose share goes the other way from its dot
+ *   adds the medians among those ("–" for none), "with any · median among those" with its plain unit.
+ * - Bands: the median bands, "median". Named groups: the shares of the group that differs most, under its name.
+ */
+export function profileColumns(item) {
+  const { kind, stats: g, all: a, variable, nf } = item;
+  const num = (v) => (v == null ? "–" : trimZeros(nf.value(v)));
+  if (kind === "num") return { genre: g && [num(g.median)], all: a && [num(a.median)], unit: profileUnit(item) };
+  if (kind === "bin") return { genre: g && [formatPercent(g.share)], all: a && [formatPercent(a.share)], unit: "" };
+  if (kind === "zero") {
+    if (g && a && otherWay(item)) {
+      const unit = profileUnit(item);
+      return {
+        genre: [formatPercent(g.share), num(g.median)],
+        all: [formatPercent(a.share), num(a.median)],
+        unit: `with any · median among those${unit ? `, ${unit}` : ""}`,
+      };
+    }
+    return { genre: g && [formatPercent(g.share)], all: a && [formatPercent(a.share)], unit: "stories with any" };
+  }
+  if (kind === "band") {
+    const median = (s) => s && [variable.bins.labels[bandQuartiles(s.shares).median]];
+    return { genre: median(g), all: median(a), unit: "median" };
+  }
+  if (!g || !a) return { genre: null, all: null, unit: "" };
+  const b = biggestGap(g, a);
+  return { genre: [formatPercent(g.shares[b])], all: [formatPercent(a.shares[b])], unit: variable.bins.labels[b] };
+}
+
+/**
+ * A row's mark in "One genre" (concept R3): how often the genre's story is the higher one against a story from all
+ * genres, out of 100: 50 × (1 + r), the rank-biserial r the rule decides by. A stem runs from 50 to there (`from`, `to`),
+ * with a dot at its end (`end`) and its number (`times`, rounded away from 50: r of ±0.25 reads 63 and 37). Null when
+ * r is null (fewer than the rule's min_n stories: nothing was compared).
  */
 export function comparisonBar(r) {
   if (r == null) return null;
@@ -529,45 +568,108 @@ export function comparisonBar(r) {
     to: Math.max(50, end),
     end,
     lower: r < 0,
-    inside: end <= 15 || end >= 85,
   };
 }
 
 /** The zone of "no clear difference" on that scale, from the rule (40 to 60 in 100 for min_r 0.2). */
 export const noDifferenceZone = (rule) => [Math.round(50 * (1 - rule.min_r)), Math.round(50 * (1 + rule.min_r))];
 
-/** How one stand-out compares, at the end of a row's name: "clearly lower", "no clear difference". */
-function profileComparison(item, small) {
-  if (small) return "too few stories to compare";
+/**
+ * Where a row's number goes (F83, quick win 1): beside its dot on the side away from 50 (a dot at 50 counts as higher),
+ * `gap` px from the dot's edge; a dot inside the zone of no clear difference has its number `gap` px outside the zone's
+ * edge on the dot's side, so no number sits on a line; near the scale's ends, a number that would pass the plot's edge
+ * goes on the dot's inner side (its halo over the stem). `plotW`: the plot's width, `dotR`: the dot's radius and
+ * `textW`: the number's width, in px. Returns { x (percent of the plot), dx (px), anchor ("start" or "end") }.
+ */
+export function numberPlace(r, zone, { plotW, dotR, textW, gap = 8 }) {
+  const end = 50 * (1 + r);
+  const left = r < 0;
+  if (end > zone[0] && end < zone[1]) return left ? { x: zone[0], dx: -gap, anchor: "end" } : { x: zone[1], dx: gap, anchor: "start" };
+  const off = dotR + gap;
+  const at = (end / 100) * plotW;
+  const passes = left ? at - off - textW < 0 : at + off + textW > plotW;
+  return left !== passes ? { x: end, dx: -off, anchor: "end" } : { x: end, dx: off, anchor: "start" };
+}
+
+/** How one row compares, at the end of its name: "clearly less", "no clear difference", "too few stories to compare". */
+function profileComparison(item) {
+  if (item.r == null) return "too few stories to compare";
   if (!item.f) return "no clear difference";
   if (item.kind === "grp") return "a clearly different mix";
   return `clearly ${standOutWord(item)}`;
 }
 
 /**
- * What a row in "One genre" says after its visible label and values, for screen readers (its accessible name starts
- * with what is on screen, F76): "Romance median 7.79 per 1,000 words, interquartile range 4.1–12.2; all genres median
- * 19.3, interquartile range 9.82–31.4; clearly less. Opens every genre’s numbers."
+ * A row's accessible name in "One genre" (F92), built from what the row shows: its label, then the dot's number, the
+ * two columns' numbers in reading order and the unit (after all genres' number, once: "1 page"), then the comparison:
+ * "Sexual language: 26 in 100; Romance 7.8, all genres 19.3 per 1,000 words; clearly less. Opens every genre’s
+ * numbers." Not compared: no number of the dot ("…; too few stories to compare."), and "fewer than 10 stories" for
+ * the genre without its numbers. Mostly zero: "Romance 73% with any, all genres 43%", with "; among those, median
+ * 0.709 and 0.422 per 1,000 words" where the medians show. Bands: "Romance median 6–20, all genres median 2–5". Named
+ * groups: every group's share in both ("a clearly different mix").
  */
-export function profileRowDescription(item, genre, small, minN) {
+export function profileRowName(item, genre, minN) {
   const { kind, stats: g, all: a, variable, nf } = item;
-  const describe = (s) => {
-    if (!s) return `fewer than ${minN} stories`;
-    if (kind === "num") return `median ${nf.withUnit(s.median)}, interquartile range ${nf.span(s.p25, s.p75)}`;
-    if (kind === "bin") return formatPercent(s.share);
-    if (kind === "zero") {
-      const among = s.median == null ? "" : `, median ${nf.withUnit(s.median)} among them`;
-      return `${formatPercent(s.share)} with any${among}`;
+  const cols = profileColumns(item);
+  const end = `; ${profileComparison(item)}. Opens every genre’s numbers.`;
+  const times = item.r == null || kind === "grp" ? "" : ` ${comparisonBar(item.r).times} in 100;`;
+  const few = `fewer than ${minN} stories`;
+  if (kind === "grp") {
+    const shares = (s) => (s ? variable.bins.labels.map((l, b) => `${l} ${formatPercent(s.shares[b])}`).join(", ") : few);
+    return `${variable.label}: ${genre.name} ${shares(g)}; all genres ${shares(a)}${end}`;
+  }
+  const genreN = cols.genre ? cols.genre[0] : few;
+  const allN = cols.all ? cols.all[0] : few;
+  if (kind === "band") {
+    const median = (n) => (n === few ? n : `median ${lowerFirst(n)}`);
+    return `${variable.label}:${times} ${genre.name} ${median(genreN)}, all genres ${median(allN)}${end}`;
+  }
+  if (kind === "zero") {
+    let among = "";
+    if (cols.genre?.[1]) {
+      const unit = profileUnit(item);
+      const [gm, am] = [cols.genre[1], cols.all[1]];
+      if (gm !== "–" && am !== "–") among = `; among those, median ${gm} and ${withUnit(am, unit)}`;
+      else if (am !== "–") among = `; among those, median ${withUnit(am, unit)} in all genres`;
+      else if (gm !== "–") among = `; among those, median ${withUnit(gm, unit)} in ${genre.name}`;
     }
-    if (kind === "band") {
-      const q = bandQuartiles(s.shares);
-      const L = variable.bins.labels;
-      return `median ${L[q.median]}, interquartile range ${L[q.p25]} to ${L[q.p75]}`;
-    }
-    return variable.bins.labels.map((l, b) => `${l} ${formatPercent(s.shares[b])}`).join(", ");
-  };
-  return `${genre.name} ${describe(g)}; all genres ${describe(a)}; ${profileComparison(item, small)}. Opens every genre’s numbers.`;
+    const withAny = cols.genre ? `${genreN} with any` : genreN;
+    return `${variable.label}:${times} ${genre.name} ${withAny}, all genres ${allN}${among}${end}`;
+  }
+  const unit = kind === "num" ? cols.unit : "";
+  // a scale's text that starts with a number follows a comma ("0.468, −1 (all negative) to +1 (all positive)")
+  const all = !cols.all ? allN : /^[−+\d]/.test(unit) ? `${allN}, ${unit}` : withUnit(allN, unit);
+  return `${variable.label}:${times} ${genre.name} ${genreN}, all genres ${all}${end}`;
 }
+
+/**
+ * What a sample of stories is called under "One genre"'s heading (F93): "300 stories in Romance.", or with another
+ * option "100 stories in Romance match “Published 2020 or later”.".
+ */
+export const sampleLine = (n, genre, subset) =>
+  `${formatCount(n)} stories in ${genre.name}${subset.id === "all" ? "" : ` match “${subset.label}”`}.`;
+
+/**
+ * The heads of the two number columns: wide, the genre's name in up to two lines of `width` px (12 px, 600; a line may
+ * break at a space or after a slash, which gets a zero-width space: "Taboo/" "Incest") and "All genres"; stacked, the
+ * name on one line of `width` px and "All"; "Genre" when the name doesn't fit.
+ */
+export function profileHeads(genre, stacked, width) {
+  const fits = (t) => textWidth(t, 12, 600) <= width;
+  if (stacked) return [fits(genre.name) ? genre.name : "Genre", "All"];
+  let lines = 0;
+  let line = "";
+  // the pieces a line may break between, each with what joins it to the previous one
+  for (const [, join, piece] of genre.name.matchAll(/(^|\s|(?<=\/))([^\s/]+\/?)/g)) {
+    if (!fits(piece)) lines = Infinity;
+    else if (line && fits(`${line}${join}${piece}`)) line = `${line}${join}${piece}`;
+    else [line, lines] = [piece, lines + 1];
+  }
+  return [lines <= 2 ? genre.name.replace(/\//g, "/​") : "Genre", "All genres"];
+}
+
+/** A topic's count (F89): "1 of 28 stand out" ({ k, m }) whenever any was compared, else "13 characteristics" ({ n }). */
+export const topicCount = (t) => (t.compared ? { k: t.count, m: t.compared } : { n: t.items.length });
 
 // -------------------------------------------------------------------------------------------- the range chart
 /**

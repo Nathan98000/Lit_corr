@@ -5,6 +5,9 @@
 import { columnDecimals, formatCompact, formatCount, formatFixed, stepDecimals } from "./format.js";
 
 export const PHONE = 560; // below this width the labels move above the bars (or into a narrow column)
+// "One genre"'s rows only: below this chart width a row stacks, the label and the two numbers on one line and the plot
+// across the row under them (decision 9)
+export const STACKED = 900;
 export const MARK_W = 18; // the Genres page's mark column (▲ ▼ ≠), after a gap from the labels
 export const MARK_GAP = 8;
 export const SHORT_LABEL = 7; // labels this short (months, weekdays, short ranges) fit in a 64 px column

@@ -11,8 +11,8 @@ import {
   chartQuestionText,
   genreProfile,
   genreRows,
-  profileRowDescription,
-  profileValues,
+  profileColumns,
+  profileRowName,
   rowDetails,
 } from "../lib/genres.js";
 import { CAUSAL, UK_SPELLINGS } from "./scans.js";
@@ -44,8 +44,11 @@ function sentences(meta, file) {
     add(profileAnnouncement(meta, file, { genre: genre.id, sub: file.s }));
     if (file.n[gi] < meta.min_n) continue;
     for (const item of genreProfile(meta, file, gi).items) {
-      add(profileValues(item));
-      add(profileRowDescription(item, genre, Boolean(item.stats) && item.stats.n < meta.small_n, meta.min_n));
+      // "One genre"'s rows: the unit line, the two columns and the name
+      const cols = profileColumns(item);
+      add(cols.unit);
+      add([...(cols.genre || []), ...(cols.all || [])].join(" "));
+      add(profileRowName(item, genre, meta.min_n));
     }
   }
   return out;

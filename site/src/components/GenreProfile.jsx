@@ -3,13 +3,15 @@ import {
   comparisonBar,
   genreProfile,
   noDifferenceZone,
+  numberPlace,
+  profileColumns,
   profileHeading,
-  profileRowDescription,
+  profileHeads,
+  profileRowName,
   profileTakeaway,
-  profileValueParts,
 } from "../lib/genres.js";
 import { mixColors } from "../lib/genreLayout.js";
-import { PHONE, textWidth } from "../lib/rangeLayout.js";
+import { PHONE, STACKED, textWidth } from "../lib/rangeLayout.js";
 import CopyLink from "./CopyLink.jsx";
 import { HOW_DECIDED } from "./GenreAnswer.jsx";
 import { ViewLink } from "./GenreDetails.jsx";
@@ -20,52 +22,31 @@ const SHOWN = 7; // rows of a list before "Show all"
 const markOf = (item) => (item.kind === "grp" ? "≠" : item.f > 0 ? "▲" : "▼");
 const characteristics = (n) => `${n} characteristic${n === 1 ? "" : "s"}`;
 
-const LABEL = 250; // the label column on wider screens
-const GAP = 12;
-const MIN_PLOT = 200; // on wider screens the values take two lines rather than leave the plot narrower than this
+// The one grid of every list and open topic (F81; genres.css draws it with the same numbers): wide, the label (with its
+// unit under it) · the plot · the genre's number · all genres' number · "›"; stacked (a chart under STACKED), the label
+// and the numbers on one line and the plot across the row under them. The plot keeps PAD px at each end for its dots.
+const WIDE = { label: 250, n: 76, chev: 14, gap: 12 };
+const NARROW = { n: 58, chev: 12, gap: 12 };
+const PAD = 2;
+const UNIT_KEPT = 18; // a unit line up to this long never breaks inside; a longer one takes a line of its own
+const TICKS = [0, 25, 50, 75, 100];
+const DOT = { out: 5, quiet: 3.5 }; // radii: a 10 px dot for a stand-out, 7 px for a row that doesn't stand out
+const HEADS_UNDER = 328; // a chart this narrow (a window under 360 px) puts a list's columns' heads under its title
+
+/** The plot's width in px, for the numbers' placement: the same in every list and open topic. */
+export const plotWidth = (width, stacked) =>
+  stacked ? width - 2 * PAD : width - WIDE.label - 2 * WIDE.n - WIDE.chev - 4 * WIDE.gap - 2 * PAD;
 
 /**
- * The values column of a list or a topic (each has its scale over its bars): { w, words }. The widest values (with a
- * mark) on one line when the plot keeps its room (MIN_PLOT, or half the row on narrower charts; 42% on phones); else
- * the widest of their two parts, which then sit on two lines; else at most that room, the parts breaking at their
- * spaces too (`words`).
+ * The plot of one row (concept R3), on one scale for every row: how often the genre's story is the higher one against
+ * a story from all genres, out of 100. The zone of no clear difference (the rule's 40 to 60) is shaded, its edges drawn
+ * (they carry the rule's thresholds), with a line at 50; a stem runs from 50 to 50 × (1 + r) with a dot at its end: a
+ * 10 px accent dot for a stand-out, a 7 px gray dot otherwise (a hollow dot means "fewer than 30 stories" elsewhere on
+ * the site, so these are filled). The number sits beside the dot (numberPlace). Named groups keep their two thin 100%
+ * bars, the genre's above all genres'. The geometry is in percent of the plot, so the plot takes whatever width its
+ * cell has. Rows not compared say so instead.
  */
-function valuesWidth(items, width, phone, minN, genre) {
-  const mark = textWidth("▲ ", 13);
-  const parts = items.map((item) => profileValueParts(item) || [`Fewer than ${minN} stories`, ""]);
-  const head = textWidth(`${genre.name} · all genres`, 12.5, 600);
-  const line = Math.max(head, ...parts.map((p) => textWidth(p.join(" · "), 13) + mark)) + 4;
-  const part = Math.max(70, ...parts.map((p) => Math.max(textWidth(`${p[0]} ·`, 13) + mark, textWidth(p[1], 13)))) + 4;
-  const room = phone ? width - GAP - 14 : width - LABEL - 2 * GAP - 14; // the plot's and the values' room together
-  const max = Math.round(phone ? width * 0.58 : Math.max(room / 2, room - MIN_PLOT));
-  if (line <= max) return { w: Math.ceil(line), words: false };
-  if (part <= max) return { w: Math.ceil(part), words: false };
-  return { w: max, words: true };
-}
-
-/** The values as drawn, in two parts a phone may put on two lines; the mark is for the eye (the name says it). */
-function Values({ item, mark, minN }) {
-  const parts = profileValueParts(item);
-  if (!parts) return `Fewer than ${minN} stories`;
-  return (
-    <>
-      <span className="v-part">
-        {mark && <span aria-hidden="true">{mark} </span>}
-        {parts[0]} ·
-      </span>{" "}
-      <span className="v-part">{parts[1]}</span>
-    </>
-  );
-}
-
-/**
- * The plot of one row (concept P2, F67), on one scale for every row: how often the genre's story is the higher one
- * against a story from all genres, out of 100. The zone of no clear difference (the rule's 40 to 60) is shaded, its
- * edges drawn (they carry the rule's thresholds), with a line at 50; the bar runs from 50 to 50 × (1 + r) with its
- * number at its end. Named groups keep their two thin 100% bars, the genre's above all genres'. The geometry is in
- * percent of the plot, so the plot takes whatever width its cell has. Rows not compared say so instead.
- */
-function RowPlot({ item, zone }) {
+function RowPlot({ item, zone, plotW }) {
   if (item.r == null) return <span className="profile-few">Too few stories to compare</span>;
   if (item.kind === "grp") {
     const colors = mixColors("grp", item.all.shares);
@@ -80,106 +61,190 @@ function RowPlot({ item, zone }) {
       });
     };
     return (
-      <svg width="100%" height={20} aria-hidden="true" className="profile-plot">
+      <svg width="100%" height={20} className="profile-plot">
         {bar(item.stats.shares, 1)}
         {bar(item.all.shares, 12)}
       </svg>
     );
   }
   const b = comparisonBar(item.r);
-  const left = b.lower !== b.inside; // the number sits left of the bar's end (outside a lower bar, inside a higher one)
+  const quiet = item.f ? "" : " quiet";
+  const dotR = item.f ? DOT.out : DOT.quiet;
+  const textW = item.f ? textWidth(String(b.times), 13, 600) : textWidth(String(b.times), 12);
+  const at = numberPlace(item.r, zone, { plotW, dotR, textW });
   return (
-    <svg width="100%" height={20} aria-hidden="true" className="profile-plot">
-      <rect className="p2-zone" x={`${zone[0]}%`} y={2} width={`${zone[1] - zone[0]}%`} height={16} />
-      <line className="p2-edge" x1={`${zone[0]}%`} x2={`${zone[0]}%`} y1={2} y2={18} />
-      <line className="p2-edge" x1={`${zone[1]}%`} x2={`${zone[1]}%`} y1={2} y2={18} />
-      <line className="p2-mid" x1="50%" x2="50%" y1={0} y2={20} />
-      {b.to > b.from && <rect className="p2-bar" x={`${b.from}%`} y={5} width={`${b.to - b.from}%`} height={10} rx={2} />}
-      <text className={`p2-num${b.inside ? " inside" : ""}`} x={`${b.end}%`} dx={left ? -4 : 4} y={14} textAnchor={left ? "end" : "start"}>
+    <svg width="100%" height={22} className="profile-plot">
+      <rect className="p2-zone" x={`${zone[0]}%`} y={2} width={`${zone[1] - zone[0]}%`} height={18} />
+      <line className="p2-edge" x1={`${zone[0]}%`} x2={`${zone[0]}%`} y1={2} y2={20} />
+      <line className="p2-edge" x1={`${zone[1]}%`} x2={`${zone[1]}%`} y1={2} y2={20} />
+      <line className="p2-mid" x1="50%" x2="50%" y1={0} y2={22} />
+      {b.to > b.from && <line className={`p2-stem${quiet}`} x1={`${b.from}%`} x2={`${b.to}%`} y1={11} y2={11} />}
+      <circle className={`p2-dot${quiet}`} cx={`${b.end}%`} cy={11} r={dotR} />
+      <text className={`p2-num${quiet}`} x={`${at.x}%`} dx={at.dx} y={15.5} textAnchor={at.anchor}>
         {b.times}
       </text>
     </svg>
   );
 }
 
-/** One characteristic in "One genre": a link to every genre's numbers (View 1). */
-function ProfileRow({ item, genre, sub, minN, mark, zone, onNavigate }) {
-  const few = item.r == null; // not compared: fewer than the rule's min_n stories
+/** A number column's cell: the main number, and a second small line where there is one ("–" without the numbers). */
+function Numbers({ col, all = false }) {
   return (
-    <ViewLink className={`profile-row${few ? " small" : ""}`} to={{ v: item.id, sub }} onNavigate={onNavigate}>
-      <span className="profile-label">{item.variable.label}</span>
-      <span className="profile-plot-cell">
-        <RowPlot item={item} zone={zone} />
+    <span className={`profile-n${all ? " all" : ""}`} aria-hidden="true">
+      {col ? col[0] : "–"}
+      {col?.[1] && <small>{col[1]}</small>}
+    </span>
+  );
+}
+
+/**
+ * One characteristic in "One genre" (concept R3, F85, F87, F92): a link to every genre's numbers (View 1). Its label,
+ * with its unit line, the plot, the genre's and all genres' numbers and "›". Its accessible name is its own content:
+ * the visible label, then (visually hidden) the dot's number, the numbers in reading order, the unit and how it
+ * compares; the unit line, the numbers' cells and "›" are hidden from it, since their words come in that order there.
+ * In a topic (`marks`), a stand-out's ▲ ▼ ≠ sits in a column before the label.
+ */
+function ProfileRow({ item, genre, sub, minN, zone, plotW, marks, onNavigate }) {
+  const cols = profileColumns(item);
+  const label = item.variable.label;
+  const name = profileRowName(item, genre, minN);
+  return (
+    <ViewLink className={`profile-row${item.r == null ? " few" : ""}`} to={{ v: item.id, sub }} onNavigate={onNavigate}>
+      <span className={`profile-label${marks ? " has-mark" : ""}`}>
+        {marks && (
+          <span className="profile-mark" aria-hidden="true">
+            {item.f ? markOf(item) : ""}
+          </span>
+        )}
+        <span className="profile-name">
+          <span className="profile-label-text">{label}</span>
+          <span className="visually-hidden">{name.slice(label.length)}</span>
+          {cols.unit && (
+            <>
+              {" "}
+              <span className={`profile-unit${cols.unit.length > UNIT_KEPT ? " long" : ""}`} aria-hidden="true">
+                {cols.unit}
+              </span>
+            </>
+          )}
+        </span>
       </span>
-      <span className="profile-values">
-        <Values item={item} mark={mark} minN={minN} />
+      <span className="profile-plot-cell" aria-hidden="true">
+        <RowPlot item={item} zone={zone} plotW={plotW} />
       </span>
-      <span className="visually-hidden">. {profileRowDescription(item, genre, few, minN)}</span>
+      <Numbers col={cols.genre} />
+      <Numbers col={cols.all} all />
+      <span className="profile-chev" aria-hidden="true">
+        ›
+      </span>
     </ViewLink>
   );
 }
 
 /**
- * The scale over a list or an open topic: its ticks over the plots ("0" to "100 in 100"; on phones, or a plot too narrow
- * for five labels, "0", "50" and "100"), where any of its rows has a bar, and what the values are.
+ * The zone's bracket ("40–60: no clear difference", from the rule's thresholds) over a block's plots: wide, in the
+ * block's head row with the tick labels under it (`ticks`); stacked, over the first row.
  */
-function ProfileScale({ genre, short, bars }) {
-  const ticks = short ? [0, 50, 100] : [0, 25, 50, 75, 100];
+function Bracket({ zone, ticks = false }) {
+  const [lo, hi] = zone;
+  const y = ticks ? 14 : 13; // the bracket's line, its ends 5 px down
   return (
-    <div className="profile-scale" aria-hidden="true">
-      <span className="profile-plot-cell">
-        {bars && (
-          <svg width="100%" height={16} className="profile-ticks">
-            {ticks.map((t) => (
-              <text key={t} x={`${t}%`} y={12} textAnchor={t === 0 ? "start" : t === 100 ? "end" : "middle"}>
-                {t === 100 && !short ? "100 in 100" : t}
-              </text>
-            ))}
-          </svg>
-        )}
-      </span>
-      <span className="profile-values">{genre.name} · all genres</span>
-    </div>
+    <svg width="100%" height={ticks ? 30 : 18} className="profile-axis">
+      <text className="zone-label" x="50%" y={y - 3} textAnchor="middle">
+        {lo}–{hi}: no clear difference
+      </text>
+      <line className="zone-bracket" x1={`${lo}%`} x2={`${hi}%`} y1={y} y2={y} />
+      <line className="zone-bracket" x1={`${lo}%`} x2={`${lo}%`} y1={y} y2={y + 5} />
+      <line className="zone-bracket" x1={`${hi}%`} x2={`${hi}%`} y1={y} y2={y + 5} />
+      {ticks && <TickLabels y={28} />}
+    </svg>
   );
 }
 
-/** The rows of a list or a topic, under their scale (`marks`: the topics' lists mark their stand-outs). */
-function ProfileRows({ id, items, marks = false, rowProps }) {
-  const { width, phone, minN } = rowProps;
-  const mark = (item) => (marks && item.f ? markOf(item) : "");
-  const values = valuesWidth(items, width, phone, minN, rowProps.genre);
-  const plotW = (phone ? width - values.w - GAP : width - LABEL - values.w - 2 * GAP) - 14; // the plot cell, less its room
+const TickLabels = ({ y }) =>
+  TICKS.map((t) => (
+    <text key={t} className="tick-label" x={`${t}%`} y={y} textAnchor={t === 0 ? "start" : t === 100 ? "end" : "middle"}>
+      {t}
+    </text>
+  ));
+
+/** The scale under a stacked block's last row: "0" to "100" (never "in 100", F96) on 4 px tick marks. */
+function Ticks() {
   return (
-    <div className={`profile-block${values.words ? " wrap-words" : ""}`} style={{ "--values-w": `${values.w}px` }}>
-      <ProfileScale genre={rowProps.genre} short={phone || plotW < 320} bars={items.some((item) => item.r != null && item.kind !== "grp")} />
+    <svg width="100%" height={20} className="profile-axis">
+      {TICKS.map((t) => (
+        <line key={t} className="zone-bracket" x1={`${t}%`} x2={`${t}%`} y1={0} y2={4} />
+      ))}
+      <TickLabels y={16} />
+    </svg>
+  );
+}
+
+/**
+ * The rows of a list or a topic, on the page's one grid (F81): wide, a head row with the zone's bracket over the tick
+ * labels and the two columns' heads; stacked, the bracket over the first row and the ticks under the last, with the
+ * heads in a head row of their own in a topic (`headRow`; a list has them on its title line). A block with no dot
+ * (named groups only, or nothing compared) has no bracket and no ticks; its heads stay.
+ */
+function ProfileBlock({ id, items, marks = false, headRow = false, layout, rowProps }) {
+  const { stacked, heads } = layout;
+  const dots = items.some((x) => x.r != null && x.kind !== "grp");
+  return (
+    <div className={`profile-block${marks ? " marks" : ""}`}>
+      {(!stacked || headRow) && (
+        <div className="profile-head" aria-hidden="true">
+          {!stacked && <span className="profile-plot-cell">{dots && <Bracket zone={rowProps.zone} ticks />}</span>}
+          <span className="profile-n-head g">{heads[0]}</span>
+          <span className="profile-n-head a">{heads[1]}</span>
+        </div>
+      )}
+      {stacked && dots && (
+        <div className="profile-bracket" aria-hidden="true">
+          <Bracket zone={rowProps.zone} />
+        </div>
+      )}
       <ul className="profile-rows" id={id}>
         {items.map((item) => (
           <li key={item.id}>
-            <ProfileRow item={item} mark={mark(item)} {...rowProps} />
+            <ProfileRow item={item} marks={marks} plotW={layout.plotW} {...rowProps} />
           </li>
         ))}
       </ul>
+      {stacked && dots && (
+        <div className="profile-ticks" aria-hidden="true">
+          <Ticks />
+        </div>
+      )}
     </div>
   );
 }
 
-/** "Lower in Romance than in all genres": the first seven, then "Show all 18" / "Show fewer". */
-function ProfileList({ title, items, all = false, rowProps }) {
+/**
+ * "Lower in Romance than in all genres": the first seven, then "Show all 18" / "Show fewer". Wide, its title line ends
+ * with the count; stacked, with the two columns' heads, the count left to screen readers ("Show all 18" keeps it).
+ */
+function ProfileList({ title, items, all = false, layout, rowProps }) {
   const id = useId();
   const [open, setOpen] = useState(false);
   const shown = all || open ? items : items.slice(0, SHOWN);
+  const count = characteristics(items.length);
   return (
     <section className="profile-list" aria-labelledby={`${id}-h`}>
       <div className="profile-list-head">
         <h3 id={`${id}-h`}>{title}</h3>
-        <span className="list-count">
-          <span className="long">{characteristics(items.length)}</span>
-          <span className="short" aria-hidden="true">
-            {items.length}
-          </span>
-        </span>
+        {layout.stacked ? (
+          <>
+            <span className="visually-hidden">{count}</span>
+            <span className="profile-heads" aria-hidden="true">
+              <span>{layout.heads[0]}</span>
+              <span>{layout.heads[1]}</span>
+            </span>
+          </>
+        ) : (
+          <span className="list-count">{count}</span>
+        )}
       </div>
-      <ProfileRows id={`${id}-list`} items={shown} rowProps={rowProps} />
+      <ProfileBlock id={`${id}-list`} items={shown} layout={layout} rowProps={rowProps} />
       {!all && items.length > SHOWN && (
         <button
           type="button"
@@ -245,8 +310,12 @@ export default function GenreProfile({ meta, state, file, busy, onSwitch, onNavi
   const gi = file.genres.indexOf(state.genre);
   const n = gi < 0 ? 0 : file.n[gi];
   const { min_n: minN } = meta;
-  // the phone layout follows the chart's own width, as the other forms do (below PHONE: the label on its own line)
-  const panel = `chart-panel genre-profile${width < PHONE ? " phone" : ""}${busy ? " is-busy" : ""}`;
+  // the rows stack under a chart width of STACKED; a phone's chart (under PHONE) has smaller list titles, and a
+  // narrower one puts the heads of a list's columns under its title
+  const stacked = width < STACKED;
+  const panel = `chart-panel genre-profile${stacked ? " stacked" : ""}${width < PHONE ? " phone" : ""}${width < HEADS_UNDER ? " narrow" : ""}${
+    busy ? " is-busy" : ""
+  }`;
   const showAll = state.sub !== "all" && (
     <p className="inline-actions">
       <button type="button" className="btn" onClick={() => onSwitch({ ...state, sub: "all" })}>
@@ -273,9 +342,9 @@ export default function GenreProfile({ meta, state, file, busy, onSwitch, onNavi
   const p = genreProfile(meta, file, gi);
   const count = p.flagged.length;
   const takeaway = profileTakeaway(p.flagged);
-  const phone = width < PHONE;
   const zone = noDifferenceZone(file.rule);
-  const rowProps = { genre, sub: state.sub, minN, zone, onNavigate, phone, width };
+  const layout = { stacked, plotW: plotWidth(width, stacked), heads: profileHeads(genre, stacked, stacked ? NARROW.n : WIDE.n) };
+  const rowProps = { genre, sub: state.sub, minN, zone, onNavigate };
   const setTopic = (id, isOpen) =>
     setOpenTopics((prev) => {
       if (prev.has(id) === isOpen) return prev;
@@ -304,12 +373,12 @@ export default function GenreProfile({ meta, state, file, busy, onSwitch, onNavi
           {takeaway && <p className="takeaway profile-takeaway">{takeaway}</p>}
           <ProfileLegend genre={genre} zone={zone} mix={p.items.some((x) => x.kind === "grp")} />
           {p.lower.length > 0 && (
-            <ProfileList title={`Lower in ${genre.name} than in all genres`} items={p.lower} rowProps={rowProps} />
+            <ProfileList title={`Lower in ${genre.name} than in all genres`} items={p.lower} layout={layout} rowProps={rowProps} />
           )}
           {p.higher.length > 0 && (
-            <ProfileList title={`Higher in ${genre.name} than in all genres`} items={p.higher} rowProps={rowProps} />
+            <ProfileList title={`Higher in ${genre.name} than in all genres`} items={p.higher} layout={layout} rowProps={rowProps} />
           )}
-          {p.mix.length > 0 && <ProfileList title="A different mix" items={p.mix} all rowProps={rowProps} />}
+          {p.mix.length > 0 && <ProfileList title="A different mix" items={p.mix} all layout={layout} rowProps={rowProps} />}
         </>
       )}
       <section className="profile-topics" aria-labelledby={`${ids}-topics`}>
@@ -322,7 +391,7 @@ export default function GenreProfile({ meta, state, file, busy, onSwitch, onNavi
                 <h4>{topic.label}</h4>
                 <span className="profile-topic-count">{k ? `${k} of ${compared} stand out` : characteristics(items.length)}</span>
               </summary>
-              {open && <ProfileRows items={items} marks rowProps={rowProps} />}
+              {open && <ProfileBlock items={items} marks headRow layout={layout} rowProps={rowProps} />}
             </details>
           );
         })}

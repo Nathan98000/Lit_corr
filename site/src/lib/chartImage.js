@@ -10,7 +10,8 @@ export const CREDIT = "Chart by Nathan Nguyen, @NathanDNguyen";
 export const SCALE = 2;
 export const PAD = 24; // CSS px around everything
 const KEY = { col: 18, row: 6, swatch: 7 }; // the legend's gaps (styles.css)
-const WHITE = "#ffffff";
+/** The image's white: the page's paper color (styles.css's --paper). */
+const paper = () => getComputedStyle(document.documentElement).getPropertyValue("--paper").trim() || "#fff";
 
 // The paint and text properties written on the clone: an <svg> drawn as an image sees no style sheet.
 const PAINT = [
@@ -389,6 +390,7 @@ export function chartSvg(svg, margin = PAD) {
   }
 
   const page = getComputedStyle(document.body).backgroundColor;
+  const white = paper();
   const holder = document.createElement("div");
   holder.setAttribute("aria-hidden", "true");
   holder.style.cssText =
@@ -402,7 +404,7 @@ export function chartSvg(svg, margin = PAD) {
       for (const [p, raw] of values) {
         if (!raw || (p === "transform" && raw === "none")) continue;
         let v = p === "fill" || p === "stroke" ? relink(raw) : raw;
-        if (p === "stroke" && v === page && (el.tagName === "text" || el.tagName === "tspan")) v = WHITE;
+        if (p === "stroke" && v === page && (el.tagName === "text" || el.tagName === "tspan")) v = white;
         el.style.setProperty(p, v);
       }
     }
@@ -519,7 +521,7 @@ export async function drawChartImage(spec) {
   canvas.height = H * SCALE;
   const ctx = canvas.getContext("2d");
   ctx.scale(SCALE, SCALE);
-  ctx.fillStyle = WHITE;
+  ctx.fillStyle = paper();
   ctx.fillRect(0, 0, W, H);
   try {
     for (const op of ops) {

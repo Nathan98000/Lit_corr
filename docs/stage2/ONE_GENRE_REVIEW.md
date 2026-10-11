@@ -4,7 +4,7 @@
 review: before and after, the README and the prompt"). **Status: approved and implemented** on branch `one-genre` (from
 `main` at `0d8611d`, October 10–11, 2026), following `STAGE2_ONE_GENRE_IMPLEMENTATION_PROMPT.md`: R3, S1 and T1 with the
 quick wins. Not pushed. What was built, measured and left open is in section 10; your follow-up on the mix line
-(October 11) is in 10.8.*
+(October 11) is in 10.8 and 10.9.*
 
 - **A branch to know about.** While I wrote this, your working copy moved to `simplify-png`: eleven commits after
   `692939e`, since merged into `main` as `0d8611d`. On View 2 it removes three things this review covers:
@@ -1214,13 +1214,13 @@ in `scores.md` ("built-mix").
   score explained once (6/6), an open topic "a long wall" of gray rows (3/3 desktop). Five rated the page 3 of 5; one
   said 4 for the gist and 3 for the charts (every earlier run said 3).
 
-**Still open (each needs your yes)**
+**Still open (each needs your yes)** *(both done at your word on October 11: 10.9)*
 
-- **The named groups' other colors**: a key for all of a row's groups, as View 1's legend has ("■ Mostly she/her
+- ~~**The named groups' other colors**: a key for all of a row's groups, as View 1's legend has ("■ Mostly she/her
   ■ Both he and she ■ Mostly he/him ■ Few he/she"), under the bars or in place of the one name; it would add a line
-  to each such row, and its words are new.
-- **What the bars split**: "% of stories" somewhere on the row (each story counts once, in the group its pronouns put
-  it in), e.g. in the unit line after the group's name. New words too.
+  to each such row, and its words are new.~~
+- ~~**What the bars split**: "% of stories" somewhere on the row (each story counts once, in the group its pronouns put
+  it in), e.g. in the unit line after the group's name. New words too.~~
 
 **My calls here**
 
@@ -1231,3 +1231,65 @@ in `scores.md` ("built-mix").
 3. **Each named-group row gets its own line**, so "Narration" has two, two rows apart.
 4. **No swatch where the bars aren't drawn** (too few stories to compare), since there would be nothing for it to
    key; the group's name stays.
+
+### 10.9 Your second follow-up: a key of every group, and "% of stories" (October 11)
+
+You chose both fixes 10.8 left open. Built in `fddb2fa`; this write-up and the redone screenshots are the commit after
+it. Not pushed.
+
+**What changed**
+
+- **A key under a named group's bars**, as View 1's legend has it: every group's swatch and name, in the bars' order
+  (`mixColors`, so the colors are the bars' own), 12 px in the second ink, an item never broken. It sits in the plot's
+  cell, under the bars: wide, in the plot's column; stacked, across the row. Only where the bars are drawn, so not with
+  too few stories to compare. Hidden from screen readers, as the bars are: the row's name has every share.
+- **"% of stories"** on a line of its own under the printed group's name, wherever the row prints numbers (also without
+  bars), and in the row's name: "Pronoun composition, % of stories: Romance Mostly she/her 36%, …".
+
+**Measured** on the build, frozen and served with gzip (`v2glyphs-key.mjs` adds the key; `forcedgenres-key.mjs` adds
+its items and counts an element's own text beside a child, which the earlier copy missed):
+
+| Measure | `0aa851d` | Now |
+|---|---|---|
+| Glyph boxes, 360 pages each font | 0 problems | **0 with the site font and 0 with Verdana**, the same 76,328 rows; plus 1,680 keys (under their bars, inside the plot's cell and the row, items on one line and on no other item) and "% of stories" under its group's name |
+| Bad breaks, every genre, both fonts, 4 widths | 0 | **0**; the whole output the same line for line |
+| axe-core (30 runs) / label in name | 0 / passes | **0 / passes** |
+| Forced colors, light and dark | every mark draws | every mark draws, the key's items too (their text in the link's color, the swatches in theirs) |
+| First load | 148.5 KiB | **148.5 KiB**: the main script the same but for the chunks' names |
+| A visit that starts on View 2 | 204.3 KiB | 204.4 KiB, 8 requests |
+| The Genres chunk, as Vite counts it | 58.52 kB, 18.74 kB gzipped; CSS 14.21 kB, 3.54 kB | 58.94 kB, 18.84 kB gzipped; CSS 14.45 kB, 3.59 kB |
+| Tests | 359 in 29 files | 360 in 29 files |
+
+**Screenshots**: a03, a05, a06, a07 and a09 are redone from this build; a07 because its genre's rows without bars now
+say "% of stories".
+
+**Fresh eyes again** (screens `built-key`, the same six-stand-in test and Q11; `fresh-eyes/built-key.md`, scored in
+`scores.md` as "built-key"):
+
+| | Only one color labeled (Q10) | Q11: which bar is which | Q11: what 44% and 30% go with | Q11: what the other colors are | Q11: what the shares are of |
+|---|---|---|---|---|---|
+| 10.8 | 6/6 | 6/6 | 6/6 | 0/6 | 6/6 unsure |
+| **Now** | **0/6** | **6/6** | **6/6** | **6/6**, from the key | **6/6**: "the share of stories that use both he and she" |
+
+- The mix line confused 0/6 again; Q4, Q5, Q7, Q9b and the gray dots stay at 6/6; all six rated the page 3 of 5.
+- **New or still:** the named groups' blue and gray read like the page's "stands out" blue and "no clear difference"
+  gray (3/6) and the two blues look alike (3/6); "Romance above, all genres below" is small or easy to miss (3/6,
+  phones); the bars are thin (3/6, desktops); a named-group row has no dot, so whether 44% vs 30% is a clear difference
+  isn't shown on it (2/6).
+
+**Still open (each needs your yes)**
+
+- **The named groups' palette** is the Genres page's, in both views (the largest group in the darkest blue, the second
+  in a warm gray). Colors that can't be read as "stands out" or "no clear difference" would change View 1's charts too.
+- **A named-group row's verdict**: a stand-out has its ≠ in a topic and sits in "A different mix", but a row that
+  doesn't stand out shows nothing like a gray dot; "no clear difference" could be said on the row (new words).
+
+**My calls here**
+
+1. **The key in the plot's cell, under the bars**, rather than a line of its own under the row, so it lines up with
+   the bars at every width.
+2. **"% of stories" on a line of its own**, not after a comma: a long group's name and the unit would break unevenly
+   on phones.
+3. **Every group in the key**, as in View 1's legend, even one too small to see in either bar ("First person plural
+   (we)").
+4. **The row's name says "% of stories" once**, after the label, rather than after every share.

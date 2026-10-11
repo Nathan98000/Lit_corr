@@ -1,6 +1,7 @@
 // "One genre" (View 2) after its review (docs/stage2/ONE_GENRE_REVIEW.md, STAGE2_ONE_GENRE_IMPLEMENTATION_PROMPT.md):
 // the row (concept R3: one grid, a stem and a dot, two number columns, the unit line, the row's name); the top of the
-// answer (S1: the sample line, the takeaway in two directions, the key folded into the first list); the topics (T1).
+// answer (S1: the sample line, the takeaway in two directions, the key folded into the first list); the topics (T1);
+// the way back from every genre's numbers (history.state).
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { readFileSync } from "node:fs";
@@ -71,7 +72,7 @@ afterEach(() => {
 /** Opens a View 2 address, with the chart `width` px wide (720 by default: stacked). */
 async function openGenre(hash, width = 720) {
   vi.spyOn(Element.prototype, "getBoundingClientRect").mockReturnValue({ width, height: 0, top: 0, left: 0, right: width, bottom: 0 });
-  window.history.replaceState(null, "", `/${hash}`);
+  window.history.replaceState(window.history.state, "", `/${hash}`); // the entry's state stays (the way back)
   const user = userEvent.setup();
   render(<App />);
   await waitFor(() => expect(document.querySelector(".genres-page .chart-panel[aria-busy='false']")).toBeTruthy());
@@ -660,5 +661,74 @@ describe("the topics (T1, F84, F89, F92)", () => {
     }
     const quiet = [...document.querySelectorAll(".profile-topic .profile-row")].filter((r) => r.querySelector(".p2-dot.quiet"));
     expect(quiet).toHaveLength(1);
+  });
+});
+
+// ------------------------------------------------------------------------------------------------------ the way back
+describe("the way back (F88, quick win 6)", () => {
+  const kept = () => window.history.state?.oneGenre;
+
+  it("keeps the open topics and the lists shown in full in the entry's state, and restores them on the same entry", async () => {
+    serveWith(...nineMore);
+    const user = await openGenre("#/genres?view=genre&genre=romance&include=all");
+    await user.click(document.querySelectorAll(".profile-topic summary")[1]);
+    await user.click(screen.getByRole("button", { name: "Show all 10" }));
+    await waitFor(() => expect(kept()).toMatchObject({ topics: ["dialogue"], all: ["lower"] }));
+    expect(window.location.hash).toBe("#/genres?view=genre&genre=romance&include=all"); // the address doesn't change
+    cleanup(); // a remount, as after View 1 and Back
+    render(<App />);
+    // read before the first paint: open as soon as the answer is drawn
+    await waitFor(() => expect(document.querySelector(".genres-page .chart-panel[aria-busy='false']")).toBeTruthy());
+    expect([...document.querySelectorAll(".profile-topic")].map((t) => t.open)).toEqual([false, true, false]);
+    expect(screen.getByRole("button", { name: "Show fewer" })).toBeTruthy();
+  });
+
+  it("starts with nothing open on a new entry", async () => {
+    window.history.replaceState({ oneGenre: { topics: ["dialogue"], all: ["lower"], y: 0 } }, "", "/#/genres?var=dlg_word_share");
+    window.history.pushState(null, "", "/#/genres?view=genre&genre=romance&include=all");
+    await openGenre("#/genres?view=genre&genre=romance&include=all");
+    expect(document.querySelector(".profile-topic[open]")).toBeNull();
+  });
+
+  it("keeps them when the genre or the option changes (App's address changes in place keep the entry's state)", async () => {
+    const user = await openGenre("#/genres?view=genre&genre=romance&include=all");
+    await user.click(document.querySelectorAll(".profile-topic summary")[1]);
+    await waitFor(() => expect(kept()).toMatchObject({ topics: ["dialogue"] }));
+    await user.selectOptions(screen.getByLabelText("Only include"), "y2020");
+    await waitFor(() => expect(window.location.hash).toBe("#/genres?view=genre&genre=romance&include=y2020"));
+    await waitFor(() => expect(document.querySelector(".genres-page .chart-panel[aria-busy='false']")).toBeTruthy());
+    expect(kept()).toMatchObject({ topics: ["dialogue"] });
+    expect(document.querySelectorAll(".profile-topic")[1].open).toBe(true);
+    await user.selectOptions(screen.getByLabelText("Genre"), "fetish");
+    await waitFor(() => expect(window.location.hash).toBe("#/genres?view=genre&genre=fetish&include=y2020"));
+    expect(kept()).toMatchObject({ topics: ["dialogue"] });
+    const src = readFileSync(path.join(here, "..", "App.jsx"), "utf8");
+    expect(src).not.toMatch(/replaceState\(null/);
+  });
+
+  it("restores the scroll position when the browser's own restoration was clamped, at once", async () => {
+    const scrolls = [];
+    vi.stubGlobal("scrollTo", (...args) => scrolls.push(args));
+    window.history.replaceState({ oneGenre: { topics: ["dialogue"], all: [], y: 2315 } }, "", "/#/genres?view=genre&genre=romance&include=all");
+    vi.spyOn(window, "scrollY", "get").mockReturnValue(1794); // clamped to a shorter page
+    await openGenre("#/genres?view=genre&genre=romance&include=all");
+    expect(scrolls).toContainEqual([{ top: 2315, behavior: "instant" }]);
+    cleanup();
+    scrolls.length = 0;
+    vi.spyOn(window, "scrollY", "get").mockReturnValue(2315); // restored by the browser: nothing to do
+    window.history.replaceState({ oneGenre: { topics: ["dialogue"], all: [], y: 2315 } }, "", "/#/genres?view=genre&genre=romance&include=all");
+    await openGenre("#/genres?view=genre&genre=romance&include=all");
+    expect(scrolls.filter(([to]) => typeof to === "object")).toEqual([]); // (the page's own scrollTo(0, 0) aside)
+  });
+
+  it("keeps the scroll position before a row's link adds the next entry", async () => {
+    const user = await openGenre("#/genres?view=genre&genre=romance&include=all");
+    vi.spyOn(window, "scrollY", "get").mockReturnValue(640);
+    await user.click(document.querySelector(".profile-list .profile-row"));
+    await waitFor(() => expect(window.location.hash).toBe("#/genres?var=dlg_word_share&include=all"));
+    expect(window.history.state).toBeNull(); // the new entry starts empty
+    window.history.back();
+    await waitFor(() => expect(window.location.hash).toBe("#/genres?view=genre&genre=romance&include=all"));
+    expect(kept()).toMatchObject({ y: 640 });
   });
 });

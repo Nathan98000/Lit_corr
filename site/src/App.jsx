@@ -22,6 +22,13 @@ const PAGE_TITLES = {
 const DEFAULT_QUESTION = "In All genres, how does the average rating vary with story length in words?";
 
 /**
+ * A new address in place (a control's change; an old link's setting dropped): no new history entry, and the entry's
+ * state stays, with what "One genre" keeps there (its open topics and lists, GenreProfile.jsx); a new entry
+ * (pushState) starts empty.
+ */
+const replaceHash = (hash) => window.history.replaceState(window.history.state, "", hash);
+
+/**
  * The headline as a kicker, with the story and genre counts (filled in when the data arrives; the placeholder says
  * the same). The story count is rounded, so it never contradicts a chart's exact count (F55). The Genres page asks
  * its own question.
@@ -118,11 +125,11 @@ export default function App() {
   useEffect(() => {
     const shown = route.page === "explore" ? state : route.page === "genres" ? genresState : null;
     const settled = shown && settledHash(window.location.hash, route.page, shown);
-    if (settled) window.history.replaceState(null, "", settled);
+    if (settled) replaceHash(settled);
   }, [route.page, state, genresState]);
   // a control (characteristic, option, order) replaces the address; another view adds one, so Back returns
   const updateGenres = useCallback((next) => {
-    window.history.replaceState(null, "", toHash("genres", next));
+    replaceHash(toHash("genres", next));
     setRoute({ page: "genres", state: next });
   }, []);
   // a link to another view (from a chart's details or a row) also moves focus to the new question
@@ -142,12 +149,12 @@ export default function App() {
   };
 
   const updatePatterns = useCallback((next) => {
-    window.history.replaceState(null, "", toHash("patterns", next));
+    replaceHash(toHash("patterns", next));
     setRoute({ page: "patterns", state: next });
   }, []);
 
   const update = useCallback((next) => {
-    window.history.replaceState(null, "", toHash("explore", next));
+    replaceHash(toHash("explore", next));
     setRoute({ page: "explore", state: next });
   }, []);
 

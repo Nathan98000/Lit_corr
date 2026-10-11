@@ -1,4 +1,4 @@
-import { useId, useState } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import {
   axisTitle,
   comparisonBar,
@@ -17,6 +17,7 @@ import {
   topicCount,
 } from "../lib/genres.js";
 import { mixColors } from "../lib/genreLayout.js";
+import { scrollBehavior } from "../lib/motion.js";
 import { PHONE, STACKED, textWidth } from "../lib/rangeLayout.js";
 import CopyLink from "./CopyLink.jsx";
 import { HOW_DECIDED } from "./GenreAnswer.jsx";
@@ -229,20 +230,35 @@ function ProfileBlock({ id, items, marks = false, headRow = false, layout, rowPr
 }
 
 /**
- * "Lower in Romance than in all genres": the first seven, then "Show all 18" / "Show fewer". Wide, its title line ends
- * with the count; stacked, with the two columns' heads, the count left to screen readers ("Show all 18" keeps it). The
- * first list carries the key (F86): the axis title over its rows (`caption`) and the note after its "Show all"
- * (`note`); "A different mix" says which bar is which over its rows (`caption`).
+ * "Lower in Romance than in all genres": the first seven, then "Show all 18" / "Show fewer" (`open`, `onOpen`: kept by
+ * the page, F88). Wide, its title line ends with the count; stacked, with the two columns' heads, the count left to
+ * screen readers ("Show all 18" keeps it). The first list carries the key (F86): the axis title over its rows
+ * (`caption`) and the note after its "Show all" (`note`); "A different mix" says which bar is which over its rows
+ * (`caption`). "Show fewer" is the one control on the page that moves it, on purpose: when the rows it hides take the
+ * button off the screen, the list's heading is brought into view (smoothly, or at once under reduced motion), and focus
+ * stays on the button.
  */
-function ProfileList({ title, items, all = false, caption = null, note = null, layout, rowProps }) {
+function ProfileList({ title, items, all = false, open = false, onOpen, caption = null, note = null, layout, rowProps }) {
   const id = useId();
-  const [open, setOpen] = useState(false);
+  const heading = useRef(null);
+  const button = useRef(null);
+  const fewer = useRef(false);
+  useLayoutEffect(() => {
+    if (!fewer.current) return;
+    fewer.current = false;
+    const box = button.current?.getBoundingClientRect();
+    if (box && (box.bottom < 0 || box.top > window.innerHeight)) {
+      heading.current?.scrollIntoView?.({ behavior: scrollBehavior(), block: "start" });
+    }
+  }, [open]);
   const shown = all || open ? items : items.slice(0, SHOWN);
   const count = characteristics(items.length);
   return (
     <section className="profile-list" aria-labelledby={`${id}-h`}>
       <div className="profile-list-head">
-        <h3 id={`${id}-h`}>{title}</h3>
+        <h3 id={`${id}-h`} ref={heading}>
+          {title}
+        </h3>
         {layout.stacked ? (
           <>
             <span className="visually-hidden">{count}</span>
@@ -259,11 +275,15 @@ function ProfileList({ title, items, all = false, caption = null, note = null, l
       <ProfileBlock id={`${id}-list`} items={shown} layout={layout} rowProps={rowProps} />
       {!all && items.length > SHOWN && (
         <button
+          ref={button}
           type="button"
           className="link-button show-all"
           aria-expanded={open}
           aria-controls={`${id}-list`}
-          onClick={() => setOpen((x) => !x)}
+          onClick={() => {
+            fewer.current = open;
+            onOpen(!open);
+          }}
         >
           {open ? "Show fewer" : `Show all ${items.length}`}
         </button>
@@ -313,6 +333,79 @@ function TopicRows({ items, lead, genre, layout, rowProps }) {
   );
 }
 
+const PLACE = "oneGenre"; // View 2's key in history.state
+
+/** View 2's place in this history entry ({ topics, all, y }), or null: a new entry starts with nothing open. */
+function keptPlace() {
+  try {
+    return window.history.state?.[PLACE] ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/** Keeps `patch` in this history entry's state, in place: the address doesn't change, so every address keeps working. */
+function keepPlace(patch) {
+  try {
+    const state = window.history.state;
+    window.history.replaceState({ ...state, [PLACE]: { ...state?.[PLACE], ...patch } }, "");
+  } catch {
+    // a browser that limits how often the state may change: the next change keeps it
+  }
+}
+
+/** A Set's copy with `id` in it or not. */
+const toggled = (set, id, on) => {
+  if (set.has(id) === on) return set;
+  const next = new Set(set);
+  if (on) next.add(id);
+  else next.delete(id);
+  return next;
+};
+
+/**
+ * The way back from every genre's numbers (F88, quick win 6): the open topics and the lists shown in full are kept in
+ * this history entry's state, with the scroll position (when scrolling stops, and when a link inside is followed). They
+ * are read before the first paint, so the page is as tall as it was; then, if the browser's own restoration of the
+ * scroll position was clamped (the page was shorter when it restored it), the position is restored here, at once.
+ */
+function useWayBack(ref) {
+  const [kept] = useState(keptPlace);
+  const [topics, setTopics] = useState(() => new Set(kept?.topics ?? []));
+  const [lists, setLists] = useState(() => new Set(kept?.all ?? []));
+  const back = useRef(kept?.y ?? null);
+  useLayoutEffect(() => {
+    const y = back.current;
+    back.current = null;
+    if (y != null && window.scrollY < y - 1) window.scrollTo?.({ top: y, behavior: "instant" });
+  }, []);
+  useEffect(() => {
+    keepPlace({ topics: [...topics], all: [...lists], y: Math.round(window.scrollY) });
+  }, [topics, lists]);
+  useEffect(() => {
+    let timer;
+    const now = () => keepPlace({ y: Math.round(window.scrollY) });
+    const later = () => {
+      clearTimeout(timer);
+      timer = setTimeout(now, 300);
+    };
+    const el = ref.current;
+    window.addEventListener("scroll", later, { passive: true });
+    el?.addEventListener("click", now, true); // before a row's link adds the next entry
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("scroll", later);
+      el?.removeEventListener("click", now, true);
+    };
+  }, [ref]);
+  return {
+    topics,
+    setTopic: (id, on) => setTopics((prev) => toggled(prev, id, on)),
+    lists,
+    setList: (id, on) => setLists((prev) => toggled(prev, id, on)),
+  };
+}
+
 /**
  * "Fewer than 10 stories in Chain Stories match “Published 2020 or later”: too few to compare.", or with the rule's
  * min_n ("Fewer than 30 …") when the genre has its numbers but too few stories to be compared (F60).
@@ -330,7 +423,7 @@ export const tooFewText = (genre, subset, minN) =>
  */
 export default function GenreProfile({ meta, state, file, busy, onSwitch, onNavigate, headingRef }) {
   const [ref, width] = useWidth(720, "genres");
-  const [openTopics, setOpenTopics] = useState(() => new Set());
+  const place = useWayBack(ref);
   const ids = useId();
   const genre = meta.genres.find((g) => g.id === state.genre);
   const subset = meta.subsets.find((s) => s.id === state.sub);
@@ -375,14 +468,7 @@ export default function GenreProfile({ meta, state, file, busy, onSwitch, onNavi
   const lead = p.lower.length ? "lower" : p.higher.length ? "higher" : null;
   const layout = { stacked, plotW: plotWidth(width, stacked), heads: profileHeads(genre, stacked, stacked ? NARROW.n : WIDE.n) };
   const rowProps = { genre, sub: state.sub, minN, zone, onNavigate };
-  const setTopic = (id, isOpen) =>
-    setOpenTopics((prev) => {
-      if (prev.has(id) === isOpen) return prev;
-      const next = new Set(prev);
-      if (isOpen) next.add(id);
-      else next.delete(id);
-      return next;
-    });
+  const listProps = (id) => ({ open: place.lists.has(id), onOpen: (on) => place.setList(id, on), layout, rowProps });
 
   return (
     <article className={panel} aria-busy={busy} ref={ref}>
@@ -417,8 +503,7 @@ export default function GenreProfile({ meta, state, file, busy, onSwitch, onNavi
               items={p.lower}
               caption={lead === "lower" && <AxisTitle genre={genre} />}
               note={lead === "lower" && <Note genre={genre} />}
-              layout={layout}
-              rowProps={rowProps}
+              {...listProps("lower")}
             />
           )}
           {p.higher.length > 0 && (
@@ -427,12 +512,11 @@ export default function GenreProfile({ meta, state, file, busy, onSwitch, onNavi
               items={p.higher}
               caption={lead === "higher" && <AxisTitle genre={genre} />}
               note={lead === "higher" && <Note genre={genre} />}
-              layout={layout}
-              rowProps={rowProps}
+              {...listProps("higher")}
             />
           )}
           {p.mix.length > 0 && (
-            <ProfileList title="A different mix" items={p.mix} all caption={<MixLine genre={genre} />} layout={layout} rowProps={rowProps} />
+            <ProfileList title="A different mix" items={p.mix} all caption={<MixLine genre={genre} />} {...listProps("mix")} />
           )}
         </>
       )}
@@ -446,10 +530,10 @@ export default function GenreProfile({ meta, state, file, busy, onSwitch, onNavi
         )}
         {p.topics.map((t) => {
           const { topic, items } = t;
-          const open = openTopics.has(topic.id);
+          const open = place.topics.has(topic.id);
           const c = topicCount(t);
           return (
-            <details key={topic.id} className="profile-topic" open={open} onToggle={(e) => setTopic(topic.id, e.currentTarget.open)}>
+            <details key={topic.id} className="profile-topic" open={open} onToggle={(e) => place.setTopic(topic.id, e.currentTarget.open)}>
               {/* named by its text, "Length & structure, 1 of 28 stand out" (F92): one hidden line, as a row's name */}
               <summary className="profile-topic-head">
                 <span className="visually-hidden">{`${topic.label}, ${c.text}`}</span>

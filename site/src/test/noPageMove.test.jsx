@@ -1,6 +1,7 @@
 // Round 3, change 1: opening, using or picking from the measure menu or the characteristic picker never moves the
 // page. The menus scroll only their own box, every focus() prevents scrolling, the popover fits on the screen, and a
-// shorter chart keeps the scroll position.
+// shorter chart keeps the scroll position. One control moves it on purpose: "One genre"'s "Show fewer", when the rows
+// it hides take its button off the screen (the one-genre review's F88).
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useRef } from "react";
@@ -235,5 +236,70 @@ describe("a chart drawn again starts at its real width", () => {
     vi.spyOn(window, "innerWidth", "get").mockReturnValue(1440);
     render(<Probe out={out} />);
     expect(out.first).toBe(343); // remembered
+  });
+});
+
+describe("the one control that moves the page on purpose: “One genre”'s “Show fewer” (F88)", () => {
+  /** Romance lower than all genres on ten characteristics, so its first list has "Show all 10". */
+  function tenLower() {
+    const serve = fixtureFetch();
+    vi.stubGlobal("fetch", async (url) => {
+      const res = await serve(url);
+      if (String(url).endsWith("meta.json")) {
+        const meta = await res.json();
+        const extra = Array.from({ length: 9 }, (_, i) => ({ ...meta.variables[0], id: `x${i}`, label: `Extra ${i}` }));
+        meta.variables.push(...extra);
+        meta.topics[0].ids.push(...extra.map((v) => v.id));
+        return { ok: true, status: 200, json: async () => meta };
+      }
+      if (!String(url).includes("genres/")) return res;
+      const body = await res.json();
+      body.c.dlg_word_share = { ...body.c.dlg_word_share, r: [null, 0, -0.31, null], f: [0, 0, -1, 0] };
+      for (let i = 0; i < 9; i += 1) body.c[`x${i}`] = { ...body.c.dlg_word_share, r: [null, 0, -0.3 + i / 100, null], f: [0, 0, -1, 0] };
+      return { ok: true, status: 200, json: async () => body };
+    });
+  }
+
+  /** Opens Romance's View 2, shows all of its first list, then presses "Show fewer" with its button at `top` px. */
+  async function showFewer(top) {
+    tenLower();
+    const user = await renderApp("#/genres?view=genre&genre=romance&include=all");
+    await user.click(screen.getByRole("button", { name: "Show all 10" }));
+    const into = vi.spyOn(Element.prototype, "scrollIntoView").mockImplementation(() => {});
+    vi.spyOn(Element.prototype, "getBoundingClientRect").mockImplementation(function getRect() {
+      return this.classList?.contains("show-all") ? rect(top, 44, 80) : rect(0, 0, 720);
+    });
+    const fewer = screen.getByRole("button", { name: "Show fewer" });
+    await user.click(fewer);
+    return { into, fewer };
+  }
+
+  it("brings the list's heading into view when the rows it hides take its button off the screen, keeping focus", async () => {
+    const { into, fewer } = await showFewer(-300);
+    expect(into).toHaveBeenCalledTimes(1);
+    expect(into.mock.instances[0]).toBe(document.querySelector(".profile-list h3"));
+    expect(into.mock.calls[0][0]).toEqual({ behavior: "smooth", block: "start" });
+    expect(document.activeElement).toBe(fewer);
+    expect(fewer.textContent).toBe("Show all 10");
+  });
+
+  it("moves nothing while the button is still on the screen", async () => {
+    const { into, fewer } = await showFewer(400);
+    expect(into).not.toHaveBeenCalled();
+    expect(document.activeElement).toBe(fewer);
+  });
+
+  it("jumps at once under reduced motion", async () => {
+    vi.stubGlobal("matchMedia", (q) => ({ matches: q === "(prefers-reduced-motion: reduce)", media: q, addEventListener() {}, removeEventListener() {} }));
+    const { into } = await showFewer(-300);
+    expect(into.mock.calls[0][0]).toEqual({ behavior: "auto", block: "start" });
+  });
+
+  it("is the only scroll “Show all” makes: showing all moves nothing", async () => {
+    tenLower();
+    const user = await renderApp("#/genres?view=genre&genre=romance&include=all");
+    const into = vi.spyOn(Element.prototype, "scrollIntoView").mockImplementation(() => {});
+    await user.click(screen.getByRole("button", { name: "Show all 10" }));
+    expect(into).not.toHaveBeenCalled();
   });
 });

@@ -146,16 +146,11 @@
   fill: var(--band);
 }
 
-.genre-chart .band-highlight {
-  fill: var(--accent-wash);
-}
-
 .genre-chart .all-rule {
   stroke: var(--rule-2);
 }
 
-.genre-chart .row.all .glabel,
-.genre-chart .row.highlight .glabel {
+.genre-chart .row.all .glabel {
   font-weight: 600;
 }
 
@@ -176,17 +171,11 @@
   font-size: 12px;
 }
 
-/* the labels' halo is the row's own background on the shaded rows */
+/* the labels' halo is the row's own background on All genres' shaded row */
 .genre-chart .row.all .glabel,
 .genre-chart .row.all .gn,
 .genre-chart .row.all .gval {
   stroke: var(--band);
-}
-
-.genre-chart .row.highlight .glabel,
-.genre-chart .row.highlight .gn,
-.genre-chart .row.highlight .gval {
-  stroke: var(--accent-wash);
 }
 
 .genre-chart .stories-head {
@@ -256,12 +245,6 @@
     stroke: GrayText;
   }
 
-  .genre-chart .band-highlight {
-    fill: Canvas;
-    stroke: Highlight;
-    stroke-width: 2px;
-  }
-
   .genre-chart .all-rule {
     stroke: GrayText;
   }
@@ -273,10 +256,7 @@
 
   .genre-chart .row.all .glabel,
   .genre-chart .row.all .gn,
-  .genre-chart .row.all .gval,
-  .genre-chart .row.highlight .glabel,
-  .genre-chart .row.highlight .gn,
-  .genre-chart .row.highlight .gval {
+  .genre-chart .row.all .gval {
     stroke: Canvas;
   }
 
@@ -545,10 +525,6 @@
   fill: var(--band);
 }
 
-.genre-mix .band-highlight {
-  fill: var(--accent-wash);
-}
-
 .genre-mix .all-rule {
   stroke: var(--rule-2);
 }
@@ -579,7 +555,6 @@
 }
 
 .genre-mix .row.all .glabel,
-.genre-mix .row.highlight .glabel,
 .genre-mix .row.active .glabel {
   font-weight: 600;
 }
@@ -649,12 +624,6 @@
   .genre-mix .band-all {
     fill: Canvas;
     stroke: GrayText;
-  }
-
-  .genre-mix .band-highlight {
-    fill: Canvas;
-    stroke: Highlight;
-    stroke-width: 2px;
   }
 
   .genre-mix .row-hit,

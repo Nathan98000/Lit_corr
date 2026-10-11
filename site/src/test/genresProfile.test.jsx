@@ -138,10 +138,11 @@ describe("the lists", () => {
     expect([...list.querySelectorAll(".profile-label")].map((x) => x.textContent)[0]).toBe("Extra 0"); // |r| 0.30 first
   });
 
-  it("are links to every genre's numbers, with the genre highlighted, as a new history entry", async () => {
+  it("are links to every genre's numbers, without a genre (decision 8), as a new history entry", async () => {
     const user = await openGenre("#/genres?view=genre&genre=romance&include=all");
     const row = document.querySelector(".profile-list .profile-row");
-    expect(row.getAttribute("href")).toBe("#/genres?var=dlg_word_share&include=all&genre=romance");
+    expect(row.getAttribute("href")).toBe("#/genres?var=dlg_word_share&include=all");
+    for (const link of document.querySelectorAll(".profile-row")) expect(link.getAttribute("href")).not.toMatch(/genre=/);
     // the name starts with what is on screen (label in name, F76): the label and the values, then the description
     expect(row.hasAttribute("aria-label")).toBe(false);
     expect(
@@ -150,8 +151,9 @@ describe("the lists", () => {
       }),
     ).toBe(row);
     await user.click(row);
-    await waitFor(() => expect(window.location.hash).toBe("#/genres?var=dlg_word_share&include=all&genre=romance"));
-    await waitFor(() => expect(document.querySelector(".genre-chart .row.highlight")).toBeTruthy());
+    await waitFor(() => expect(window.location.hash).toBe("#/genres?var=dlg_word_share&include=all"));
+    await waitFor(() => expect(document.querySelector(".genre-chart")).toBeTruthy());
+    expect(document.querySelector(".row.repeat, .row.highlight, .band-highlight")).toBeNull();
     await waitFor(() => expect(document.activeElement).toBe(document.getElementById("question")));
     window.history.back();
     await waitFor(() => expect(window.location.hash).toBe("#/genres?view=genre&genre=romance&include=all"));

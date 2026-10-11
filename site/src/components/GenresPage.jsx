@@ -180,14 +180,15 @@ export default function GenresPage({ meta, state, onChange, onNavigate, onHoldSc
     if (file && !busy && !error) document.title = question;
   }, [question, file, busy, error]);
 
-  // the view switch carries the genre across: the highlighted genre becomes "one genre", and back (D8 when none)
+  // the view switch opens the genre last chosen in this visit, or the default (D8); back, the characteristic and order
+  // it came from
   const switchView = (to) => {
     if (to === "genre") {
-      onNavigate({ view: "genre", genre: state.genre || defaultGenre(meta, chosenGenre?.current), sub: state.sub });
+      onNavigate({ view: "genre", genre: defaultGenre(meta, chosenGenre?.current), sub: state.sub });
     } else {
       const back = lastChart?.current || {};
       const v = back.v && meta.variables.some((x) => x.id === back.v && onGenresPage(x)) ? back.v : state.v;
-      onNavigate({ v, sub: state.sub, genre: state.genre, sort: back.sort });
+      onNavigate({ v, sub: state.sub, sort: back.sort });
     }
   };
 
@@ -254,23 +255,6 @@ export default function GenresPage({ meta, state, onChange, onNavigate, onHoldSc
           variable={variable}
           onChange={(s) => keepPlace({ ...state, sub: s })}
         />
-        <span className="include">
-          <span className="include-label">Highlight:</span>{" "}
-          <InlineSelect
-            id={`${ids}-highlight`}
-            label="Highlight"
-            value={state.genre || ""}
-            text={state.genre ? breakable(meta.genres.find((g) => g.id === state.genre).name) : "None"}
-            onChange={(g) => keepPlace({ ...state, genre: g || undefined })}
-          >
-            <option value="">None</option>
-            {genres.map((g) => (
-              <option key={g.id} value={g.id}>
-                {g.name}
-              </option>
-            ))}
-          </InlineSelect>
-        </span>
       </>
     );
   }
@@ -306,7 +290,7 @@ export default function GenresPage({ meta, state, onChange, onNavigate, onHoldSc
               exclude={GENRE_PAGE_EXCLUDED}
               excludedNote="Publication month and weekday aren’t compared on this page."
               metricHref={(metric) =>
-                toHash("explore", { genre: state.genre || "all", metric, v: state.v, sub: state.sub })
+                toHash("explore", { genre: "all", metric, v: state.v, sub: state.sub })
               }
               focusRef={pickerFocus}
               scrollRef={pickerBody}

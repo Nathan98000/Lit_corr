@@ -569,21 +569,6 @@ export function profileRowDescription(item, genre, small, minN) {
   return `${genre.name} ${describe(g)}; all genres ${describe(a)}; ${profileComparison(item, small)}. Opens every genre’s numbers.`;
 }
 
-// ------------------------------------------------------------------------------------- the highlighted genre (I9)
-/** The id of a highlighted genre's row drawn a second time, right under All genres. */
-export const REPEAT = "repeat";
-
-/**
- * A chart's rows with the highlighted genre's (`index`) drawn a second time right under All genres (idea I9), in either
- * order; its row in its place stays. The copy's `index` is REPEAT and `of` the genre's own. Without a highlight, the
- * rows as they are.
- */
-export function withRepeat(rows, index) {
-  const k = index == null ? -1 : rows.findIndex((r) => r.index === index);
-  if (k <= 0) return rows;
-  return [rows[0], { ...rows[k], index: REPEAT, of: index }, ...rows.slice(1)];
-}
-
 // -------------------------------------------------------------------------------------------- the range chart
 /**
  * The rows of the range chart (num) or the share chart (bin) for rangeLayout(): a genre's interquartile range and

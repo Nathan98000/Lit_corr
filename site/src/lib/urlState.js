@@ -10,10 +10,10 @@ export const DEFAULT_STATE = {
 
 const PARAMS = { genre: "genre", metric: "metric", v: "var", sub: "include" };
 const PATTERN_PARAMS = { genre: "genre", metric: "metric" };
-// the Genres page: one characteristic in every genre (#/genres?var=…&include=…&genre=…&sort=value, the genre being the
-// highlighted one), or one genre against all genres (#/genres?view=genre&genre=…&include=…)
+// the Genres page: one characteristic in every genre (#/genres?var=…&include=…&sort=value), or one genre against all
+// genres (#/genres?view=genre&genre=…&include=…)
 const GENRE_PARAMS = { view: "view", v: "var", genre: "genre", sub: "include", sort: "sort" };
-const GENRE_CHART_ORDER = ["v", "sub", "genre", "sort"];
+const GENRE_CHART_ORDER = ["v", "sub", "sort"];
 const GENRE_PROFILE_ORDER = ["view", "genre", "sub"];
 
 /**
@@ -58,15 +58,15 @@ export function toHash(page, state = {}) {
   return q ? `${base}?${q}` : base;
 }
 
-// Settings that old links carry and the pages no longer have: the similar-age check (`check=age`) and the mode
+// Settings that old links carry and the pages no longer have: Explore's similar-age check (`check=age`) and mode
 // (`mode=one`, or `mode=compare` for comparing genres, whose links open the chart of the genre they carry, or of All
-// genres).
-const RETIRED = ["check", "mode"];
+// genres), and the highlighted genre of the Genres page's "One characteristic" (`genre`, which "One genre" keeps).
+const RETIRED = ["check", "mode", "genre"];
 
 /**
- * The address to settle on when `hash` carries a setting its page no longer has (an old link's `check=age` or
- * `mode=one`): the page's own address for `state`; null otherwise (any other address stays as it is, even one the page
- * sanitizes).
+ * The address to settle on when `hash` carries a setting its page no longer has (an old link's `check=age`, `mode=one`
+ * or highlighted `genre`): the page's own address for `state`; null otherwise (any other address stays as it is, even
+ * one the page sanitizes).
  */
 export function settledHash(hash, page, state) {
   const keys = (h) => [...new URLSearchParams((h || "").split("?")[1] || "").keys()];
@@ -123,11 +123,11 @@ export function defaultGenre(meta, remembered = null) {
 }
 
 /**
- * The Genres page's settings: { v, sub, genre?, sort? } for one characteristic in every genre (`genre` is the
- * highlighted one), { view: "genre", genre, sub, v } for one genre (`v` is kept for the way back). An unknown
- * characteristic, or one left out of the page, becomes story length; an unknown or conflicting option, All stories; an
- * unknown genre is dropped, or for one genre replaced by the default (D8); `sort` stays only as "value" for
- * characteristics that can be put in order.
+ * The Genres page's settings: { v, sub, sort? } for one characteristic in every genre, { view: "genre", genre, sub, v }
+ * for one genre (`v` is kept for the way back). An unknown characteristic, or one left out of the page, becomes story
+ * length; an unknown or conflicting option, All stories; one characteristic drops any genre (the highlight is gone), and
+ * one genre replaces an unknown one by the default (D8); `sort` stays only as "value" for characteristics that can be
+ * put in order.
  */
 export function sanitizeGenres(state, meta, remembered = null) {
   const allowed = (id) => meta.variables.find((v) => v.id === id && onGenresPage(v));
@@ -138,7 +138,6 @@ export function sanitizeGenres(state, meta, remembered = null) {
   if (!profile && subsetConflict(meta.subsets.find((x) => x.id === sub), variable)) sub = "all";
   if (profile) return { view: "genre", genre: real(state.genre) ? state.genre : defaultGenre(meta, remembered), sub, v: variable.id };
   const s = { v: variable.id, sub };
-  if (real(state.genre)) s.genre = state.genre;
   if (state.sort === "value" && sortable(variable)) s.sort = "value";
   return s;
 }

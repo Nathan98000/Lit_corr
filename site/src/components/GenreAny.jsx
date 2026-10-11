@@ -1,6 +1,6 @@
 import { useId, useRef } from "react";
 import useOrderGlide from "./GenreGlide.jsx";
-import { REPEAT, chartDomain, comparison, formatPercent, numberFormat, rowDetails, tickFormatFor, withRepeat } from "../lib/genres.js";
+import { chartDomain, comparison, formatPercent, numberFormat, rowDetails, tickFormatFor } from "../lib/genres.js";
 import { anyLayout } from "../lib/genreLayout.js";
 import { GenreRowDetails, useGenreDetails } from "./GenreDetails.jsx";
 import useWidth from "./useWidth.js";
@@ -34,16 +34,14 @@ export const anyHeading = (nf) => `Among stories with any${nf.unit ? ` (${nf.uni
  * comparison takes every story, the zeros included. All genres comes first and its median among the stories with any
  * is the dashed line. One tab stop; the details as on the other forms.
  */
-export default function GenreAny({ meta, variable, entry, rows, highlight, sub, title, onNavigate }) {
+export default function GenreAny({ meta, variable, entry, rows, sub, title, onNavigate }) {
   const [ref, width] = useWidth(720, "genres");
   const frame = useRef(null);
   const ids = useId();
   const titleId = `${ids}-title`;
   const hatchId = `${ids}-hatch`.replace(/:/g, "");
   const nf = numberFormat(variable, entry);
-  // the highlighted genre's row, drawn a second time under All genres (I9)
-  const hl = highlight ? rows.find((r) => r.genre.id === highlight) : null;
-  const aRows = withRepeat(anyRows(rows, variable, meta.min_n), hl?.i);
+  const aRows = anyRows(rows, variable, meta.min_n);
   const layout = anyLayout({
     rows: aRows,
     width,
@@ -53,17 +51,15 @@ export default function GenreAny({ meta, variable, entry, rows, highlight, sub, 
     tickFormat: tickFormatFor("zero", entry.fmt),
   });
   const byIndex = new Map(rows.map((r) => [r.i, r]));
-  const rowOf = (r) => byIndex.get(r.index === REPEAT ? hl.i : r.index);
-  const realIds = layout.rows.filter((r) => r.index !== REPEAT).map((r) => r.index);
-  const repeat = layout.rows.find((r) => r.index === REPEAT);
-  const d = useGenreDetails({ ids: realIds, frame, phone: layout.phone, byIndex, variable, entry, minN: meta.min_n });
-  const activeRow = d.active == null ? null : layout.rows.find((r) => r.index === (d.shown?.repeat ? REPEAT : d.active));
+  const rowIds = layout.rows.map((r) => r.index);
+  const d = useGenreDetails({ ids: rowIds, frame, phone: layout.phone, byIndex, variable, entry, minN: meta.min_n });
+  const activeRow = d.active == null ? null : layout.rows.find((r) => r.index === d.active);
   // a new order glides the rows to their places (I10)
   useOrderGlide(
     frame,
     new Map(layout.rows.map((r) => [String(r.index), r.y0])),
     rows.map((r) => r.i).join(","),
-    `${variable.id}|${sub}|${layout.width}|${highlight || ""}`,
+    `${variable.id}|${sub}|${layout.width}`,
   );
   return (
     <div ref={ref} className="range-chart genre-chart genre-any">
@@ -82,24 +78,15 @@ export default function GenreAny({ meta, variable, entry, rows, highlight, sub, 
             </pattern>
           </defs>
           <g aria-hidden="true">
-            {layout.rows.map((r) => {
-              const row = rowOf(r);
-              if (!row.all && row.genre.id !== highlight) return null;
-              return (
-                <rect
-                  key={r.index}
-                  className={row.all ? "band-all" : "band-highlight"}
-                  data-glide={row.all || r.index === REPEAT ? undefined : String(r.index)}
-                  x={0}
-                  y={r.y0 + 1}
-                  width={layout.width}
-                  height={r.y1 - r.y0 - 2}
-                  rx={4}
-                />
-              );
-            })}
+            <rect
+              className="band-all"
+              x={0}
+              y={layout.rows[0].y0 + 1}
+              width={layout.width}
+              height={layout.rows[0].y1 - layout.rows[0].y0 - 2}
+              rx={4}
+            />
             {layout.rows.length > 1 && <line className="all-rule" x1={0} x2={layout.width} y1={layout.rows[1].y0} y2={layout.rows[1].y0} />}
-            {repeat && <line className="all-rule" x1={0} x2={layout.width} y1={repeat.y1} y2={repeat.y1} />}
             {layout.ticks.map((t) => (
               <g key={t.v} className="tick-mark">
                 <line className="grid" x1={t.x} x2={t.x} y1={layout.top - 4} y2={layout.height - (layout.ref ? 22 : 6)} />
@@ -127,35 +114,19 @@ export default function GenreAny({ meta, variable, entry, rows, highlight, sub, 
               </g>
             )}
           </g>
-          {layout.rows.map((r) => {
-            const row = rowOf(r);
-            const fill = row.small ? `url(#${hatchId})` : undefined;
-            const state = [row.small && "small", !row.stats && "hidden-group"];
-            if (r.index === REPEAT) {
-              const cls = ["row", "repeat", "highlight", ...state, d.shown?.repeat && "active"].filter(Boolean);
-              return (
-                <g key={REPEAT} {...d.repeatProps(hl.i)} className={cls.join(" ")} aria-hidden="true">
-                  <AnyRow r={r} layout={layout} fill={fill} />
-                </g>
-              );
-            }
-            const cls = [
-              "row",
-              ...state,
-              row.all && "all",
-              row.genre.id === highlight && "highlight",
-              d.active === r.index && !d.shown?.repeat && "active",
-            ].filter(Boolean);
+          {layout.rows.map((r, ri) => {
+            const row = byIndex.get(r.index);
+            const cls = ["row", row.small && "small", !row.stats && "hidden-group", row.all && "all", d.active === r.index && "active"];
             return (
               <g
                 key={r.index}
-                {...d.rowProps(realIds.indexOf(r.index), r.index)}
-                className={cls.join(" ")}
+                {...d.rowProps(ri, r.index)}
+                className={cls.filter(Boolean).join(" ")}
                 role="img"
                 aria-label={rowDetails(row, variable, entry, meta.min_n).name}
                 data-glide={row.all ? undefined : String(r.index)}
               >
-                <AnyRow r={r} layout={layout} fill={fill} />
+                <AnyRow r={r} layout={layout} fill={row.small ? `url(#${hatchId})` : undefined} />
               </g>
             );
           })}

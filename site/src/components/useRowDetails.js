@@ -9,9 +9,9 @@ const KEYS = ["ArrowDown", "ArrowUp", "Home", "End"];
  * chart would move the page under the pointer). `within` (optional) is the element of the details a row's focus may
  * move to (a link in them), so that the details stay while it does.
  *
- * Returns `shown` ({ i, by: "hover" | "focus" | "tap", repeat? } or null), `hide()`, `rowProps(position, id)`: the
- * tab stop (the focused row's, ↑/↓, Home and End move it), hover, focus, and a tap that keeps the details until the same
- * row is tapped again; Escape hides them; and `repeatProps(id)`, the pointer's part of them for a copy of a row.
+ * Returns `shown` ({ i, by: "hover" | "focus" | "tap" } or null), `hide()` and `rowProps(position, id)`: the tab stop
+ * (the focused row's, ↑/↓, Home and End move it), hover, focus, and a tap that keeps the details until the same row is
+ * tapped again; Escape hides them.
  */
 export default function useRowDetails({ ids, frame, phone, within = null }) {
   const [shown, setShown] = useState(null);
@@ -69,17 +69,5 @@ export default function useRowDetails({ ids, frame, phone, within = null }) {
     onKeyDown: (e) => onRowKey(e, ri),
   });
 
-  // a row drawn a second time elsewhere (the Genres page's highlighted genre, I9): hover and tap only, outside the tab
-  // order; its details are row i's, shown by it (`repeat`)
-  const repeatProps = (i) => ({
-    onPointerEnter: (e) => {
-      if (e.pointerType === "mouse" && !phone && shown?.by !== "tap") setShown({ i, by: "hover", repeat: true });
-    },
-    onPointerLeave: (e) => {
-      if (e.pointerType === "mouse") setShown((s) => (s?.by === "hover" ? null : s));
-    },
-    onClick: () => setShown((s) => (s?.by === "tap" && s.i === i && s.repeat ? null : { i, by: "tap", repeat: true })),
-  });
-
-  return { shown, setShown, hide: () => setShown(null), rowProps, repeatProps };
+  return { shown, setShown, hide: () => setShown(null), rowProps };
 }

@@ -120,7 +120,7 @@ export default function App() {
     const settled = shown && settledHash(window.location.hash, route.page, shown);
     if (settled) window.history.replaceState(null, "", settled);
   }, [route.page, state, genresState]);
-  // a control (characteristic, option, highlight, order) replaces the address; another view adds one, so Back returns
+  // a control (characteristic, option, order) replaces the address; another view adds one, so Back returns
   const updateGenres = useCallback((next) => {
     window.history.replaceState(null, "", toHash("genres", next));
     setRoute({ page: "genres", state: next });

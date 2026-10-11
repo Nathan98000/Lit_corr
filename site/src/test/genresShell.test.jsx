@@ -37,9 +37,11 @@ async function openGenres(hash = "#/genres") {
 
 describe("Genres addresses", () => {
   it("round-trip both views, in the documented order", () => {
-    const chart = { v: "sex_terms_per_1k", sub: "y2020", genre: "adult-romance", sort: "value" };
-    expect(toHash("genres", chart)).toBe("#/genres?var=sex_terms_per_1k&include=y2020&genre=adult-romance&sort=value");
+    const chart = { v: "sex_terms_per_1k", sub: "y2020", sort: "value" };
+    expect(toHash("genres", chart)).toBe("#/genres?var=sex_terms_per_1k&include=y2020&sort=value");
     expect(parseHash(toHash("genres", chart))).toEqual({ page: "genres", state: chart });
+    // one characteristic no longer carries a genre (the highlight is gone, decision 8)
+    expect(toHash("genres", { ...chart, genre: "adult-romance" })).toBe("#/genres?var=sex_terms_per_1k&include=y2020&sort=value");
     const one = { view: "genre", genre: "adult-romance", sub: "all" };
     expect(toHash("genres", { ...one, v: "story_words" })).toBe("#/genres?view=genre&genre=adult-romance&include=all");
     expect(parseHash("#/genres?view=genre&genre=adult-romance&include=all")).toEqual({ page: "genres", state: one });
@@ -51,7 +53,7 @@ describe("Genres addresses", () => {
     expect(parseHash("#/methodology/genres")).toMatchObject({ page: "methodology", section: "genres" });
   });
 
-  it("sanitizes: characteristic, option, genre, order and view", () => {
+  it("sanitizes: characteristic, option, order and view, and drops one characteristic's genre", () => {
     const meta = fixtureMeta;
     // the test data has no story length: the page's first characteristic stands in
     expect(sanitizeGenres({}, meta)).toEqual({ v: "dlg_word_share", sub: "all" });
@@ -63,7 +65,6 @@ describe("Genres addresses", () => {
     expect(sanitizeGenres({ v: "emo_anger_per_1k", sub: "y2020", genre: "romance", sort: "value" }, meta)).toEqual({
       v: "emo_anger_per_1k",
       sub: "y2020",
-      genre: "romance",
       sort: "value",
     });
     expect(sanitizeGenres({ v: "dlg_has_dialogue", sort: "value" }, meta).sort).toBe("value"); // yes/no: by share
@@ -233,14 +234,21 @@ describe("the default genre of “One genre” (D8)", () => {
     expect(screen.getByLabelText("Genre").value).toBe("romance");
   });
 
-  it("is the largest genre when none was chosen, and the switch carries the highlighted genre across", async () => {
+  it("is the largest genre when none was chosen; the switch back opens the characteristic, and again the genre chosen", async () => {
     const user = await openGenres("#/genres?var=pov_class");
     await user.click(screen.getByRole("radio", { name: "One genre" }));
     await waitFor(() => expect(window.location.hash).toBe("#/genres?view=genre&genre=fetish&include=all"));
     await user.selectOptions(screen.getByLabelText("Genre"), "tiny");
     await user.click(screen.getByRole("radio", { name: "One characteristic" }));
-    // back to the characteristic it came from, with the genre highlighted
-    await waitFor(() => expect(window.location.hash).toBe("#/genres?var=pov_class&include=all&genre=tiny"));
+    // back to the characteristic it came from, with no genre in the address (decision 8)
+    await waitFor(() => expect(window.location.hash).toBe("#/genres?var=pov_class&include=all"));
+    await waitFor(() => expect(document.querySelector(".genres-page .chart-panel[aria-busy='false']")).toBeTruthy());
+    expect(document.querySelector(".row.repeat, .row.highlight")).toBeNull();
+    // the switch to one genre opens the genre last chosen (D8)
+    await user.click(screen.getByRole("radio", { name: "One genre" }));
+    await waitFor(() => expect(window.location.hash).toBe("#/genres?view=genre&genre=tiny&include=all"));
+    window.history.back();
+    await waitFor(() => expect(window.location.hash).toBe("#/genres?var=pov_class&include=all"));
     window.history.back();
     await waitFor(() => expect(window.location.hash).toBe("#/genres?view=genre&genre=tiny&include=all"));
   });

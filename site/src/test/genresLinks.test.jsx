@@ -192,7 +192,7 @@ describe("the picker on the Genres page (F77)", () => {
   });
 
   it("is given the note and the link by the Genres page, and opens Explore with the measure and the characteristic", async () => {
-    window.history.replaceState(null, "", "/#/genres?var=dlg_word_share&genre=romance");
+    window.history.replaceState(null, "", "/#/genres?var=dlg_word_share");
     const user = userEvent.setup();
     render(<App />);
     await waitFor(() => expect(document.querySelector(".genres-page .chart-panel[aria-busy='false']")).toBeTruthy());
@@ -200,6 +200,6 @@ describe("the picker on the Genres page (F77)", () => {
     const box = await screen.findByRole("combobox", { name: /^Search/ });
     await user.type(box, "rating");
     const link = await within(document.querySelector(".pick-measure-note")).findByRole("link", { name: /See it in Explore/ });
-    expect(link.getAttribute("href")).toBe("#/explore?genre=romance&metric=pop_rating_count&var=dlg_word_share&include=all");
+    expect(link.getAttribute("href")).toBe("#/explore?genre=all&metric=pop_rating_count&var=dlg_word_share&include=all");
   });
 });

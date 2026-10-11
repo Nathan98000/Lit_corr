@@ -1,6 +1,6 @@
 import { useId, useRef } from "react";
 import useOrderGlide from "./GenreGlide.jsx";
-import { REPEAT, chartDomain, chartRows, numberFormat, printedFor, rowDetails, tickFormatFor, withRepeat } from "../lib/genres.js";
+import { chartDomain, chartRows, numberFormat, printedFor, rowDetails, tickFormatFor } from "../lib/genres.js";
 import { PHONE, rangeLayout } from "../lib/rangeLayout.js";
 import { GenreRowDetails, useGenreDetails } from "./GenreDetails.jsx";
 import useWidth from "./useWidth.js";
@@ -17,7 +17,7 @@ import useWidth from "./useWidth.js";
  * One tab stop: ↑/↓, Home and End move between genres; the focused or hovered genre's details show as a card (wider
  * charts) or a line under the chart (phones), with the link to what stands out about the genre's stories.
  */
-export default function GenreChart({ meta, variable, entry, rows, highlight, sub, title, onNavigate }) {
+export default function GenreChart({ meta, variable, entry, rows, sub, title, onNavigate }) {
   const kind = entry.k;
   const { min_n: minN, small_n: smallN } = meta;
   const [ref, width] = useWidth(720, "genres");
@@ -25,9 +25,7 @@ export default function GenreChart({ meta, variable, entry, rows, highlight, sub
   const ids = useId();
   const titleId = `${ids}-title`;
   const hatchId = `${ids}-hatch`.replace(/:/g, "");
-  // the highlighted genre's row, drawn a second time under All genres (I9)
-  const hl = highlight ? rows.find((r) => r.genre.id === highlight) : null;
-  const crow = withRepeat(chartRows(rows, variable, kind), hl?.i);
+  const crow = chartRows(rows, variable, kind);
   const layout = rangeLayout({
     rows: crow,
     overall: crow[0].stats,
@@ -49,12 +47,9 @@ export default function GenreChart({ meta, variable, entry, rows, highlight, sub
   });
   const phone = layout.width < PHONE;
   const byIndex = new Map(rows.map((r) => [r.i, r]));
-  const rowOf = (r) => byIndex.get(r.index === REPEAT ? hl.i : r.index); // the copy is the highlighted genre's
-  const realIds = layout.rows.filter((r) => r.index !== REPEAT).map((r) => r.index);
-  const d = useGenreDetails({ ids: realIds, frame, phone, byIndex, variable, entry, minN });
+  const d = useGenreDetails({ ids: layout.rows.map((r) => r.index), frame, phone, byIndex, variable, entry, minN });
   const { active, rowProps } = d;
-  const activeRow = active == null ? null : layout.rows.find((r) => r.index === (d.shown?.repeat ? REPEAT : active));
-  const repeat = layout.rows.find((r) => r.index === REPEAT);
+  const activeRow = active == null ? null : layout.rows.find((r) => r.index === active);
   const x = layout.x;
   const svgClass = active != null ? "has-active" : undefined;
   // a new order glides the rows to their places (I10)
@@ -62,7 +57,7 @@ export default function GenreChart({ meta, variable, entry, rows, highlight, sub
     frame,
     new Map(layout.rows.map((r) => [String(r.index), r.y0])),
     rows.map((r) => r.i).join(","),
-    `${variable.id}|${sub}|${layout.width}|${highlight || ""}`,
+    `${variable.id}|${sub}|${layout.width}`,
   );
 
   return (
@@ -79,26 +74,17 @@ export default function GenreChart({ meta, variable, entry, rows, highlight, sub
             </pattern>
           </defs>
           <g aria-hidden="true">
-            {layout.rows.map((r) => {
-              const row = rowOf(r);
-              if (!row.all && row.genre.id !== highlight) return null;
-              return (
-                <rect
-                  key={r.index}
-                  className={row.all ? "band-all" : "band-highlight"}
-                  data-glide={row.all || r.index === REPEAT ? undefined : String(r.index)}
-                  x={0}
-                  y={r.y0 + 1}
-                  width={layout.width}
-                  height={r.y1 - r.y0 - 2}
-                  rx={4}
-                />
-              );
-            })}
+            <rect
+              className="band-all"
+              x={0}
+              y={layout.rows[0].y0 + 1}
+              width={layout.width}
+              height={layout.rows[0].y1 - layout.rows[0].y0 - 2}
+              rx={4}
+            />
             {layout.rows.length > 1 && (
               <line className="all-rule" x1={0} x2={layout.width} y1={layout.rows[1].y0} y2={layout.rows[1].y0} />
             )}
-            {repeat && <line className="all-rule" x1={0} x2={layout.width} y1={repeat.y1} y2={repeat.y1} />}
             {layout.ticks.map((t) => (
               <g key={t.v} className="tick-mark" data-v={t.v}>
                 <line className="grid" x1={t.x} x2={t.x} y1={layout.top - 4} y2={layout.height - (layout.ref ? 22 : 6)} />
@@ -126,36 +112,19 @@ export default function GenreChart({ meta, variable, entry, rows, highlight, sub
               </g>
             )}
           </g>
-          {layout.rows.map((r) => {
-            const row = rowOf(r);
-            const parts = <RowParts r={r} kind={kind} x={x} width={layout.width} hatchId={hatchId} />;
-            const state = [r.small && "small", !r.ok && "hidden-group"];
-            if (r.index === REPEAT) {
-              // the copy: for the eye only, outside the keyboard's sequence; hovering or tapping it shows the genre's details
-              const cls = ["row", "repeat", "highlight", ...state, d.shown?.repeat && "active"].filter(Boolean);
-              return (
-                <g key={REPEAT} {...d.repeatProps(hl.i)} className={cls.join(" ")} aria-hidden="true">
-                  {parts}
-                </g>
-              );
-            }
-            const cls = [
-              "row",
-              ...state,
-              row.all && "all",
-              row.genre.id === highlight && "highlight",
-              active === r.index && !d.shown?.repeat && "active",
-            ].filter(Boolean);
+          {layout.rows.map((r, ri) => {
+            const row = byIndex.get(r.index);
+            const cls = ["row", r.small && "small", !r.ok && "hidden-group", row.all && "all", active === r.index && "active"];
             return (
               <g
                 key={r.index}
-                {...rowProps(realIds.indexOf(r.index), r.index)}
-                className={cls.join(" ")}
+                {...rowProps(ri, r.index)}
+                className={cls.filter(Boolean).join(" ")}
                 role="img"
                 aria-label={rowDetails(row, variable, entry, minN).name}
                 data-glide={row.all ? undefined : String(r.index)}
               >
-                {parts}
+                <RowParts r={r} kind={kind} x={x} width={layout.width} hatchId={hatchId} />
               </g>
             );
           })}

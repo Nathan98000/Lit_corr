@@ -1,5 +1,8 @@
 // The simpler site (STAGE2_SIMPLIFY_AND_PNG_PROMPT.md): what that round removed stays removed, on every view.
 import { render, screen, waitFor } from "@testing-library/react";
+import { readFileSync } from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "../App.jsx";
 import { clearCache } from "../lib/data.js";
@@ -83,5 +86,41 @@ describe("no comparing genres on Explore (decision 6)", () => {
     expect(document.querySelector(".range-chart svg")).toBeTruthy();
     await waitFor(() => expect(window.location.hash).not.toMatch(/mode/));
     expect(window.location.hash).toMatch(new RegExp(`^#/explore\\?genre=${genre}&.*var=dlg_word_share`));
+  });
+});
+
+describe("no highlighted genre on the Genres page (decision 8)", () => {
+  it.each(VIEWS.filter(([name]) => name.startsWith("One characteristic")))("%s: no Highlight menu", async (_, hash) => {
+    await open(hash);
+    expect(screen.queryByLabelText("Highlight")).toBeNull();
+    expect(document.querySelector(".genres-controls").textContent).not.toMatch(/Highlight/);
+    expect([...document.querySelectorAll(".genres-controls select")].map((x) => x.getAttribute("aria-label") || x.id)).toHaveLength(1);
+  });
+
+  it("draws no second row for an old link's genre, and the address drops it", async () => {
+    await open("#/genres?var=dlg_word_share&genre=romance");
+    const rows = [...document.querySelectorAll(".genre-chart .row")];
+    expect(rows).toHaveLength(4); // All genres and the three genres, once each
+    expect(rows.filter((r) => r.getAttribute("aria-label").startsWith("Romance:"))).toHaveLength(1);
+    expect(document.querySelector(".row.repeat, .row.highlight, .band-highlight")).toBeNull();
+    await waitFor(() => expect(window.location.hash).toBe("#/genres?var=dlg_word_share&include=all"));
+  });
+
+  const here = path.dirname(fileURLToPath(import.meta.url));
+  const REAL = path.join(here, "..", "..", "public", "aggregates");
+  const real = realMeta();
+  it.skipIf(!real)("#/genres?var=story_words&genre=adult-romance: no repeated row, and the address loses genre (real data)", async () => {
+    vi.stubGlobal("fetch", async (url) => {
+      const rel = String(url).split("aggregates/")[1];
+      const body = readFileSync(path.join(REAL, rel), "utf8");
+      return { ok: true, status: 200, json: async () => JSON.parse(body) };
+    });
+    await open("#/genres?var=story_words&genre=adult-romance");
+    const names = [...document.querySelectorAll(".genre-chart .row")].map((r) => r.getAttribute("aria-label").split(":")[0]);
+    expect(names).toHaveLength(real.genres.length);
+    expect(names[0]).toBe("All genres");
+    expect(names.filter((n) => n === "Romance")).toHaveLength(1);
+    expect(document.querySelector(".row.repeat, .row.highlight, .band-highlight")).toBeNull();
+    await waitFor(() => expect(window.location.hash).toBe("#/genres?var=story_words&include=all"));
   });
 });

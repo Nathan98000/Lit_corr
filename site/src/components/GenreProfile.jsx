@@ -102,11 +102,11 @@ function RowPlot({ item, zone }) {
   );
 }
 
-/** One characteristic in "One genre": a link to every genre's numbers, with this genre highlighted (View 1). */
+/** One characteristic in "One genre": a link to every genre's numbers (View 1). */
 function ProfileRow({ item, genre, sub, minN, mark, zone, onNavigate }) {
   const few = item.r == null; // not compared: fewer than the rule's min_n stories
   return (
-    <ViewLink className={`profile-row${few ? " small" : ""}`} to={{ v: item.id, sub, genre: genre.id }} onNavigate={onNavigate}>
+    <ViewLink className={`profile-row${few ? " small" : ""}`} to={{ v: item.id, sub }} onNavigate={onNavigate}>
       <span className="profile-label">{item.variable.label}</span>
       <span className="profile-plot-cell">
         <RowPlot item={item} zone={zone} />
@@ -232,8 +232,8 @@ export const tooFewText = (genre, subset, minN) =>
  * One genre against all genres (View 2): how many characteristics clearly set the genre apart, the three biggest
  * differences, the characteristics lower and higher in the genre (ordered by the size of the difference: this ranks
  * characteristics within one genre, never genres), the named groups with a different mix, and every characteristic by
- * topic, folded (a topic's rows are drawn when it is opened). Every row opens that characteristic's chart with the
- * genre highlighted. With fewer stories than the rule needs, nothing is compared: the heading says so, then "Show all
+ * topic, folded (a topic's rows are drawn when it is opened). Every row opens that characteristic's chart in every
+ * genre. With fewer stories than the rule needs, nothing is compared: the heading says so, then "Show all
  * stories" and the topics, whose rows give the numbers. Under the topics, Copy link (F80).
  */
 export default function GenreProfile({ meta, state, file, busy, onSwitch, onNavigate, headingRef }) {

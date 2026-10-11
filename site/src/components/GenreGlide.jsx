@@ -8,7 +8,7 @@ const easeOut = (t) => 1 - (1 - t) ** 3; // the explorer's glide easing (useGlid
  * Rows glide from their old places to their new ones when the order of the genres changes (idea I10), so a reader can
  * follow a genre from A–Z to "By median". `places` maps each moving element's `data-glide` id (a row and its band) to
  * its top in the new layout; `orderKey` is the order, `layoutKey` everything else the places depend on (the
- * characteristic, the option, the width, the highlighted genre): only a new order glides, over 300 ms. The rows are
+ * characteristic, the option, the width): only a new order glides, over 300 ms. The rows are
  * moved with transforms set on the elements themselves, so nothing is laid out again and React draws once. Under
  * reduced motion the rows jump.
  */

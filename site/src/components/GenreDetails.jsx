@@ -143,7 +143,7 @@ export function cardHeight(row, details) {
  */
 export function useGenreDetails({ ids, frame, phone, byIndex, variable, entry, minN }) {
   const detailsRef = useRef(null);
-  const { shown, setShown, rowProps, repeatProps } = useRowDetails({ ids, frame, phone, within: detailsRef });
+  const { shown, setShown, rowProps } = useRowDetails({ ids, frame, phone, within: detailsRef });
   const active = shown?.i ?? null;
   // on phones the line sticks to the bottom of the screen: a row focused from the keyboard is never left under it
   // (WCAG 2.4.11); a tap leaves the page where it is
@@ -164,7 +164,6 @@ export function useGenreDetails({ ids, frame, phone, byIndex, variable, entry, m
     row,
     details: row ? rowDetails(row, variable, entry, minN) : null,
     rowProps,
-    repeatProps,
     detailsRef,
     // focus leaving the details for somewhere outside the chart hides details that focus showed
     leave: (e) => {

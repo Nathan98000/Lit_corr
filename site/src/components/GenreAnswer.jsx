@@ -160,7 +160,7 @@ export default function GenreAnswer({ meta, state, file, busy, onChange, onNavig
   const anySmall = rows.some((r) => r.small);
   const question = chartQuestionText(variable);
   const explore = toHash("explore", {
-    genre: state.genre || "all",
+    genre: "all",
     metric: lastExplore?.metric,
     v: variable.id,
     sub: state.sub,
@@ -171,7 +171,6 @@ export default function GenreAnswer({ meta, state, file, busy, onChange, onNavig
     variable,
     entry,
     rows: ordered,
-    highlight: state.genre,
     sub: state.sub,
     title: `${question} ${heading}`,
     onNavigate,

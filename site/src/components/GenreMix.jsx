@@ -1,5 +1,5 @@
 import { useId, useRef } from "react";
-import { REPEAT, comparison, formatPercent, rowDetails, withRepeat } from "../lib/genres.js";
+import { comparison, formatPercent, rowDetails } from "../lib/genres.js";
 import { bandPalette, mixColors, mixLayout } from "../lib/genreLayout.js";
 import { GenreRowDetails, useGenreDetails } from "./GenreDetails.jsx";
 import useWidth from "./useWidth.js";
@@ -26,7 +26,7 @@ export function mixRows(rows, variable, kind, minN) {
  * genres' bar where it fits. The mark has its own column. Genres with fewer than SMALL_N stories are hatched and never
  * marked. Details and keyboard as on the range chart.
  */
-export default function GenreMix({ meta, variable, entry, rows, highlight, sub, title, onNavigate }) {
+export default function GenreMix({ meta, variable, entry, rows, sub, title, onNavigate }) {
   const kind = entry.k;
   const [ref, width] = useWidth(720, "genres");
   const frame = useRef(null);
@@ -35,15 +35,10 @@ export default function GenreMix({ meta, variable, entry, rows, highlight, sub, 
   const hatchId = `${ids}-hatch`.replace(/:/g, "");
   const labels = variable.bins.labels;
   const colors = mixColors(kind, rows[0].stats?.shares || labels.map(() => 0));
-  // the highlighted genre's row, drawn a second time under All genres (I9)
-  const hl = highlight ? rows.find((r) => r.genre.id === highlight) : null;
-  const layout = mixLayout({ rows: withRepeat(mixRows(rows, variable, kind, meta.min_n), hl?.i), width, labels });
+  const layout = mixLayout({ rows: mixRows(rows, variable, kind, meta.min_n), width, labels });
   const byIndex = new Map(rows.map((r) => [r.i, r]));
-  const rowOf = (r) => byIndex.get(r.index === REPEAT ? hl.i : r.index);
-  const realIds = layout.rows.filter((r) => r.index !== REPEAT).map((r) => r.index);
-  const repeat = layout.rows.find((r) => r.index === REPEAT);
   const d = useGenreDetails({
-    ids: realIds,
+    ids: layout.rows.map((r) => r.index),
     frame,
     phone: layout.phone,
     byIndex,
@@ -51,7 +46,7 @@ export default function GenreMix({ meta, variable, entry, rows, highlight, sub, 
     entry,
     minN: meta.min_n,
   });
-  const activeRow = d.active == null ? null : layout.rows.find((r) => r.index === (d.shown?.repeat ? REPEAT : d.active));
+  const activeRow = d.active == null ? null : layout.rows.find((r) => r.index === d.active);
 
   return (
     <div ref={ref} className={`genre-mix kind-${kind}${kind === "band" ? ` bands-${bandPalette(labels.length)}` : ""}`}>
@@ -72,25 +67,17 @@ export default function GenreMix({ meta, variable, entry, rows, highlight, sub, 
             </pattern>
           </defs>
           <g aria-hidden="true">
-            {layout.rows.map((r) => {
-              const row = rowOf(r);
-              if (!row.all && row.genre.id !== highlight) return null;
-              return (
-                <rect
-                  key={r.index}
-                  className={row.all ? "band-all" : "band-highlight"}
-                  x={0}
-                  y={r.y0 + 1}
-                  width={layout.width}
-                  height={r.y1 - r.y0 - 2}
-                  rx={4}
-                />
-              );
-            })}
+            <rect
+              className="band-all"
+              x={0}
+              y={layout.rows[0].y0 + 1}
+              width={layout.width}
+              height={layout.rows[0].y1 - layout.rows[0].y0 - 2}
+              rx={4}
+            />
             {layout.rows.length > 1 && (
               <line className="all-rule" x1={0} x2={layout.width} y1={layout.rows[1].y0} y2={layout.rows[1].y0} />
             )}
-            {repeat && <line className="all-rule" x1={0} x2={layout.width} y1={repeat.y1} y2={repeat.y1} />}
             {layout.storiesHead && (
               <text className="tick stories-head" x={layout.storiesHead.x} y={layout.storiesHead.y} textAnchor="end">
                 {layout.storiesHead.text}
@@ -102,34 +89,18 @@ export default function GenreMix({ meta, variable, entry, rows, highlight, sub, 
               </text>
             ))}
           </g>
-          {layout.rows.map((r) => {
-            const row = rowOf(r);
-            const parts = <MixRow r={r} row={row} layout={layout} colors={colors} hatchId={hatchId} />;
-            const state = [row.small && "small", !row.stats && "hidden-group"];
-            if (r.index === REPEAT) {
-              const cls = ["row", "repeat", "highlight", ...state, d.shown?.repeat && "active"].filter(Boolean);
-              return (
-                <g key={REPEAT} {...d.repeatProps(hl.i)} className={cls.join(" ")} aria-hidden="true">
-                  {parts}
-                </g>
-              );
-            }
-            const cls = [
-              "row",
-              ...state,
-              row.all && "all",
-              row.genre.id === highlight && "highlight",
-              d.active === r.index && !d.shown?.repeat && "active",
-            ].filter(Boolean);
+          {layout.rows.map((r, ri) => {
+            const row = byIndex.get(r.index);
+            const cls = ["row", row.small && "small", !row.stats && "hidden-group", row.all && "all", d.active === r.index && "active"];
             return (
               <g
                 key={r.index}
-                {...d.rowProps(realIds.indexOf(r.index), r.index)}
-                className={cls.join(" ")}
+                {...d.rowProps(ri, r.index)}
+                className={cls.filter(Boolean).join(" ")}
                 role="img"
                 aria-label={rowDetails(row, variable, entry, meta.min_n).name}
               >
-                {parts}
+                <MixRow r={r} row={row} layout={layout} colors={colors} hatchId={hatchId} />
               </g>
             );
           })}

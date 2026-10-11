@@ -15,10 +15,15 @@ const PATTERN_PARAMS = { genre: "genre", metric: "metric" };
 const GENRE_PARAMS = { view: "view", v: "var", genre: "genre", sub: "include", sort: "sort" };
 const GENRE_CHART_ORDER = ["v", "sub", "sort"];
 const GENRE_PROFILE_ORDER = ["view", "genre", "sub"];
+// the Trends page: one characteristic over time (#/trends?var=…&genre=…&include=…), or what changed in a genre's
+// stories (#/trends?view=changes&genre=…&include=…)
+const TREND_PARAMS = { view: "view", v: "var", genre: "genre", sub: "include" };
+const TREND_CHART_ORDER = ["v", "genre", "sub"];
+const TREND_CHANGES_ORDER = ["view", "genre", "sub"];
 
 /**
- * Pages: #/explore?… (the explorer), #/genres?… (the Genres page), #/patterns?genre=…&metric=… (the pattern browser)
- * and #/methodology or #/methodology/<section> (How it works).
+ * Pages: #/explore?… (the explorer), #/genres?… (the Genres page), #/trends?… (the Trends page),
+ * #/patterns?genre=…&metric=… (the pattern browser) and #/methodology or #/methodology/<section> (How it works).
  */
 export function parseHash(hash) {
   const h = (hash || "").replace(/^#/, "");
@@ -35,6 +40,7 @@ export function parseHash(hash) {
   if (parts[0] === "methodology") return { page: "methodology", section: parts[1] || null, state: {} };
   if (parts[0] === "patterns") return { page: "patterns", state: read(PATTERN_PARAMS) };
   if (parts[0] === "genres") return { page: "genres", state: read(GENRE_PARAMS) };
+  if (parts[0] === "trends") return { page: "trends", state: read(TREND_PARAMS) };
   return { page: "explore", state: read(PARAMS) };
 }
 
@@ -47,6 +53,14 @@ export function toHash(page, state = {}) {
     }
     const q = params.toString();
     return q ? `#/genres?${q}` : "#/genres";
+  }
+  if (page === "trends") {
+    const params = new URLSearchParams();
+    for (const key of state.view === "changes" ? TREND_CHANGES_ORDER : TREND_CHART_ORDER) {
+      if (state[key] != null) params.set(TREND_PARAMS[key], state[key]);
+    }
+    const q = params.toString();
+    return q ? `#/trends?${q}` : "#/trends";
   }
   const map = page === "patterns" ? PATTERN_PARAMS : PARAMS;
   const params = new URLSearchParams();
@@ -140,4 +154,23 @@ export function sanitizeGenres(state, meta, remembered = null) {
   const s = { v: variable.id, sub };
   if (state.sort === "value" && sortable(variable)) s.sort = "value";
   return s;
+}
+
+/** Characteristics left out of the Trends page (TREND_PAGE_EXCLUDED in litcorr/stage2/wording.py; meta.trend.excluded). */
+export const TREND_PAGE_EXCLUDED = ["pub_year", "age_years", "pub_month", "pub_weekday", "pub_is_weekend", "meta_tag_count", "author_stories_count"];
+export const onTrendsPage = (variable) => Boolean(variable) && !TREND_PAGE_EXCLUDED.includes(variable.id);
+
+/**
+ * The Trends page's settings: { v, genre, sub } for one characteristic over time, { view: "changes", genre, sub, v } for
+ * what changed (`v` is kept for the way back). An unknown characteristic, or one left out of the page, becomes story
+ * length; an unknown genre, All genres (the page opens on All genres, D9); an option the page doesn't offer
+ * (meta.trend.subsets), or a Length option with story length, All stories; `view` stays only as "changes".
+ */
+export function sanitizeTrends(state, meta) {
+  const allowed = (id) => meta.variables.find((v) => v.id === id && onTrendsPage(v));
+  const variable = allowed(state.v) || allowed(DEFAULT_STATE.v) || meta.variables.find(onTrendsPage);
+  const genre = has(meta.genres, state.genre) ? state.genre : "all";
+  let sub = (meta.trend?.subsets ?? ["all"]).includes(state.sub) ? state.sub : "all";
+  if (subsetConflict(meta.subsets.find((x) => x.id === sub), variable)) sub = "all";
+  return state.view === "changes" ? { view: "changes", genre, sub, v: variable.id } : { v: variable.id, genre, sub };
 }

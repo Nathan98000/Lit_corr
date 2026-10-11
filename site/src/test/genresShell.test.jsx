@@ -100,19 +100,20 @@ describe("Genres addresses", () => {
   });
 });
 
-describe("the masthead (D4, D9)", () => {
-  it("lists Explore, Genres, Patterns and How it works; the footer keeps How it works", async () => {
+describe("the masthead (D4, D9; with the Trends page, D7)", () => {
+  it("lists Explore, Genres, Trends, Patterns and How it works; the footer keeps How it works", async () => {
     await openGenres();
     const nav = screen.getByRole("navigation", { name: "Pages" });
     const links = within(nav).getAllByRole("link");
-    expect(links.map((a) => a.textContent)).toEqual(["Explore", "Genres", "Patterns", "How it works"]);
+    expect(links.map((a) => a.textContent)).toEqual(["Explore", "Genres", "Trends", "Patterns", "How it works"]);
     expect(within(nav).getByRole("link", { name: "Genres" }).getAttribute("aria-current")).toBe("page");
     expect(within(nav).getByRole("link", { name: "How it works" }).classList.contains("nav-how")).toBe(true);
-    expect(within(screen.getByRole("contentinfo")).getByRole("link", { name: "How it works" })).toBeTruthy();
+    const footer = screen.getByRole("contentinfo");
+    expect(within(footer.querySelector("p")).getByRole("link", { name: "How it works" })).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Menu" })).toBeNull(); // no Menu button (D4)
   });
 
-  it("hides How it works below 560 px and Explore below 360 px, and keeps text at 14.5 px or more", () => {
+  it("drops How it works below 602 px, tightens below 484, drops Explore below 414 and Patterns below 352 (measured)", () => {
     const css = readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "styles.css"), "utf8");
     // every block of a media query, joined
     const block = (q) =>
@@ -121,10 +122,11 @@ describe("the masthead (D4, D9)", () => {
         .slice(1)
         .map((b) => b.split(/\n}\n/)[0])
         .join("\n");
-    expect(block("max-width: 559px")).toMatch(/\.masthead nav a\.nav-how \{\s*display: none;/);
-    expect(block("max-width: 359px")).toMatch(/\.masthead nav a\.nav-explore \{\s*display: none;/);
-    expect(block("max-width: 419px")).toMatch(/font-size: 14\.5px/);
-    expect(css).not.toMatch(/@media \(max-width: 399px\) \{\s*\.brand/); // the old breakpoint is gone
+    expect(block("max-width: 601px")).toMatch(/\.masthead nav a\.nav-how \{\s*display: none;/);
+    expect(block("max-width: 483px")).toMatch(/\.masthead nav \{\s*gap: 0;\s*font-size: 14\.5px;/);
+    expect(block("max-width: 413px")).toMatch(/\.masthead nav a\.nav-explore \{\s*display: none;/);
+    expect(block("max-width: 351px")).toMatch(/\.masthead nav a\.nav-patterns \{\s*display: none;/);
+    for (const old of ["559px", "419px", "359px"]) expect(block(`max-width: ${old}`)).not.toMatch(/\.masthead|\.brand/); // the old ones
   });
 
   it("links Genres to the last Genres address of the visit and fetches the page's code and file ahead", async () => {

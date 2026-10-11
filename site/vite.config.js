@@ -1,12 +1,12 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
-// Parts that load their code when first needed (F49), the Genres page's components (Genre*.jsx) and helpers among them,
-// and the code that makes "Download PNG"'s image (lib/chartImage.js).
+// Parts that load their code when first needed (F49), the Genres and Trends pages' components (Genre*.jsx, Trend*.jsx,
+// IncludeSelect.jsx) and helpers among them, and the code that makes "Download PNG"'s image (lib/chartImage.js).
 // Everything else, including React and the code the first chart needs, stays in the main chunk, so the first load is
 // one script.
 const LAZY =
-  /[\\/]src[\\/](components[\\/](CharacteristicPicker|Methodology|MetricMenu|PatternBrowser|Genre\w*)\.jsx|lib[\\/](search|genres|genreLayout|chartImage)\.js|genres\.css)$/;
+  /[\\/]src[\\/](components[\\/](CharacteristicPicker|Methodology|MetricMenu|PatternBrowser|IncludeSelect|Genre\w*|Trend\w*)\.jsx|lib[\\/](search|genres|genreLayout|chartImage|trends|trendLayout)\.js|(genres|trends)\.css)$/;
 
 export default defineConfig({
   plugins: [react()],

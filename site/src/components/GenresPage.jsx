@@ -7,6 +7,7 @@ import { ChartPlaceholder } from "./Explorer.jsx";
 import GenreAnswer from "./GenreAnswer.jsx";
 import GenreProfile, { profileAnnouncement } from "./GenreProfile.jsx";
 import Segmented from "./GenreSwitch.jsx";
+import IncludeSelect from "./IncludeSelect.jsx";
 import InlineSelect, { SlotWords } from "./InlineSelect.jsx";
 import { PartBoundary } from "./lazyPart.jsx";
 import LoadError from "./LoadError.jsx";
@@ -66,55 +67,6 @@ function useAnnouncement(text, key, orderText = "", orderKey = "") {
     return () => clearTimeout(t);
   }, [text, key, orderKey]); // eslint-disable-line react-hooks/exhaustive-deps
   return said;
-}
-
-/** "Only include", with the options that cannot go with the characteristic turned off (as on the explorer). */
-function IncludeSelect({ meta, value, variable, onChange }) {
-  const ids = useId();
-  const groups = new Map();
-  for (const s of meta.subsets) {
-    if (!groups.has(s.group)) groups.set(s.group, []);
-    groups.get(s.group).push(s);
-  }
-  const anyConflict = Boolean(variable) && meta.subsets.some((s) => subsetConflict(s, variable));
-  const option = (s) => {
-    const reason = variable ? subsetConflict(s, variable) : null;
-    return (
-      <option key={s.id} value={s.id} disabled={Boolean(reason)}>
-        {s.label}
-        {reason ? ` (${reason})` : ""}
-      </option>
-    );
-  };
-  const subset = meta.subsets.find((s) => s.id === value);
-  return (
-    <span className="include include-row">
-      <span className="include-label">Only include:</span>{" "}
-      <InlineSelect
-        id={`${ids}-include`}
-        label="Only include"
-        value={value}
-        text={subset.label}
-        onChange={onChange}
-        describedBy={anyConflict ? `${ids}-note` : undefined}
-      >
-        {[...groups.entries()].map(([grp, subs]) =>
-          grp ? (
-            <optgroup key={grp} label={grp}>
-              {subs.map(option)}
-            </optgroup>
-          ) : (
-            subs.map(option)
-          ),
-        )}
-      </InlineSelect>
-      {anyConflict && (
-        <span className="visually-hidden" id={`${ids}-note`}>
-          Options that would leave only one group of {variable.label.toLowerCase()} are turned off.
-        </span>
-      )}
-    </span>
-  );
 }
 
 /**
@@ -227,7 +179,7 @@ export default function GenresPage({ meta, state, onChange, onNavigate, onHoldSc
     controls = (
       <>
         {viewSwitch}
-        <IncludeSelect meta={meta} value={state.sub} onChange={(s) => keepPlace({ ...state, sub: s })} />
+        <IncludeSelect subsets={meta.subsets} value={state.sub} onChange={(s) => keepPlace({ ...state, sub: s })} />
       </>
     );
   } else {
@@ -247,7 +199,7 @@ export default function GenresPage({ meta, state, onChange, onNavigate, onHoldSc
       <>
         {viewSwitch}
         <IncludeSelect
-          meta={meta}
+          subsets={meta.subsets}
           value={state.sub}
           variable={variable}
           onChange={(s) => keepPlace({ ...state, sub: s })}

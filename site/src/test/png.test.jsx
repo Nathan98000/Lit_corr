@@ -196,7 +196,7 @@ describe("the button", () => {
 
   it("loads the image's code as a lazy part", () => {
     const config = readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "vite.config.js"), "utf8");
-    expect(config).toMatch(/lib\[\\\\\/\]\(search\|genres\|genreLayout\|chartImage\)\\\.js/);
+    expect(config).toMatch(/lib\[\\\\\/\]\((\w+\|)*chartImage(\|\w+)*\)\\\.js/); // among the lazy helpers
   });
 });
 

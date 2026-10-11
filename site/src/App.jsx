@@ -2,22 +2,24 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Explorer, { ChartPlaceholder } from "./components/Explorer.jsx";
 import { PartBoundary } from "./components/lazyPart.jsx";
 import LoadError from "./components/LoadError.jsx";
-import { GenresPage, Methodology, PatternBrowser } from "./components/pages.js";
+import { GenresPage, Methodology, PatternBrowser, TrendsPage } from "./components/pages.js";
 import useScrollFloor from "./components/useScrollFloor.js";
-import { clearCache, loadMeta, prefetchGenres } from "./lib/data.js";
+import { clearCache, loadMeta, prefetchGenres, prefetchTrends } from "./lib/data.js";
 import { scrollBehavior } from "./lib/motion.js";
-import { parseHash, sanitize, sanitizeGenres, settledHash, toHash } from "./lib/urlState.js";
+import { parseHash, sanitize, sanitizeGenres, sanitizeTrends, settledHash, toHash } from "./lib/urlState.js";
 import { aboutCount } from "./lib/wording.js";
 
 const PAGE_PLACEHOLDER = <div className="page-placeholder" aria-busy="true" />;
 
 export const TITLE = "What do popular Literotica stories have in common?";
 export const GENRES_TITLE = "How do the genres’ stories differ?";
+export const TRENDS_TITLE = "How have the stories changed?";
 export const SITE_NAME = "Story Patterns"; // the masthead name: change it here
 const PAGE_TITLES = {
   methodology: `How it works · ${TITLE}`,
   patterns: `Patterns · ${TITLE}`,
   genres: GENRES_TITLE, // while the page or its file loads; then the question on screen (GenresPage, F73)
+  trends: TRENDS_TITLE, // the same (TrendsPage)
 };
 const DEFAULT_QUESTION = "In All genres, how does the average rating vary with story length in words?";
 
@@ -31,23 +33,29 @@ const replaceHash = (hash) => window.history.replaceState(window.history.state, 
 /**
  * The headline as a kicker, with the story and genre counts (filled in when the data arrives; the placeholder says
  * the same). The story count is rounded, so it never contradicts a chart's exact count (F55). The Genres page asks
- * its own question.
+ * its own question; the Trends page too, with the years it covers instead of the genres (meta.trend; until the data
+ * arrives, figure spaces hold their place).
  */
-function Kicker({ meta, title = TITLE }) {
+function Kicker({ meta, title = TITLE, years = false }) {
+  const stories = meta ? aboutCount(meta.counts.included) : "about 9,000";
+  const span = meta?.trend ? `${meta.trend.periods[0][0]}–${meta.trend.now[1]}` : "\u2007\u2007\u2007\u2007–\u2007\u2007\u2007\u2007";
   return (
     <h1 className="kicker">
       {title}{" "}
       <span className="kicker-counts">
-        · {meta ? aboutCount(meta.counts.included) : "about 9,000"} stories · {meta ? meta.genres.length - 1 : 30} genres
+        · {stories} stories · {years ? span : `${meta ? meta.genres.length - 1 : 30} genres`}
       </span>
     </h1>
   );
 }
 
-/** The Genres page's place while its code or its file is on its way: the question, then a chart-sized frame. */
-export function GenresPlaceholder() {
+/**
+ * The Genres page's place while its code or its file is on its way: the question, then a chart-sized frame (the
+ * Trends page's too).
+ */
+export function GenresPlaceholder({ className = "genres-page" }) {
   return (
-    <div className="genres-page" aria-busy="true">
+    <div className={className} aria-busy="true">
       <div className="controls">
         <p className="sentence sentence-placeholder" aria-hidden="true">
           {"\u00a0"}
@@ -64,10 +72,15 @@ export default function App() {
   const [error, setError] = useState(null);
   const [route, setRoute] = useState(() => {
     const first = parseHash(window.location.hash);
-    // a visit that starts on the Genres page fetches the page's code and its file at once, not after meta.json (F68)
+    // a visit that starts on the Genres page fetches the page's code and its file at once, not after meta.json (F68),
+    // and one that starts on the Trends page its code and the file of its option and genre
     if (first.page === "genres") {
       GenresPage.preload();
       prefetchGenres(first.state.sub || "all");
+    }
+    if (first.page === "trends") {
+      TrendsPage.preload();
+      prefetchTrends(first.state.sub || "all", first.state.genre || "all");
     }
     return first;
   });
@@ -75,6 +88,8 @@ export default function App() {
   const lastGenres = useRef(null); // the last Genres address of this visit (the masthead's link goes back to it)
   const lastChart = useRef({}); // the Genres page's last characteristic and order, for the way back from one genre
   const chosenGenre = useRef(null); // the last genre the reader chose in this visit, on any page (D8)
+  const lastTrends = useRef(null); // the last Trends address of this visit (the masthead's link goes back to it)
+  const lastTrendChart = useRef({}); // the Trends page's last characteristic, for the way back from what changed
   const mainRef = useRef(null);
   const [floorRef, holdScroll] = useScrollFloor();
 
@@ -121,6 +136,20 @@ export default function App() {
     if (genresState.view !== "genre") lastChart.current = { v: genresState.v, sort: genresState.sort };
   }, [genresState]);
 
+  // the Trends page: what changed keeps the characteristic it came from, for the way back; it opens on All genres (D9),
+  // and a genre chosen there counts as chosen for the Genres page (D8)
+  const trendsState = useMemo(() => {
+    if (!meta || route.page !== "trends") return null;
+    const raw = route.state.view === "changes" ? { ...lastTrendChart.current, ...route.state } : route.state;
+    return sanitizeTrends(raw, meta);
+  }, [meta, route.page, route.state]);
+  useEffect(() => {
+    if (!trendsState) return;
+    lastTrends.current = trendsState;
+    if (trendsState.genre !== "all") chosenGenre.current = trendsState.genre;
+    if (trendsState.view !== "changes") lastTrendChart.current = { v: trendsState.v };
+  }, [trendsState]);
+
   // an old link's setting that the page no longer has leaves the address, in place (no new history entry)
   useEffect(() => {
     const shown = route.page === "explore" ? state : route.page === "genres" ? genresState : null;
@@ -148,6 +177,28 @@ export default function App() {
     prefetchGenres(lastGenres.current?.sub || "all");
   };
 
+  const updateTrends = useCallback((next) => {
+    replaceHash(toHash("trends", next));
+    setRoute({ page: "trends", state: next });
+  }, []);
+  const goTrends = useCallback((next, { focus = false } = {}) => {
+    window.history.pushState(null, "", toHash("trends", next));
+    setRoute({ page: "trends", state: next });
+    window.scrollTo?.(0, 0);
+    if (focus) {
+      const later = window.requestAnimationFrame || ((f) => setTimeout(f, 0));
+      later(() => document.getElementById("question")?.focus({ preventScroll: true }));
+    }
+  }, []);
+  // the masthead's link: the last Trends address of this visit, else the page's own (All genres, D9); hovering or
+  // focusing it fetches the page's code and that address's file
+  const trendsLink = lastTrends.current ? toHash("trends", lastTrends.current) : "#/trends";
+  const preloadTrends = () => {
+    TrendsPage.preload();
+    prefetchTrends(lastTrends.current?.sub || "all", lastTrends.current?.genre || "all");
+  };
+  const patternsLink = toHash("patterns", { genre: lastExplore.current.genre, metric: lastExplore.current.metric });
+
   const updatePatterns = useCallback((next) => {
     replaceHash(toHash("patterns", next));
     setRoute({ page: "patterns", state: next });
@@ -173,7 +224,7 @@ export default function App() {
   // The skip link goes to the question sentence (or to the page's content elsewhere).
   const skip = (e) => {
     e.preventDefault();
-    const asks = route.page === "explore" || route.page === "genres";
+    const asks = route.page === "explore" || route.page === "genres" || route.page === "trends";
     const target = (asks && document.getElementById("question")) || mainRef.current;
     target?.focus();
     target?.scrollIntoView?.({ block: "start" });
@@ -206,7 +257,17 @@ export default function App() {
               Genres
             </a>
             <a
-              href={toHash("patterns", { genre: lastExplore.current.genre, metric: lastExplore.current.metric })}
+              className="nav-trends"
+              href={trendsLink}
+              aria-current={route.page === "trends" ? "page" : undefined}
+              onPointerEnter={preloadTrends}
+              onFocus={preloadTrends}
+            >
+              Trends
+            </a>
+            <a
+              className="nav-patterns"
+              href={patternsLink}
               aria-current={route.page === "patterns" ? "page" : undefined}
               onPointerEnter={PatternBrowser.preload}
               onFocus={PatternBrowser.preload}
@@ -264,6 +325,26 @@ export default function App() {
               <GenresPlaceholder />
             )}
           </>
+        ) : route.page === "trends" ? (
+          <>
+            <div className="intro">
+              <Kicker meta={meta} title={TRENDS_TITLE} years />
+            </div>
+            {meta ? (
+              <PartBoundary fallback={<GenresPlaceholder className="trends-page" />}>
+                <TrendsPage
+                  meta={meta}
+                  state={trendsState}
+                  onChange={updateTrends}
+                  onNavigate={goTrends}
+                  onHoldScroll={holdScroll}
+                  lastChart={lastTrendChart}
+                />
+              </PartBoundary>
+            ) : (
+              <GenresPlaceholder className="trends-page" />
+            )}
+          </>
         ) : route.page === "patterns" ? (
           meta ? (
             <PartBoundary fallback={PAGE_PLACEHOLDER}>
@@ -296,7 +377,7 @@ export default function App() {
         )}
       </main>
       {/* keeps the scroll position when the sentence's new question makes the page shorter (useScrollFloor.js) */}
-      {(route.page === "explore" || route.page === "genres") && (
+      {(route.page === "explore" || route.page === "genres" || route.page === "trends") && (
         <div ref={floorRef} className="scroll-floor" aria-hidden="true" />
       )}
 
@@ -308,6 +389,34 @@ export default function App() {
               How it works
             </a>
           </p>
+          {/* every page in the masthead's order (D7): on phones the masthead keeps only some of them */}
+          <nav aria-label="All pages">
+            <ul className="footer-pages">
+              <li>
+                <a href={toHash("explore", lastExplore.current)}>Explore</a>
+              </li>
+              <li>
+                <a href={genresLink} onPointerEnter={preloadGenres} onFocus={preloadGenres}>
+                  Genres
+                </a>
+              </li>
+              <li>
+                <a href={trendsLink} onPointerEnter={preloadTrends} onFocus={preloadTrends}>
+                  Trends
+                </a>
+              </li>
+              <li>
+                <a href={patternsLink} onPointerEnter={PatternBrowser.preload} onFocus={PatternBrowser.preload}>
+                  Patterns
+                </a>
+              </li>
+              <li>
+                <a href="#/methodology" onPointerEnter={Methodology.preload} onFocus={Methodology.preload}>
+                  How it works
+                </a>
+              </li>
+            </ul>
+          </nav>
         </div>
       </footer>
     </div>

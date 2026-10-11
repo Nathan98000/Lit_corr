@@ -99,7 +99,8 @@ describe("the explorer", () => {
   it("has a How it works page that keeps the limits of the sample", async () => {
     const user = await renderApp();
     await user.click(within(screen.getByRole("navigation", { name: "Pages" })).getByRole("link", { name: "How it works" }));
-    expect(screen.getAllByRole("link", { name: "How it works" })).toHaveLength(2); // nav and footer agree
+    // nav and footer agree: the masthead, the independence statement and the footer's list of every page (D7)
+    expect(screen.getAllByRole("link", { name: "How it works" })).toHaveLength(3);
     await screen.findByRole("heading", { level: 1, name: "How it works" });
     expect(document.title).toBe("How it works · What do popular Literotica stories have in common?");
     expect(screen.getByText(/do not stand for erotic fiction, readers or human sexuality in general/)).toBeTruthy();
@@ -125,14 +126,18 @@ describe("no causation reminders (decision 1 of round 2)", () => {
     render(<App />);
     await ready();
     expect(document.body.textContent).not.toMatch(REMINDERS);
-    expect(screen.getByRole("contentinfo").textContent).toMatch(
+    const footer = screen.getByRole("contentinfo");
+    expect(footer.querySelector("p").textContent).toMatch(
       /^An independent project, not affiliated with or endorsed by Literotica\. How it works$/,
     );
     // round 3, change 5: the footer no longer lists what the site does not hold; How it works keeps that section
-    expect(screen.getByRole("contentinfo").textContent).not.toMatch(/story-by-story records/);
-    expect(within(screen.getByRole("contentinfo")).getByRole("link", { name: "How it works" }).getAttribute("href")).toBe(
+    expect(footer.textContent).not.toMatch(/story-by-story records/);
+    expect(within(footer.querySelector("p")).getByRole("link", { name: "How it works" }).getAttribute("href")).toBe(
       "#/methodology",
     );
+    // and a line with every page, in the masthead's order (D7)
+    const pages = within(within(footer).getByRole("navigation", { name: "All pages" })).getAllByRole("link");
+    expect(pages.map((a) => a.textContent)).toEqual(["Explore", "Genres", "Trends", "Patterns", "How it works"]);
   });
 
   it("leaves the note on chance to How it works (the owner's follow-up, 2)", async () => {

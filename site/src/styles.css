@@ -739,6 +739,42 @@ h3 {
   margin: 0 0 10px;
 }
 
+/* every page, in the masthead's order (D7), each link a 44 px target, with a "·" before every link but one that starts a
+   line: the list sits one separator to the left, and the nav clips what runs past its edge (with 3 px of room for the
+   focus outline) */
+.site-footer nav {
+  overflow: hidden;
+  margin: -3px;
+  padding: 3px;
+}
+
+.footer-pages {
+  display: flex;
+  flex-wrap: wrap;
+  margin: 0 0 0 -15px;
+  padding: 0;
+  list-style: none;
+}
+
+.footer-pages li {
+  display: inline-flex;
+  align-items: center;
+}
+
+.footer-pages li::before {
+  content: "·" / "";
+  display: inline-block;
+  width: 15px;
+  text-align: center;
+  color: var(--ink-3);
+}
+
+.footer-pages a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--target);
+}
+
 
 
 /* -------------------------------------------------------------- small screens */
@@ -1798,15 +1834,16 @@ html[data-page="explore"] body {
   }
 }
 
-/* Phones (D4): How it works leaves the masthead (the footer keeps its link); Genres and Patterns always show, and
-   Explore as long as it fits (the name links to the explorer too). The breakpoints come from measured widths. */
-@media (max-width: 559px) {
+/* Phones (D4, D7): How it works leaves the masthead first, then the links tighten, then Explore leaves (the name links
+   to the explorer too), then Patterns; Genres and Trends always show, and the footer lists every page. Each
+   breakpoint is the narrowest width that keeps 8 px to spare, measured on this Mac (masthead.mjs). */
+@media (max-width: 601px) {
   .masthead nav a.nav-how {
     display: none;
   }
 }
 
-@media (max-width: 419px) {
+@media (max-width: 483px) {
   .brand {
     font-size: 17px;
   }
@@ -1821,8 +1858,14 @@ html[data-page="explore"] body {
   }
 }
 
-@media (max-width: 359px) {
+@media (max-width: 413px) {
   .masthead nav a.nav-explore {
+    display: none;
+  }
+}
+
+@media (max-width: 351px) {
+  .masthead nav a.nav-patterns {
     display: none;
   }
 }

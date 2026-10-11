@@ -99,3 +99,18 @@ export function groupRows(variable, genreData, k) {
 export function pattern(genreData, k) {
   return genreData?.p?.[k] ?? [0, null];
 }
+
+/**
+ * trends/<included>/<genre>.json, the Trends page's file for one "Only include" option (meta.trend.subsets) and genre:
+ * `periods` (five-year periods of publication year, the last one from 2020 to the newest story), the windows compared
+ * (`then`, `now`: the last period), `rule`, the stories per period `n`, and per characteristic `c[id]`: its form `k`
+ * (num, zero, bin, grp, band), `fmt` for numbers, per period `q` and for the "then" window `t` (num: [n, p25, median,
+ * p75]; bin: [n, share]; zero: [n, stories above 0, (all genres only: their share), p25, median, p75 among them]; grp
+ * and band: [n, share per group]; null under meta.min_n stories), `r` (now against then: rank-biserial r, or for grp the
+ * total variation distance; null when a window has fewer than the rule's stories) and `f` (+1 clearly rose, -1 clearly
+ * fell, 1 a different mix, 0 neither); all.json also `rm`, `fm`: the same with each genre's share held fixed.
+ */
+export const loadTrends = (subset, genre) => getJson(`trends/${subset}/${genre}.json`);
+export function prefetchTrends(subset = "all", genre = "all") {
+  loadTrends(subset, genre).catch(() => {});
+}

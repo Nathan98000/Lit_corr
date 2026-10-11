@@ -19,9 +19,10 @@ function Marked({ label, query }) {
 /**
  * The data without the characteristics a page leaves out: in Popular, the topics and search alike. A topic that loses
  * some lists its remaining characteristics' labels as its blurb ("Publication year, published on a weekend, years
- * online"), since its own blurb names the others too (F77).
+ * online"), since its own blurb names the others too (F77); one in `keepBlurbs` keeps its own, which still fits (the
+ * Trends page's Length & structure: "Word count, paragraphs, series, titles", without the tags and the author's count).
  */
-function withoutExcluded(meta, exclude) {
+function withoutExcluded(meta, exclude, keepBlurbs = []) {
   if (!exclude?.length) return meta;
   const keep = (id) => !exclude.includes(id);
   const label = new Map(meta.variables.map((v) => [v.id, v.label]));
@@ -33,7 +34,8 @@ function withoutExcluded(meta, exclude) {
     topics: meta.topics
       .map((t) => {
         const ids = t.ids.filter(keep);
-        return ids.length === t.ids.length ? t : { ...t, ids, blurb: blurb(ids) };
+        if (ids.length === t.ids.length) return t;
+        return { ...t, ids, blurb: keepBlurbs.includes(t.id) ? t.blurb : blurb(ids) };
       })
       .filter((t) => t.ids.length),
   };
@@ -57,7 +59,8 @@ function withoutExcluded(meta, exclude) {
  * content: the active option is kept in view by scrolling it, never the page, and another list (a topic, the results
  * of a new query) starts at its top.
  *
- * `exclude` lists characteristics a page does not offer (the Genres page leaves out publication month and weekday);
+ * `exclude` lists characteristics a page does not offer (the Genres page leaves out publication month and weekday), and
+ * `keepBlurbs` the topics that keep their own blurb when some of theirs are left out;
  * `onPreview(id)` is told which characteristic is active or hovered, so the page can fetch its file ahead of time.
  */
 export default function CharacteristicPicker({
@@ -72,13 +75,14 @@ export default function CharacteristicPicker({
   focusRef,
   scrollRef,
   exclude = null,
+  keepBlurbs = null,
 }) {
   const [query, setQuery] = useState("");
   const [topicId, setTopicId] = useState(null);
   const [active, setActive] = useState(0);
   const input = focusRef;
   const base = useId().replace(/:/g, "");
-  const meta = useMemo(() => withoutExcluded(fullMeta, exclude), [fullMeta, exclude]);
+  const meta = useMemo(() => withoutExcluded(fullMeta, exclude, keepBlurbs || []), [fullMeta, exclude, keepBlurbs]);
   const byId = useMemo(() => new Map(meta.variables.map((v) => [v.id, v])), [meta]);
 
   useEffect(() => {

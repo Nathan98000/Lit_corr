@@ -145,7 +145,7 @@ describe("the columns (profileColumns, F85, decision 6)", () => {
     expect(profileColumns(band)).toEqual({ genre: ["6–20"], all: ["2–5"], unit: "median" });
     const groups = ["First person (I)", "Second person (you)", "Third person"];
     const grp = itemOf({ kind: "grp", unit: "first / second / third", labels: groups, g: { n: 300, shares: [0.31, 0.55, 0.14] }, a: { n: 9000, shares: [0.55, 0.02, 0.43] } });
-    expect(profileColumns(grp)).toEqual({ genre: ["55%"], all: ["2%"], unit: "Second person (you)", group: 1 });
+    expect(profileColumns(grp)).toEqual({ genre: ["55%"], all: ["2%"], unit: "Second person (you)", group: 1, of: "% of stories" });
   });
 
   it("leaves a genre without its numbers (fewer than 10 stories with the characteristic) empty", () => {
@@ -317,7 +317,7 @@ describe("the rows (concept R3)", () => {
       const label = row.querySelector(".profile-label-text").textContent;
       const name = profileRowName(p.items.find((x) => x.variable.label === label), romance, meta.min_n);
       expect(screen.getAllByRole("link", { name }).includes(row)).toBe(true);
-      expect(name.startsWith(`${label}:`)).toBe(true);
+      expect(name.startsWith(`${label}:`) || name.startsWith(`${label}, % of stories:`)).toBe(true); // named groups say their unit
       // the name is one visually hidden line; what the row shows (the label, the unit line, the cells and "›") is hidden
       // from screen readers, and its words are all in the name: the dot's number and the cells' numbers in reading order
       expect(row.querySelector(".profile-name > .visually-hidden").textContent).toBe(name);
@@ -374,7 +374,7 @@ describe("the row names (profileRowName, F92)", () => {
     );
     const grp = itemOf({ kind: "grp", label: "Narrative perspective", unit: "first / third", labels: ["First person", "Third person"], g: { n: 300, shares: [0.3, 0.7] }, a: { n: 9000, shares: [0.6, 0.4] }, r: 0.3, f: 1 });
     expect(profileRowName(grp, romance, 10)).toBe(
-      "Narrative perspective: Romance First person 30%, Third person 70%; all genres First person 60%, Third person 40%; a clearly different mix. Opens every genre’s numbers.",
+      "Narrative perspective, % of stories: Romance First person 30%, Third person 70%; all genres First person 60%, Third person 40%; a clearly different mix. Opens every genre’s numbers.",
     );
   });
 
@@ -638,7 +638,7 @@ describe("the key, in the lists (F86)", () => {
       expect(swatch.parentElement.textContent).toBe(unit.split(" ")[0]);
       expect(row.querySelector(".profile-unit").getAttribute("aria-hidden")).toBe("true"); // the row's name has every share
     }
-    expect(document.querySelectorAll(".profile-swatch")).toHaveLength(4); // no other row has one
+    expect(document.querySelectorAll(".profile-unit .profile-swatch")).toHaveLength(4); // no other row has one
     expect(css).toMatch(/\.profile-swatch \{[^}]*border: 1px solid var\(--control\);/);
     expect(css).toMatch(/\.profile-swatch-lead \{\s*white-space: nowrap;/);
   });
@@ -653,8 +653,36 @@ describe("the key, in the lists (F86)", () => {
     for (const row of rows) {
       expect(row.querySelector(".profile-few").textContent).toBe("Too few stories to compare");
       expect(row.querySelector(".profile-unit").textContent).not.toBe(""); // the printed group's name stays
+      expect(row.querySelector(".profile-of").textContent).toBe("% of stories"); // with the numbers
     }
-    expect(document.querySelector(".profile-swatch, .profile-mix-line")).toBeNull();
+    expect(document.querySelector(".profile-swatch, .profile-mix-line, .profile-key")).toBeNull();
+  });
+
+  it.skipIf(!real)("keys every group under a named group's bars, as View 1's legend, and says the shares are of stories (the real data)", { timeout: 15000 }, async () => {
+    vi.stubGlobal("fetch", realFetch);
+    const user = await openGenre("#/genres?view=genre&genre=adult-romance&include=all");
+    await openAllTopics(user);
+    const file = realFile();
+    const named = genreProfile(real, file, file.genres.indexOf("adult-romance")).items.filter((x) => x.kind === "grp");
+    const rows = [...document.querySelectorAll(".profile-topic .profile-row")];
+    for (const item of named) {
+      const row = rows.find((r) => r.querySelector(".profile-label-text").textContent === item.variable.label);
+      const colors = mixColors("grp", item.all.shares);
+      // under the bars, in the plot's cell (hidden from screen readers, as the bars are): every group in the bars' order
+      const key = row.querySelector(".profile-plot-cell[aria-hidden='true'] .profile-plot + .profile-key");
+      const items = [...key.querySelectorAll(".profile-key-item")];
+      expect(items.map((x) => x.textContent)).toEqual(item.variable.bins.labels);
+      items.forEach((x, b) => expect(x.querySelector(".profile-swatch").classList.contains(colors[b].cls)).toBe(true));
+      // "% of stories" on a line of its own under the group's name, and in the row's name
+      const of = row.querySelector(".profile-unit + .profile-of");
+      expect(of.textContent).toBe("% of stories");
+      expect(of.getAttribute("aria-hidden")).toBe("true");
+      expect(row.querySelector(".visually-hidden").textContent).toMatch(new RegExp(`^${item.variable.label}, % of stories: Romance `));
+    }
+    expect(document.querySelectorAll(".profile-key")).toHaveLength(4);
+    expect(document.querySelectorAll(".profile-of")).toHaveLength(4); // named groups only
+    expect(css).toMatch(/\.profile-unit\.profile-of,\n\.genre-profile\.stacked \.profile-unit\.profile-of \{\s*display: block;/);
+    expect(css).toMatch(/\.profile-key-item \{\s*white-space: nowrap;/);
   });
 
   it("never says “a Romance story”: always “a story in Romance”", async () => {

@@ -321,7 +321,8 @@ describe("one scale for every row (concepts P2 and R3)", () => {
     await openGenre("#/genres?view=genre&genre=romance&include=all");
     for (const row of document.querySelectorAll(".profile-row")) {
       const label = row.querySelector(".profile-label-text").textContent;
-      const name = screen.getByRole("link", { name: new RegExp(`^${label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}: \\S`) });
+      // (a named group's name says its unit after the label: "Narrative perspective, % of stories: …")
+      const name = screen.getByRole("link", { name: new RegExp(`^${label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(, % of stories)?: \\S`) });
       expect(name).toBe(row);
     }
   });
@@ -402,7 +403,7 @@ describe("one genre on the real data", () => {
     expect(profileColumns(item("sex_sentence_share"))).toEqual({ genre: ["9%"], all: ["20%"], unit: "" });
     const howTo = genreProfile(real, file, file.genres.indexOf("adult-how-to"));
     const howToItem = (id) => howTo.items.find((x) => x.id === id);
-    expect(profileColumns(howToItem("pov_class"))).toEqual({ genre: ["55%"], all: ["2%"], unit: "Second person (you)", group: 2 });
+    expect(profileColumns(howToItem("pov_class"))).toEqual({ genre: ["55%"], all: ["2%"], unit: "Second person (you)", group: 2, of: "% of stories" });
     // How To's repeated five-word phrases: lower in its share with any, higher among those with any, marked higher
     expect(howToItem("rep_repeated_5gram_per_1k").f).toBe(1);
     expect(profileColumns(howToItem("rep_repeated_5gram_per_1k"))).toEqual({

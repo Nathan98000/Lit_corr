@@ -124,18 +124,36 @@ function GroupName({ name, cls }) {
 }
 
 /**
+ * A named group's key under its bars, as View 1's legend is: every group's swatch and name, in the bars' order
+ * (`colors`: mixColors' classes). Hidden from screen readers, as the bars are: the row's name has every share.
+ */
+function GroupKey({ labels, colors }) {
+  return (
+    <span className="profile-key">
+      {labels.map((label, b) => (
+        <span key={label} className="profile-key-item">
+          <span className={`profile-swatch ${colors[b].cls}`} />
+          {label}
+        </span>
+      ))}
+    </span>
+  );
+}
+
+/**
  * One characteristic in "One genre" (concept R3, F85, F87, F92): a link to every genre's numbers (View 1). Its label,
  * with its unit line, the plot, the genre's and all genres' numbers and "›". Its accessible name is its content, with
  * no aria-label: one visually hidden line that says the label, the dot's number, the numbers in reading order, the
  * unit and how it compares (profileRowName); the visible parts are hidden from screen readers, since their words are
  * all there in that order. (Visible text followed by hidden text would read "Sexual language : 26 in 100" in Chrome,
  * which puts a space before a box taken out of the flow.) In a topic (`marks`), a stand-out's ▲ ▼ ≠ sits in a column
- * before the label. A named group's unit line names its printed group after a swatch of that group's color, where
- * its bars are drawn (not with too few stories to compare).
+ * before the label. A named group's unit line names its printed group, then "% of stories" on a line of its own;
+ * where its bars are drawn (not with too few stories to compare), the name follows a swatch of that group's color and
+ * the bars have a key of every group under them.
  */
 function ProfileRow({ item, genre, sub, minN, zone, plotW, marks, onNavigate }) {
   const cols = profileColumns(item);
-  const swatch = cols.group != null && item.r != null && mixColors("grp", item.all.shares)[cols.group].cls;
+  const colors = cols.group != null && item.r != null && mixColors("grp", item.all.shares);
   return (
     <ViewLink className={`profile-row${item.r == null ? " few" : ""}`} to={{ v: item.id, sub }} onNavigate={onNavigate}>
       <span className={`profile-label${marks ? " has-mark" : ""}`}>
@@ -153,14 +171,20 @@ function ProfileRow({ item, genre, sub, minN, zone, plotW, marks, onNavigate }) 
             <>
               {" "}
               <span className={`profile-unit${cols.unit.length > UNIT_KEPT ? " long" : ""}`} aria-hidden="true">
-                {swatch ? <GroupName name={cols.unit} cls={swatch} /> : cols.unit}
+                {colors ? <GroupName name={cols.unit} cls={colors[cols.group].cls} /> : cols.unit}
               </span>
             </>
+          )}
+          {cols.of && (
+            <span className="profile-unit profile-of" aria-hidden="true">
+              {cols.of}
+            </span>
           )}
         </span>
       </span>
       <span className="profile-plot-cell" aria-hidden="true">
         <RowPlot item={item} zone={zone} plotW={plotW} />
+        {colors && <GroupKey labels={item.variable.bins.labels} colors={colors} />}
       </span>
       <Numbers col={cols.genre} />
       <Numbers col={cols.all} all />

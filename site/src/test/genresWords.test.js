@@ -62,6 +62,7 @@ function sentences(meta, file) {
       // "One genre"'s rows: the unit line, the two columns and the name
       const cols = profileColumns(item);
       add(cols.unit);
+      add(cols.of);
       add([...(cols.genre || []), ...(cols.all || [])].join(" "));
       add(profileRowName(item, genre, meta.min_n));
     }

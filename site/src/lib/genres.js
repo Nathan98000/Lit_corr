@@ -498,6 +498,9 @@ export const trimZeros = (text) => text.replace(/(\d)\.(\d*?)0+(?=\D|$)/g, (_, d
 // unit texts that are not a unit to print under a label: shares, yes/no, "1 = …", and publication month and weekday
 const NOT_A_UNIT = /^(share|yes\/no|1 =|month \(|0 = Monday)/;
 
+// what a named group's shares are of: each story counts once, in one group
+const OF_STORIES = "% of stories";
+
 /**
  * The unit under a number's label in "One genre" (decision 7): the plain unit ("per 1,000 words", "words"), else the
  * data's own unit text where it explains a scale ("Zipf scale (higher = more common)", "ratio (1 = random order)"),
@@ -531,7 +534,8 @@ const otherWay = (item) =>
  * - Mostly zero: the shares with any, "stories with any"; a stand-out whose share goes the other way from its dot
  *   adds the medians among those ("–" for none), "with any · median among those" with its plain unit.
  * - Bands: the median bands, "median". Named groups: the shares of the group that differs most, under its name
- *   (`group`: its index, for the swatch of its color before the name).
+ *   (`group`: its index, for the swatch of its color before the name), then "% of stories" (`of`): each story counts
+ *   once, in one group.
  */
 export function profileColumns(item) {
   const { kind, stats: g, all: a, variable, nf } = item;
@@ -555,7 +559,13 @@ export function profileColumns(item) {
   }
   if (!g || !a) return { genre: null, all: null, unit: "" };
   const b = biggestGap(g, a);
-  return { genre: [formatPercent(g.shares[b])], all: [formatPercent(a.shares[b])], unit: variable.bins.labels[b], group: b };
+  return {
+    genre: [formatPercent(g.shares[b])],
+    all: [formatPercent(a.shares[b])],
+    unit: variable.bins.labels[b],
+    group: b,
+    of: OF_STORIES,
+  };
 }
 
 /**
@@ -611,7 +621,7 @@ function profileComparison(item) {
  * numbers." Not compared: no number of the dot ("…; too few stories to compare."), and "fewer than 10 stories" for
  * the genre without its numbers. Mostly zero: "Romance 73% with any, all genres 43%", with "; among those, median
  * 0.709 and 0.422 per 1,000 words" where the medians show. Bands: "Romance median 6–20, all genres median 2–5". Named
- * groups: every group's share in both ("a clearly different mix").
+ * groups: "% of stories", then every group's share in both ("a clearly different mix").
  */
 export function profileRowName(item, genre, minN) {
   const { kind, stats: g, all: a, variable, nf } = item;
@@ -621,7 +631,7 @@ export function profileRowName(item, genre, minN) {
   const few = `fewer than ${minN} stories`;
   if (kind === "grp") {
     const shares = (s) => (s ? variable.bins.labels.map((l, b) => `${l} ${formatPercent(s.shares[b])}`).join(", ") : few);
-    return `${variable.label}: ${genre.name} ${shares(g)}; all genres ${shares(a)}${end}`;
+    return `${variable.label}, ${OF_STORIES}: ${genre.name} ${shares(g)}; all genres ${shares(a)}${end}`;
   }
   const genreN = cols.genre ? cols.genre[0] : few;
   const allN = cols.all ? cols.all[0] : few;

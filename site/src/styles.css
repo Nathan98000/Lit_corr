@@ -739,34 +739,14 @@ h3 {
   margin: 0 0 10px;
 }
 
-/* every page, in the masthead's order (D7), each link a 44 px target, with a "·" before every link but one that starts a
-   line: the list sits one separator to the left, and the nav clips what runs past its edge (with 3 px of room for the
-   focus outline) */
-.site-footer nav {
-  overflow: hidden;
-  margin: -3px;
-  padding: 3px;
-}
-
+/* every page, in the masthead's order (D7), as the mock-up draws them: spaced links, each a 44 px target */
 .footer-pages {
   display: flex;
   flex-wrap: wrap;
-  margin: 0 0 0 -15px;
+  gap: 0 16px;
+  margin: 0;
   padding: 0;
   list-style: none;
-}
-
-.footer-pages li {
-  display: inline-flex;
-  align-items: center;
-}
-
-.footer-pages li::before {
-  content: "·" / "";
-  display: inline-block;
-  width: 15px;
-  text-align: center;
-  color: var(--ink-3);
 }
 
 .footer-pages a {

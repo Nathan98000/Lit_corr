@@ -22,6 +22,7 @@ import {
   profileRowName,
   profileTakeaway,
   profileUnit,
+  sharePair,
   takeawayLine,
   topicCount,
   trimZeros,
@@ -122,6 +123,19 @@ describe("the columns (profileColumns, F85, decision 6)", () => {
     expect(profileColumns(yes)).toEqual({ genre: ["24%"], all: ["27%"], unit: "" });
     const zero = itemOf({ kind: "zero", g: { n: 300, share: 0.73, median: 0.709 }, a: { n: 9000, share: 0.43, median: 0.422 }, r: 0.4, f: 1 });
     expect(profileColumns(zero)).toEqual({ genre: ["73%"], all: ["43%"], unit: "stories with any" });
+  });
+
+  it("gives two shares that would print the same one decimal each, when they differ (section 4.2)", () => {
+    expect(sharePair(0.184, 0.182)).toEqual(["18.4%", "18.2%"]);
+    expect(sharePair(0.18, 0.18)).toEqual(["18%", "18%"]); // the same share
+    expect(sharePair(0.24, 0.27)).toEqual(["24%", "27%"]);
+    expect(sharePair(0.0004, 0.0003)).toEqual(["<0.1%", "<0.1%"]);
+    const yes = itemOf({ kind: "bin", unit: "yes/no", g: { n: 300, share: 0.099 }, a: { n: 9000, share: 0.097 } });
+    expect(profileColumns(yes)).toEqual({ genre: ["9.9%"], all: ["9.7%"], unit: "" });
+    const zero = itemOf({ kind: "zero", g: { n: 300, share: 0.707, median: 0.7 }, a: { n: 9000, share: 0.714, median: 0.7 }, r: 0.02, f: 0 });
+    expect(profileColumns(zero).genre).toEqual(["70.7%"]);
+    const groups = itemOf({ kind: "grp", labels: ["A", "B"], g: { n: 300, shares: [0.502, 0.498] }, a: { n: 9000, shares: [0.498, 0.502] }, r: 0.1, f: 0 });
+    expect([profileColumns(groups).genre, profileColumns(groups).all]).toEqual([["50.2%"], ["49.8%"]]);
   });
 
   it("adds the medians among those with any only for a stand-out whose share goes the other way from its dot", () => {

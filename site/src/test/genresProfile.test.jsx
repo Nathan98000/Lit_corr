@@ -258,6 +258,35 @@ describe("one scale for every row (concepts P2 and R3)", () => {
     expect(noDifferenceZone({ min_r: 0.2 })).toEqual([40, 60]);
   });
 
+  it("never prints a clear difference on the zone's edge: one step outward, 39 or 61 (section 4.2)", () => {
+    const zone = [40, 60];
+    expect(comparisonBar(-0.2, { flagged: true, zone }).times).toBe(39);
+    expect(comparisonBar(0.2, { flagged: true, zone }).times).toBe(61);
+    expect(comparisonBar(-0.206, { flagged: true, zone }).times).toBe(39); // the Trends page's build-up of sexual language
+    expect(comparisonBar(-0.2, { zone }).times).toBe(40); // not a clear difference: as it rounds
+    expect(comparisonBar(-0.25, { flagged: true, zone }).times).toBe(37);
+    expect(comparisonBar(-0.2, { flagged: true, zone }).end).toBe(40); // the dot stays where r puts it
+  });
+
+  it.skipIf(!real)("prints no clear difference as 40 or 60, in any genre or option of the real data", () => {
+    let edges = 0;
+    for (const s of real.subsets) {
+      const file = realFile(s.id);
+      for (let gi = 1; gi < file.genres.length; gi += 1) {
+        if (file.n[gi] < real.min_n) continue;
+        const genre = real.genres.find((g) => g.id === file.genres[gi]);
+        for (const item of genreProfile(real, file, gi).items) {
+          if (item.r == null || !item.f || item.kind === "grp") continue;
+          const { times } = comparisonBar(item.r, { flagged: true, zone: item.zone });
+          expect(item.zone).not.toContain(times);
+          expect(profileRowName(item, genre, real.min_n)).toContain(`: ${times} in 100;`);
+          if (comparisonBar(item.r).times !== times) edges += 1;
+        }
+      }
+    }
+    expect(edges).toBe(264); // r of ±0.20, two decimals on this page
+  });
+
   it("draws the zone of no clear difference with its edges, and the stem and dot, on each row; named groups keep two bars", async () => {
     // a wide screen: the row's own grid
     vi.spyOn(Element.prototype, "getBoundingClientRect").mockReturnValue({ width: 1032, height: 0, top: 0, left: 0, right: 1032, bottom: 0 });

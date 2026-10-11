@@ -1,8 +1,10 @@
 // The fingerprint of "One genre" (STAGE2_TRENDS_PAGE_PROMPT.md, section 4.2): its markup on the real data for Romance,
 // How To, Fetish and Chain Stories, with all stories and with "Published 2020 or later", wide and stacked, with every
 // topic closed and then one open. Moving its rows, lists, topics, notes, way back and "Copy link" into
-// ComparisonProfile.jsx must leave it unchanged. The markup is stored one tag per line, React's ids numbered in order
-// of appearance; for the open topic, its own markup (nothing else changes).
+// ComparisonProfile.jsx left it unchanged; since then only the two fixes of section 4.2 have changed it (a clear
+// difference never prints 40 or 60; two shares that would print the same get one decimal), in the rows that commit
+// lists. The markup is stored one tag per line, React's ids numbered in order of appearance; for the open topic, its
+// own markup (nothing else changes).
 import { cleanup, render, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { readFileSync } from "node:fs";

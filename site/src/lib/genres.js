@@ -23,6 +23,17 @@ export function formatPercent(v) {
   return `${formatFixed(p, 1)}%`;
 }
 
+/**
+ * A row's two shares in "One genre" and "What changed" (section 4.2): as formatPercent writes them, or both with one
+ * decimal when they would print the same but differ ("18.4%" and "18.2%", not "18%" twice).
+ */
+export function sharePair(g, a) {
+  const texts = [formatPercent(g), formatPercent(a)];
+  if (g == null || a == null || g === a || texts[0] !== texts[1]) return texts;
+  const one = (v) => (Math.abs(v) >= 0.0005 ? `${formatFixed(v * 100, 1)}%` : formatPercent(v));
+  return [one(g), one(a)];
+}
+
 /** Decimals of a number as the file writes it: three significant digits, no trailing zeros (2050 → 0, 0.0588 → 4). */
 export function fileDecimals(v) {
   if (v == null || !Number.isFinite(v) || v === 0) return 0;
@@ -419,6 +430,7 @@ export function genreProfile(meta, file, gi) {
       all: cellStats(entry, 0),
       r: entry.r[gi],
       f: entry.f[gi],
+      zone: noDifferenceZone(file.rule),
     };
   });
   const bySize = (a, b) => Math.abs(b.r) - Math.abs(a.r) || a.pos - b.pos;
@@ -541,17 +553,19 @@ export function profileColumns(item) {
   const { kind, stats: g, all: a, variable, nf } = item;
   const num = (v) => (v == null ? "–" : trimZeros(nf.value(v)));
   if (kind === "num") return { genre: g && [num(g.median)], all: a && [num(a.median)], unit: profileUnit(item) };
-  if (kind === "bin") return { genre: g && [formatPercent(g.share)], all: a && [formatPercent(a.share)], unit: "" };
+  // the two shares, both with one decimal where they would print the same but differ (sharePair)
+  const [gs, as] = g && a && g.share != null ? sharePair(g.share, a.share) : [g && formatPercent(g.share), a && formatPercent(a.share)];
+  if (kind === "bin") return { genre: g && [gs], all: a && [as], unit: "" };
   if (kind === "zero") {
     if (g && a && otherWay(item)) {
       const unit = profileUnit(item);
       return {
-        genre: [formatPercent(g.share), num(g.median)],
-        all: [formatPercent(a.share), num(a.median)],
+        genre: [gs, num(g.median)],
+        all: [as, num(a.median)],
         unit: `with any\u00a0·\u00a0median among those${unit ? `, ${unit}` : ""}`, // never a line that starts or ends with "·"
       };
     }
-    return { genre: g && [formatPercent(g.share)], all: a && [formatPercent(a.share)], unit: "stories with any" };
+    return { genre: g && [gs], all: a && [as], unit: "stories with any" };
   }
   if (kind === "band") {
     const median = (s) => s && [variable.bins.labels[bandQuartiles(s.shares).median]];
@@ -559,9 +573,10 @@ export function profileColumns(item) {
   }
   if (!g || !a) return { genre: null, all: null, unit: "" };
   const b = biggestGap(g, a);
+  const [gb, ab] = sharePair(g.shares[b], a.shares[b]);
   return {
-    genre: [formatPercent(g.shares[b])],
-    all: [formatPercent(a.shares[b])],
+    genre: [gb],
+    all: [ab],
     unit: variable.bins.labels[b],
     group: b,
     of: OF_STORIES,
@@ -571,14 +586,18 @@ export function profileColumns(item) {
 /**
  * A row's mark in "One genre" (concept R3): how often the genre's story is the higher one against a story from all
  * genres, out of 100: 50 × (1 + r), the rank-biserial r the rule decides by. A stem runs from 50 to there (`from`, `to`),
- * with a dot at its end (`end`) and its number (`times`, rounded away from 50: r of ±0.25 reads 63 and 37). Null when
- * r is null (fewer than the rule's min_n stories: nothing was compared).
+ * with a dot at its end (`end`) and its number (`times`, rounded away from 50: r of ±0.25 reads 63 and 37). A clear
+ * difference (`flagged`) never prints the edge of the `zone` of no clear difference: its number goes one step outward
+ * (r −0.206 reads 39, not 40; section 4.2). Null when r is null (fewer than the rule's min_n stories: nothing was
+ * compared).
  */
-export function comparisonBar(r) {
+export function comparisonBar(r, { flagged = false, zone = null } = {}) {
   if (r == null) return null;
   const end = 50 * (1 + r);
+  const times = 50 + Math.sign(r) * Math.round(50 * Math.abs(r));
+  const edge = flagged && zone && (times === zone[0] || times === zone[1]);
   return {
-    times: 50 + Math.sign(r) * Math.round(50 * Math.abs(r)),
+    times: edge ? times + Math.sign(r) : times,
     from: Math.min(50, end),
     to: Math.max(50, end),
     end,
@@ -627,11 +646,15 @@ export function profileRowName(item, genre, minN) {
   const { kind, stats: g, all: a, variable, nf } = item;
   const cols = profileColumns(item);
   const end = `; ${profileComparison(item)}. Opens every genre’s numbers.`;
-  const times = item.r == null || kind === "grp" ? "" : ` ${comparisonBar(item.r).times} in 100;`;
+  const bar = comparisonBar(item.r, { flagged: Boolean(item.f), zone: item.zone });
+  const times = item.r == null || kind === "grp" ? "" : ` ${bar.times} in 100;`;
   const few = `fewer than ${minN} stories`;
   if (kind === "grp") {
-    const shares = (s) => (s ? variable.bins.labels.map((l, b) => `${l} ${formatPercent(s.shares[b])}`).join(", ") : few);
-    return `${variable.label}, ${OF_STORIES}: ${genre.name} ${shares(g)}; all genres ${shares(a)}${end}`;
+    // each group's two shares as the columns print theirs (sharePair)
+    const pairs = g && a && variable.bins.labels.map((_, b) => sharePair(g.shares[b], a.shares[b]));
+    const shares = (s, k) =>
+      s ? variable.bins.labels.map((l, b) => `${l} ${pairs ? pairs[b][k] : formatPercent(s.shares[b])}`).join(", ") : few;
+    return `${variable.label}, ${OF_STORIES}: ${genre.name} ${shares(g, 0)}; all genres ${shares(a, 1)}${end}`;
   }
   const genreN = cols.genre ? cols.genre[0] : few;
   const allN = cols.all ? cols.all[0] : few;

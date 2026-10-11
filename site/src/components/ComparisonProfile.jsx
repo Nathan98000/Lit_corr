@@ -65,7 +65,7 @@ function RowPlot({ item, zone, plotW }) {
       </svg>
     );
   }
-  const b = comparisonBar(item.r);
+  const b = comparisonBar(item.r, { flagged: Boolean(item.f), zone });
   const quiet = item.f ? "" : " quiet";
   const dotR = item.f ? DOT.out : DOT.quiet;
   const textW = item.f ? textWidth(String(b.times), 13, 600) : textWidth(String(b.times), 12);

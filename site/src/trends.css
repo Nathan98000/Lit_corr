@@ -1,4 +1,5 @@
 @import "./palettes.css"; /* the 100% bars' palettes, shared with the Genres page */
+@import "./comparison.css"; /* "What changed", drawn as the Genres page's "One genre" */
 
 /* The Trends page (loaded with its code, like genres.css): its controls, its charts over time and its answer. The
    charts draw with the explorer's marks (.range-chart in styles.css: capsules, dots, hatching, hover and focus). */
@@ -134,11 +135,6 @@
 .trend-mix .segment {
   stroke: #fff;
   stroke-width: 1;
-}
-
-/* the near-white group: a 1 px outline on its segments (1.13:1 against the page without it), as on the Genres page */
-.trend-mix .segment.pal-group-4 {
-  stroke: #a5a29a;
 }
 
 .trend-mix .seglab {

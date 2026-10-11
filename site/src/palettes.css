@@ -142,3 +142,10 @@
 .seg-ink-dark {
   fill: var(--ink);
 }
+
+/* the near-white group: a 1 px outline on its segments (1.13:1 against the page without it) */
+.trend-mix .segment.pal-group-4,
+.genre-mix .segment.pal-group-4,
+.profile-plot .segment.pal-group-4 {
+  stroke: #a5a29a;
+}

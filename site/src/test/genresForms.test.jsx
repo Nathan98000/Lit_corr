@@ -136,7 +136,7 @@ describe("named groups: 100% bars", () => {
       const seg = [...all.querySelectorAll(".segment")].find((r) => r.classList.contains(mixColors("grp", fixtureFile("genres/all.json").c.pov_class.q[0].slice(1))[b].cls));
       expect(Math.abs(Number(seg.getAttribute("x")) + Number(seg.getAttribute("width")) / 2 - Number(t.getAttribute("x")))).toBeLessThan(0.01);
     }
-    const css = readFileSync(path.join(here, "..", "genres.css"), "utf8");
+    const css = readFileSync(path.join(here, "..", "palettes.css"), "utf8"); // with the palettes, for every 100% bar
     expect(css).toMatch(/\.genre-mix \.segment\.pal-group-4,\s*\.profile-plot \.segment\.pal-group-4 \{\s*stroke: #a5a29a;/);
   });
 

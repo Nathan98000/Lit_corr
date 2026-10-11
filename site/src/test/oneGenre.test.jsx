@@ -32,7 +32,7 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const real = realMeta();
 const realFile = (sub = "all") =>
   JSON.parse(readFileSync(path.join(here, "..", "..", "public", "aggregates", "genres", `${sub}.json`), "utf8"));
-const css = readFileSync(path.join(here, "..", "genres.css"), "utf8");
+const css = readFileSync(path.join(here, "..", "comparison.css"), "utf8"); // "One genre"'s styles, shared with the Trends page
 /** A fetch() that serves the site's real aggregates. */
 const realFetch = async (url) => {
   const body = readFileSync(path.join(here, "..", "..", "public", "aggregates", String(url).split("aggregates/")[1]), "utf8");

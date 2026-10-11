@@ -107,16 +107,35 @@ function Numbers({ col, all = false }) {
 }
 
 /**
+ * A named group's unit line: the name of the group whose numbers the row prints, after a swatch of its color in the
+ * bars (`cls`), the swatch kept with the name's first word.
+ */
+function GroupName({ name, cls }) {
+  const [first, ...rest] = name.split(" ");
+  return (
+    <>
+      <span className="profile-swatch-lead">
+        <span className={`profile-swatch ${cls}`} />
+        {first}
+      </span>
+      {rest.length > 0 && ` ${rest.join(" ")}`}
+    </>
+  );
+}
+
+/**
  * One characteristic in "One genre" (concept R3, F85, F87, F92): a link to every genre's numbers (View 1). Its label,
  * with its unit line, the plot, the genre's and all genres' numbers and "›". Its accessible name is its content, with
  * no aria-label: one visually hidden line that says the label, the dot's number, the numbers in reading order, the
  * unit and how it compares (profileRowName); the visible parts are hidden from screen readers, since their words are
  * all there in that order. (Visible text followed by hidden text would read "Sexual language : 26 in 100" in Chrome,
  * which puts a space before a box taken out of the flow.) In a topic (`marks`), a stand-out's ▲ ▼ ≠ sits in a column
- * before the label.
+ * before the label. A named group's unit line names its printed group after a swatch of that group's color, where
+ * its bars are drawn (not with too few stories to compare).
  */
 function ProfileRow({ item, genre, sub, minN, zone, plotW, marks, onNavigate }) {
   const cols = profileColumns(item);
+  const swatch = cols.group != null && item.r != null && mixColors("grp", item.all.shares)[cols.group].cls;
   return (
     <ViewLink className={`profile-row${item.r == null ? " few" : ""}`} to={{ v: item.id, sub }} onNavigate={onNavigate}>
       <span className={`profile-label${marks ? " has-mark" : ""}`}>
@@ -134,7 +153,7 @@ function ProfileRow({ item, genre, sub, minN, zone, plotW, marks, onNavigate }) 
             <>
               {" "}
               <span className={`profile-unit${cols.unit.length > UNIT_KEPT ? " long" : ""}`} aria-hidden="true">
-                {cols.unit}
+                {swatch ? <GroupName name={cols.unit} cls={swatch} /> : cols.unit}
               </span>
             </>
           )}
@@ -192,12 +211,21 @@ function Ticks() {
 }
 
 /**
+ * Which of a named group's two bars is the genre's (quick win 5), only where named groups are compared: over the
+ * "A different mix" list's rows, and in an open topic right over each named-group row, shorter (`inTopic`).
+ */
+const MixLine = ({ genre, inTopic = false }) => (
+  <p className={`profile-caption profile-mix-line${inTopic ? " over-row" : ""}`}>{mixLine(genre, { inTopic })}</p>
+);
+
+/**
  * The rows of a list or a topic, on the page's one grid (F81): wide, a head row with the zone's bracket over the tick
  * labels and the two columns' heads; stacked, the bracket over the first row and the ticks under the last, with the
  * heads in a head row of their own in a topic (`headRow`; a list has them on its title line). A block with no dot
- * (named groups only, or nothing compared) has no bracket and no ticks; its heads stay.
+ * (named groups only, or nothing compared) has no bracket and no ticks; its heads stay. In a topic (`mixLines`), the
+ * mix line sits right over each compared named-group row, in its list item.
  */
-function ProfileBlock({ id, items, marks = false, headRow = false, layout, rowProps }) {
+function ProfileBlock({ id, items, marks = false, headRow = false, mixLines = false, layout, rowProps }) {
   const { stacked, heads } = layout;
   const dots = items.some((x) => x.r != null && x.kind !== "grp");
   return (
@@ -217,6 +245,7 @@ function ProfileBlock({ id, items, marks = false, headRow = false, layout, rowPr
       <ul className="profile-rows" id={id}>
         {items.map((item) => (
           <li key={item.id}>
+            {mixLines && item.kind === "grp" && item.r != null && <MixLine genre={rowProps.genre} inTopic />}
             <ProfileRow item={item} marks={marks} plotW={layout.plotW} {...rowProps} />
           </li>
         ))}
@@ -297,9 +326,6 @@ function ProfileList({ title, items, all = false, open = false, onOpen, caption 
 /** The axis title over the first list's rows (F86, S1). */
 const AxisTitle = ({ genre }) => <p className="profile-caption profile-axis-title">{axisTitle(genre)}</p>;
 
-/** Which of a named group's two bars is the genre's (quick win 5): only over rows where named groups are compared. */
-const MixLine = ({ genre }) => <p className="profile-caption profile-mix-line">{mixLine(genre)}</p>;
-
 /**
  * The note under the first list (F84, F86, F87): what a dot compares, with the link to how a difference is decided
  * (a 44 px target, never broken inside its parentheses), what the gray dots in the topics say, and that a row opens
@@ -320,15 +346,14 @@ function Note({ genre, inTopic = false }) {
 
 /**
  * An open topic's rows: the axis title over them and the note under them when no list carries them (`lead`, nothing
- * stands out) and the topic has dots; the mix line where its named-group row is compared (quick win 5).
+ * stands out) and the topic has dots; the mix line right over each compared named-group row (quick win 5).
  */
 function TopicRows({ items, lead, genre, layout, rowProps }) {
   const dots = lead && items.some((x) => x.r != null && x.kind !== "grp");
   return (
     <>
       {dots && <AxisTitle genre={genre} />}
-      {items.some((x) => x.kind === "grp" && x.r != null) && <MixLine genre={genre} />}
-      <ProfileBlock items={items} marks headRow layout={layout} rowProps={rowProps} />
+      <ProfileBlock items={items} marks headRow mixLines layout={layout} rowProps={rowProps} />
       {dots && <Note genre={genre} inTopic />}
     </>
   );

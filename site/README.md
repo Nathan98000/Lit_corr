@@ -22,11 +22,15 @@ different mix), then lists the characteristics that set the genre apart from all
 first. Each row has a dot on one scale (how often a story in the genre is the higher one against a story from all
 genres, out of 100, with the no-difference zone at 40–60 bracketed), the genre's and all genres' numbers in two columns
 with the unit under the label, and "›" for every genre's numbers; the first list's axis title and the note under it are
-the key. Then every characteristic by topic ("1 of 28 stand out"), where gray dots show no clear difference, and "Copy
-link"; Back from every genre's numbers finds the open topics and the lists shown in full as they were. On phones a tapped genre's numbers stay at the bottom of the screen while its chart is in view. The tab is
-named after the question on screen. A genre "clearly differs" only by the rule in How it works (`meta.genre_rule`): a
-rank-biserial correlation of at least 0.2 against all genres (for named groups, a total variation distance of at least
-0.2), clear at the 99.9% level, with at least 30 stories; a genre with fewer is named as too few to compare.
+the key. A named group's row (narrative perspective, say) draws two 100% bars instead, the genre's above all genres',
+and prints the shares of the group that differs most after a swatch of its color; "Romance above, all genres below"
+sits over each such row in an open topic ("A different mix: …" over that list). Then every characteristic by topic
+("1 of 28 stand out"), where gray dots show no clear difference, and "Copy link"; Back from every genre's numbers finds
+the open topics and the lists shown in full as they were. On phones a tapped genre's numbers stay at the bottom of the
+screen while its chart is in view. The tab is named after the question on screen. A genre "clearly differs" only by the
+rule in How it works (`meta.genre_rule`): a rank-biserial correlation of at least 0.2 against all genres (for named
+groups, a total variation distance of at least 0.2), clear at the 99.9% level, with at least 30 stories; a genre with
+fewer is named as too few to compare.
 
 The site shows **descriptive associations only**, never causes, and it ships **only precomputed summaries of
 groups of stories**: no story text, titles, authors, addresses or story-by-story records.
@@ -73,10 +77,10 @@ third). A chart loads one file of about 15–20 KB; the Genres page one file of 
 
 The **first load** is the HTML, the main script, the CSS, the heading font, `meta.json` and the first chart file:
 **148.5 KiB of gzip response bodies in 6 requests** (October 10, 2026, after the simplification and "Download PNG";
-the Genres page's own code, styles and files load only when it is opened: a visit that starts on it is 204.1 KiB in 8
-requests since "One genre"'s review, 201.8 before; no layout shift). The budget is **155 KiB of gzip response
-bodies** for that set, measured on the built site served with gzip (the design review's `firstload.mjs` with
-`serve.mjs`; response headers are not counted).
+the Genres page's own code, styles and files load only when it is opened: a visit that starts on it is 204.3 KiB in 8
+requests since "One genre"'s review and its follow-up, 201.8 before; no layout shift). The budget is **155 KiB of
+gzip response bodies** for that set, measured on the built site served with gzip (the design review's `firstload.mjs`
+with `serve.mjs`; response headers are not counted).
 
 Parts that the first chart does not need load their code when first used (`React.lazy` through
 `src/components/lazyPart.jsx`), each a small chunk of about 1–6 KiB gzipped:

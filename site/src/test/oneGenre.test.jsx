@@ -11,6 +11,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "../App.jsx";
 import { plotWidth, profileAnnouncement } from "../components/GenreProfile.jsx";
 import { clearCache } from "../lib/data.js";
+import { mixColors } from "../lib/genreLayout.js";
 import {
   genreProfile,
   noDifferenceZone,
@@ -32,6 +33,11 @@ const real = realMeta();
 const realFile = (sub = "all") =>
   JSON.parse(readFileSync(path.join(here, "..", "..", "public", "aggregates", "genres", `${sub}.json`), "utf8"));
 const css = readFileSync(path.join(here, "..", "genres.css"), "utf8");
+/** A fetch() that serves the site's real aggregates. */
+const realFetch = async (url) => {
+  const body = readFileSync(path.join(here, "..", "..", "public", "aggregates", String(url).split("aggregates/")[1]), "utf8");
+  return { ok: true, status: 200, json: async () => JSON.parse(body) };
+};
 
 /**
  * The test data with Romance standing out on purpose: less dialogue (r −0.32, a number), more anger (+0.24, mostly
@@ -139,7 +145,7 @@ describe("the columns (profileColumns, F85, decision 6)", () => {
     expect(profileColumns(band)).toEqual({ genre: ["6–20"], all: ["2–5"], unit: "median" });
     const groups = ["First person (I)", "Second person (you)", "Third person"];
     const grp = itemOf({ kind: "grp", unit: "first / second / third", labels: groups, g: { n: 300, shares: [0.31, 0.55, 0.14] }, a: { n: 9000, shares: [0.55, 0.02, 0.43] } });
-    expect(profileColumns(grp)).toEqual({ genre: ["55%"], all: ["2%"], unit: "Second person (you)" });
+    expect(profileColumns(grp)).toEqual({ genre: ["55%"], all: ["2%"], unit: "Second person (you)", group: 1 });
   });
 
   it("leaves a genre without its numbers (fewer than 10 stories with the characteristic) empty", () => {
@@ -273,6 +279,8 @@ describe("the rows (concept R3)", () => {
     expect(css).toMatch(/\.genre-profile\.stacked \.profile-row \{\s*grid-template-columns: minmax\(0, 1fr\) 58px 58px 12px;/);
     // the plot's width the numbers are placed by, held from the approved mock-up
     expect([plotWidth(288, true), plotWidth(343, true), plotWidth(720, true), plotWidth(1032, false)]).toEqual([284, 339, 716, 564]);
+    // a topic's mix line starts where its row's bars do: wide, after the label's 250 px, the gap and the plot's 2 px
+    expect(css).toMatch(/\.profile-mix-line\.over-row \{\s*padding-left: 264px;\s*\}\s*\.genre-profile\.stacked \.profile-mix-line\.over-row \{\s*padding-left: 0;/);
   });
 
   it("stack under a chart of 900 px", async () => {
@@ -574,15 +582,79 @@ describe("the key, in the lists (F86)", () => {
     expect(document.querySelectorAll(".profile-topic .profile-row").length).toBeGreaterThan(0);
   });
 
-  it("says which bar is which only where named groups are compared (quick win 5)", async () => {
+  it("says which bar is which only where named groups are compared: over the mix list, and over the row in a topic (quick win 5)", async () => {
     const user = await openGenre("#/genres?view=genre&genre=romance&include=all");
     const mix = [...document.querySelectorAll(".profile-list")].find((l) => l.querySelector("h3").textContent === "A different mix");
     expect(mix.querySelector(".profile-mix-line").textContent).toBe("A different mix: Romance above, all genres below");
+    expect(mix.querySelector(".profile-mix-line").nextElementSibling.className).toBe("profile-block");
     expect(document.querySelectorAll(".profile-mix-line")).toHaveLength(1);
     await openAllTopics(user);
-    const withMix = [...document.querySelectorAll(".profile-topic")].filter((t) => t.querySelector(".profile-mix-line"));
-    expect(withMix.map((t) => t.querySelector("summary").textContent)).toEqual([expect.stringMatching(/^Narration/)]);
-    expect(withMix[0].querySelector(".segment")).toBeTruthy();
+    const lines = [...document.querySelectorAll(".profile-topic .profile-mix-line")];
+    expect(lines.map((p) => p.closest(".profile-topic").querySelector("summary").textContent)).toEqual([expect.stringMatching(/^Narration/)]);
+    expect(lines[0].textContent).toBe("Romance above, all genres below");
+    expect(lines[0].parentElement.tagName).toBe("LI"); // in the row's list item, right over it
+    expect(lines[0].nextElementSibling.querySelector(".segment")).toBeTruthy();
+  });
+
+  it.skipIf(!real)("sits right over each of Romance's named-group rows, never at a topic's top (the real data)", { timeout: 15000 }, async () => {
+    vi.stubGlobal("fetch", realFetch);
+    const user = await openGenre("#/genres?view=genre&genre=adult-romance&include=all");
+    expect(document.querySelector(".profile-mix-line")).toBeNull(); // no "A different mix" list
+    await openAllTopics(user);
+    const lines = [...document.querySelectorAll(".profile-topic .profile-mix-line")];
+    const barred = [...document.querySelectorAll(".profile-topic .profile-row")].filter((row) => row.querySelector(".segment"));
+    expect(lines.map((p) => p.nextElementSibling)).toEqual(barred);
+    expect(barred.map((row) => row.querySelector(".profile-label-text").textContent)).toEqual([
+      "Person of the description",
+      "Narrative perspective",
+      "Narration tense",
+      "Pronoun composition",
+    ]);
+    for (const p of lines) expect(p.textContent).toBe("Romance above, all genres below");
+    // "Pronoun composition" is the last of "Dialogue & characters"' 18 rows
+    const dialogue = [...document.querySelectorAll(".profile-topic")].find((t) => t.querySelector("summary").textContent.startsWith("Dialogue"));
+    const items = dialogue.querySelectorAll(".profile-rows > li");
+    expect(items).toHaveLength(18);
+    expect([...items].findIndex((li) => li.querySelector(".profile-mix-line"))).toBe(17);
+  });
+
+  it.skipIf(!real)("puts a swatch of the printed group's color before its name, kept with its first word (the real data)", { timeout: 15000 }, async () => {
+    vi.stubGlobal("fetch", realFetch);
+    const user = await openGenre("#/genres?view=genre&genre=adult-romance&include=all");
+    await openAllTopics(user);
+    const file = realFile();
+    const named = genreProfile(real, file, file.genres.indexOf("adult-romance")).items.filter((x) => x.kind === "grp");
+    expect(named).toHaveLength(4);
+    const rows = [...document.querySelectorAll(".profile-topic .profile-row")];
+    for (const item of named) {
+      const row = rows.find((r) => r.querySelector(".profile-label-text").textContent === item.variable.label);
+      const { unit, group } = profileColumns(item);
+      const cls = mixColors("grp", item.all.shares)[group].cls;
+      const swatch = row.querySelector(".profile-unit .profile-swatch");
+      expect(swatch.classList.contains(cls)).toBe(true);
+      expect(row.querySelectorAll(`.segment.${cls}`)).toHaveLength(2); // its color in both bars
+      expect(row.querySelector(".profile-unit").textContent).toBe(unit);
+      expect(swatch.parentElement.className).toBe("profile-swatch-lead");
+      expect(swatch.parentElement.textContent).toBe(unit.split(" ")[0]);
+      expect(row.querySelector(".profile-unit").getAttribute("aria-hidden")).toBe("true"); // the row's name has every share
+    }
+    expect(document.querySelectorAll(".profile-swatch")).toHaveLength(4); // no other row has one
+    expect(css).toMatch(/\.profile-swatch \{[^}]*border: 1px solid var\(--control\);/);
+    expect(css).toMatch(/\.profile-swatch-lead \{\s*white-space: nowrap;/);
+  });
+
+  it.skipIf(!real)("leaves the swatch and the mix line out where a named group has no bars: too few stories to compare", { timeout: 15000 }, async () => {
+    vi.stubGlobal("fetch", realFetch);
+    const user = await openGenre("#/genres?view=genre&genre=chain-stories&include=y2020"); // 12 stories: nothing compared
+    await openAllTopics(user);
+    const named = ["Person of the description", "Narrative perspective", "Narration tense", "Pronoun composition"];
+    const rows = [...document.querySelectorAll(".profile-row")].filter((r) => named.includes(r.querySelector(".profile-label-text").textContent));
+    expect(rows).toHaveLength(4);
+    for (const row of rows) {
+      expect(row.querySelector(".profile-few").textContent).toBe("Too few stories to compare");
+      expect(row.querySelector(".profile-unit").textContent).not.toBe(""); // the printed group's name stays
+    }
+    expect(document.querySelector(".profile-swatch, .profile-mix-line")).toBeNull();
   });
 
   it("never says “a Romance story”: always “a story in Romance”", async () => {

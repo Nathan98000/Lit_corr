@@ -530,7 +530,8 @@ const otherWay = (item) =>
  * - Yes/no: the shares, no unit line.
  * - Mostly zero: the shares with any, "stories with any"; a stand-out whose share goes the other way from its dot
  *   adds the medians among those ("–" for none), "with any · median among those" with its plain unit.
- * - Bands: the median bands, "median". Named groups: the shares of the group that differs most, under its name.
+ * - Bands: the median bands, "median". Named groups: the shares of the group that differs most, under its name
+ *   (`group`: its index, for the swatch of its color before the name).
  */
 export function profileColumns(item) {
   const { kind, stats: g, all: a, variable, nf } = item;
@@ -554,7 +555,7 @@ export function profileColumns(item) {
   }
   if (!g || !a) return { genre: null, all: null, unit: "" };
   const b = biggestGap(g, a);
-  return { genre: [formatPercent(g.shares[b])], all: [formatPercent(a.shares[b])], unit: variable.bins.labels[b] };
+  return { genre: [formatPercent(g.shares[b])], all: [formatPercent(a.shares[b])], unit: variable.bins.labels[b], group: b };
 }
 
 /**
@@ -662,8 +663,13 @@ export const breakable = (name) => name.replace(/\//g, "/\u200b");
 /** The axis title over the first list's rows (F86): what a dot's number is, with "out of 100" kept on one line. */
 export const axisTitle = (genre) => `How often a story in ${genre.name} is the higher one, out\u00a0of\u00a0100`;
 
-/** Which of a named group's two bars is the genre's (quick win 5). */
-export const mixLine = (genre) => `A different mix: ${genre.name} above, all genres below`;
+/**
+ * Which of a named group's two bars is the genre's (quick win 5): "A different mix: Romance above, all genres below" over
+ * the "A different mix" list's rows; "Romance above, all genres below" right over each named-group row in an open topic
+ * (`inTopic`), where nothing may differ.
+ */
+export const mixLine = (genre, { inTopic = false } = {}) =>
+  `${inTopic ? "" : "A different mix: "}${genre.name} above, all genres below`;
 
 /**
  * The note under the first list (F84, F86, F87), in three parts, the middle one the link to how a difference is decided

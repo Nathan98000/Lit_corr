@@ -168,10 +168,10 @@ describe("every characteristic, by topic", () => {
   it("folds the topics with their counts and draws a topic's rows only when it is opened", async () => {
     const user = await openGenre("#/genres?view=genre&genre=romance&include=all");
     const topics = [...document.querySelectorAll(".profile-topic")];
-    const heads = topics.map((t) => [t.querySelector("h4").textContent, t.querySelector(".profile-topic-count").textContent]);
+    const heads = topics.map((t) => [t.querySelector(".profile-topic-name").textContent, t.querySelector(".profile-topic-count").textContent]);
     const expected = fixtureMeta.topics.map((t) => {
       const k = { dialogue: 2, narration: 1, emotion: 1 }[t.id] ?? 0;
-      return [t.label, k ? `${k} of ${t.ids.length} stand out` : `${t.ids.length} characteristic${t.ids.length === 1 ? "" : "s"}`];
+      return [t.label, `${k} of ${t.ids.length} stand out`]; // every characteristic of the test data is compared
     });
     expect(heads).toEqual(expected);
     expect(topics.every((t) => !t.open && !t.querySelector(".profile-row"))).toBe(true);

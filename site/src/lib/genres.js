@@ -693,8 +693,15 @@ export function profileHeads(genre, stacked, width) {
   return [lines <= 2 ? genre.name.replace(/\//g, "/​") : "Genre", "All genres"];
 }
 
-/** A topic's count (F89): "1 of 28 stand out" ({ k, m }) whenever any was compared, else "13 characteristics" ({ n }). */
-export const topicCount = (t) => (t.compared ? { k: t.count, m: t.compared } : { n: t.items.length });
+/**
+ * A topic's count (F89), never worded two ways: "1 of 28 stand out" ({ k, m, text }) whenever any was compared, "0 of 13"
+ * included, else "13 characteristics" ({ n, text }).
+ */
+export function topicCount(t) {
+  if (t.compared) return { k: t.count, m: t.compared, text: `${t.count} of ${t.compared} stand out` };
+  const n = t.items.length;
+  return { n, text: `${n} characteristic${n === 1 ? "" : "s"}` };
+}
 
 // -------------------------------------------------------------------------------------------- the range chart
 /**

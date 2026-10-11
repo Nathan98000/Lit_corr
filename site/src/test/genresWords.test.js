@@ -20,6 +20,7 @@ import {
   rowDetails,
   sampleLine,
   takeawayLine,
+  topicCount,
 } from "../lib/genres.js";
 import { CAUSAL, UK_SPELLINGS } from "./scans.js";
 import { realMeta } from "./fixtures.js";
@@ -56,6 +57,7 @@ function sentences(meta, file) {
     add(axisTitle(genre));
     add(mixLine(genre));
     for (const inTopic of [false, true]) for (const tap of [false, true]) add(profileNote(genre, { inTopic, tap }).join(""));
+    for (const t of p.topics) add(`${t.topic.label}, ${topicCount(t).text}`); // the topics' names
     for (const item of p.items) {
       // "One genre"'s rows: the unit line, the two columns and the name
       const cols = profileColumns(item);

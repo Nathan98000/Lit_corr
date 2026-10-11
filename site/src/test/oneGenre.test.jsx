@@ -1,6 +1,6 @@
 // "One genre" (View 2) after its review (docs/stage2/ONE_GENRE_REVIEW.md, STAGE2_ONE_GENRE_IMPLEMENTATION_PROMPT.md):
 // the row (concept R3: one grid, a stem and a dot, two number columns, the unit line, the row's name); the top of the
-// answer (S1: the sample line, the takeaway in two directions, the key folded into the first list).
+// answer (S1: the sample line, the takeaway in two directions, the key folded into the first list); the topics (T1).
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { readFileSync } from "node:fs";
@@ -21,6 +21,7 @@ import {
   profileTakeaway,
   profileUnit,
   takeawayLine,
+  topicCount,
   trimZeros,
 } from "../lib/genres.js";
 import { fixtureFetch, fixtureFile, fixtureMeta, realMeta } from "./fixtures.js";
@@ -595,5 +596,69 @@ describe("the key, in the lists (F86)", () => {
 describe("the heading (F94)", () => {
   it("may run to 62ch from a 1,000 px window", () => {
     expect(css).toMatch(/@media \(min-width: 1000px\) \{\s*\.genre-profile \.chart-title \{\s*max-width: 62ch;/);
+  });
+});
+
+// ------------------------------------------------------------------------------------------------------- the topics
+describe("the topics (T1, F84, F89, F92)", () => {
+  const counts = () => [...document.querySelectorAll(".profile-topic-count")].map((c) => c.textContent);
+
+  it("say how many stand out of those compared, “0 of …” included, else how many characteristics", async () => {
+    expect(topicCount({ count: 1, compared: 28, items: Array(28) })).toEqual({ k: 1, m: 28, text: "1 of 28 stand out" });
+    expect(topicCount({ count: 0, compared: 13, items: Array(13) })).toEqual({ k: 0, m: 13, text: "0 of 13 stand out" });
+    expect(topicCount({ count: 0, compared: 0, items: Array(13) })).toEqual({ n: 13, text: "13 characteristics" });
+    expect(topicCount({ count: 0, compared: 0, items: Array(1) }).text).toBe("1 characteristic");
+    await openGenre("#/genres?view=genre&genre=fetish&include=all");
+    expect(counts()).toEqual(["0 of 1 stand out", "0 of 2 stand out", "0 of 1 stand out"]);
+    cleanup();
+    await openGenre("#/genres?view=genre&genre=romance&include=all");
+    expect(counts()).toEqual(["1 of 1 stand out", "2 of 2 stand out", "1 of 1 stand out"]);
+    expect(document.querySelector(".profile-topic-count b").textContent).toBe("1");
+    expect(css).toMatch(/\.profile-topic-count \{[^}]*white-space: nowrap;/);
+    expect(css).toMatch(/\.profile-topic-count b \{\s*font-weight: 650;/);
+    cleanup();
+    await openGenre("#/genres?view=genre&genre=romance&include=long"); // nothing compared
+    expect(counts()).toEqual(["1 characteristic", "2 characteristics", "1 characteristic"]);
+  });
+
+  it("are named by their text, with no heading inside the summary: “Narration, 1 of 1 stand out”", async () => {
+    await openGenre("#/genres?view=genre&genre=romance&include=all");
+    const summary = document.querySelector(".profile-topic summary");
+    expect(document.querySelector(".profile-topic summary h1, .profile-topic summary h2, .profile-topic summary h3, .profile-topic summary h4")).toBeNull();
+    expect(summary.querySelector(".visually-hidden").textContent).toBe("Narration, 1 of 1 stand out");
+    for (const el of summary.querySelectorAll(".profile-topic-name, .profile-topic-count")) expect(el.getAttribute("aria-hidden")).toBe("true");
+    expect(summary.querySelector(".profile-topic-name").textContent).toBe("Narration");
+    expect(css).toMatch(/\.profile-topic-name \{\s*font-size: 16px;\s*font-weight: 600;/);
+    expect(css).toMatch(/\.profile-topics > h3 \{\s*margin: 0 0 4px;\s*font-size: 23px;/);
+  });
+
+  it("have a line under their heading, left out when nothing was compared", async () => {
+    await openGenre("#/genres?view=genre&genre=romance&include=all");
+    const line = document.querySelector(".profile-topics > h3").nextElementSibling;
+    expect(line.textContent).toBe(
+      "How many characteristics in each topic stand out. Open a topic to see them all: blue dots stand out, gray dots show no clear difference.",
+    );
+    cleanup();
+    await openGenre("#/genres?view=genre&genre=romance&include=long");
+    expect(document.querySelector(".profile-topics-line")).toBeNull();
+    expect(document.querySelectorAll(".profile-topic").length).toBeGreaterThan(0);
+  });
+
+  it("mark only their stand-outs, in a column before the label; the lists' rows have no mark column", async () => {
+    serveWith((body) => {
+      body.c.dlg_has_dialogue.f = [0, 0, 0, 0]; // a quiet row beside a stand-out in "Dialogue & characters"
+      return body;
+    });
+    const user = await openGenre("#/genres?view=genre&genre=romance&include=all");
+    expect(document.querySelector(".profile-list .profile-mark, .profile-list .has-mark")).toBeNull();
+    await openAllTopics(user);
+    for (const row of document.querySelectorAll(".profile-topic .profile-row")) {
+      const mark = row.querySelector(".profile-label.has-mark > .profile-mark");
+      const quiet = row.querySelector(".p2-dot.quiet");
+      expect(mark.textContent).toEqual(quiet ? "" : expect.stringMatching(/^[▲▼≠]$/));
+      expect(mark.getAttribute("aria-hidden")).toBe("true");
+    }
+    const quiet = [...document.querySelectorAll(".profile-topic .profile-row")].filter((r) => r.querySelector(".p2-dot.quiet"));
+    expect(quiet).toHaveLength(1);
   });
 });

@@ -14,6 +14,7 @@ import {
   profileTakeaway,
   sampleLine,
   takeawayLine,
+  topicCount,
 } from "../lib/genres.js";
 import { mixColors } from "../lib/genreLayout.js";
 import { PHONE, STACKED, textWidth } from "../lib/rangeLayout.js";
@@ -437,13 +438,33 @@ export default function GenreProfile({ meta, state, file, busy, onSwitch, onNavi
       )}
       <section className="profile-topics" aria-labelledby={`${ids}-topics`}>
         <h3 id={`${ids}-topics`}>Every characteristic, by topic</h3>
-        {p.topics.map(({ topic, items, count: k, compared }) => {
+        {!few && (
+          <p className="profile-topics-line">
+            How many characteristics in each topic stand out. Open a topic to see them all: blue dots stand out, gray dots
+            show no clear difference.
+          </p>
+        )}
+        {p.topics.map((t) => {
+          const { topic, items } = t;
           const open = openTopics.has(topic.id);
+          const c = topicCount(t);
           return (
             <details key={topic.id} className="profile-topic" open={open} onToggle={(e) => setTopic(topic.id, e.currentTarget.open)}>
+              {/* named by its text, "Length & structure, 1 of 28 stand out" (F92): one hidden line, as a row's name */}
               <summary className="profile-topic-head">
-                <h4>{topic.label}</h4>
-                <span className="profile-topic-count">{k ? `${k} of ${compared} stand out` : characteristics(items.length)}</span>
+                <span className="visually-hidden">{`${topic.label}, ${c.text}`}</span>
+                <span className="profile-topic-name" aria-hidden="true">
+                  {topic.label}
+                </span>
+                <span className="profile-topic-count" aria-hidden="true">
+                  {c.n == null ? (
+                    <>
+                      <b>{c.k}</b> of {c.m} stand out
+                    </>
+                  ) : (
+                    c.text
+                  )}
+                </span>
               </summary>
               {open && <TopicRows items={items} lead={!lead} genre={genre} layout={layout} rowProps={rowProps} />}
             </details>

@@ -799,6 +799,13 @@ a.profile-row:hover .profile-label-text {
   line-height: 1.3;
 }
 
+/* a label (wide) and a long unit that wrap do so in even lines, never leaving one word alone ("of the way through the" ⏎
+   "story"); stacked, a label keeps its lines and a short unit follows it whole */
+.genre-profile:not(.stacked) .profile-name,
+.profile-unit {
+  text-wrap: balance;
+}
+
 /* in a topic, a stand-out's ▲ ▼ ≠ in a 16 px column before its label (every label of the topic starts after it) */
 .profile-label.has-mark {
   display: grid;
@@ -1088,6 +1095,14 @@ a.profile-row:hover .profile-label-text {
 
 .genre-profile.stacked .profile-n-head.g {
   grid-column: 2;
+}
+
+/* a stacked head is one line, at its column's end: a name a wider font makes longer than the estimate runs into the gap
+   before it */
+.genre-profile.stacked .profile-n-head,
+.profile-heads > span {
+  justify-self: end;
+  white-space: nowrap;
 }
 
 .genre-profile.stacked .profile-n-head.a {

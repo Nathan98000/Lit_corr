@@ -543,7 +543,7 @@ export function profileColumns(item) {
       return {
         genre: [formatPercent(g.share), num(g.median)],
         all: [formatPercent(a.share), num(a.median)],
-        unit: `with any · median among those${unit ? `, ${unit}` : ""}`,
+        unit: `with any\u00a0·\u00a0median among those${unit ? `, ${unit}` : ""}`, // never a line that starts or ends with "·"
       };
     }
     return { genre: g && [formatPercent(g.share)], all: a && [formatPercent(a.share)], unit: "stories with any" };

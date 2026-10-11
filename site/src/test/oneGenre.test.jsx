@@ -123,14 +123,14 @@ describe("the columns (profileColumns, F85, decision 6)", () => {
     expect(profileColumns(itemOf(other))).toEqual({
       genre: ["76%", "2.57"],
       all: ["83%", "1.19"],
-      unit: "with any · median among those, per 1,000 words",
+      unit: "with any\u00a0·\u00a0median among those, per 1,000 words",
     });
     // not a stand-out: the shares alone, whichever way they go
     expect(profileColumns(itemOf({ ...other, f: 0 })).genre).toEqual(["76%"]);
     // no median for the genre: "–"
     expect(profileColumns(itemOf({ ...other, g: { n: 300, share: 0.76 } })).genre).toEqual(["76%", "–"]);
     // a share unit: no unit after "median among those"
-    expect(profileColumns(itemOf({ ...other, unit: "share (0–1)", fmt: "percent" })).unit).toBe("with any · median among those");
+    expect(profileColumns(itemOf({ ...other, unit: "share (0–1)", fmt: "percent" })).unit).toBe("with any\u00a0·\u00a0median among those");
   });
 
   it("gives bands their median band, and named groups the shares of the group that differs most, under its name", () => {

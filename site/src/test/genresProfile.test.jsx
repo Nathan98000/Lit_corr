@@ -408,7 +408,7 @@ describe("one genre on the real data", () => {
     expect(profileColumns(howToItem("rep_repeated_5gram_per_1k"))).toEqual({
       genre: ["76%", "2.57"],
       all: ["83%", "1.19"],
-      unit: "with any · median among those, per 1,000 words",
+      unit: "with any\u00a0·\u00a0median among those, per 1,000 words",
     });
     expect(profileColumns(howToItem("author_stories_count"))).toMatchObject({ unit: "median" });
     expect(profileRowName(item("sex_terms_per_1k"), romance, 10)).toBe(

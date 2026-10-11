@@ -424,7 +424,8 @@ h3 {
   text-underline-offset: 2px;
 }
 
-.copy-link {
+.copy-link,
+.png-download {
   min-height: var(--target);
   font-size: 14px;
 }
@@ -808,11 +809,17 @@ h3 {
   max-width: 40ch;
 }
 
-.copy-link {
+.copy-link,
+.png-download {
   display: inline-flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 8px 12px;
+}
+
+/* "Download PNG"'s message when the image can't be made, beside the button */
+.png-failed {
+  color: var(--ink-2);
 }
 
 .copy-manual {

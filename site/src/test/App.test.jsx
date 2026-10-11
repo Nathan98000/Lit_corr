@@ -157,8 +157,8 @@ describe("robustness", () => {
     expect(await screen.findByText("Interquartile range", { selector: "li" })).toBeTruthy();
   });
 
-  it("copies the link, or shows it to copy by hand when the clipboard is unavailable", async () => {
-    const user = await renderApp();
+  it("copies the link of one genre, or shows it to copy by hand when the clipboard is unavailable", async () => {
+    const user = await renderApp("#/genres?view=genre&genre=romance&include=all"); // only "One genre" keeps Copy link
     Object.defineProperty(navigator, "clipboard", { value: undefined, configurable: true });
     await user.click(screen.getByRole("button", { name: "Copy link" }));
     const field = screen.getByLabelText("Copy this link:");

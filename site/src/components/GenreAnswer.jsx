@@ -13,7 +13,7 @@ import {
 } from "../lib/genres.js";
 import { toHash } from "../lib/urlState.js";
 import { bandPalette, mixColors } from "../lib/genreLayout.js";
-import CopyLink from "./CopyLink.jsx";
+import DownloadPng from "./DownloadPng.jsx";
 import GenreChart from "./GenreChart.jsx";
 import GenreMix from "./GenreMix.jsx";
 import GenreAny from "./GenreAny.jsx";
@@ -142,6 +142,23 @@ function OrderLine({ kind, sort, onSort }) {
   );
 }
 
+/** "Download PNG"'s file name: the characteristic's and the option's ids, in lower case. */
+export const genresFileName = (state) => `genres-${state.v}-${state.sub}.png`.toLowerCase();
+
+/**
+ * What "Download PNG" draws for one characteristic (the owner's decision 9): the question as the title; the verdict
+ * heading, then the option and the order line's words, as the subtitle; and the panel's chart with its key.
+ */
+export function genresImage({ variable, heading, subset, kind, sort, state }, panel) {
+  return {
+    title: [chartQuestionText(variable)],
+    subtitle: [heading, `${subset.label} · ${orderWords(kind, sort)}`],
+    chart: panel?.querySelector(".genre-chart, .genre-mix"),
+    legend: panel?.querySelector(".genre-legend"),
+    fileName: genresFileName(state),
+  };
+}
+
 /**
  * One characteristic in every genre (View 1): the verdict heading, the takeaway (▲/▼ lists in the D10 words, then
  * All genres, then the genres with too few stories to compare), the legend, the line that says the order (with the
@@ -176,6 +193,8 @@ export default function GenreAnswer({ meta, state, file, busy, onChange, onNavig
     onNavigate,
   };
   const Chart = kind === "zero" ? GenreAny : kind === "grp" || kind === "band" ? GenreMix : GenreChart;
+  const subset = meta.subsets.find((s) => s.id === state.sub);
+  const image = (panel) => genresImage({ variable, heading, subset, kind, sort: state.sort, state }, panel);
   const groups =
     kind === "grp" || kind === "band"
       ? mixColors(kind, rows[0].stats?.shares || variable.bins.labels.map(() => 0)).map((c, b) => ({
@@ -214,7 +233,7 @@ export default function GenreAnswer({ meta, state, file, busy, onChange, onNavig
       <OrderLine kind={kind} sort={state.sort} onSort={(o) => onChange({ ...state, sort: o === "value" ? "value" : undefined })} />
       <Chart key={`${variable.id}/${file.s}`} {...chartProps} />
       <div className="chart-actions">
-        <CopyLink />
+        <DownloadPng busy={busy} image={image} />
         {/* the name starts with the visible words (label in name), then the noun as the question has it (F76) */}
         <a className="btn primary" href={explore} aria-label={`Open in Explore: ${nounOf(variable)}`}>
           Open in Explore →

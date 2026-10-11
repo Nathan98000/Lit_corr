@@ -10,6 +10,7 @@ import {
   oneGroupNote,
   patternNote,
   standsOutQuestion,
+  subtitle,
   subtitleParts,
   takeawaySegments,
   theMeasure,
@@ -18,7 +19,7 @@ import {
 import { onGenresPage, sanitize, toHash } from "../lib/urlState.js";
 import ChartNotes from "./ChartNotes.jsx";
 import Controls, { preloadMenus } from "./Controls.jsx";
-import CopyLink from "./CopyLink.jsx";
+import DownloadPng from "./DownloadPng.jsx";
 import { whenIdle } from "./lazyPart.jsx";
 import LoadError from "./LoadError.jsx";
 import { GenresPage, PatternBrowser } from "./pages.js";
@@ -98,6 +99,25 @@ export function describeView(meta, view, data) {
     takeaway,
     oneGroup,
     shownCount,
+  };
+}
+
+/** "Download PNG"'s file name: the view's ids, in lower case. */
+export const exploreFileName = (view) => `explore-${view.v}-${view.metric}-${view.genre}-${view.sub}.png`.toLowerCase();
+
+/**
+ * What "Download PNG" draws for this view (the owner's decision 9): the chart's full title, then the answer heading
+ * when it says something else (the pair screen readers hear), the line under the heading as text, and the panel's
+ * chart with its key, read from the page.
+ */
+export function exploreImage(d, view, panel) {
+  const chart = panel?.querySelector(".range-chart");
+  return {
+    title: [d.title, d.answer !== d.title && d.answer],
+    subtitle: [subtitle({ genre: d.genre, subset: d.subset, n: d.gd?.n })],
+    chart,
+    legend: chart?.querySelector(".legend"),
+    fileName: exploreFileName(view),
   };
 }
 
@@ -316,9 +336,11 @@ export default function Explorer({ meta, state, onChange, onAsk, onHoldScroll })
               />
             </div>
             <ChartNotes meta={meta} d={d} view={view} wide={wide} onChange={keepPlace} />
-            <div className="chart-actions">
-              <CopyLink />
-            </div>
+            {d.shownCount > 0 && (
+              <div className="chart-actions">
+                <DownloadPng busy={busy} image={(panel) => exploreImage(d, view, panel)} />
+              </div>
+            )}
           </div>
           <KeepExploring meta={meta} view={view} d={d} onAsk={onAsk} />
         </article>

@@ -186,7 +186,7 @@ CAUSAL = re.compile(r"\b(cause[sd]?|causing|drives?|driven|driving|makes? reader
 def _visitor_strings(meta):
     """Every string in meta.json that a visitor can read (not ids, dates or file names, and not the search-only
     synonyms, which keep the spellings people type, such as "humour")."""
-    skip = {"id", "generated_at", "source", "var", "metric", "genre", "mode", "kind", "unit", "ids", "topic",
+    skip = {"id", "generated_at", "source", "var", "metric", "genre", "kind", "unit", "ids", "topic",
             "default_metric", "format", "excluded_reasons", "syn"}
     out = []
 

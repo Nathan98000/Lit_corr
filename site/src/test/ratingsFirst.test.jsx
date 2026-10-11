@@ -134,14 +134,14 @@ describe("singular measures take “the”", () => {
     expect(chartTitle({ variable: v("dlg_has_dialogue"), metric: RATING, genre: romance, direction: 0 })).toBe(
       "How the average rating varies between stories with dialogue and stories without dialogue in Romance",
     );
-    expect(chartTitle({ variable: v("pov_class"), metric: RATING, genre: all, direction: 0, compare: true })).toBe(
-      "How the average rating varies by narrative perspective, genre by genre",
+    expect(chartTitle({ variable: v("pov_class"), metric: RATING, genre: all, direction: 0 })).toBe(
+      "How the average rating varies by narrative perspective across all genres",
     );
     expect(chartTitle({ variable: v("dlg_word_share"), metric: RATING, genre: all, direction: 1 })).toBe(
       "Stories with more dialogue tend to have higher average ratings",
     );
-    expect(questionText({ variable: v("dlg_word_share"), metric: RATING, genre: all, compare: true })).toBe(
-      "Genre by genre, how does the average rating vary with dialogue share?",
+    expect(questionText({ variable: v("dlg_word_share"), metric: RATING, genre: all })).toBe(
+      "In All genres, how does the average rating vary with dialogue share?",
     );
     expect(keepExploring(meta, sanitize({ v: "dlg_word_share" }, meta)).every((x) => x.state.metric)).toBe(true);
   });
@@ -151,10 +151,8 @@ describe("singular measures take “the”", () => {
     const genres = [real.genres[0], real.genres[5]];
     for (const variable of real.variables) {
       const sentences = [
-        questionText({ variable, metric: rating, genre: genres[1] }),
-        questionText({ variable, metric: rating, genre: genres[0], compare: true }),
+        ...genres.map((genre) => questionText({ variable, metric: rating, genre })),
         ...genres.flatMap((genre) => [-1, 0, 1].map((direction) => chartTitle({ variable, metric: rating, genre, direction }))),
-        chartTitle({ variable, metric: rating, genre: genres[0], direction: 0, compare: true }),
       ];
       for (const s of sentences) {
         expect(s).not.toMatch(/\bthe the\b|(how does|How|with|varies) average rating|average rating vary\b(?! with| by| between)/);

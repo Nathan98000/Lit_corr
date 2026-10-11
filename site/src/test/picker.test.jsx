@@ -65,13 +65,11 @@ describe("the question sentence", () => {
     for (const meta of [fixtureMeta, real].filter(Boolean)) {
       for (const variable of meta.variables) {
         for (const metric of meta.metrics) {
-          for (const compare of [false, true]) {
-            const q = questionText({ variable, metric, genre: meta.genres[1], compare });
-            expect(q).toMatch(/^(In .+, how (do|does) |Genre by genre, how (do|does) )/);
-            expect(q).toMatch(/ (vary with|vary by|differ between) .+\?$/);
-            expect(q).not.toMatch(/undefined|null| {2}|\bwith with\b|\bthe the\b/);
-            if (!metric.plural) expect(q).toMatch(/how does /);
-          }
+          const q = questionText({ variable, metric, genre: meta.genres[1] });
+          expect(q).toMatch(/^In .+, how (do|does) /);
+          expect(q).toMatch(/ (vary with|vary by|differ between) .+\?$/);
+          expect(q).not.toMatch(/undefined|null| {2}|\bwith with\b|\bthe the\b/);
+          if (!metric.plural) expect(q).toMatch(/how does /);
         }
       }
     }
@@ -84,8 +82,8 @@ describe("the question sentence", () => {
     expect(questionText({ variable: v("dlg_word_share"), metric: m("pop_fav_per_1k_views"), genre: all })).toBe(
       "In All genres, how do favorites per 1,000 views vary with dialogue share?",
     );
-    expect(questionText({ variable: v("pov_class"), metric: m("pop_views"), genre: all, compare: true })).toBe(
-      "Genre by genre, how do views vary by narrative perspective?",
+    expect(questionText({ variable: v("pov_class"), metric: m("pop_views"), genre: all })).toBe(
+      "In All genres, how do views vary by narrative perspective?",
     );
     expect(questionText({ variable: v("dlg_has_dialogue"), metric: m("pop_views"), genre: all })).toBe(
       "In All genres, how do views differ between stories with dialogue and stories without dialogue?",

@@ -520,7 +520,7 @@ describe("the actions and what screen readers hear", () => {
     await openGenres("#/genres?var=dlg_word_share&genre=romance");
     const explore = screen.getByRole("link", { name: "Open in Explore: dialogue share" }); // starts with its visible words (F76)
     expect(explore.textContent).toBe("Open in Explore →");
-    expect(explore.getAttribute("href")).toBe("#/explore?mode=one&genre=romance&var=dlg_word_share&include=all");
+    expect(explore.getAttribute("href")).toBe("#/explore?genre=romance&var=dlg_word_share&include=all");
   });
 
   it("announces the heading and the takeaway, and only the order's words when the order changes (F75)", async () => {

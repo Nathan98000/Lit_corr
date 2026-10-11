@@ -85,22 +85,11 @@ describe("the chart's words", () => {
   });
 });
 
-describe("compare mode and How it works", () => {
+describe("How it works", () => {
   beforeEach(() => {
     clearCache();
     window.history.replaceState(null, "", "/");
     vi.stubGlobal("fetch", fixtureFetch());
-  });
-
-  it("explains the genre cards with medians", async () => {
-    window.history.replaceState(null, "", "/#/explore?mode=compare&var=dlg_word_share");
-    render(<App />);
-    await waitFor(() => expect(document.querySelector(".chart-panel[aria-busy='false']")).toBeTruthy());
-    expect(document.querySelector(".compare-caption").textContent).toBe(
-      "Each small chart is one genre. A dot is a group’s median as a multiple of the genre’s median (the dashed line); " +
-        "the shaded band runs from 0.67× to 1.5×. Hollow dots: fewer than 30 stories; a dash: fewer than 10. Genres " +
-        "are in alphabetical order, not ranked. Select a genre for its full chart.",
-    );
   });
 
   it("says median and interquartile range without explaining them", async () => {
@@ -117,7 +106,6 @@ describe("compare mode and How it works", () => {
     );
     expect(text).toContain("and the medians of the lowest and highest groups must differ by at least 10% (or 0.1 stars for ratings)");
     expect(text).toContain("Even a clear pattern describes the medians; individual stories vary widely.");
-    expect(text).toContain("compared with that genre’s own median");
     expect(text).toContain("are not typical readers"); // other uses of “typical” stay
   });
 });

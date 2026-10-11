@@ -76,7 +76,7 @@ export default function PatternBrowser({ meta, state, onChange }) {
   const metric = meta.metrics.find((m) => m.id === state.metric);
   const where = genre.id === "all" ? "across all genres" : `in ${genre.name}`;
   const s = patterns ? patternSummary(meta, patterns, genre.id, metric.id) : null;
-  const link = (v) => toHash("explore", { mode: "one", genre: genre.id, metric: metric.id, v: v.id, sub: "all" });
+  const link = (v) => toHash("explore", { genre: genre.id, metric: metric.id, v: v.id, sub: "all" });
   // a topic folds open when it has something to list: its clear patterns, or (with the toggle) the others
   const opens = (t) => t.clear.length > 0 || (showAll && t.other.length > 0);
   const openable = s ? s.topics.filter(opens) : [];

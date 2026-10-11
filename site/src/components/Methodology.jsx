@@ -116,7 +116,7 @@ function Glossary({ meta }) {
   const [query, setQuery] = useState("");
   const byId = new Map(meta.variables.map((v) => [v.id, v]));
   const results = query.trim() ? searchCharacteristics(meta, query) : null;
-  const chart = (v) => toHash("explore", { mode: "one", genre: "all", metric: defaultMetric(meta), v: v.id, sub: "all" });
+  const chart = (v) => toHash("explore", { genre: "all", metric: defaultMetric(meta), v: v.id, sub: "all" });
   const entry = (v) => (
     <div key={v.id}>
       <dt>{v.label}</dt>
@@ -419,9 +419,7 @@ export default function Methodology({ meta, section }) {
           weights each story by the size of its genre on Literotica, so that big genres count in proportion. Groups
           with fewer than {meta.min_n} stories are not shown, and groups with fewer than {meta.small_n} are drawn hatched,
           with a hollow dot: they deserve less trust. “Only include” narrows any chart to stories published in a
-          period, of a given length, or above a minimum number of views or ratings. When comparing all genres, each
-          genre’s groups are compared with that genre’s own median, and genres are listed alphabetically, never
-          ranked.
+          period, of a given length, or above a minimum number of views or ratings.
         </p>
 
         <h2 id="tend-to" tabIndex={-1}>

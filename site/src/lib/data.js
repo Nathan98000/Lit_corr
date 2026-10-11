@@ -99,9 +99,3 @@ export function groupRows(variable, genreData, k) {
 export function pattern(genreData, k) {
   return genreData?.p?.[k] ?? [0, null];
 }
-
-/** A group's median as a multiple of the median for all stories shown in that genre. */
-export function relativeMedian(stats, overall) {
-  if (!stats || stats.suppressed || !overall || overall.suppressed || !overall.median) return null;
-  return stats.median / overall.median;
-}

@@ -115,7 +115,7 @@ export const SlotButton = forwardRef(function SlotButton({ expanded, onPress, ch
 /**
  * The controls are the question itself (concept B): "In [All genres], how do [favorites per 1,000 views] vary with
  * [story length]?", then "Only include: [All stories]". Genre and "only include" are native selects styled as words;
- * the measure and the characteristic open a menu and a picker. Comparing genres: "Genre by genre, how do …".
+ * the measure and the characteristic open a menu and a picker.
  */
 export default function Controls({ meta, state, onChange }) {
   const set = (patch) => onChange({ ...state, ...patch });
@@ -123,7 +123,6 @@ export default function Controls({ meta, state, onChange }) {
   const metric = meta.metrics.find((m) => m.id === state.metric);
   const genre = meta.genres.find((g) => g.id === state.genre);
   const subset = meta.subsets.find((s) => s.id === state.sub);
-  const compare = state.mode === "compare";
   const p = questionParts({ variable, metric });
   const [menu, setMenu] = useState(null); // "metric" | "variable" | null
   const metricBtn = useRef(null);
@@ -137,7 +136,7 @@ export default function Controls({ meta, state, onChange }) {
   const subsetGroups = groupBy(meta.subsets, "group");
   const anyConflict = meta.subsets.some((s) => subsetConflict(s, variable));
   const narrow = useMediaQuery("(max-width: 699px)");
-  const barText = [variable.label, metric.label, compare ? "Genre by genre" : genre.name, subset.id !== "all" && subset.label]
+  const barText = [variable.label, metric.label, genre.name, subset.id !== "all" && subset.label]
     .filter(Boolean)
     .join(" · ");
 
@@ -156,35 +155,28 @@ export default function Controls({ meta, state, onChange }) {
       {narrow && (
         <QuestionBar
           text={barText}
-          question={questionText({ variable, metric, genre, compare })}
+          question={questionText({ variable, metric, genre })}
           sheetOpen={menu != null}
         />
       )}
       <fieldset className="question" id="question" tabIndex={-1}>
         <legend className="visually-hidden">Choose what to compare</legend>
         <p className="sentence">
-          {compare ? (
-            "Genre by genre, "
-          ) : (
-            <>
-              In{" "}
-              <InlineSelect
-                id={`${ids}-genre`}
-                label="Genre"
-                value={state.genre}
-                text={genre.name}
-                onChange={(g) => set({ genre: g })}
-              >
-                {meta.genres.map((g) => (
-                  <option key={g.id} value={g.id}>
-                    {g.name}
-                  </option>
-                ))}
-              </InlineSelect>
-              {"\u2060,"}{" "}
-            </>
-          )}
-          how {p.aux} {p.article}
+          In{" "}
+          <InlineSelect
+            id={`${ids}-genre`}
+            label="Genre"
+            value={state.genre}
+            text={genre.name}
+            onChange={(g) => set({ genre: g })}
+          >
+            {meta.genres.map((g) => (
+              <option key={g.id} value={g.id}>
+                {g.name}
+              </option>
+            ))}
+          </InlineSelect>
+          {"\u2060,"} how {p.aux} {p.article}
           <SlotButton
             ref={metricBtn}
             expanded={menu === "metric"}
@@ -231,11 +223,6 @@ export default function Controls({ meta, state, onChange }) {
             )}
           </InlineSelect>
         </span>
-        {compare && (
-          <button type="button" className="btn" onClick={() => set({ mode: "one" })}>
-            ← Back to one genre
-          </button>
-        )}
       </div>
       {anyConflict && (
         <p className="include-note visually-hidden" id={`${ids}-include-note`}>

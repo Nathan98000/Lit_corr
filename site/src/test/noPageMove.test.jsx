@@ -1,7 +1,7 @@
 // Round 3, change 1: opening, using or picking from the measure menu or the characteristic picker never moves the
 // page. The menus scroll only their own box, every focus() prevents scrolling, the popover fits on the screen, and a
 // shorter chart keeps the scroll position.
-import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useRef } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -196,7 +196,7 @@ describe("a shorter chart keeps the scroll position", () => {
     expect(floor.style.height).toBe("");
   });
 
-  it("is held for a new question from the sentence or an age box's switch, not for another view", async () => {
+  it("is held for a new question from the sentence or the totals box's switch, not for a way out", async () => {
     const hold = vi.fn();
     const state = sanitize({ v: "dlg_word_share", metric: "pop_views" }, fixtureMeta);
     const user = userEvent.setup();
@@ -207,7 +207,10 @@ describe("a shorter chart keeps the scroll position", () => {
     expect([hold.mock.calls.length, onChange.mock.calls.length]).toEqual([1, 1]);
     await user.click(screen.getByRole("button", { name: "Switch to views per month" }));
     expect([hold.mock.calls.length, onChange.mock.calls.length]).toEqual([2, 2]);
-    await user.click(screen.getByRole("button", { name: "See this pattern in every genre →" }));
+    cleanup();
+    // a way out of a selection with too few stories (back to All genres) is another view: no hold
+    render(<Explorer meta={fixtureMeta} state={{ ...state, genre: "tiny" }} onChange={onChange} onAsk={() => {}} onHoldScroll={hold} />);
+    await user.click(await screen.findByRole("button", { name: "All genres" }));
     expect([hold.mock.calls.length, onChange.mock.calls.length]).toEqual([2, 3]);
   });
 });

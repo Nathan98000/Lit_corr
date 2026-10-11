@@ -306,7 +306,7 @@ export default function GenresPage({ meta, state, onChange, onNavigate, onHoldSc
               exclude={GENRE_PAGE_EXCLUDED}
               excludedNote="Publication month and weekday aren’t compared on this page."
               metricHref={(metric) =>
-                toHash("explore", { mode: "one", genre: state.genre || "all", metric, v: state.v, sub: state.sub })
+                toHash("explore", { genre: state.genre || "all", metric, v: state.v, sub: state.sub })
               }
               focusRef={pickerFocus}
               scrollRef={pickerBody}

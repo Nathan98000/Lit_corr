@@ -40,15 +40,6 @@ describe("parts that load on demand", () => {
     expect(await screen.findByRole("heading", { level: 1, name: "How it works" })).toBeTruthy();
     expect(document.querySelector(".page-placeholder")).toBeNull();
   });
-
-  it("open the genre cards and their table in compare mode", async () => {
-    const user = userEvent.setup();
-    window.history.replaceState(null, "", "/#/explore?mode=compare&var=dlg_word_share");
-    render(<App />);
-    expect((await screen.findAllByRole("button", { name: /Open its chart\.$/ })).length).toBe(4);
-    await user.click(screen.getByRole("button", { name: "Show the numbers" }));
-    expect(await screen.findByRole("table")).toBeTruthy();
-  });
 });
 
 describe("lazyPart", () => {

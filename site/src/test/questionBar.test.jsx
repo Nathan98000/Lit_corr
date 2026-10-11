@@ -82,11 +82,11 @@ describe("the question bar", () => {
     expect(bar()).toBeNull();
   });
 
-  it("names the genre by genre view, and hides while a sheet is open", async () => {
+  it("hides while a sheet is open", async () => {
     screenWidth(375);
-    const user = await renderApp("#/explore?mode=compare&var=dlg_word_share");
+    const user = await renderApp("#/explore?genre=romance&var=dlg_word_share");
     scrollSentence(true);
-    expect(bar().textContent).toMatch(/^Dialogue share · Favorites per 1,000 views · Genre by genre/);
+    expect(bar().textContent).toMatch(/^Dialogue share · Favorites per 1,000 views · Romance/);
     await user.click(screen.getByRole("button", { name: /^Popularity measure:/ }));
     expect(screen.getByRole("dialog", { name: "Popularity measure" })).toBeTruthy();
     expect(bar()).toBeNull();

@@ -235,9 +235,8 @@
   border: 0;
 }
 
-/* On phones a genre's line sticks to the bottom of the screen while its chart is on screen (concept Q1, F62), as
-   the compare table's tapped cell does; in the document it stays a line under the chart, where screen readers find
-   it. Only the phone layout draws this line. */
+/* On phones a genre's line sticks to the bottom of the screen while its chart is on screen (concept Q1, F62); in the
+   document it stays a line under the chart, where screen readers find it. Only the phone layout draws this line. */
 .row-details.genre-line:not(.empty) {
   position: sticky;
   bottom: 0;

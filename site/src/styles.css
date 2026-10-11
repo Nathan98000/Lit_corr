@@ -26,8 +26,7 @@
   --accent-bar: #c9dcfb; /* middle-half bars */
   --accent-soft: #d7e5fd;
   --accent-wash: #eef4fe;
-  --band: #f1efe9; /* the 0.67×–1.5× band on genre cards */
-  --spark-line: #9db8e6;
+  --band: #f1efe9; /* placeholders, and All genres' band on the Genres page */
   --warm: #e8894a;
   --warm-ink: #a9531d;
   --age-bg: #fff6ec;
@@ -140,18 +139,6 @@ main.wrap {
 .page-placeholder {
   min-height: 100vh; /* a page whose code is on its way holds at least one screen, so the footer stays below */
   background: transparent; /* no top margin: it would collapse through main, which then jumps when the page arrives */
-}
-
-/* the genre cards and the compare table while their code is on its way */
-.compare-grid-placeholder,
-.compare-numbers-placeholder {
-  border-radius: var(--radius);
-  background: var(--band);
-}
-
-.compare-numbers-placeholder {
-  min-height: 60vh;
-  margin-top: 16px;
 }
 
 /* a sheet's or popover's body while its code is on its way: as tall as the body it waits for */
@@ -440,258 +427,6 @@ h3 {
 .copy-link {
   min-height: var(--target);
   font-size: 14px;
-}
-
-/* -------------------------------------------------------- compare genres (D2, D1) */
-.compare-caption {
-  margin: 12px 0 6px;
-  max-width: 66ch;
-  font-size: 13.5px;
-  color: var(--ink-2);
-}
-
-.compare-axis {
-  margin: 0 0 8px;
-  font-size: 12.5px;
-  color: var(--ink-3);
-}
-
-.compare-grid {
-  display: grid;
-  gap: 10px;
-}
-
-.genre-card {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  padding: 8px 0 4px;
-  border: 1px solid var(--rule);
-  border-radius: 8px;
-  background: transparent;
-  text-align: left;
-  cursor: pointer;
-  font: inherit;
-  color: inherit;
-}
-
-.genre-card:hover {
-  border-color: var(--control);
-  background: var(--paper);
-}
-
-.genre-card.all {
-  grid-column: 1 / -1;
-  background: var(--paper);
-  border-color: var(--rule-2);
-}
-
-.genre-card-head {
-  display: block;
-  min-height: 38px;
-  padding: 0 9px;
-  font-size: 13.5px;
-  line-height: 1.25;
-}
-
-.genre-card.all .genre-card-head {
-  min-height: 0;
-  margin-bottom: 4px;
-}
-
-.genre-name {
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  overflow: hidden;
-  overflow-wrap: anywhere;
-  font-weight: 600;
-}
-
-.genre-card.all .genre-name {
-  display: inline;
-  margin-right: 8px;
-}
-
-.verdict {
-  font-size: 12.5px;
-  white-space: nowrap;
-  color: var(--ink-3);
-}
-
-.verdict.up {
-  color: var(--accent-ink);
-}
-
-.verdict.down {
-  color: var(--warm-ink);
-}
-
-.spark {
-  display: block;
-  flex: none;
-  margin: auto 1px 0; /* at the card's bottom, so the small charts of a row line up */
-}
-
-.spark-band {
-  fill: var(--band);
-}
-
-.spark-one {
-  stroke: var(--ink-3);
-  stroke-dasharray: 3 3;
-}
-
-.spark-line {
-  fill: none;
-  stroke: var(--spark-line);
-  stroke-width: 1.5;
-}
-
-.spark-dot {
-  fill: var(--accent-ink);
-}
-
-.spark-dot.hollow {
-  fill: #fff;
-  stroke: var(--accent-ink);
-  stroke-width: 1.4;
-}
-
-.spark-dash {
-  stroke: var(--ink-3);
-  stroke-width: 1.5;
-}
-
-.spark-label {
-  fill: var(--ink-2);
-  font-size: 11.5px;
-}
-
-.agebox.compare-age {
-  margin: 14px 0 4px;
-  max-width: 62ch;
-}
-
-.compare-numbers {
-  margin-top: 16px;
-}
-
-/* the tapped cell's numbers stay at the bottom of the screen while the table is on it (F53) */
-.cell-detail {
-  position: sticky;
-  bottom: 0;
-  z-index: 2;
-  min-height: calc(2.6em + 16px);
-  margin: 0;
-  padding: 8px 0;
-  border-top: 1px solid var(--rule);
-  background: var(--paper);
-  font-size: 14px;
-  color: var(--ink-2);
-}
-
-.compare-table td.cell {
-  scroll-margin-bottom: 72px; /* keyboard focus never ends up under the sticky line */
-}
-
-.compare-scroll {
-  position: relative;
-  overflow-x: auto;
-}
-
-.compare-table {
-  border-collapse: separate;
-  border-spacing: 2px;
-  width: 100%;
-  font-size: 13px;
-  font-variant-numeric: tabular-nums;
-}
-
-.compare-table thead th {
-  padding: 0 4px 6px;
-  font-size: 12px;
-  font-weight: 600;
-  line-height: 1.2;
-  color: var(--ink-2);
-  vertical-align: bottom;
-  min-width: 54px;
-}
-
-.compare-table .genre-col {
-  position: sticky;
-  left: 0;
-  z-index: 1;
-  background: var(--bg);
-  min-width: 104px;
-  max-width: 190px;
-  padding: 0 6px 0 0;
-  text-align: left;
-  font-weight: 500;
-  line-height: 1.2;
-}
-
-.compare-table .verdict-col {
-  min-width: 64px;
-  padding: 0 6px;
-  text-align: left;
-}
-
-.compare-table td.cell {
-  height: 40px;
-  border-radius: 4px;
-  text-align: center;
-  color: var(--ink);
-  cursor: pointer;
-}
-
-.compare-table td.cell.small {
-  outline: 1px dashed var(--control);
-  outline-offset: -2px;
-}
-
-.compare-table td.cell.empty {
-  color: var(--ink-3);
-}
-
-.compare-table td.cell:focus-visible {
-  outline: 2px solid var(--accent-ink);
-  outline-offset: -2px;
-}
-
-.compare-table tr.all-row th,
-.compare-table tr.all-row td {
-  font-weight: 700;
-  border-bottom: 2px solid var(--ink);
-}
-
-.step-legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px 12px;
-  list-style: none;
-  margin: 12px 0 4px;
-  padding: 0;
-  font-size: 12.5px;
-  color: var(--ink-2);
-}
-
-.step-legend li {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.swatch {
-  display: inline-block;
-  width: 18px;
-  height: 12px;
-  border-radius: 2px;
-  border: 1px solid var(--rule-2);
-}
-
-.swatch.small {
-  border: 1px dashed var(--control);
 }
 
 /* ------------------------------------------------------------ methodology */
@@ -2397,7 +2132,6 @@ summary.pattern-topic-head::after {
 /* The charts draw with system colors only, so they read in light and dark contrast themes alike. */
 @media (forced-colors: active) {
   .range-chart svg,
-  .spark,
   .range-chart .key {
     forced-color-adjust: none;
   }
@@ -2407,8 +2141,7 @@ summary.pattern-topic-head::after {
   .range-chart .gval,
   .range-chart .gnone,
   .range-chart .reflab,
-  .range-chart .tick,
-  .spark-label {
+  .range-chart .tick {
     fill: CanvasText;
     stroke: Canvas;
   }
@@ -2449,33 +2182,6 @@ summary.pattern-topic-head::after {
   .range-chart .row:focus-visible .row-hit {
     fill: transparent;
     stroke: Highlight;
-  }
-
-  .spark-band {
-    fill: Canvas;
-    stroke: GrayText;
-  }
-
-  .spark-one {
-    stroke: CanvasText;
-  }
-
-  .spark-line {
-    stroke: GrayText;
-  }
-
-  .spark-dot {
-    fill: Highlight;
-    stroke: Canvas;
-  }
-
-  .spark-dot.hollow {
-    fill: Canvas;
-    stroke: Highlight;
-  }
-
-  .spark-dash {
-    stroke: CanvasText;
   }
 
   .range-chart .key-median {

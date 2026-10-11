@@ -2,14 +2,13 @@
 // so any view can be bookmarked or shared.
 
 export const DEFAULT_STATE = {
-  mode: "one",
   genre: "all",
   metric: "pop_rating", // the average rating, also meta.default_metric (litcorr/stage2/wording.py)
   v: "story_words",
   sub: "all",
 };
 
-const PARAMS = { mode: "mode", genre: "genre", metric: "metric", v: "var", sub: "include" };
+const PARAMS = { genre: "genre", metric: "metric", v: "var", sub: "include" };
 const PATTERN_PARAMS = { genre: "genre", metric: "metric" };
 // the Genres page: one characteristic in every genre (#/genres?var=…&include=…&genre=…&sort=value, the genre being the
 // highlighted one), or one genre against all genres (#/genres?view=genre&genre=…&include=…)
@@ -59,12 +58,15 @@ export function toHash(page, state = {}) {
   return q ? `${base}?${q}` : base;
 }
 
-// Settings that old links carry and the pages no longer have: the similar-age check.
-const RETIRED = ["check"];
+// Settings that old links carry and the pages no longer have: the similar-age check (`check=age`) and the mode
+// (`mode=one`, or `mode=compare` for comparing genres, whose links open the chart of the genre they carry, or of All
+// genres).
+const RETIRED = ["check", "mode"];
 
 /**
- * The address to settle on when `hash` carries a setting its page no longer has (an old link's `check=age`): the
- * page's own address for `state`; null otherwise (any other address stays as it is, even one the page sanitizes).
+ * The address to settle on when `hash` carries a setting its page no longer has (an old link's `check=age` or
+ * `mode=one`): the page's own address for `state`; null otherwise (any other address stays as it is, even one the page
+ * sanitizes).
  */
 export function settledHash(hash, page, state) {
   const keys = (h) => [...new URLSearchParams((h || "").split("?")[1] || "").keys()];
@@ -94,7 +96,6 @@ export const defaultMetric = (meta) => (has(meta.metrics, meta.default_metric) ?
 /** Fill in defaults and replace anything the data does not know about. */
 export function sanitize(state, meta) {
   const s = { ...DEFAULT_STATE, ...state };
-  if (s.mode !== "one" && s.mode !== "compare") s.mode = DEFAULT_STATE.mode;
   if (!has(meta.genres, s.genre)) s.genre = "all";
   if (!has(meta.metrics, s.metric)) s.metric = defaultMetric(meta);
   if (!has(meta.variables, s.v)) s.v = has(meta.variables, DEFAULT_STATE.v) ? DEFAULT_STATE.v : meta.variables[0].id;

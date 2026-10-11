@@ -15,13 +15,6 @@ export function formatValue(v, format) {
 
 export const formatCount = (n) => (n == null ? "–" : whole.format(n));
 
-/** A ratio such as 1.3× or 0.8×. */
-export function formatRatio(r) {
-  if (r == null || !Number.isFinite(r)) return "–";
-  if (r >= 10) return `${Math.round(r)}×`;
-  return `${r.toFixed(1)}×`;
-}
-
 export function formatDate(iso) {
   if (!iso) return "";
   const d = new Date(`${iso.slice(0, 10)}T12:00:00Z`);

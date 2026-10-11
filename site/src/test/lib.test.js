@@ -1,12 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { cellStats, relativeMedian } from "../lib/data.js";
+import { cellStats } from "../lib/data.js";
 import {
   columnDecimals,
   formatCompact,
   formatDate,
   formatFixed,
   formatRange,
-  formatRatio,
   formatValue,
   stepDecimals,
 } from "../lib/format.js";
@@ -23,7 +22,6 @@ describe("formatting", () => {
     expect(formatValue(4.416, "rating")).toBe("4.42");
     expect(formatValue(0, "rate")).toBe("0");
     expect(formatValue(null, "rate")).toBe("–");
-    expect(formatRatio(1.26)).toBe("1.3×");
   });
 });
 
@@ -57,16 +55,11 @@ describe("reading the aggregates", () => {
     expect(cellStats(cell, 2)).toEqual({ n: 120, suppressed: true });
     expect(cellStats(null, 0)).toBeNull();
   });
-  it("compares a group with all stories shown", () => {
-    expect(relativeMedian({ median: 0.6 }, { median: 0.4 })).toBeCloseTo(1.5);
-    expect(relativeMedian({ suppressed: true }, { median: 0.4 })).toBeNull();
-    expect(relativeMedian({ median: 1 }, { median: 0 })).toBeNull();
-  });
 });
 
 describe("addresses", () => {
   it("round-trips the explorer settings through the address", () => {
-    const state = { mode: "compare", genre: "adult-romance", metric: "pop_views", v: "story_words", sub: "y2020" };
+    const state = { genre: "adult-romance", metric: "pop_views", v: "story_words", sub: "y2020" };
     expect(parseHash(toHash("explore", state))).toEqual({ page: "explore", state });
     expect(parseHash("#/methodology").page).toBe("methodology");
     expect(parseHash("#/methodology/tend-to")).toMatchObject({ page: "methodology", section: "tend-to" });
@@ -78,20 +71,23 @@ describe("addresses", () => {
     expect(toHash("patterns", { genre: "all", metric: "pop_views", v: "x" })).toBe("#/patterns?genre=all&metric=pop_views");
     expect(parseHash("").page).toBe("explore");
   });
-  it("no longer reads or writes the similar-age check, and settles an old link without it", () => {
+  it("no longer reads or writes the similar-age check or the mode, and settles an old link without them", () => {
     expect(parseHash("#/explore?var=story_words&check=age").state).toEqual({ v: "story_words" });
-    const s = sanitize({ v: "dlg_word_share", check: "age" }, fixtureMeta);
-    expect(toHash("explore", s)).not.toMatch(/check/);
-    expect(toHash("explore", { ...s, check: "age" })).not.toMatch(/check/);
+    expect(parseHash("#/explore?mode=compare&genre=romance&var=story_words").state).toEqual({ genre: "romance", v: "story_words" });
+    const s = sanitize({ v: "dlg_word_share", check: "age", mode: "compare" }, fixtureMeta);
+    expect(toHash("explore", s)).not.toMatch(/check|mode|compare/);
+    expect(toHash("explore", { ...s, check: "age", mode: "compare" })).not.toMatch(/check|mode|compare/);
     expect(settledHash("#/explore?var=dlg_word_share&check=age", "explore", s)).toBe(toHash("explore", s));
+    expect(settledHash("#/explore?mode=compare&var=dlg_word_share", "explore", s)).toBe(toHash("explore", s));
+    expect(settledHash(`#/explore?mode=one&${toHash("explore", s).split("?")[1]}`, "explore", s)).toBe(toHash("explore", s));
     // an address that leaves nothing out stays as it is, even one without settings
     expect(settledHash(toHash("explore", s), "explore", s)).toBeNull();
     expect(settledHash("#/explore", "explore", s)).toBeNull();
     expect(settledHash("#/explore?var=dlg_word_share", "explore", s)).toBeNull();
   });
   it("replaces anything the data does not know about", () => {
-    const s = sanitize({ mode: "weird", genre: "nope", metric: "nope", v: "nope", sub: "nope" }, fixtureMeta);
-    expect(s.mode).toBe(DEFAULT_STATE.mode);
+    const s = sanitize({ genre: "nope", metric: "nope", v: "nope", sub: "nope" }, fixtureMeta);
+    expect(Object.keys(s).sort()).toEqual(Object.keys(DEFAULT_STATE).sort());
     expect(s.genre).toBe("all");
     // the test data has no average rating (too few stories have one), so its first measure stands in
     expect(fixtureMeta.default_metric).toBe("pop_rating");
@@ -112,7 +108,6 @@ function everyTitle(meta) {
       for (const genre of genres) {
         for (const direction of [-1, 0, 1]) titles.push(chartTitle({ variable, metric, genre, direction }));
       }
-      titles.push(chartTitle({ variable, metric, genre: genres[0], direction: 0, compare: true }));
     }
   }
   return titles;

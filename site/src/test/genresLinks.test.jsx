@@ -1,5 +1,5 @@
-// The Genres page from the rest of the site: Explore's "See this pattern in every genre" (D7), the Genres page's
-// question in Keep exploring, and How it works' "Comparing genres".
+// The Genres page from the rest of the site: the Genres page's question in Keep exploring, and How it works'
+// "Comparing genres" (Explore's "See this pattern in every genre", D7, is gone with compare mode).
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -34,14 +34,6 @@ async function renderApp(hash) {
 
 const keepExploring = () => within(screen.getByRole("navigation", { name: "Keep exploring" })).getAllByRole("link");
 
-describe("Explore (D7)", () => {
-  it("says “See this pattern in every genre →”, not “Compare all … genres”", async () => {
-    await renderApp("#/explore?var=dlg_word_share");
-    expect(screen.getByRole("button", { name: "See this pattern in every genre →" })).toBeTruthy();
-    expect(document.body.textContent).not.toMatch(/Compare all \d+ genres/);
-  });
-});
-
 describe("Keep exploring", () => {
   it("asks what stands out about the chosen genre's stories, after every clear pattern", async () => {
     const user = await renderApp("#/explore?genre=romance&var=dlg_word_share&include=y2020");
@@ -53,8 +45,8 @@ describe("Keep exploring", () => {
     expect(screen.getByLabelText("Genre").value).toBe("romance");
   });
 
-  it("asks how the genres differ in the characteristic with All genres, and in compare mode", async () => {
-    await renderApp("#/explore?mode=compare&var=dlg_has_dialogue");
+  it("asks how the genres differ in the characteristic with All genres", async () => {
+    await renderApp("#/explore?var=dlg_has_dialogue");
     const link = keepExploring()[1];
     expect(link.textContent).toBe("How common are stories with dialogue in each genre?\u00a0→");
     expect(link.getAttribute("href")).toBe("#/genres?var=dlg_has_dialogue&include=all");
@@ -65,8 +57,8 @@ describe("Keep exploring", () => {
     const month = meta.variables.find((v) => v.id === "pub_month");
     if (!month) return;
     const view = sanitize({ v: "pub_month" }, meta);
-    expect(genresQuestion(meta, view, { compare: false, genre: meta.genres[0], variable: month })).toBeNull();
-    expect(genresQuestion(meta, view, { compare: false, genre: meta.genres[3], variable: month }).text).toMatch(/^What stands out/);
+    expect(genresQuestion(meta, view, { genre: meta.genres[0], variable: month })).toBeNull();
+    expect(genresQuestion(meta, view, { genre: meta.genres[3], variable: month }).text).toMatch(/^What stands out/);
   });
 });
 
@@ -208,6 +200,6 @@ describe("the picker on the Genres page (F77)", () => {
     const box = await screen.findByRole("combobox", { name: /^Search/ });
     await user.type(box, "rating");
     const link = await within(document.querySelector(".pick-measure-note")).findByRole("link", { name: /See it in Explore/ });
-    expect(link.getAttribute("href")).toBe("#/explore?mode=one&genre=romance&metric=pop_rating_count&var=dlg_word_share&include=all");
+    expect(link.getAttribute("href")).toBe("#/explore?genre=romance&metric=pop_rating_count&var=dlg_word_share&include=all");
   });
 });

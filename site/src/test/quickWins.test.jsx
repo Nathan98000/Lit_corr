@@ -1,4 +1,5 @@
-// Round 2's quick wins (section 6 of DESIGN_REVIEW_2.md): F39, F47, F52, F53, F54 and F59 (F37's similar-age check is gone).
+// Round 2's quick wins (section 6 of DESIGN_REVIEW_2.md): F47, F52, F54 and F59 (F37's similar-age check, and F39's
+// and F53's compare mode, are gone).
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { readFileSync } from "node:fs";
@@ -27,21 +28,6 @@ async function renderApp(hash = "") {
   await waitFor(() => expect(document.querySelector(".chart-panel[aria-busy='false']")).toBeTruthy());
   return user;
 }
-
-describe("F39: comparing a total", () => {
-  it("puts the story-age box with its switch above the genre cards", async () => {
-    const user = await renderApp("#/explore?mode=compare&metric=pop_views&var=dlg_word_share");
-    await screen.findAllByRole("button", { name: /Open its chart\.$/ }); // the cards' code has arrived
-    const box = screen.getByText("Totals grow with time online.").closest(".agebox");
-    const caption = document.querySelector(".compare-caption");
-    const grid = document.querySelector(".compare-grid");
-    expect(box.compareDocumentPosition(caption) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(caption.compareDocumentPosition(grid) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(document.querySelector(".chart-sub").compareDocumentPosition(box) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    await user.click(within(box).getByRole("button", { name: "Switch to views per month" }));
-    await waitFor(() => expect(window.location.hash).toMatch(/metric=pop_views_per_month/));
-  });
-});
 
 describe("F47: what screen readers hear", () => {
   it("announces the full title and the answer, so two charts without a pattern sound different", async () => {
@@ -77,20 +63,6 @@ describe("F52: ways out and headings", () => {
     render(<App />);
     await screen.findByText(/We couldn’t load the data/);
     expect(screen.getByRole("heading", { level: 1 }).textContent).toMatch(/^What do popular Literotica stories have in common\?/);
-  });
-});
-
-describe("F53: the compare table's cell details", () => {
-  it("come after the table, where the line can stay at the bottom of the screen", async () => {
-    const user = await renderApp("#/explore?mode=compare&var=dlg_word_share");
-    await user.click(await screen.findByRole("button", { name: "Show the numbers" }));
-    const table = await screen.findByRole("table");
-    const detail = document.querySelector(".cell-detail");
-    expect(table.compareDocumentPosition(detail) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(detail.getAttribute("aria-live")).toBe("polite");
-    const cell = within(table).getAllByRole("cell").find((c) => c.className.includes("cell") && !c.className.includes("empty"));
-    await user.click(cell);
-    expect(detail.textContent).toMatch(/^.+, .+: median [\d.]+ \(\d+ stories\), against [\d.]+ for all .*stories shown\.$/);
   });
 });
 

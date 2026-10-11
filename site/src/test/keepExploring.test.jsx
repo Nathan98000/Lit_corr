@@ -13,7 +13,7 @@ const FEATURED = [
   { question: "Q2: dialogue share in Romance, views per month?", var: "dlg_word_share", metric: "pop_views_per_month", genre: "romance" },
   { question: "Q3: anger, views?", var: "emo_anger_per_1k", metric: "pop_views" },
   { question: "Q4: perspective, favorites?", var: "pov_class", metric: "pop_fav_per_1k_views" },
-  { question: "Q5: has dialogue, genre by genre?", var: "dlg_has_dialogue", metric: "pop_views", mode: "compare" },
+  { question: "Q5: has dialogue, views?", var: "dlg_has_dialogue", metric: "pop_views" },
   { question: "Q6: dialogue share, views per month?", var: "dlg_word_share", metric: "pop_views_per_month" },
 ];
 const meta = { ...fixtureMeta, featured: FEATURED };
@@ -36,7 +36,7 @@ async function renderApp(hash) {
 }
 
 const items = () => within(screen.getByRole("navigation", { name: "Keep exploring" })).getAllByRole("link");
-const view = (v) => ({ mode: "one", genre: "all", metric: "pop_fav_per_1k_views", v: "dlg_word_share", sub: "all", ...v });
+const view = (v) => ({ genre: "all", metric: "pop_fav_per_1k_views", v: "dlg_word_share", sub: "all", ...v });
 
 describe("keep exploring", () => {
   it("lists the Patterns page, the Genres page's question, then the first three example questions that open another view", async () => {
@@ -53,7 +53,7 @@ describe("keep exploring", () => {
     expect(links[0].getAttribute("href")).toBe("#/patterns?genre=all&metric=pop_fav_per_1k_views");
     expect(links[1].getAttribute("href")).toBe("#/genres?var=dlg_word_share&include=all");
     expect(links[2].getAttribute("href")).toBe(
-      "#/explore?mode=one&genre=romance&metric=pop_views_per_month&var=dlg_word_share&include=all",
+      "#/explore?genre=romance&metric=pop_views_per_month&var=dlg_word_share&include=all",
     );
     for (const a of links) expect(a.getAttribute("href")).not.toBe(window.location.hash); // none opens this view
   });
@@ -72,13 +72,8 @@ describe("keep exploring", () => {
     const picks = (v) => keepExploring(meta, view(v)).map((x) => x.question.slice(0, 2));
     expect(picks({})).toEqual(["Q2", "Q3", "Q4"]);
     expect(picks({ v: "emo_anger_per_1k", metric: "pop_views" })).toEqual(["Q1", "Q2", "Q4"]);
-    expect(picks({ mode: "compare", v: "dlg_has_dialogue", metric: "pop_views", genre: "fetish" })).toEqual(["Q1", "Q2", "Q3"]);
+    expect(picks({ genre: "romance", metric: "pop_views_per_month" })).toEqual(["Q1", "Q3", "Q4"]); // Q2 is this view
     expect(picks({ v: "dlg_word_share", metric: "pop_views" })).toEqual(["Q1", "Q2", "Q3"]); // Q6 would be the switch
-  });
-
-  it("is there in compare mode, pointing to the Patterns page for all genres", async () => {
-    await renderApp("#/explore?mode=compare&genre=romance&var=dlg_word_share");
-    expect(items()[0].textContent).toBe("Every clear pattern with favorites per 1,000 views across all genres\u00a0→");
   });
 
   it("is there when no group has enough stories", async () => {

@@ -88,40 +88,6 @@ describe("the explorer", () => {
     expect(document.querySelector(".chart-sub").textContent).toBe(`Fetish · ${data.n.toLocaleString("en-US")} stories`);
   });
 
-  it("compares genres as small charts, alphabetical, and opens a genre from its card", async () => {
-    const user = await renderApp();
-    await user.click(screen.getByRole("button", { name: "See this pattern in every genre →" }));
-    await waitFor(() => expect(document.title).toMatch(/genre by genre$/));
-    // the answer is the count of verdicts (dialogue share is a clear pattern in the synthetic data)
-    expect(chartTitle().textContent).toMatch(/^Tends higher in .* of 3 genres, tends lower in .*, no clear pattern in .*\.$/);
-    const cards = await screen.findAllByRole("button", { name: /Open its chart\.$/ }); // the cards load their own code
-    expect(cards.map((c) => c.querySelector(".genre-name").textContent)).toEqual(fixtureMeta.genres.map((g) => g.name));
-    const tiny = cards.find((c) => c.textContent.startsWith("Tiny Genre"));
-    expect(tiny.getAttribute("aria-label")).toMatch(/fewer than 10 stories/);
-    expect(tiny.textContent).toMatch(/too few stories to judge/);
-    expect(screen.queryByLabelText("Genre")).toBeNull();
-    expect(screen.getByText(/Genre by genre/)).toBeTruthy();
-    expect(screen.getByText(/alphabetical order, not ranked/)).toBeTruthy();
-
-    await user.click(screen.getByRole("button", { name: "Show the numbers" }));
-    const table = await screen.findByRole("table");
-    expect(within(table).getAllByRole("rowheader").map((th) => th.textContent)).toEqual(fixtureMeta.genres.map((g) => g.name));
-    const cell = within(table).getAllByRole("cell").find((c) => c.className.includes("cell") && !c.className.includes("empty"));
-    await user.click(cell);
-    expect(screen.getByText(/^.+, .+: median [\d.]+ \(\d+ stories\), against [\d.]+ for all .*stories shown\.$/)).toBeTruthy();
-    expect(document.querySelector("[title*='median']")).toBeNull(); // no hover-only tooltips
-
-    await user.click(cards.find((c) => c.textContent.startsWith("Romance")));
-    await waitFor(() => expect(screen.getByLabelText("Genre").value).toBe("romance"));
-    expect(window.location.hash).toMatch(/mode=one/);
-  });
-
-  it("returns from comparing to the last genre used", async () => {
-    const user = await renderApp("#/explore?mode=compare&genre=fetish&var=dlg_word_share");
-    await user.click(screen.getByRole("button", { name: /Back to one genre/ }));
-    await waitFor(() => expect(screen.getByLabelText("Genre").value).toBe("fetish"));
-  });
-
   it("opens an example question from Keep exploring, and goes back up to the question", async () => {
     const user = await renderApp("#/explore?var=emo_anger_per_1k");
     const nav = screen.getByRole("navigation", { name: "Keep exploring" });
@@ -151,11 +117,6 @@ describe("no causation reminders (decision 1 of round 2)", () => {
   const REMINDERS = /do not establish causation|do not show that a characteristic changes|\bnot why\b|Descriptive only/i;
   const pages = [
     ["the explorer, one genre", "#/explore", () => waitFor(() => expect(document.querySelector(".chart-panel[aria-busy='false']")).toBeTruthy())],
-    [
-      "the explorer, comparing genres",
-      "#/explore?mode=compare&var=dlg_word_share",
-      () => screen.findAllByRole("button", { name: /Open its chart\.$/ }),
-    ],
     ["Patterns", "#/patterns?genre=all&metric=pop_fav_per_1k_views", () => screen.findByText(/characteristics have a clear pattern/)],
     ["How it works", "#/methodology", () => screen.findByRole("heading", { level: 1, name: "How it works" })],
   ];
@@ -314,12 +275,6 @@ describe("notes", () => {
     expect(screen.queryByText(/Story age/)).toBeNull();
     await waitFor(() => expect(window.location.hash).not.toMatch(/check/));
     expect(window.location.hash).toMatch(/^#\/explore\?.*var=dlg_word_share/);
-  });
-
-  it("switches to comparing all genres", async () => {
-    const user = await renderApp();
-    await user.click(screen.getByRole("button", { name: "See this pattern in every genre →" }));
-    await waitFor(() => expect(window.location.hash).toMatch(/mode=compare/));
   });
 });
 

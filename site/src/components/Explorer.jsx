@@ -17,36 +17,13 @@ import {
 } from "../lib/wording.js";
 import { onGenresPage, sanitize, toHash } from "../lib/urlState.js";
 import ChartNotes from "./ChartNotes.jsx";
-import { compareRows, compareSummary, gridColumns } from "../lib/compare.js";
 import Controls, { preloadMenus } from "./Controls.jsx";
 import CopyLink from "./CopyLink.jsx";
-import { PartBoundary, lazyPart, whenIdle } from "./lazyPart.jsx";
+import { whenIdle } from "./lazyPart.jsx";
 import LoadError from "./LoadError.jsx";
 import { GenresPage, PatternBrowser } from "./pages.js";
 import RangeChart from "./RangeChart.jsx";
 import useMediaQuery from "./useMediaQuery.js";
-import useWidth from "./useWidth.js";
-
-// Comparing genres loads its code when first needed (F49), or ahead of time when "See this pattern in every genre" is
-// hovered or focused.
-const CompareGrid = lazyPart(() => import("./CompareGrid.jsx"));
-const CompareTable = lazyPart(() => import("./CompareTable.jsx"));
-const preloadCompare = () => {
-  CompareGrid.preload();
-  CompareTable.preload();
-};
-
-/**
- * The genre cards' space while their code is on its way: the full-width "All genres" card, then rows of cards
- * (108 px and a 10 px gap each; on two-column phones a few long genre names take a second line).
- */
-function CompareGridPlaceholder({ genres }) {
-  const [ref, width] = useWidth(960, "compare");
-  const cols = gridColumns(width);
-  const rows = Math.ceil(genres / cols);
-  const height = (cols > 2 ? 111 : 91) + rows * 118 + (cols > 2 ? 0 : 25);
-  return <div ref={ref} className="compare-grid-placeholder" aria-busy="true" style={{ height }} />;
-}
 
 const fileKey = (s) => `${s.v}/${s.sub}`;
 
@@ -74,8 +51,8 @@ export function useShownData(state) {
   }, [key, state.v, state.sub, attempt]);
 
   const busy = !error && (!shown || shown.key !== key);
-  // The settings the visible chart describes: today's genre, measure and mode, with the file's characteristic and
-  // "only include" option (they differ from today's only while the next file is loading).
+  // The settings the visible chart describes: today's genre and measure, with the file's characteristic and "only
+  // include" option (they differ from today's only while the next file is loading).
   const view = shown ? { ...state, v: shown.v, sub: shown.sub } : null;
   return { view, data: shown?.value ?? null, busy, error, retry: () => setAttempt((a) => a + 1) };
 }
@@ -87,31 +64,26 @@ export function describeView(meta, view, data) {
   const metric = meta.metrics[k];
   const genre = meta.genres.find((g) => g.id === view.genre);
   const subset = meta.subsets.find((s) => s.id === view.sub);
-  const compare = view.mode === "compare";
-  const gd = data?.g?.[compare ? "all" : genre.id];
+  const gd = data?.g?.[genre.id];
   const rows = groupRows(variable, gd, k);
   const overall = cellStats(gd?.o, k);
   const [direction, effect] = pattern(gd, k);
-  const title = chartTitle({ variable, metric, genre, direction, compare });
-  const sub = subtitleParts({ genre, subset, n: gd?.n, compare, genreCount: meta.genres.length - 1 });
+  const title = chartTitle({ variable, metric, genre, direction });
+  const sub = subtitleParts({ genre, subset, n: gd?.n });
   const readable = variable.bins.ordered || Boolean(variable.yes_subject);
   const shownRows = rows.filter((r) => r.stats && !r.stats.suppressed);
   const shownCount = shownRows.length;
-  const pNote = patternNote({ variable, direction, effect, compare, shown: shownCount, smallN: meta.small_n });
+  const pNote = patternNote({ variable, direction, effect, shown: shownCount, smallN: meta.small_n });
   const valueText = chartValueText(rows, overall, metric.format);
-  const cRows = compare ? compareRows({ meta, variable, varData: data, k, smallN: meta.small_n }) : null;
-  const answer = compare
-    ? (readable && compareSummary(cRows)) || "Each group on its own"
-    : answerHeading({ variable, metric, genre, direction, effect, shown: shownCount });
-  const takeaway = compare || shownCount < 2 ? null : takeawaySegments({ variable, rows, valueText });
-  const oneGroup = !compare && shownCount === 1 ? shownRows[0] : null;
+  const answer = answerHeading({ variable, metric, genre, direction, effect, shown: shownCount });
+  const takeaway = shownCount < 2 ? null : takeawaySegments({ variable, rows, valueText });
+  const oneGroup = shownCount === 1 ? shownRows[0] : null;
   return {
     variable,
     k,
     metric,
     genre,
     subset,
-    compare,
     gd,
     rows,
     overall,
@@ -120,7 +92,6 @@ export function describeView(meta, view, data) {
     title,
     sub,
     totalsNote: totalsNote(metric),
-    compareRows: cRows,
     readable,
     pNote,
     answer,
@@ -166,9 +137,8 @@ function Takeaway({ segments, note, why }) {
   );
 }
 
-/** Do two settings show the same view? (Comparing genres shows every genre, whichever one is remembered.) */
-const sameView = (a, b) =>
-  a.mode === b.mode && a.metric === b.metric && a.v === b.v && a.sub === b.sub && (a.mode === "compare" || a.genre === b.genre);
+/** Do two settings show the same view? */
+const sameView = (a, b) => a.genre === b.genre && a.metric === b.metric && a.v === b.v && a.sub === b.sub;
 
 /**
  * "Keep exploring" (concept J2 of the second review): the first three example questions, in their fixed order, that
@@ -181,7 +151,7 @@ export function keepExploring(meta, view) {
   return meta.featured
     .map((q) => ({
       question: q.question,
-      state: sanitize({ mode: q.mode || "one", genre: q.genre || "all", metric: q.metric, v: q.var, sub: "all" }, meta),
+      state: sanitize({ genre: q.genre || "all", metric: q.metric, v: q.var, sub: "all" }, meta),
     }))
     .filter(({ state }) => !avoid.some((a) => sameView(a, state)))
     .slice(0, 3);
@@ -192,7 +162,7 @@ export function keepExploring(meta, view) {
  * genres how the genres differ in this characteristic (none for those the page leaves out). { text, hash } or null.
  */
 export function genresQuestion(meta, view, d) {
-  const genre = d.compare ? meta.genres[0] : d.genre;
+  const { genre } = d;
   if (genre.id !== "all") {
     return { text: standsOutQuestion(genre), hash: toHash("genres", { view: "genre", genre: genre.id, sub: view.sub }) };
   }
@@ -206,7 +176,7 @@ export function genresQuestion(meta, view, d) {
  */
 function KeepExploring({ meta, view, d, onAsk }) {
   const headingId = useId();
-  const genre = d.compare ? meta.genres[0] : d.genre;
+  const { genre } = d;
   const genres = genresQuestion(meta, view, d);
   const preloadGenres = () => GenresPage.preload();
   const plainClick = (e) => !(e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey);
@@ -253,32 +223,10 @@ function KeepExploring({ meta, view, d, onAsk }) {
   );
 }
 
-/** The story-age box for totals in compare mode, with its one-tap switch to the per-month or per-1,000-views measure. */
-function TotalsBox({ meta, d, onSwitch }) {
-  const note = d.totalsNote;
-  if (!note) return null;
-  const rate = RATE_FOR[d.metric.id] && meta.metrics.find((m) => m.id === RATE_FOR[d.metric.id]);
-  return (
-    <div className="agebox compare-age">
-      <p>
-        <b>{note.lead}</b> {note.text}
-      </p>
-      {rate && (
-        <button type="button" className="link-button" onClick={() => onSwitch(rate.id)}>
-          Switch to {rate.label.toLowerCase()}
-        </button>
-      )}
-    </div>
-  );
-}
-
 export default function Explorer({ meta, state, onChange, onAsk, onHoldScroll }) {
   const { view, data, busy, error, retry } = useShownData(state);
   const d = view ? describeView(meta, view, data) : null;
-  const [showNumbers, setShowNumbers] = useState(false);
-  const numbersId = useId();
   const wide = useMediaQuery("(min-width: 900px)");
-  const genreCount = meta.genres.length - 1;
 
   useEffect(() => {
     if (d && !busy) document.title = d.title;
@@ -337,97 +285,41 @@ export default function Explorer({ meta, state, onChange, onAsk, onHoldScroll })
               )}
             </p>
           </header>
-          {d.compare ? (
-            <>
-              <TotalsBox meta={meta} d={d} onSwitch={(metric) => keepPlace({ ...state, metric })} />
-              <p className="compare-caption">
-                Each small chart is one genre. A dot is a group’s median as a multiple of the genre’s median (the
-                dashed line); the shaded band runs from 0.67× to 1.5×. Hollow dots: fewer than {meta.small_n} stories; a
-                dash: fewer than {meta.min_n}. Genres are in alphabetical order, not ranked. Select a genre for its full
-                chart.
-              </p>
-              <p className="compare-axis" aria-hidden="true">
-                Left to right: {d.variable.bins.labels[0]} → {d.variable.bins.labels[d.variable.bins.labels.length - 1]}
-              </p>
-              <PartBoundary fallback={<CompareGridPlaceholder genres={genreCount} />}>
-                <CompareGrid
-                  rows={d.compareRows}
-                  variable={d.variable}
-                  minN={meta.min_n}
-                  onPickGenre={(id) => onChange({ ...state, mode: "one", genre: id })}
-                />
-              </PartBoundary>
-              <div className="chart-actions">
-                <button
-                  type="button"
-                  className="btn"
-                  aria-expanded={showNumbers}
-                  aria-controls={numbersId}
-                  onClick={() => setShowNumbers((x) => !x)}
-                >
-                  {showNumbers ? "Hide the numbers" : "Show the numbers"}
-                </button>
-                <CopyLink />
-              </div>
-              {showNumbers && (
-                <PartBoundary fallback={<div className="compare-numbers-placeholder" aria-busy="true" />}>
-                  <CompareTable
-                    id={numbersId}
-                    rows={d.compareRows}
-                    variable={d.variable}
-                    metric={d.metric}
-                    smallN={meta.small_n}
-                    minN={meta.min_n}
+          <div className={`answer-grid${wide ? " wide" : ""}`}>
+            <div className="answer-main">
+              {d.oneGroup ? (
+                <div className="takeaway one-group">
+                  <p>{oneGroupNote(d.oneGroup)}</p>
+                  {wayOut}
+                </div>
+              ) : (
+                d.shownCount > 0 &&
+                (d.takeaway || d.pNote) && (
+                  <Takeaway
+                    segments={d.takeaway}
+                    note={d.pNote}
+                    why={d.readable && !d.direction && d.effect != null}
                   />
-                </PartBoundary>
+                )
               )}
-            </>
-          ) : (
-            <div className={`answer-grid${wide ? " wide" : ""}`}>
-              <div className="answer-main">
-                {d.oneGroup ? (
-                  <div className="takeaway one-group">
-                    <p>{oneGroupNote(d.oneGroup)}</p>
-                    {wayOut}
-                  </div>
-                ) : (
-                  d.shownCount > 0 &&
-                  (d.takeaway || d.pNote) && (
-                    <Takeaway
-                      segments={d.takeaway}
-                      note={d.pNote}
-                      why={d.readable && !d.direction && d.effect != null}
-                    />
-                  )
-                )}
-                <RangeChart
-                  key={`${d.variable.id}/${view.sub}/${view.metric}`}
-                  rows={d.rows}
-                  overall={d.overall}
-                  metric={d.metric}
-                  variable={d.variable}
-                  smallN={meta.small_n}
-                  minN={meta.min_n}
-                  title={d.title}
-                  n={d.gd?.n}
-                  emptyActions={wayOut}
-                />
-              </div>
-              <ChartNotes meta={meta} d={d} view={view} wide={wide} onChange={keepPlace} />
-              <div className="chart-actions">
-                <CopyLink />
-                <button
-                  type="button"
-                  className="btn primary"
-                  onPointerEnter={preloadCompare}
-                  onFocus={preloadCompare}
-                  onClick={() => onChange({ ...state, mode: "compare" })}
-                >
-                  See this pattern in every genre →
-                </button>
-              </div>
+              <RangeChart
+                key={`${d.variable.id}/${view.sub}/${view.metric}`}
+                rows={d.rows}
+                overall={d.overall}
+                metric={d.metric}
+                variable={d.variable}
+                smallN={meta.small_n}
+                minN={meta.min_n}
+                title={d.title}
+                n={d.gd?.n}
+                emptyActions={wayOut}
+              />
             </div>
-          )}
+            <ChartNotes meta={meta} d={d} view={view} wide={wide} onChange={keepPlace} />
+            <div className="chart-actions">
+              <CopyLink />
+            </div>
+          </div>
           <KeepExploring meta={meta} view={view} d={d} onAsk={onAsk} />
         </article>
       )}

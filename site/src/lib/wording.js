@@ -40,13 +40,9 @@ function inGenre(genre, sentence) {
 }
 
 /** The chart title. `direction` is the pattern direction for this genre and measure. */
-export function chartTitle({ variable, metric, genre, direction, compare = false }) {
+export function chartTitle({ variable, metric, genre, direction }) {
   const verb = metric.plural ? "vary" : "varies";
   const binary = Boolean(variable.yes_subject);
-  if (compare) {
-    if (binary) return `How ${theMeasure(metric)} ${verb} between ${lowerFirst(variable.yes_subject)} and ${variable.no_subject}, genre by genre`;
-    return `How ${theMeasure(metric)} ${verb} ${variable.bins.ordered ? "with" : "by"} ${variable.noun}, genre by genre`;
-  }
   if (direction && binary) {
     const what = direction > 0 ? metric.more : metric.less;
     return inGenre(genre, `${variable.yes_subject} tend to ${what} than ${variable.no_subject}`);
@@ -68,14 +64,11 @@ export function chartTitle({ variable, metric, genre, direction, compare = false
  * order, whose heading already says that each group stands on its own. `shown` is the number of groups with enough
  * stories; `smallN` the size both end groups need before a pattern is judged.
  */
-export function patternNote({ variable, direction, effect, compare = false, shown = null, smallN = 30 }) {
-  if (!compare && shown != null && shown < 2) {
+export function patternNote({ variable, direction, effect, shown = null, smallN = 30 }) {
+  if (shown != null && shown < 2) {
     return ["Only one group has enough stories for this selection, so there is nothing to compare. Try “All stories” or All genres."];
   }
   if (!variable.bins.ordered && !variable.yes_subject) return null;
-  if (compare) {
-    return ["Arrows mark the genres where the pattern is clear enough to describe; a dash means no clear pattern."];
-  }
   if (effect == null) return [`A pattern is judged only when the groups at both ends have at least ${smallN} stories.`];
   if (direction) {
     return ["A ", { strength: strengthWord(effect) }, " pattern; individual stories vary a lot within every group."];
@@ -147,10 +140,10 @@ export function howToRead({ smallN }) {
  * The line under the title: genre, which stories, and how many, as { lead, count } (the page links the count to
  * "Missing data and excluded stories", F55). `subtitle` gives the whole line as text.
  */
-export function subtitleParts({ genre, subset, n, compare = false, genreCount = 0 }) {
-  const parts = [compare ? `All ${genreCount} genres, side by side` : genre.name];
+export function subtitleParts({ genre, subset, n }) {
+  const parts = [genre.name];
   if (subset && subset.id !== "all") parts.push(subset.label);
-  return { lead: parts.join(" · "), count: n != null && !compare ? `${n.toLocaleString("en-US")} stories` : null };
+  return { lead: parts.join(" · "), count: n != null ? `${n.toLocaleString("en-US")} stories` : null };
 }
 
 export function subtitle(args) {
@@ -259,10 +252,9 @@ export function questionParts({ variable, metric }) {
 }
 
 /** The whole question as text (for tests and for screen readers' summary). */
-export function questionText({ variable, metric, genre, compare = false }) {
+export function questionText({ variable, metric, genre }) {
   const p = questionParts({ variable, metric });
-  const lead = compare ? "Genre by genre," : `In ${genre.name},`;
-  return `${lead} how ${p.aux} ${p.article}${p.measure} ${p.verb} ${p.characteristic}?`;
+  return `In ${genre.name}, how ${p.aux} ${p.article}${p.measure} ${p.verb} ${p.characteristic}?`;
 }
 
 // ------------------------------------------------------------------------------------------------ the Genres page

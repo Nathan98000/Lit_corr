@@ -379,9 +379,6 @@ FEATURED = [  # example questions under the chart: (question, settings). Each op
     ("Is more sexual language linked to more favorites per 1,000 views?", {"var": "sex_terms_per_1k",
                                                                            "metric": "pop_fav_per_1k_views"}),
     ("Do older stories have more views?", {"var": "age_years", "metric": "pop_views"}),
-    ("Does present-tense narration look the same in every genre?", {"var": "narr_is_present_tense",
-                                                                    "metric": "pop_fav_per_1k_views",
-                                                                    "mode": "compare"}),
 ]
 
 

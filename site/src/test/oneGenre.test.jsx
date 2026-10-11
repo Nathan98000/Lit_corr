@@ -308,8 +308,10 @@ describe("the rows (concept R3)", () => {
       const name = profileRowName(p.items.find((x) => x.variable.label === label), romance, meta.min_n);
       expect(screen.getAllByRole("link", { name }).includes(row)).toBe(true);
       expect(name.startsWith(`${label}:`)).toBe(true);
-      // the unit line, the cells and "›" are hidden from the name; the dot's number and the cells' numbers are in it
-      for (const el of row.querySelectorAll(".profile-unit, .profile-n, .profile-chev, .profile-plot-cell, .profile-mark")) {
+      // the name is one visually hidden line; what the row shows (the label, the unit line, the cells and "›") is hidden
+      // from screen readers, and its words are all in the name: the dot's number and the cells' numbers in reading order
+      expect(row.querySelector(".profile-name > .visually-hidden").textContent).toBe(name);
+      for (const el of row.querySelectorAll(".profile-label-text, .profile-unit, .profile-n, .profile-chev, .profile-plot-cell, .profile-mark")) {
         expect(el.getAttribute("aria-hidden")).toBe("true");
       }
       let from = 0;

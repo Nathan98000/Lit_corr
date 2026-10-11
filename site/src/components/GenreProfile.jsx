@@ -105,15 +105,15 @@ function Numbers({ col, all = false }) {
 
 /**
  * One characteristic in "One genre" (concept R3, F85, F87, F92): a link to every genre's numbers (View 1). Its label,
- * with its unit line, the plot, the genre's and all genres' numbers and "›". Its accessible name is its own content:
- * the visible label, then (visually hidden) the dot's number, the numbers in reading order, the unit and how it
- * compares; the unit line, the numbers' cells and "›" are hidden from it, since their words come in that order there.
- * In a topic (`marks`), a stand-out's ▲ ▼ ≠ sits in a column before the label.
+ * with its unit line, the plot, the genre's and all genres' numbers and "›". Its accessible name is its content, with
+ * no aria-label: one visually hidden line that says the label, the dot's number, the numbers in reading order, the
+ * unit and how it compares (profileRowName); the visible parts are hidden from screen readers, since their words are
+ * all there in that order. (Visible text followed by hidden text would read "Sexual language : 26 in 100" in Chrome,
+ * which puts a space before a box taken out of the flow.) In a topic (`marks`), a stand-out's ▲ ▼ ≠ sits in a column
+ * before the label.
  */
 function ProfileRow({ item, genre, sub, minN, zone, plotW, marks, onNavigate }) {
   const cols = profileColumns(item);
-  const label = item.variable.label;
-  const name = profileRowName(item, genre, minN);
   return (
     <ViewLink className={`profile-row${item.r == null ? " few" : ""}`} to={{ v: item.id, sub }} onNavigate={onNavigate}>
       <span className={`profile-label${marks ? " has-mark" : ""}`}>
@@ -123,8 +123,10 @@ function ProfileRow({ item, genre, sub, minN, zone, plotW, marks, onNavigate }) 
           </span>
         )}
         <span className="profile-name">
-          <span className="profile-label-text">{label}</span>
-          <span className="visually-hidden">{name.slice(label.length)}</span>
+          <span className="profile-label-text" aria-hidden="true">
+            {item.variable.label}
+          </span>
+          <span className="visually-hidden">{profileRowName(item, genre, minN)}</span>
           {cols.unit && (
             <>
               {" "}

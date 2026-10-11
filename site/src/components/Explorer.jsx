@@ -1,10 +1,11 @@
 import { useEffect, useId, useState } from "react";
-import { cellStats, groupRows, loadVariable, pattern } from "../lib/data.js";
+import { cellStats, groupRows, loadVariable, pattern, prefetchTrends } from "../lib/data.js";
 import { chartValueText } from "../lib/rangeLayout.js";
 import {
   RATE_FOR,
   announcement,
   answerHeading,
+  changedOverTime,
   chartQuestionText,
   chartTitle,
   oneGroupNote,
@@ -16,13 +17,13 @@ import {
   theMeasure,
   totalsNote,
 } from "../lib/wording.js";
-import { onGenresPage, sanitize, toHash } from "../lib/urlState.js";
+import { onGenresPage, onTrendsPage, sanitize, subsetConflict, toHash } from "../lib/urlState.js";
 import ChartNotes from "./ChartNotes.jsx";
 import Controls, { preloadMenus } from "./Controls.jsx";
 import DownloadPng from "./DownloadPng.jsx";
 import { whenIdle } from "./lazyPart.jsx";
 import LoadError from "./LoadError.jsx";
-import { GenresPage, PatternBrowser } from "./pages.js";
+import { GenresPage, PatternBrowser, TrendsPage } from "./pages.js";
 import RangeChart from "./RangeChart.jsx";
 import useMediaQuery from "./useMediaQuery.js";
 
@@ -191,14 +192,32 @@ export function genresQuestion(meta, view, d) {
 }
 
 /**
- * One list after the chart: every clear pattern with this measure, the Genres page's question for this view, then
- * three example questions. A no-break space keeps each "→" with its last word.
+ * The Trends page's question for this view's characteristic (§5): "How has story length in words changed over time?",
+ * opening its chart over time with this view's genre and, when the Trends page offers it, this view's option (else all
+ * stories); none for the characteristics the page leaves out. { text, hash, state } or null.
+ */
+export function trendsQuestion(meta, view, d) {
+  if (!meta.trend || !onTrendsPage(d.variable)) return null;
+  const subset = meta.subsets.find((s) => s.id === view.sub);
+  const offered = meta.trend.subsets.includes(view.sub) && !subsetConflict(subset, d.variable);
+  const state = { v: d.variable.id, genre: view.genre, sub: offered ? view.sub : "all" };
+  return { text: changedOverTime(d.variable), hash: toHash("trends", state), state };
+}
+
+/**
+ * One list after the chart: every clear pattern with this measure, the Genres page's question for this view, the
+ * Trends page's, then three example questions. A no-break space keeps each "→" with its last word.
  */
 function KeepExploring({ meta, view, d, onAsk }) {
   const headingId = useId();
   const { genre } = d;
   const genres = genresQuestion(meta, view, d);
+  const trends = trendsQuestion(meta, view, d);
   const preloadGenres = () => GenresPage.preload();
+  const preloadTrends = () => {
+    TrendsPage.preload();
+    prefetchTrends(trends.state.sub, trends.state.genre);
+  };
   const plainClick = (e) => !(e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey);
   return (
     <nav className="keep-exploring" aria-labelledby={headingId}>
@@ -219,6 +238,14 @@ function KeepExploring({ meta, view, d, onAsk }) {
           <li>
             <a href={genres.hash} onPointerEnter={preloadGenres} onFocus={preloadGenres}>
               {genres.text}
+              {"\u00a0→"}
+            </a>
+          </li>
+        )}
+        {trends && (
+          <li>
+            <a href={trends.hash} onPointerEnter={preloadTrends} onFocus={preloadTrends}>
+              {trends.text}
               {"\u00a0→"}
             </a>
           </li>

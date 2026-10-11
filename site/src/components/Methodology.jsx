@@ -26,6 +26,7 @@ export const SECTIONS = [
   ["charts", "How the charts summarize stories"],
   ["tend-to", "When a title says “tend to”"],
   ["genres", "Comparing genres"],
+  ["trends", "Changes over time"],
   ["missing-data", "Missing data and excluded stories"],
   ["limits", "Limitations"],
   ["privacy", "What this site does not contain"],
@@ -106,6 +107,59 @@ function ComparingGenres({ meta }) {
         When most stories score 0 on a characteristic, the page shows how many stories have any, and the median and
         interquartile range among them. Publication month and weekday are left out: their twelve and seven groups
         can’t be compared genre by genre in one chart.
+      </p>
+    </>
+  );
+}
+
+/** "2000–04"; "1998–2003" across a century; a word joiner keeps the range on one line. */
+const yearsLabel = ([a, b]) => `${a}–\u2060${Math.floor(a / 100) === Math.floor(b / 100) ? String(b).slice(-2) : b}`;
+
+/**
+ * "Changes over time": the Trends page's periods and rule (meta.trend) in plain words. The years, the thresholds, the
+ * level and the stories each window needs come from the data, and the end of the collection from meta.source; the tag
+ * counts describe the handoff (rechecked against it: a median of 10 tags in 2000–04, 4 in 2005–09).
+ */
+function ChangesOverTime({ meta }) {
+  const t = meta.trend;
+  if (!t) return null;
+  const { rule } = t;
+  const times = Math.round(50 * (1 + rule.min_r));
+  const last = t.periods[t.periods.length - 1];
+  const end = new Date(`${meta.source.collected_to.slice(0, 10)}T12:00:00Z`).toLocaleDateString("en-US", {
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+  const periods = `${t.periods.slice(0, -1).map(yearsLabel).join(", ")}, and ${last[0]} to the end of the collection (${end})`;
+  const then = `${t.then[0]}–\u2060${t.then[1]}`;
+  return (
+    <>
+      <h2 id="trends" tabIndex={-1}>
+        Changes over time
+      </h2>
+      <p>
+        The Trends page groups stories by the year they were published: {periods}. For each period it shows the median
+        and the interquartile range, or the share of stories, with All genres counting each genre by its size on
+        Literotica, as everywhere on this site.
+      </p>
+      <p>
+        A characteristic clearly changed when, picking one story published in {t.now[0]} or later and one published{" "}
+        {then} at random, the newer story would be the higher one at least {times} times in 100, or the lower one at
+        least {times} times in 100 (ties count as half), clear at the {pct(rule.level)} level, with at least {rule.min_n}{" "}
+        stories on each side. That is the Genres page’s rule. For yes/no characteristics it means a change of at least{" "}
+        {Math.round(rule.min_r * 100)} percentage points; for characteristics with named groups, at least{" "}
+        {Math.round(rule.min_tvd * 100)}% of the newer stories would have to change group to match the mix of {then}.
+      </p>
+      <p>
+        The share of each genre among new stories changed too. For All genres the page also checks each change with
+        every genre’s share held fixed, and says so when that check gives another answer.
+      </p>
+      <p>
+        The stories are the ones still on Literotica when they were collected, in today’s categories: stories removed
+        from the site are not in the sample. Two characteristics are not on this page: the number of tags, which jumps
+        between stories published before 2005 (a median of 10) and after (4), and the author’s number of stories, which
+        was counted when the stories were collected, not when they were published.
       </p>
     </>
   );
@@ -441,6 +495,7 @@ export default function Methodology({ meta, section }) {
         </p>
 
         <ComparingGenres meta={meta} />
+        <ChangesOverTime meta={meta} />
 
         <h2 id="missing-data" tabIndex={-1}>
           Missing data and excluded stories

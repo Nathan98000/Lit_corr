@@ -278,6 +278,13 @@ export function chartQuestionText(variable) {
 /** The question about one genre: "stories in {genre}", as genre names such as "Chain Stories" need. */
 export const standsOutQuestion = (genre) => `What stands out about stories in ${genre.name}?`;
 
+/**
+ * The Trends page's question for one characteristic, as Explore's "Keep exploring" asks it (§5): "How has story length
+ * in words changed over time?"; yes/no, "How has the share of stories with an author’s note changed over time?".
+ */
+export const changedOverTime = (variable) =>
+  `How has ${variable.yes_subject ? `the share of ${lowerFirst(variable.yes_subject)}` : variable.noun} changed over time?`;
+
 /** The median of the genres' story counts, to the nearest 10 ("each genre is a random sample of about 300 stories"). */
 export function typicalSample(meta) {
   const ns = meta.genres

@@ -32,6 +32,20 @@ after the question on screen. A genre "clearly differs" only by the rule in How 
 rank-biserial correlation of at least 0.2 against all genres (for named groups, a total variation distance of at least
 0.2), clear at the 99.9% level, with at least 30 stories; a genre with fewer is named as too few to compare.
 
+The **Trends** page shows how the stories themselves changed over time. "In [All genres], how has [story length in
+words] changed over time?" draws one characteristic over five periods of publication (2000–04 to 2020 and later), in
+one of four forms on one time axis: range columns for numbers, share columns for yes/no characteristics, 100% columns
+for named groups and ordered bands (the groups' key above them), and a split chart for characteristics where most
+stories score 0 (the share of stories with any, and the range and median among those). Under the plot, aligned with
+the columns: the periods, their medians or shares, their stories, and brackets under the two windows compared,
+2000–2009 and 2020 or later. The heading says whether the characteristic clearly rose, fell, moved later or earlier, or
+changed between those windows, by the Genres page's rule; for All genres a line says when holding each genre's share
+of stories fixed gives another answer. "Download PNG" and "Compare genres →" follow. "What has changed in stories in
+[All genres]?" is "One genre" relabeled: the characteristics that fell, rose or changed their mix, each with a dot on
+the 0–100 scale (how often a story from 2020 or later is the higher one against a story from 2000–2009) and the two
+windows' numbers, then every characteristic by topic; a row opens its chart over time. Publication year, month and
+weekday, story age, the number of tags and the author's number of stories are not on the page.
+
 The site shows **descriptive associations only**, never causes, and it ships **only precomputed summaries of
 groups of stories**: no story text, titles, authors, addresses or story-by-story records.
 
@@ -45,6 +59,7 @@ site/public/aggregates/meta.json                       genres, measures, charact
 site/public/aggregates/v/<characteristic>/<included>.json
 site/public/aggregates/patterns.json                   the existing pattern verdicts, collected for the Patterns page
 site/public/aggregates/genres/<included>.json          the Genres page: every genre's quartiles or shares per characteristic
+site/public/aggregates/trends/<included>/<genre>.json  the Trends page: every period's quartiles or shares, and the change
         │   npm run build
         ▼
 site/dist/                                             the static site
@@ -70,15 +85,24 @@ with it. Genres with fewer than 10 stories are left out, as everywhere. `loadGen
 `prefetchGenres(include)` in `src/lib/data.js` read it, through the same cache as the other files; a visit that starts
 on the Genres page fetches it, and the page's code, while the app starts, before `meta.json` arrives (`App.jsx`).
 
-The aggregates are about 68 MB uncompressed (1,694 small files; git and web hosts compress them to roughly a
-third). A chart loads one file of about 15–20 KB; the Genres page one file of about 55 KB gzipped per option.
+`trends/<included>/<genre>.json` (one per genre and Length option: 4 × 31 files, 1.6–13 KB gzipped) holds, for every
+characteristic on the Trends page, each period's number of stories and quartiles or shares (none under 10 stories),
+the 2000–2009 window's, and the comparison of 2020 or later with 2000–2009: the rank-biserial correlation (for named
+groups the total variation distance) with whether it clearly changed, and for All genres the same with every genre's
+share of stories held fixed. `meta.json`'s `trend` gives the periods, the two windows, the rule, the options and the
+characteristics left out. `loadTrends(include, genre)` and `prefetchTrends` in `src/lib/data.js` read them.
+
+The aggregates are about 72 MB uncompressed (1,818 small files; git and web hosts compress them to roughly a
+third). A chart loads one file of about 15–20 KB; the Genres page one file of about 55 KB gzipped per option; the
+Trends page one of at most 13 KB.
 
 ## First-load budget and lazy parts
 
 The **first load** is the HTML, the main script, the CSS, the heading font, `meta.json` and the first chart file:
-**148.5 KiB of gzip response bodies in 6 requests** (October 10, 2026, after the simplification and "Download PNG";
-the Genres page's own code, styles and files load only when it is opened: a visit that starts on it is 204.4 KiB in 8
-requests since "One genre"'s review and its follow-up, 201.8 before; no layout shift). The budget is **155 KiB of
+**149.5 KiB of gzip response bodies in 6 requests** (October 11, 2026, with the Trends page; 148.5 before it). The
+Genres and Trends pages' own code, styles and files load only when they are opened: a visit that starts on the Genres
+page is 207.1 KiB in 9 requests (204.4 in 8 before the Trends page: the code the two pages share is now a chunk of its
+own), one that starts on the Trends page 171.1 KiB in 9; no layout shift. The budget is **155 KiB of
 gzip response bodies** for that set, measured on the built site served with gzip (the design review's `firstload.mjs`
 with `serve.mjs`; response headers are not counted).
 
@@ -91,7 +115,8 @@ Parts that the first chart does not need load their code when first used (`React
 | Measure menu | `MetricMenu-*.js` | the same |
 | "Download PNG" (the code that makes the image) | `chartImage-*.js` | when the button is hovered or focused (or pressed) |
 | Patterns page | `PatternBrowser-*.js` | when a link to it is hovered or focused |
-| Genres page (its components, helpers and styles) | `GenresPage-*.js`, `GenresPage-*.css` | when a link to it is hovered or focused (the masthead's link also fetches `genres/all.json`); a visit that starts on it fetches both while the app starts |
+| Genres page (its components, helpers and styles) | `GenresPage-*.js`, `GenresPage-*.css`, and `IncludeSelect-*.js`, which it shares with the Trends page ("Only include", the comparison of "One genre" and "What changed", the Genres page's helpers) | when a link to it is hovered or focused (the masthead's link also fetches `genres/all.json`); a visit that starts on it fetches both while the app starts |
+| Trends page (its components, helpers and styles) | `TrendsPage-*.js`, `TrendsPage-*.css`, and the shared `IncludeSelect-*.js` | when a link to it is hovered or focused (the masthead's link and Explore's "Keep exploring" item also fetch its file); a visit that starts on it fetches both while the app starts |
 | How it works | `Methodology-*.js` (shares `search-*.js`) | when a link to it is hovered or focused |
 
 The sheet or popover of the picker and the menu (title, Close) opens at once and keeps its size while its body
@@ -122,8 +147,8 @@ test fixtures in `src/test/fixtures/` come from a synthetic handoff:
 ## Deploying
 
 The built site is plain static files with relative paths and hash-based addresses (`#/explore?...`,
-`#/genres?...`, `#/patterns?...`, `#/methodology` and `#/methodology/<section>`), so it needs no server
-configuration.
+`#/genres?...`, `#/trends?...`, `#/patterns?...`, `#/methodology` and `#/methodology/<section>`), so it needs no
+server configuration.
 
 **Vercel.** Import the GitHub repository, set **Root Directory** to `site`, and keep the detected Vite settings
 (`npm run build`, output `dist`). `site/vercel.json` adds caching headers for the aggregates.
@@ -137,14 +162,19 @@ configuration.
 
 ```
 src/
-  App.jsx                 page shell: masthead (How it works leaves it below 560 px, Explore below 360 px), routes,
-                          the headline (kicker), footer; remembers the Genres page's last address and the last genre
-                          chosen in the visit (the default of "One genre"); an address changed in place keeps the
-                          history entry's state (where "One genre" keeps its open topics)
+  App.jsx                 page shell: masthead with five pages (How it works leaves it below 602 px, its links tighten
+                          below 484 px, Explore leaves below 414 px and Patterns below 352 px; the footer lists every
+                          page), routes, the headline (kicker), footer; remembers the Genres and Trends pages' last
+                          addresses and the last genre chosen in the visit (the default of "One genre"); an address
+                          changed in place keeps the history entry's state (where "One genre" and "What changed" keep
+                          their open topics)
   genres.css              the Genres page's styles, loaded with its code
+  trends.css              the Trends page's styles, loaded with its code
+  comparison.css          "One genre"'s and "What changed"'s styles; genres.css and trends.css import it
+  palettes.css            the 100% bars' and columns' palettes; genres.css and trends.css import it
   components/
     Explorer.jsx          the explorer: keeps the shown chart until the next one loads, answer heading, takeaway,
-                          "Download PNG", "Keep exploring"
+                          "Download PNG", "Keep exploring" (with the Genres and Trends pages' questions)
     Controls.jsx          the question sentence, "Only include", the sheets of the picker and the measure menu, and
                           the question bar on phones
     CharacteristicPicker.jsx  (lazy) search-first picker body (combobox with listbox): Popular, eight topics, search,
@@ -157,7 +187,8 @@ src/
     RangeChart.jsx        one genre: one row per group (median dot with value, interquartile-range capsule); one
                           tab stop with arrow keys; details as a card, or a line under the chart in the phone layout;
                           the genre-change glide on one scale
-    useRowDetails.js      a chart's rows as one tab stop with details on demand (RangeChart and the Genres page)
+    useRowDetails.js      a chart's rows as one tab stop with details on demand (RangeChart, the Genres page, and the
+                          Trends page's columns, where ← → move too)
     GenresPage.jsx        (lazy) the Genres page: the question, the view switch and "Only include"; keeps
                           the shown file until the next one has loaded; the live region (only the order's words after
                           an order change); the tab's title; focus to the answer's heading after a button that changes it
@@ -173,23 +204,39 @@ src/
     GenreSwitch.jsx       (lazy) the two-option switches (the view; the order, drawn compact)
     GenreDetails.jsx      (lazy) a genre's details: a compact card on wider charts, or on phones a line that sticks to
                           the bottom of the screen while its chart is in view; the link to the genre's own view
-    GenreProfile.jsx      (lazy) one genre against all genres: the sample line and the takeaway (▼ ▲ ≠), the lists
-                          with the first one's axis title and note, every characteristic by topic, and "Copy link";
-                          each row a dot on one 0–100 scale with two number columns, on one grid for the whole page
-                          (stacked under a 900 px chart); the open topics and lists shown in full kept in the history
-                          entry, so Back returns to them; the small-sample and too-few states
+    GenreProfile.jsx      (lazy) one genre against all genres: the heading, the sample line and the takeaway (▼ ▲ ≠),
+                          the small-sample and too-few states, and "One genre"'s words for ComparisonProfile
+    ComparisonProfile.jsx (lazy) a comparison of two sides, characteristic by characteristic ("One genre" and "What
+                          changed"): the lists with the first one's axis title and note, every characteristic by topic,
+                          and "Copy link"; each row a dot on one 0–100 scale with two number columns, on one grid for the
+                          whole page (stacked under a 900 px chart); the open topics and lists shown in full kept in the
+                          history entry, so Back returns to them; configured by each page's words and rows
+    IncludeSelect.jsx     (lazy) "Only include", shared by the Genres and Trends pages
+    TrendsPage.jsx        (lazy) the Trends page: the question, the view switch and "Only include"; keeps the shown
+                          file until the next one has loaded; the live region; the tab's title; focus to the answer's
+                          heading after a button that changes it
+    TrendAnswer.jsx       (lazy) one characteristic over time: the heading, the takeaway (the windows' numbers, the
+                          fixed-mix line), the key, the chart for its form and the actions ("Download PNG", "Compare
+                          genres →"); the too-few state
+    TrendChart.jsx        (lazy) range and share columns (numbers, yes/no) and the split chart (mostly zero), with the
+                          table and brackets under the plot; one tab stop; a card beside a column, or the line under the
+                          chart on phones; the glide to another genre or option
+    TrendMix.jsx          (lazy) 100% columns for named groups and ordered bands
+    TrendChanges.jsx      (lazy) what changed from 2000–2009 to 2020 or later: the heading, the sample line, the takeaway
+                          (▼ ▲ ≠) and the too-few state, with "What changed"'s words for ComparisonProfile
     ChartNotes.jsx        the totals box (story age) with its switch, and the three explanations (disclosures at every
                           width)
-    DownloadPng.jsx       "Download PNG": the button, its lazy code and its failure message (Explore and "One
-                          characteristic")
+    DownloadPng.jsx       "Download PNG": the button, its lazy code and its failure message (Explore, the Genres page's
+                          "One characteristic" and the Trends page's)
     PatternBrowser.jsx    (lazy) the Patterns page: topics folded with their counts, one row per pattern
     Methodology.jsx       (lazy) How it works, with the sticky section bar below 1,000 px
     lazyPart.jsx          lazy parts with preload, their error boundary, and whenIdle
-    pages.js              the two lazy pages, shared by App and Explorer
+    pages.js              the lazy pages, shared by App and Explorer
     useScrollFloor.js     keeps the scroll position when a new question makes the page shorter
     CopyLink.jsx, LoadError.jsx, useWidth.js, useMediaQuery.js, useGlide.js
   lib/
-    data.js               loading and reading the aggregates (loadGenres and prefetchGenres for the Genres page)
+    data.js               loading and reading the aggregates (loadGenres and prefetchGenres for the Genres page,
+                          loadTrends and prefetchTrends for the Trends page)
     rangeLayout.js        the chart's geometry (pure; tested for overlapping labels), with the Genres page's options
                           (a mark column, a value column with its heading, a Stories column, two-line names in a
                           phone column); STACKED, the chart width under which "One genre"'s rows stack
@@ -198,14 +245,20 @@ src/
                           (one number format per chart)
     genreLayout.js        (lazy) the geometry of the 100% bars (with the groups' names and their inks) and of the
                           mostly-zero chart, and their overlap checks
+    trends.js             (lazy) reading trends/<included>/<genre>.json and every sentence of the Trends page: the
+                          questions, headings, takeaway lines, the periods' details, the chart's number format, "What
+                          changed"'s profile, rows and words; no year is written here (they come from the files)
+    trendLayout.js        (lazy) the columns' geometry (axis, two-line periods, the table under the plot, brackets, the
+                          split chart's halves, the 100% columns' segments) and its overlap checks
     search.js             characteristic search (picker and glossary)
-    wording.js            titles, answer headings, takeaway, notes, the question sentence (no causal language)
+    wording.js            titles, answer headings, takeaway, notes, the question sentence, and the Trends page's
+                          question for "Keep exploring" (no causal language)
     format.js             number formats (one number of decimals per axis and column)
     listScroll.js         keeps a menu's active option in view by scrolling the menu, never the page
     chartImage.js         (lazy) the PNG: the chart's <svg> cloned at rest with its computed styles, the title,
                           subtitle, key and credit drawn on a canvas at 2×, and the file saved
     motion.js             reduced-motion checks
-    urlState.js           settings in the address, so views can be shared (the Genres page's too)
+    urlState.js           settings in the address, so views can be shared (the Genres and Trends pages' too)
   styles.css              all styling; colors are CSS variables at the top (ready for a dark theme later), and a
                           forced-colors block that draws the charts with system colors
 public/
@@ -237,11 +290,16 @@ License 1.1 (`public/fonts/OFL.txt`, taken from `@fontsource/source-serif-4` 5.3
   limit any chart to stories published in one period.
 - Genres are listed alphabetically, never ranked, except where the reader asks for it: the Genres page's "By median"
   (or "By share") order (owner's decision D3), which the line above the chart says. "One genre" orders characteristics
-  by the size of their difference within that genre, never genres. The Patterns page is grouped by topic and
+  by the size of their difference within that genre, never genres; so does "What changed" by the size of their change.
+  The Trends page's genre slot lists All genres, then every genre A–Z.
+- On the Trends page a characteristic "clearly" changed only by the rule in `meta.trend` (the Genres page's, applied to
+  stories from 2020 or later against stories from 2000–2009, with at least 30 stories on each side); for All genres a
+  line says when holding each genre's share of stories fixed gives another answer. Its words say what changed (rose,
+  fell, moved later), never why, and no year is written in its code. The Patterns page is grouped by topic and
   alphabetical, never sorted by strength, and always gives the count of characteristics without a clear pattern.
 - Motion is switched off under "reduce motion": another genre glides the marks and the axis together (one scale
-  in every frame; the printed values fade in at the end), another measure or characteristic cross-fades, the Genres
-  page's rows glide to a new order, and scrolling is smooth.
+  in every frame; the printed values fade in at the end; on the Trends page another option too), another measure or
+  characteristic cross-fades, the Genres page's rows glide to a new order, and scrolling is smooth.
 - "Show fewer" in "One genre" is the one control that moves the page, on purpose: when the rows it hides take it off
   the screen, its list's heading is brought into view (at once under reduced motion); focus stays on it.
 - Opening a menu, moving through it or choosing from it never moves the page: the menus scroll inside themselves,
@@ -249,7 +307,8 @@ License 1.1 (`public/fonts/OFL.txt`, taken from `@fontsource/source-serif-4` 5.3
 - "Download PNG" draws the chart as the page shows it, at rest (no hover, tap or glide), from its own `<svg>` and the
   page's computed styles, at 2× pixels, with "Chart by Nathan Nguyen, @NathanDNguyen" at the bottom right; nothing
   leaves the browser.
-- Keyboard: each chart is one tab stop (arrow keys, Home and End move between rows; Escape hides the details).
+- Keyboard: each chart is one tab stop (arrow keys, Home and End move between rows, and between the Trends page's
+  columns with ← → too; Escape hides the details).
   Windows contrast themes get system colors on the charts (`@media (forced-colors: active)`).
 - Nothing on the site reminds visitors that correlation is not causation (an owner's decision of October 2026);
   nothing on it claims a cause either: the titles say "tend to" only through the pattern rule, and the tests scan

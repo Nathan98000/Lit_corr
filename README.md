@@ -251,10 +251,14 @@ cd site && npm install && npm run dev
 ```
 
 `site-data` reads only the newest handoff zip and writes the small summaries the website needs (no story-level
-data), including `patterns.json`, the existing pattern verdicts collected for the site's Patterns page, and
+data), including `patterns.json`, the existing pattern verdicts collected for the site's Patterns page;
 `genres/<included>.json`, one file per "Only include" option for the Genres page: each genre's quartiles or shares
 for every characteristic, and whether the genre clearly differs from all genres (a rank-biserial correlation of at
-least 0.2, or for named groups a total variation distance of at least 0.2, clear at the 99.9% level). The website,
+least 0.2, or for named groups a total variation distance of at least 0.2, clear at the 99.9% level); and
+`trends/<included>/<genre>.json`, one file per genre and Length option for the Trends page: each five-year period's
+quartiles or shares for every characteristic on that page, and whether it clearly changed from 2000–2009 to 2020 or
+later by the same rule (for All genres, also with each genre's share of stories held fixed). `meta.json` gives the
+Trends page's periods, windows, rule, options and left-out characteristics as `trend`. The website,
 *Story Patterns* ("What do popular Literotica stories have in common?"), is a static React + Vite app: see [site/README.md](site/README.md) for development,
 tests and deployment to Vercel or Netlify.
 

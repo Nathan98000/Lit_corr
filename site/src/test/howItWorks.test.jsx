@@ -86,7 +86,7 @@ describe("the section bar below 1,000 px", () => {
     const nav = screen.getByRole("navigation", { name: "Contents" });
     expect(button.getAttribute("aria-controls")).toBe(nav.id);
     const links = within(nav).getAllByRole("link");
-    expect(links).toHaveLength(14);
+    expect(links).toHaveLength(15);
     expect(links.filter((a) => a.getAttribute("aria-current") === "location").map((a) => a.textContent)).toEqual([
       "Emotion and psychological language",
     ]);

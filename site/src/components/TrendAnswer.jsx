@@ -1,33 +1,62 @@
+import { bandPalette } from "../lib/genreLayout.js";
 import { nounOf } from "../lib/genres.js";
-import { mixFixedLine, nothingToDraw, numbersLine, trendCells, trendFormat, trendHeading, trendQuestionText, trendsFileName, tooFewHeading } from "../lib/trends.js";
+import {
+  mixFixedLine,
+  nothingToDraw,
+  numbersLine,
+  trendCells,
+  trendFormat,
+  trendHeading,
+  trendMixColors,
+  trendQuestionText,
+  trendsFileName,
+  tooFewHeading,
+} from "../lib/trends.js";
 import { toHash } from "../lib/urlState.js";
 import DownloadPng from "./DownloadPng.jsx";
-import TrendChart from "./TrendChart.jsx";
+import TrendChart, { TrendSplit } from "./TrendChart.jsx";
+import TrendMix from "./TrendMix.jsx";
 
 export const HOW_DECIDED = toHash("methodology", { section: "trends" });
 
 /**
  * The chart's key: only what the chart shows (§3), with the link to how a change is decided. Numbers: the median and
- * the interquartile range; yes/no: the share of stories; the hatching when a period has fewer than the rule's stories;
- * the brackets of the periods compared.
+ * the interquartile range; yes/no: the share of stories; mostly zero: both; named groups and bands: every group's
+ * swatch (`groups`: [{ label, cls }]), above the chart since a column is too narrow for names; the hatching when a
+ * period has fewer than SMALL_N stories; the brackets of the periods compared.
  */
-export function TrendLegend({ kind, anySmall, minStories }) {
+export function TrendLegend({ kind, anySmall, minStories, groups = null }) {
+  const share = (
+    <li>
+      <span className="key key-share" aria-hidden="true" /> Share of stories
+    </li>
+  );
+  const range = (
+    <>
+      <li>
+        <span className="key key-median" aria-hidden="true" /> Median
+      </li>
+      <li>
+        <span className="key key-iqr" aria-hidden="true" /> Interquartile range
+      </li>
+    </>
+  );
+  const bands = kind === "band" ? ` bands-${bandPalette(groups.length)}` : "";
   return (
-    <ul className="legend trend-legend">
-      {kind === "bin" ? (
-        <li>
-          <span className="key key-median" aria-hidden="true" /> Share of stories
-        </li>
-      ) : (
+    <ul className={`legend trend-legend${bands}`}>
+      {kind === "bin" && share}
+      {kind === "num" && range}
+      {kind === "zero" && (
         <>
-          <li>
-            <span className="key key-median" aria-hidden="true" /> Median
-          </li>
-          <li>
-            <span className="key key-iqr" aria-hidden="true" /> Interquartile range
-          </li>
+          {share}
+          {range}
         </>
       )}
+      {groups?.map((g) => (
+        <li key={g.label}>
+          <span className={`key key-swatch ${g.cls}`} aria-hidden="true" /> {g.label}
+        </li>
+      ))}
       {anySmall && (
         <li>
           <span className="key key-small" aria-hidden="true" /> Fewer than {minStories} stories
@@ -92,10 +121,16 @@ export default function TrendAnswer({ meta, state, file, busy, onSwitch, heading
   const heading = trendHeading({ variable, entry, genre, subset, file });
   const numbers = numbersLine({ variable, entry, genre, file, fmt, smallN });
   const mix = mixFixedLine(entry, file.g);
-  const anySmall = trendCells(entry, file.g === "all", smallN).some((c) => c?.small);
+  const kind = entry.k;
+  const cells = trendCells(entry, file.g === "all", smallN);
+  // hatched: a period under SMALL_N stories (or, among a mostly-zero characteristic's stories with any, under SMALL_N)
+  const anySmall = cells.some((c) => c && (c.small || (kind === "zero" && c.median != null && c.any < smallN)));
+  const mixed = kind === "grp" || kind === "band";
+  const colors = mixed && trendMixColors(kind, cells, variable.bins.labels.length);
+  const groups = mixed ? variable.bins.labels.map((label, b) => ({ label, cls: colors[b].cls })) : null;
+  const Chart = kind === "zero" ? TrendSplit : mixed ? TrendMix : TrendChart;
   const image = (panel) => trendsImage({ variable, genre, heading, subset, state }, panel);
   const question = trendQuestionText(variable, genre);
-  const drawn = entry.k === "num" || entry.k === "bin"; // named groups, bands and mostly-zero ones: next
 
   return (
     <article className={`chart-panel trend-answer${busy ? " is-busy" : ""}`} aria-busy={busy}>
@@ -114,8 +149,8 @@ export default function TrendAnswer({ meta, state, file, busy, onSwitch, heading
           {mix && <p className="trend-mix">{mix}</p>}
         </div>
       )}
-      {drawn && <TrendLegend kind={entry.k} anySmall={anySmall} minStories={file.rule.min_n} />}
-      {drawn && <TrendChart key={variable.id} meta={meta} variable={variable} entry={entry} file={file} title={`${question} ${heading}`} />}
+      <TrendLegend kind={kind} anySmall={anySmall} minStories={file.rule.min_n} groups={groups} />
+      <Chart key={variable.id} meta={meta} variable={variable} entry={entry} file={file} title={`${question} ${heading}`} />
       <div className="chart-actions">
         <DownloadPng busy={busy} image={image} />
         {/* the name starts with the visible words (label in name), then the noun as the question has it */}

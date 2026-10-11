@@ -8,11 +8,25 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "../App.jsx";
-import { trendsImage } from "../components/TrendAnswer.jsx";
+import { TrendLegend, trendsImage } from "../components/TrendAnswer.jsx";
+import TrendMix from "../components/TrendMix.jsx";
 import useRowDetails from "../components/useRowDetails.js";
 import { keyItems } from "../lib/chartImage.js";
 import { clearCache } from "../lib/data.js";
-import { TWO_LINES_UNDER, periodLabel, periodLines, trendDomain, trendLayout, trendOverlaps, trendTicks } from "../lib/trendLayout.js";
+import {
+  SPLIT_SIDE_FROM,
+  TWO_LINES_UNDER,
+  mixSegments,
+  periodLabel,
+  periodLines,
+  splitLayout,
+  splitOverlaps,
+  trendDomain,
+  trendLayout,
+  trendOverlaps,
+  trendTicks,
+} from "../lib/trendLayout.js";
+import { formatPercent } from "../lib/genres.js";
 import {
   mixFixedLine,
   numbersLine,
@@ -21,10 +35,13 @@ import {
   trendChartInput,
   trendFormat,
   trendHeading,
+  trendCells,
+  trendMixColors,
+  trendSplitInputs,
   trendsFileName,
   yesPhrase,
 } from "../lib/trends.js";
-import { fixtureFetch, fixtureMeta, realMeta } from "./fixtures.js";
+import { fixtureFetch, fixtureFile, fixtureMeta, realMeta } from "./fixtures.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const real = realMeta();
@@ -91,6 +108,15 @@ describe("the chart's geometry (trendLayout)", () => {
     expect(trendLayout({ width: 1200, ...input }).width).toBe(760); // at most 760 px wide
   });
 
+  it("says Fewer than 10 on as many lines as a column needs, never leaving the number alone", () => {
+    const some = [100, 1, 2, 3];
+    const input = trendChartInput(fixtureMeta, WORDS, num([null, some, some, some, some], some, 0.1, 0), FILE);
+    const lines = (width) => trendLayout({ width, ...input }).columns[0].none.map((l) => l.text);
+    expect(lines(288)).toEqual(["Fewer", "than", "10"]);
+    expect(lines(343)).toEqual(["Fewer", "than 10"]);
+    expect(lines(736)).toEqual(["Fewer than 10"]);
+  });
+
   it("brackets the two windows compared, their labels inside the chart", () => {
     const input = trendChartInput(fixtureMeta, WORDS, num(FILE.periods.map(() => [100, 1, 2, 3]), [100, 1, 2, 3], 0.1, 0), FILE);
     for (const width of [288, 343, 736, 760]) {
@@ -133,6 +159,9 @@ describe("the chart's geometry (trendLayout)", () => {
     const [lo, hi] = trendDomain("num", [{ p25: 40, median: 45, p75: 50 }, { p25: 44, median: 48, p75: 52 }]);
     expect(lo).toBeCloseTo(40 - 0.48);
     expect(hi).toBeCloseTo(52 + 0.48);
+    // the domain grows to its outer ticks when the data keep at least 80% of the plot; else the ticks sit inside it
+    expect(trendTicks("num", [0, 7488])).toEqual({ lo: 0, hi: 8000, step: 2000, ticks: [0, 2000, 4000, 6000, 8000] });
+    expect(trendTicks("num", [0, 0.411])).toEqual({ lo: 0, hi: 0.411, step: 0.1, ticks: [0, 0.1, 0.2, 0.3, 0.4] });
     for (const domain of [[0, 7488], [39.52, 52.48], [0, 0.0612], [-0.4, 0.66]]) {
       const t = trendTicks("num", domain);
       expect(t.ticks.length).toBeGreaterThanOrEqual(3);
@@ -142,23 +171,53 @@ describe("the chart's geometry (trendLayout)", () => {
     }
   });
 
-  it.skipIf(!real)("never overlaps a label or leaves the chart (every number and yes/no characteristic, four options, six groups, four widths)", { timeout: 60000 }, () => {
+  it.skipIf(!real)("never overlaps a label or leaves the chart (every characteristic, four options, six groups, four widths)", { timeout: 60000 }, () => {
     const byId = new Map(real.variables.map((v) => [v.id, v]));
-    let charts = 0;
+    const charts = { num: 0, bin: 0, grp: 0, band: 0, zero: 0 };
     for (const sub of real.trend.subsets) {
       for (const g of ["all", "adult-romance", "adult-how-to", "chain-stories", "transgender", "celebrity-stories"]) {
         const file = realTrends(sub, g);
         for (const [id, entry] of Object.entries(file.c)) {
-          if (entry.k !== "num" && entry.k !== "bin") continue;
+          const at = `${sub}/${g} ${id}`;
+          if (entry.k === "zero") {
+            const halves = trendSplitInputs(real, byId.get(id), entry, file);
+            // the split chart at 320, 375 and 768 px screens and on the widest page, side by side from 712 px
+            for (const width of [288, 343, 712, 720, 1032]) {
+              const split = splitLayout({ width, halves });
+              expect(split.side, `${at} ${width}`).toBe(width >= SPLIT_SIDE_FROM);
+              expect(splitOverlaps(split), `${at} ${width}`).toEqual([]);
+              charts.zero += 1;
+            }
+            continue;
+          }
           const input = trendChartInput(real, byId.get(id), entry, file);
           for (const width of [288, 343, 736, 760]) {
-            expect(trendOverlaps(trendLayout({ width, ...input })), `${sub}/${g} ${id} ${width}`).toEqual([]);
-            charts += 1;
+            expect(trendOverlaps(trendLayout({ width, ...input })), `${at} ${width}`).toEqual([]);
+            charts[entry.k] += 1;
           }
         }
       }
     }
-    expect(charts).toBeGreaterThan(10000);
+    expect(charts.num + charts.bin).toBeGreaterThan(10000);
+    expect(Math.min(...Object.values(charts))).toBeGreaterThan(100);
+  });
+
+  it.skipIf(!real)("gives every number axis three to five ticks, the data at least 80% of its height", () => {
+    const byId = new Map(real.variables.map((v) => [v.id, v]));
+    for (const sub of real.trend.subsets) {
+      for (const g of ["all", "adult-romance", "adult-how-to", "chain-stories", "transgender", "celebrity-stories"]) {
+        const file = realTrends(sub, g);
+        for (const [id, entry] of Object.entries(file.c)) {
+          const input =
+            entry.k === "num" ? trendChartInput(real, byId.get(id), entry, file) : entry.k === "zero" ? trendSplitInputs(real, byId.get(id), entry, file)[1].input : null;
+          if (!input) continue;
+          const [lo, hi] = trendDomain("num", input.cells);
+          expect(input.axis.ticks.length, `${sub}/${g} ${id}`).toBeGreaterThanOrEqual(3);
+          expect(input.axis.ticks.length, `${sub}/${g} ${id}`).toBeLessThanOrEqual(5);
+          expect((hi - lo) / (input.axis.hi - input.axis.lo), `${sub}/${g} ${id}`).toBeGreaterThanOrEqual(0.8 - 1e-9);
+        }
+      }
+    }
   });
 });
 
@@ -440,6 +499,154 @@ describe("View 1 on the page", () => {
   });
 });
 
+const POV = {
+  id: "pov_class",
+  label: "Narrative perspective",
+  noun: "narrative perspective",
+  unit: "first / second / third",
+  bins: { type: "levels", labels: ["First", "Second", "Third"] },
+};
+
+describe("named groups and bands: 100% columns", () => {
+  it("colors the groups as the Genres page does: named groups by their share over the periods, the largest darkest; bands light to dark", () => {
+    const cells = [{ n: 100, shares: [0.2, 0.5, 0.3] }, null, { n: 300, shares: [0.6, 0.1, 0.3] }];
+    // over the periods, weighted by their stories: 0.5, 0.2, 0.3
+    expect(trendMixColors("grp", cells, 3).map((c) => c.cls)).toEqual(["pal-group-0", "pal-group-2", "pal-group-1"]);
+    expect(trendMixColors("band", cells, 3).map((c) => c.cls)).toEqual(["pal-band-0", "pal-band-1", "pal-band-2"]);
+  });
+
+  it("stacks the groups from the bottom up, and prints a share only where its segment is 16 px tall and has an ink", () => {
+    const entry = { k: "grp", q: FILE.periods.map(() => [100, 0.6, 0.05, 0.35]), t: [100, 0.6, 0.05, 0.35], r: 0, f: 0 };
+    const layout = trendLayout({ width: 736, ...trendChartInput(fixtureMeta, POV, entry, FILE) });
+    const segs = mixSegments(layout, layout.columns[0], [0.6, 0.05, 0.35], ["white", "dark", ""], formatPercent);
+    expect(segs[0].y + segs[0].height).toBeCloseTo(layout.bottom);
+    expect(segs[1].y + segs[1].height).toBeCloseTo(segs[0].y);
+    expect(segs[2].y).toBeCloseTo(layout.top);
+    expect(segs.map((x) => x.label?.text ?? null)).toEqual(["60%", null, null]); // 5% is 12.5 px tall; the third has no ink
+    expect(layout.heads.map((h) => h.text)).toEqual(["Stories"]); // the shares are in the columns
+  });
+
+  it("draws one 100% column per period, the groups' key above it, and names each period with every group's share", async () => {
+    await openTrends("#/trends?var=pov_class");
+    expect(screen.getByRole("heading", { level: 2 }).textContent).toBe("No clear change in narrative perspective from 2000–2009 to 2020 or later");
+    expect(document.querySelector(".trend-takeaway")).toBeNull(); // no numbers line: the shares are in the chart
+    const labels = fixtureMeta.variables.find((v) => v.id === "pov_class").bins.labels;
+    expect([...document.querySelectorAll(".trend-legend li")].map((li) => li.textContent.trim())).toEqual([
+      ...labels,
+      "The periods compared (how this is decided)",
+    ]);
+    const cols = [...document.querySelectorAll(".trend-mix g.col[role='img']")];
+    expect(cols).toHaveLength(5);
+    expect(cols[0].getAttribute("aria-label")).toBe(
+      "2000–04: First person (I) 69%, First person plural (we) 0%, Second person (you) 0%, Third person 31%, Mixed 0%, 42 stories",
+    );
+    const colors = trendMixColors("grp", trendCells(fixtureFile("trends/all/all.json").c.pov_class, true, 30), labels.length);
+    const segments = [...cols[0].querySelectorAll(".segment")];
+    expect(segments.map((r) => r.getAttribute("class"))).toEqual([`segment ${colors[0].cls}`, `segment ${colors[3].cls}`]); // empty groups draw nothing
+    expect([...cols[0].querySelectorAll(".seglab")].map((t) => t.textContent)).toEqual(["69%", "31%"]);
+    expect([...document.querySelectorAll(".trend-table .col-head")].map((t) => t.textContent)).toEqual(["Stories"]);
+    expect(document.querySelector(".trend-table .gval")).toBeNull();
+    expect(document.querySelectorAll(".trend-legend .key-swatch")).toHaveLength(5);
+  });
+
+  it("hatches a period under 30 stories", async () => {
+    await openTrends("#/trends?var=pov_class&genre=romance");
+    expect(document.querySelectorAll(".trend-mix .small-over")).toHaveLength(4); // 23, 18, 18 and 20 stories
+    expect([...document.querySelectorAll(".trend-legend li")].map((li) => li.textContent.trim())).toContain("Fewer than 30 stories");
+  });
+
+  it("draws ordered bands from light to dark, the first at the bottom, with the ink each color takes", () => {
+    vi.spyOn(Element.prototype, "getBoundingClientRect").mockReturnValue({ width: 736, height: 0, top: 0, left: 0, right: 736, bottom: 0 });
+    const labels = ["1st fifth", "2nd fifth", "Middle", "4th fifth", "Last fifth"];
+    const band = { id: "pace_sex_peak_position", label: "Where sexual language peaks", noun: "where sexual language peaks", unit: "position", bins: { type: "levels", labels, ordered: true } };
+    const entry = { k: "band", q: FILE.periods.map(() => [100, 0.1, 0.1, 0.2, 0.3, 0.3]), t: [200, 0.1, 0.1, 0.2, 0.3, 0.3], r: 0.1, f: 0 };
+    render(<TrendMix meta={fixtureMeta} variable={band} entry={entry} file={FILE} title="A band" />);
+    expect(document.querySelector(".trend-mix").classList.contains("bands-5")).toBe(true);
+    const col = document.querySelectorAll(".trend-mix g.col")[0];
+    const segs = [...col.querySelectorAll(".segment")];
+    expect(segs.map((r) => r.getAttribute("class"))).toEqual(labels.map((_, b) => `segment pal-band-${b}`));
+    expect(Number(segs[0].getAttribute("y"))).toBeGreaterThan(Number(segs[4].getAttribute("y")));
+    expect([...col.querySelectorAll(".seglab")].map((t) => t.getAttribute("class").replace("seglab ", ""))).toEqual([
+      "seg-ink-dark",
+      "seg-ink-dark",
+      "seg-ink-dark",
+      "seg-ink-white",
+      "seg-ink-white",
+    ]);
+    render(<TrendLegend kind="band" anySmall={false} minStories={30} groups={labels.map((label, b) => ({ label, cls: `pal-band-${b}` }))} />);
+    expect(document.querySelector(".trend-legend").classList.contains("bands-5")).toBe(true);
+  });
+});
+
+describe("mostly zero: the split chart", () => {
+  it("draws both halves in one svg, side by side from 712 px, and names each period with both, in the Genres page's words", async () => {
+    await openTrends("#/trends?var=emo_anger_per_1k", { width: 1032 });
+    const chart = document.querySelector(".trend-split");
+    expect(chart.classList.contains("side")).toBe(true);
+    expect(chart.querySelectorAll("svg")).toHaveLength(1);
+    expect([...chart.querySelectorAll(".half-title")].map((t) => t.textContent)).toEqual(["Stories with any", "Among stories with any"]);
+    expect([...chart.querySelectorAll(".half-axis-title")].map((t) => t.textContent)).toEqual(["Share of stories", "per 1,000 words"]);
+    const cols = [...chart.querySelectorAll("g.col[role='img']")];
+    expect(cols).toHaveLength(5);
+    expect(cols[0].getAttribute("aria-label")).toMatch(
+      /^2000–04: 47% with any, among those, median [\d.]+ per 1,000 words, interquartile range [\d.]+–[\d.]+, 42 stories$/,
+    );
+    const [any, among] = chart.querySelectorAll(".trend-table");
+    expect([...any.querySelectorAll(".col-head")].map((t) => t.textContent)).toEqual(["Share", "Stories"]);
+    expect([...among.querySelectorAll(".col-head")].map((t) => t.textContent)).toEqual(["Median", "Stories"]);
+    expect(any.querySelector(".gn").textContent).toBe("42");
+    expect(among.querySelector(".gn").textContent).toBe("22*"); // the stories with any, hatched under 30
+    expect(cols[0].querySelectorAll(".half")[1].classList.contains("small")).toBe(true);
+    expect([...document.querySelectorAll(".trend-legend li")].map((li) => li.textContent.trim())).toEqual([
+      "Share of stories",
+      "Median",
+      "Interquartile range",
+      "Fewer than 30 stories",
+      "The periods compared (how this is decided)",
+    ]);
+    expect(document.querySelector(".trend-takeaway").textContent).toMatch(
+      /^All genres: stories with any, \d+% in 2000–2009 and \d+% in 2020 or later; among those, median [\d.]+ and [\d.]+ per 1,000 words\.$/,
+    );
+  });
+
+  it("stacks the halves below 712 px", async () => {
+    await openTrends("#/trends?var=emo_anger_per_1k", { width: 600 });
+    const chart = document.querySelector(".trend-split");
+    expect(chart.classList.contains("side")).toBe(false);
+    const halves = [...chart.querySelectorAll("svg > g[transform]")].slice(0, 2).map((g) => g.getAttribute("transform"));
+    expect(halves[0]).toBe("translate(0,0)");
+    expect(halves[1]).toMatch(/^translate\(0,\d+/);
+  });
+
+  it("lights a period in both halves and puts its card beside the column the pointer is on", async () => {
+    await openTrends("#/trends?var=emo_anger_per_1k", { width: 1032 });
+    const row = document.querySelectorAll(".trend-split g.col")[3];
+    fireEvent.click(row);
+    expect(row.classList.contains("active")).toBe(true);
+    expect(document.querySelector(".trend-tip").style.left).not.toBe(""); // the first half's 2015–19: the card to its right
+    fireEvent.pointerEnter(row.querySelectorAll(".half")[1]);
+    expect(document.querySelector(".trend-tip").style.right).not.toBe(""); // the second half's: to its left, in that half
+    expect(document.querySelector(".trend-tip strong").textContent).toBe("2015–19");
+  });
+
+  it("gives the PNG both halves", async () => {
+    await openTrends("#/trends?var=emo_anger_per_1k", { width: 1032 });
+    const spec = trendsImage(
+      {
+        variable: fixtureMeta.variables.find((v) => v.id === "emo_anger_per_1k"),
+        genre: fixtureMeta.genres.find((g) => g.id === "all"),
+        heading: "Heading",
+        subset: fixtureMeta.subsets.find((x) => x.id === "all"),
+        state: { v: "emo_anger_per_1k", genre: "all", sub: "all" },
+      },
+      document.querySelector(".trend-answer"),
+    );
+    const svgs = spec.chart.querySelectorAll(".chart-frame svg");
+    expect(svgs).toHaveLength(1);
+    expect([...svgs[0].querySelectorAll(".half-title")]).toHaveLength(2);
+  });
+});
+
 describe("the PNG", () => {
   it("has the question as its title, the heading and the genre and option as its subtitle, and the key without its link", async () => {
     await openTrends("#/trends?var=dlg_word_share&genre=fetish&include=medium");
@@ -461,6 +668,10 @@ describe("the PNG", () => {
     expect(spec.chart.classList.contains("trend-chart")).toBe(true);
     expect(keyItems(spec.legend).map((k) => k.text)).toContain("The periods compared");
     expect(trendsFileName({ v: "Story_Words", genre: "All", sub: "All" })).toBe("trends-story_words-all-all.png");
+  });
+
+  it("puts a period's card beside its column, not centered over it as the explorer's are", () => {
+    expect(css).toMatch(/\.range-chart \.chart-tip\.trend-tip \{\s*transform: none;/);
   });
 
   it("keeps the trends chart's look in forced colors", () => {

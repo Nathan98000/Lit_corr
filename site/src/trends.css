@@ -1,3 +1,5 @@
+@import "./palettes.css"; /* the 100% bars' palettes, shared with the Genres page */
+
 /* The Trends page (loaded with its code, like genres.css): its controls, its charts over time and its answer. The
    charts draw with the explorer's marks (.range-chart in styles.css: capsules, dots, hatching, hover and focus). */
 .trends-controls {
@@ -72,8 +74,9 @@
   font-weight: 600;
 }
 
-/* a period's details on wider charts: a card beside its column, at the plot's top */
-.trend-tip {
+/* a period's details on wider charts: a card beside its column, at the plot's top (not centered over a point, as the
+   explorer's cards are) */
+.range-chart .chart-tip.trend-tip {
   transform: none;
   max-width: 280px;
 }
@@ -106,6 +109,94 @@
   border-top: 0;
 }
 
+/* the key of a share column: a bar with its dot on top */
+.trend-legend .key-share {
+  width: 12px;
+  height: 18px;
+  background:
+    radial-gradient(circle at 50% 6px, var(--accent-ink) 0 5px, transparent 5.5px),
+    linear-gradient(var(--accent-bar), var(--accent-bar)) 1px 6px / 10px 12px no-repeat;
+}
+
+/* the groups' swatches of the 100% columns (their colors are in palettes.css) */
+.trend-legend .key-swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 2px;
+  border: 1px solid var(--control);
+}
+
+/* ---------------------------------------------------------- named groups and bands: 100% columns (§3.1) */
+.trend-mix .chart-frame {
+  margin-top: 12px;
+}
+
+.trend-mix .segment {
+  stroke: #fff;
+  stroke-width: 1;
+}
+
+/* the near-white group: a 1 px outline on its segments (1.13:1 against the page without it), as on the Genres page */
+.trend-mix .segment.pal-group-4 {
+  stroke: #a5a29a;
+}
+
+.trend-mix .seglab {
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.trend-mix .bar-outline {
+  fill: none;
+  stroke: var(--rule-2);
+}
+
+.trend-mix .row.small .bar-outline {
+  stroke: var(--control);
+  stroke-dasharray: 3 2;
+}
+
+.trend-mix .hatch-over {
+  stroke: rgb(255 255 255 / 0.65);
+  stroke-width: 2.4;
+}
+
+/* ---------------------------------------------------------- mostly zero: the split chart (§3.1) */
+.trend-chart.trend-split {
+  max-width: 1032px;
+  margin-top: 14px;
+}
+
+.trend-split .half-title {
+  fill: var(--ink);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.trend-split .half-axis-title {
+  fill: var(--ink);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+/* a half of a period with fewer than 30 stories (or stories with any) is hatched, as a row is elsewhere */
+.trend-split .half.small .iqr {
+  stroke-dasharray: 3 2;
+}
+
+.trend-split .half.small .share-bar {
+  stroke: var(--accent);
+  stroke-width: 1;
+  stroke-dasharray: 3 2;
+}
+
+.trend-split .half.small .median {
+  fill: #fff;
+  stroke: var(--accent-ink);
+  stroke-width: 2;
+}
+
 /* ---------------------------------------------------------------------- forced colors */
 @media (forced-colors: active) {
   .trend-chart .trend-line,
@@ -124,5 +215,57 @@
 
   .trend-legend .key-bracket {
     border-color: CanvasText;
+  }
+
+  .trend-legend .key-share {
+    background: Canvas;
+    border: 1px solid CanvasText;
+  }
+
+  /* the 100% columns keep their palette, as the Genres page's bars do */
+  .trend-mix svg,
+  .trend-legend .key-swatch {
+    forced-color-adjust: none;
+  }
+
+  .trend-mix .tick,
+  .trend-mix .gn,
+  .trend-mix .gnone,
+  .trend-mix .bracket text {
+    fill: CanvasText;
+  }
+
+  .trend-mix .grid {
+    stroke: GrayText;
+  }
+
+  .trend-mix .segment,
+  .trend-mix .bar-outline {
+    stroke: CanvasText;
+  }
+
+  .trend-mix .row-hit,
+  .trend-mix .row:hover .row-hit,
+  .trend-mix .row.active .row-hit {
+    fill: transparent;
+  }
+
+  .trend-mix .row:focus-visible .row-hit {
+    stroke: Highlight;
+  }
+
+  .trend-split .half-title,
+  .trend-split .half-axis-title {
+    fill: CanvasText;
+  }
+
+  .trend-split .half.small .iqr,
+  .trend-split .half.small .share-bar {
+    fill: Canvas !important; /* not the hatch, which is a style on the mark */
+  }
+
+  .trend-split .half.small .median {
+    fill: Canvas;
+    stroke: Highlight;
   }
 }

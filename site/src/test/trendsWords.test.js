@@ -18,6 +18,7 @@ import {
   trendFormat,
   trendHeading,
   trendQuestionText,
+  trendSplitInputs,
   tooFewHeading,
 } from "../lib/trends.js";
 import { realMeta } from "./fixtures.js";
@@ -52,13 +53,12 @@ function* sentences(meta, file) {
     const numbers = numbersLine({ variable, entry, genre, file, fmt, smallN: meta.small_n });
     if (numbers) yield { at, text: numbers.map((s) => (typeof s === "string" ? s : s.strong)).join(""), clearly: false };
     if (mix) yield { at, text: mix, clearly: Boolean(entry.fm) };
-    if (entry.k === "num" || entry.k === "bin") {
-      yield { at, text: trendAxisTitle(variable, entry), clearly: false };
-      const cells = trendCells(entry, all, meta.small_n);
-      for (const [i, p] of file.periods.entries()) {
-        const words = periodWords({ variable, entry, cell: cells[i], fmt, minN: meta.min_n });
-        yield { at, text: periodName(periodLabel(p), words), clearly: false };
-      }
+    if (entry.k === "num" || entry.k === "bin") yield { at, text: trendAxisTitle(variable, entry), clearly: false };
+    if (entry.k === "zero") for (const h of trendSplitInputs(meta, variable, entry, file)) yield { at, text: `${h.title}: ${h.axisTitle}`, clearly: false };
+    const cells = trendCells(entry, all, meta.small_n);
+    for (const [i, p] of file.periods.entries()) {
+      const words = periodWords({ variable, entry, cell: cells[i], fmt, minN: meta.min_n });
+      yield { at, text: periodName(periodLabel(p), words), clearly: false };
     }
   }
 }
@@ -85,7 +85,7 @@ describe("the Trends page's sentences on the real data", () => {
 
 describe("the Trends page's code", () => {
   it("writes no year: the periods and the windows come from the files and meta.trend", () => {
-    const files = ["lib/trends.js", "lib/trendLayout.js", "components/TrendChart.jsx", "components/TrendAnswer.jsx", "components/TrendsPage.jsx"];
+    const files = ["lib/trends.js", "lib/trendLayout.js", "components/TrendChart.jsx", "components/TrendMix.jsx", "components/TrendAnswer.jsx", "components/TrendsPage.jsx"];
     for (const f of files) {
       const code = readFileSync(path.join(src, f), "utf8")
         .replace(/\/\*[\s\S]*?\*\//g, "")

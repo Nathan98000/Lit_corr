@@ -3,6 +3,7 @@
 // here; a characteristic "clearly" changed only through the file's flags (`f`, and `fm` for the fixed-mix line).
 
 import { formatCount, formatFixed } from "./format.js";
+import { mixColors } from "./genreLayout.js";
 import { fileDecimals, formatPercent, plainUnit, withUnit } from "./genres.js";
 import { trendDomain, trendTicks } from "./trendLayout.js";
 import { lowerFirst, upperFirst } from "./wording.js";
@@ -76,9 +77,9 @@ function percentText(v, d) {
  * How one characteristic's chart prints its numbers (the Genres page's F66 rule, on the chart's own numbers): numbers
  * take the most decimals among every period's quartiles as the file writes them, but no more than the chart's largest
  * quartile needs for three significant digits (a quartile of 0.993 beside a median of 63.6 doesn't print "63.600"), at
- * most 3, with two significant digits for a value those decimals would round away; percentages and shares are whole,
- * with one decimal when the chart's largest median (or share) is under 10%. Returns { value(v), span(lo, hi), unit,
- * withUnit(v), share(v) }.
+ * most 3, with two significant digits for a value those decimals would round away; percentages are whole, with one
+ * decimal when the chart's largest median is under 10%; shares as formatPercent writes them, or all with one decimal
+ * when the chart's largest share is under 10%. Returns { value(v), span(lo, hi), unit, withUnit(v), share(v) }.
  */
 export function trendFormat(variable, entry, all, smallN = 30) {
   const fmt = entry.fmt || "num";
@@ -109,7 +110,9 @@ export function trendFormat(variable, entry, all, smallN = 30) {
     span: (lo, hi) => `${value(lo)}${lo < 0 || hi < 0 ? " to " : "–"}${value(hi)}`,
     unit,
     withUnit: (v) => withUnit(value(v), unit),
-    share: (v) => percentText(v, sd),
+    // shares as everywhere on the site (formatPercent: whole, one decimal under 1%), or all with one decimal when the
+    // chart's largest share is under 10%
+    share: (v) => (sd ? percentText(v, 1) : formatPercent(v)),
   };
 }
 
@@ -183,11 +186,12 @@ export function numbersLine({ variable, entry, genre, file, fmt, smallN = 30 }) 
   const now = trendCell(entry.k, entry.q[entry.q.length - 1], all, smallN);
   if (!then || !now) return null;
   const w = windowWords(file);
+  const shares = [{ strong: fmt.share(then.share) }, { strong: fmt.share(now.share) }];
   if (entry.k === "bin") {
-    return [`${genre.name}: ${lowerFirst(variable.yes_subject)} made up `, { strong: fmt.share(then.share) }, ` of stories in ${w.then}, `, { strong: fmt.share(now.share) }, ` in ${w.now}.`];
+    return [`${genre.name}: ${lowerFirst(variable.yes_subject)} made up `, shares[0], ` of stories in ${w.then}, `, shares[1], ` in ${w.now}.`];
   }
   if (entry.k === "zero") {
-    const parts = [`${genre.name}: stories with any, `, { strong: fmt.share(then.share) }, ` in ${w.then} and `, { strong: fmt.share(now.share) }, ` in ${w.now}`];
+    const parts = [`${genre.name}: stories with any, `, shares[0], ` in ${w.then} and `, shares[1], ` in ${w.now}`];
     if (then.median != null && now.median != null) parts.push(`; among those, median ${fmt.value(then.median)} and ${fmt.withUnit(now.median)}`);
     parts.push(".");
     return parts;
@@ -209,45 +213,118 @@ export function mixFixedLine(entry, genreId) {
 }
 
 /**
- * What View 1's chart (numbers and yes/no) draws from, before its width is known: the format, every period's cell,
- * the axis, the table's texts under the plot (the median or the share, the stories with an asterisk under SMALL_N),
- * the windows' words and "Fewer than 10" for a column with nothing drawn. trendLayout() takes it with the width.
+ * What View 1's chart draws from, before its width is known: the format, every period's cell, the axis, the table's
+ * texts under the plot (the median or the share, and the stories with an asterisk under SMALL_N; named groups and
+ * bands print only the stories, their shares being in the columns), the windows' words and "Fewer than 10" for a
+ * column with nothing drawn. trendLayout() takes it with the width. Mostly-zero characteristics draw two of these
+ * (trendSplitInputs).
  */
 export function trendChartInput(meta, variable, entry, file) {
   const kind = entry.k;
   const all = file.g === "all";
   const fmt = trendFormat(variable, entry, all, meta.small_n);
   const cells = trendCells(entry, all, meta.small_n);
+  const mix = kind === "grp" || kind === "band";
   return {
     kind,
     fmt,
     cells,
-    axis: trendTicks(kind, trendDomain(kind, cells)),
-    percent: kind === "bin" || entry.fmt === "percent",
+    axis: mix ? trendTicks("bin", [0, 1]) : trendTicks(kind, trendDomain(kind, cells)),
+    percent: mix || kind === "bin" || entry.fmt === "percent",
     texts: cells.map((c) => ({
-      value: c ? (kind === "bin" ? fmt.share(c.share) : fmt.value(c.median)) : "–",
-      stories: c ? `${formatCount(c.n)}${c.small ? "*" : ""}` : "–",
+      value: mix ? "" : c ? (kind === "bin" ? fmt.share(c.share) : fmt.value(c.median)) : "–",
+      stories: storiesText(c),
     })),
-    valueHead: kind === "bin" ? "Share" : "Median",
-    windows: windowWords(file),
-    periods: file.periods,
-    then: file.then,
-    now: file.now,
-    noneText: `Fewer than ${meta.min_n}`,
+    valueHead: mix ? null : kind === "bin" ? "Share" : "Median",
+    ...periodsInput(meta, file),
   };
+}
+
+const storiesText = (c) => (c ? `${formatCount(c.n)}${c.small ? "*" : ""}` : "–");
+const periodsInput = (meta, file) => ({
+  windows: windowWords(file),
+  periods: file.periods,
+  then: file.then,
+  now: file.now,
+  noneText: `Fewer than ${meta.min_n}`,
+});
+
+/**
+ * The split chart's two halves (mostly-zero characteristics, §3.1): "Stories with any", the share of each period's
+ * stories above 0 as share columns (as yes/no), and "Among stories with any", their quartiles as range columns (as
+ * numbers) on their own axis, with the stories with any under each (hatched under SMALL_N; nothing drawn under MIN_N).
+ * Each half: { title, axisTitle, input } for trendLayout().
+ */
+export function trendSplitInputs(meta, variable, entry, file) {
+  const all = file.g === "all";
+  const fmt = trendFormat(variable, entry, all, meta.small_n);
+  const cells = trendCells(entry, all, meta.small_n);
+  const shares = cells.map((c) => (c ? { n: c.n, share: c.share, small: c.small } : null));
+  const among = cells.map((c) =>
+    c && c.median != null ? { n: c.any, p25: c.p25, median: c.median, p75: c.p75, small: c.any < meta.small_n } : null,
+  );
+  const unit = plainUnit(variable, fmt.fmt);
+  return [
+    {
+      title: "Stories with any",
+      axisTitle: "Share of stories",
+      input: {
+        kind: "bin",
+        fmt,
+        cells: shares,
+        axis: trendTicks("bin", trendDomain("bin", shares)),
+        percent: true,
+        texts: shares.map((c) => ({ value: c ? fmt.share(c.share) : "–", stories: storiesText(c) })),
+        valueHead: "Share",
+        ...periodsInput(meta, file),
+      },
+    },
+    {
+      title: "Among stories with any",
+      axisTitle: unit || trendAxisTitle(variable, { k: "num", fmt: fmt.fmt }),
+      input: {
+        kind: "num",
+        fmt,
+        cells: among,
+        axis: trendTicks("num", trendDomain("num", among)),
+        percent: fmt.fmt === "percent",
+        texts: among.map((c) => ({ value: c ? fmt.value(c.median) : "–", stories: storiesText(c) })),
+        valueHead: "Median",
+        ...periodsInput(meta, file),
+      },
+    },
+  ];
+}
+
+/**
+ * The groups' colors in the 100% columns (mixColors, as on the Genres page): named groups by their share over the
+ * chart's periods (weighted by their stories), the largest darkest; ordered bands from light to dark in their order.
+ */
+export function trendMixColors(kind, cells, count) {
+  const shown = cells.filter(Boolean);
+  const total = shown.reduce((t, c) => t + c.n, 0);
+  const overall = Array.from({ length: count }, (_, b) => (total ? shown.reduce((t, c) => t + c.n * c.shares[b], 0) / total : 0));
+  return mixColors(kind, overall);
 }
 
 // ---------------------------------------------------------------------------------------------- periods' details
 /**
  * A period's numbers in words, for its details and its name: "median 4,060 words · interquartile range 2,340–7,200 ·
- * 1,564 stories"; yes/no "32% with an author’s note · 1,564 stories"; fewer than MIN_N "fewer than 10 stories".
+ * 1,564 stories"; yes/no "32% with an author’s note · 1,564 stories"; mostly zero, as the Genres page says a genre's
+ * "11% with any · among those, median 0.229 per 1,000 words · interquartile range 0.144–0.388 · 2,561 stories"; named
+ * groups and bands every group's share; fewer than MIN_N "fewer than 10 stories".
  */
 export function periodWords({ variable, entry, cell, fmt, minN }) {
   if (!cell) return [`fewer than ${minN} stories`];
   const stories = `${formatCount(cell.n)} stories`;
   if (entry.k === "bin") return [`${fmt.share(cell.share)} ${yesPhrase(variable)}`, stories];
   if (entry.k === "num") return [`median ${fmt.withUnit(cell.median)}`, `interquartile range ${fmt.span(cell.p25, cell.p75)}`, stories];
-  return [stories];
+  if (entry.k === "zero") {
+    const among =
+      cell.median != null ? [`among those, median ${fmt.withUnit(cell.median)}`, `interquartile range ${fmt.span(cell.p25, cell.p75)}`] : [];
+    return [`${fmt.share(cell.share)} with any`, ...among, stories];
+  }
+  return [...variable.bins.labels.map((label, b) => `${label} ${formatPercent(cell.shares[b])}`), stories];
 }
 
 /** A period's accessible name: "2015–19: median 4,060 words, interquartile range 2,340–7,200, 1,564 stories". */

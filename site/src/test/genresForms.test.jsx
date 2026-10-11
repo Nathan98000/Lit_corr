@@ -120,7 +120,7 @@ describe("named groups: 100% bars", () => {
     const c = mixColors("grp", [0.1, 0.55, 0.3, 0.05]);
     expect(c[1]).toEqual({ cls: "pal-group-0", ink: "white" });
     expect(new Set(c.map((x) => x.cls)).size).toBe(4);
-    expect(palette().group[0]).toBe("#2b63c6"); // the palette is in genres.css (F72)
+    expect(palette().group[0]).toBe("#2b63c6"); // the palette is in palettes.css (F72), which the Trends page shares
   });
 
   it("name each group over All genres' bar where its segment has room, and outline the near-white group (F72)", async () => {
@@ -154,11 +154,11 @@ describe("named groups: 100% bars", () => {
   });
 });
 
-/** The palettes as genres.css writes them: { group: [hex…], bands: { 5: [hex…], 7: [hex…], … } }. */
+/** The palettes as palettes.css writes them: { group: [hex…], bands: { 5: [hex…], 7: [hex…], … } }. */
 function palette() {
-  const css = readFileSync(path.join(here, "..", "genres.css"), "utf8");
+  const css = readFileSync(path.join(here, "..", "palettes.css"), "utf8");
   const vars = (block, name) => [...block.matchAll(new RegExp(`--${name}-(\\d+): (#[0-9a-f]{6});`, "g"))].map((m) => m[2]);
-  const group = vars(css.match(/\.genres-page \{([^}]*)\}/)[1], "group");
+  const group = vars(css.match(/\.genres-page,\s*\.trends-page \{([^}]*)\}/)[1], "group");
   const bands = {};
   for (const m of css.matchAll(/\.bands-(\d+) \{([^}]*)\}/g)) bands[m[1]] = vars(m[2], "band");
   return { group, bands };

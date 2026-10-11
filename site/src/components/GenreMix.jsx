@@ -22,7 +22,7 @@ export function mixRows(rows, variable, kind, minN) {
  * each genre's shares printed in segments at least 34 px wide where their ink reaches 4.5:1 (every share is in the
  * details and the row's name). Named groups take the groups' palette, the darkest for the group that is largest across all
  * genres, and ≠ marks a genre whose mix clearly differs; ordered bands go from light to dark blue on an even scale of
- * contrast, with ▲ ▼ as for numbers (the palettes are in genres.css). Each group's name sits over its segment of All
+ * contrast, with ▲ ▼ as for numbers (their palettes: palettes.css). Each group's name sits over its segment of All
  * genres' bar where it fits. The mark has its own column. Genres with fewer than SMALL_N stories are hatched and never
  * marked. Details and keyboard as on the range chart.
  */

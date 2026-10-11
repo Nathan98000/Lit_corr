@@ -4,8 +4,18 @@
 
 import { formatCount, formatFixed } from "./format.js";
 import { mixColors } from "./genreLayout.js";
-import { fileDecimals, formatPercent, plainUnit, withUnit } from "./genres.js";
-import { trendDomain, trendTicks } from "./trendLayout.js";
+import {
+  comparisonBar,
+  fileDecimals,
+  formatPercent,
+  noDifferenceZone,
+  plainUnit,
+  profileColumns,
+  profileUnit,
+  sharePair,
+  withUnit,
+} from "./genres.js";
+import { periodLabel, trendDomain, trendTicks } from "./trendLayout.js";
 import { lowerFirst, upperFirst } from "./wording.js";
 
 /**
@@ -149,12 +159,13 @@ function changeWords(kind, f) {
  * published …".
  */
 export function tooFewHeading({ entry, genre, subset, file }) {
-  const w = windowWords(file);
-  const min = file.rule.min_n;
   const thenN = entry ? entry.t?.[0] ?? 0 : 0;
-  const when = !entry || thenN < min ? w.then : w.now;
+  return tooFewSentence(genre, subset, file, !entry || thenN < file.rule.min_n ? "then" : "now");
+}
+
+function tooFewSentence(genre, subset, file, which) {
   const match = subset && subset.id !== "all" ? ` match “${subset.label}” and` : "";
-  return `Fewer than ${min} stories in ${genre.name}${match} were published ${when}: too few to compare`;
+  return `Fewer than ${file.rule.min_n} stories in ${genre.name}${match} were published ${windowWords(file)[which]}: too few to compare`;
 }
 
 /**
@@ -297,10 +308,13 @@ export function trendSplitInputs(meta, variable, entry, file) {
 }
 
 /**
- * The groups' colors in the 100% columns (mixColors, as on the Genres page): named groups by their share over the
- * chart's periods (weighted by their stories), the largest darkest; ordered bands from light to dark in their order.
+ * The groups' colors in the 100% columns (mixColors, as on the Genres page): named groups by their shares in 2000–2009
+ * (`reference`: the windows' reference, as all genres is on the Genres page, so View 1 and View 2 color each group
+ * alike), else by their share over the chart's periods (weighted by their stories), the largest darkest; ordered bands
+ * from light to dark in their order.
  */
-export function trendMixColors(kind, cells, count) {
+export function trendMixColors(kind, cells, count, reference = null) {
+  if (reference) return mixColors(kind, reference);
   const shown = cells.filter(Boolean);
   const total = shown.reduce((t, c) => t + c.n, 0);
   const overall = Array.from({ length: count }, (_, b) => (total ? shown.reduce((t, c) => t + c.n * c.shares[b], 0) / total : 0));
@@ -353,4 +367,198 @@ export function trendAnnouncement(meta, file, state) {
   ]
     .filter(Boolean)
     .join(" ");
+}
+
+// ------------------------------------------------------------------------------------------- View 2: what changed
+/** The two windows' stories, from the periods' counts: { then: 2561, now: 3346 } (All genres, all stories). */
+export function windowCounts(file) {
+  const counts = { then: 0, now: 0 };
+  file.periods.forEach((p, i) => {
+    if (p[0] >= file.then[0] && p[1] <= file.then[1]) counts.then += file.n[i];
+    if (p[0] >= file.now[0]) counts.now += file.n[i];
+  });
+  return counts;
+}
+
+/** Were the genre's two windows compared: at least the rule's min_n stories in each (not Chain Stories, Transgender)? */
+export function windowsCompared(file) {
+  const c = windowCounts(file);
+  return c.then >= file.rule.min_n && c.now >= file.rule.min_n;
+}
+
+/** View 2's too-few heading, for the window with too few stories: "Fewer than 30 stories in Transgender were published 2000–2009: …". */
+export const changesTooFewHeading = (file, genre, subset) =>
+  tooFewSentence(genre, subset, file, windowCounts(file).then < file.rule.min_n ? "then" : "now");
+
+/**
+ * What changed (View 2): "One genre" relabeled (§4.1), every characteristic of the file in the topics' order with its
+ * flag, the dot's side (`stats`: 2020 or later) and the other (`all`: 2000–2009), in the shape genreProfile() gives
+ * them; { lower, higher, mix } (flagged, ordered by |r|, ties in the topics' order), how many were compared, and the
+ * topics that have characteristics on this page, with how many changed.
+ */
+export function trendProfile(meta, file) {
+  const byId = new Map(meta.variables.map((v) => [v.id, v]));
+  const all = file.g === "all";
+  const zone = noDifferenceZone(file.rule);
+  const order = meta.topics.flatMap((t) => t.ids).filter((id) => file.c[id] && byId.has(id));
+  const items = order.map((id, pos) => {
+    const entry = file.c[id];
+    const variable = byId.get(id);
+    return {
+      id,
+      pos,
+      variable,
+      entry,
+      nf: trendFormat(variable, entry, all, meta.small_n),
+      kind: entry.k,
+      stats: trendCell(entry.k, entry.q[entry.q.length - 1], all, meta.small_n),
+      all: trendCell(entry.k, entry.t, all, meta.small_n),
+      r: entry.r,
+      f: entry.f,
+      zone,
+    };
+  });
+  const bySize = (a, b) => Math.abs(b.r) - Math.abs(a.r) || a.pos - b.pos;
+  const flagged = items.filter((x) => x.f);
+  const compared = (list) => list.filter((x) => x.r != null).length;
+  const topics = meta.topics
+    .map((topic) => {
+      const own = items.filter((x) => x.variable.topic === topic.id);
+      return { topic, items: own, count: own.filter((x) => x.f).length, compared: compared(own) };
+    })
+    .filter((t) => t.items.length);
+  return {
+    items,
+    compared: compared(items),
+    flagged: [...flagged].sort(bySize),
+    lower: flagged.filter((x) => x.kind !== "grp" && x.f < 0).sort(bySize),
+    higher: flagged.filter((x) => x.kind !== "grp" && x.f > 0).sort(bySize),
+    mix: flagged.filter((x) => x.kind === "grp").sort(bySize),
+    topics,
+  };
+}
+
+/** "26 characteristics clearly changed from 2000–2009 to 2020 or later", "1 characteristic …", "No characteristic …". */
+export function changesHeading(count, file) {
+  const w = windowWords(file);
+  const what = count === 0 ? "No characteristic" : count === 1 ? "1 characteristic" : `${count} characteristics`;
+  return `${what} clearly changed from ${w.then} to ${w.now}`;
+}
+
+/** "2,561 stories from 2000–2009 and 3,346 from 2020 or later in All genres." (an option: "… match “Under 2,000 words”.") */
+export function changesSampleLine(file, genre, subset) {
+  const w = windowWords(file);
+  const c = windowCounts(file);
+  const match = subset && subset.id !== "all" ? ` match “${subset.label}”` : "";
+  return `${formatCount(c.then)} stories from ${w.then} and ${formatCount(c.now)} from ${w.now} in ${genre.name}${match}.`;
+}
+
+/** The takeaway (S1): "▼ Fell: …", "▲ Rose: …", "≠ A different mix: …", each up to three labels, as the lists word them. */
+export function changesTakeaway(p) {
+  const named = (list) => list.slice(0, 3).map((x) => lowerFirst(x.variable.label));
+  return [
+    { mark: "▼", word: "Fell", items: named(p.lower) },
+    { mark: "▲", word: "Rose", items: named(p.higher) },
+    { mark: "≠", word: "A different mix", items: named(p.mix) },
+  ].filter((line) => line.items.length);
+}
+
+/**
+ * A row's two columns in chronological order, 2000–2009 then 2020 or later ("One genre"'s columns, profileColumns,
+ * with the dot's side second).
+ */
+export function changesColumns(item) {
+  const cols = profileColumns(item);
+  return { ...cols, genre: cols.all, all: cols.genre };
+}
+
+/**
+ * A row's accessible name in View 2 (F92), its numbers in reading order: "Paragraph count: 68 in 100; 2000–2009 56, 2020
+ * or later 102 paragraphs; clearly rose. Opens its chart over time." Not clear: "no clear change"; r null: "too few
+ * stories to compare", without the dot's number; a window without the numbers, "fewer than 10 stories". Mostly zero:
+ * "2000–2009 11% with any, 2020 or later 21%", with "; among those, median …" where the medians show; bands: "median
+ * …"; named groups: "% of stories", then every group's share in both.
+ */
+export function changesRowName(item, file, minN) {
+  const { kind, variable } = item;
+  const w = windowWords(file);
+  const cols = changesColumns(item);
+  const [then, now] = [item.all, item.stats];
+  const cmp = item.r == null ? "too few stories to compare" : !item.f ? "no clear change" : `clearly ${changeWords(kind, item.f)}`;
+  const end = `; ${cmp}. Opens its chart over time.`;
+  const bar = comparisonBar(item.r, { flagged: Boolean(item.f), zone: item.zone });
+  const times = item.r == null || kind === "grp" ? "" : ` ${bar.times} in 100;`;
+  const few = `fewer than ${minN} stories`;
+  if (kind === "grp") {
+    // each group's two shares as the columns print theirs (sharePair)
+    const pairs = then && now && variable.bins.labels.map((_, b) => sharePair(then.shares[b], now.shares[b]));
+    const shares = (s, k) =>
+      s ? variable.bins.labels.map((l, b) => `${l} ${pairs ? pairs[b][k] : formatPercent(s.shares[b])}`).join(", ") : few;
+    return `${variable.label}, % of stories: ${w.then} ${shares(then, 0)}; ${w.now} ${shares(now, 1)}${end}`;
+  }
+  const thenN = cols.genre ? cols.genre[0] : few;
+  const nowN = cols.all ? cols.all[0] : few;
+  if (kind === "band") {
+    const median = (n) => (n === few ? n : `median ${lowerFirst(n)}`);
+    return `${variable.label}:${times} ${w.then} ${median(thenN)}, ${w.now} ${median(nowN)}${end}`;
+  }
+  if (kind === "zero") {
+    let among = "";
+    if (cols.genre?.[1]) {
+      const unit = profileUnit(item);
+      const [tm, nm] = [cols.genre[1], cols.all[1]];
+      if (tm !== "–" && nm !== "–") among = `; among those, median ${tm} and ${withUnit(nm, unit)}`;
+      else if (nm !== "–") among = `; among those, median ${withUnit(nm, unit)} in ${w.now}`;
+      else if (tm !== "–") among = `; among those, median ${withUnit(tm, unit)} in ${w.then}`;
+    }
+    const withAny = cols.genre ? `${thenN} with any` : thenN;
+    return `${variable.label}:${times} ${w.then} ${withAny}, ${w.now} ${nowN}${among}${end}`;
+  }
+  const unit = kind === "num" ? cols.unit : "";
+  // a scale's text that starts with a number follows a comma ("0.468, −1 (all negative) to +1 (all positive)")
+  const last = !cols.all ? nowN : /^[−+\d]/.test(unit) ? `${nowN}, ${unit}` : withUnit(nowN, unit);
+  return `${variable.label}:${times} ${w.then} ${thenN}, ${w.now} ${last}${end}`;
+}
+
+/**
+ * View 2's words for ComparisonProfile: the column heads ("2000–09", "2020+"), the lists' titles, the axis title, the
+ * zone's words, the note, the mix line, the topics' line and the count's word, from the windows (`file`).
+ */
+export function changesWords(file) {
+  const w = windowWords(file);
+  const heads = [periodLabel(file.then), `${file.now[0]}+`];
+  return {
+    heads: () => heads,
+    lists: {
+      lower: `Fell from ${w.then} to ${w.now}`,
+      higher: `Rose from ${w.then} to ${w.now}`,
+      mix: `A different mix from ${w.then} to ${w.now}`,
+    },
+    axisTitle: `How often a story from ${w.now} is the higher one against a story from ${w.then}, out\u00a0of\u00a0100`,
+    zone: "no clear change",
+    note: ({ inTopic = false, tap = false } = {}) => [
+      `Each dot compares a story from ${w.now} with a story from ${w.then}; every story counts, not only the medians (`,
+      "how\u00a0this\u00a0is\u00a0decided",
+      `). Gray dots${inTopic ? "" : ", in the topics below,"} show no clear change. ${tap ? "Tap" : "Click"} a row for its chart over time.`,
+    ],
+    mixLine: ({ inTopic = false } = {}) => `${inTopic ? "" : "A different mix: "}${w.now} above, ${w.then} below`,
+    topicsLine: "How many characteristics in each topic changed. Open a topic to see them all: blue dots changed, gray dots show no clear change.",
+    topicCount: (t) => {
+      if (t.compared) return { k: t.count, m: t.compared, text: `${t.count} of ${t.compared} changed` };
+      const n = t.items.length;
+      return { n, text: `${n} characteristic${n === 1 ? "" : "s"}` };
+    },
+    countWord: "changed",
+  };
+}
+
+/** What the polite live region says for View 2: the heading, then the takeaway's lines; or the too-few sentence. */
+export function changesAnnouncement(meta, file, state) {
+  const genre = meta.genres.find((g) => g.id === file.g);
+  const subset = meta.subsets.find((s) => s.id === file.s);
+  if (!genre) return "";
+  if (!windowsCompared(file)) return `${changesTooFewHeading(file, genre, subset)}.`;
+  const p = trendProfile(meta, file);
+  const lines = changesTakeaway(p).map((line) => `${line.word}: ${line.items.join(", ")}.`);
+  return [`${changesHeading(p.flagged.length, file)}.`, ...lines].join(" ");
 }

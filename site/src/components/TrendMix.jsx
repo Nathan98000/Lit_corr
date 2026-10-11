@@ -11,7 +11,7 @@ import useWidth from "./useWidth.js";
 /**
  * Named groups (grp) and ordered bands (band) over time (View 1, section 3.1): one 100% column per period, the groups
  * in their own order from the bottom up, in the Genres page's colors (mixColors: the rank palette for named groups, the
- * largest over the chart's periods darkest; light to dark blues for bands; the palettes are in palettes.css). Shares
+ * largest in 2000–2009 darkest, as on View 2; light to dark blues for bands; the palettes are in palettes.css). Shares
  * are printed inside segments at least 16 px tall where their ink reaches 4.5:1; every share is in the details and the
  * period's name. Under the plot the periods and their stories, and the brackets of the two windows compared. A period
  * under SMALL_N stories is hatched; under MIN_N nothing is drawn. One tab stop and details as TrendChart; another
@@ -28,7 +28,7 @@ export default function TrendMix({ meta, variable, entry, file, title }) {
   const layout = trendLayout({ width, ...input });
   const phone = layout.width < PHONE;
   const labels = variable.bins.labels;
-  const colors = trendMixColors(kind, input.cells, labels.length);
+  const colors = trendMixColors(kind, input.cells, labels.length, entry.t && entry.t.slice(1));
   const glide = useGlide(
     input.cells.map((c) => (c ? c.shares : null)),
     `${variable.id}|${kind}|${layout.width}|${file.periods.length}`,

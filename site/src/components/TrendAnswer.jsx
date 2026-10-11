@@ -126,7 +126,7 @@ export default function TrendAnswer({ meta, state, file, busy, onSwitch, heading
   // hatched: a period under SMALL_N stories (or, among a mostly-zero characteristic's stories with any, under SMALL_N)
   const anySmall = cells.some((c) => c && (c.small || (kind === "zero" && c.median != null && c.any < smallN)));
   const mixed = kind === "grp" || kind === "band";
-  const colors = mixed && trendMixColors(kind, cells, variable.bins.labels.length);
+  const colors = mixed && trendMixColors(kind, cells, variable.bins.labels.length, entry.t && entry.t.slice(1));
   const groups = mixed ? variable.bins.labels.map((label, b) => ({ label, cls: colors[b].cls })) : null;
   const Chart = kind === "zero" ? TrendSplit : mixed ? TrendMix : TrendChart;
   const image = (panel) => trendsImage({ variable, genre, heading, subset, state }, panel);

@@ -508,9 +508,10 @@ const POV = {
 };
 
 describe("named groups and bands: 100% columns", () => {
-  it("colors the groups as the Genres page does: named groups by their share over the periods, the largest darkest; bands light to dark", () => {
+  it("colors the groups as the Genres page does: named groups by their shares in 2000–2009, the largest darkest; bands light to dark", () => {
     const cells = [{ n: 100, shares: [0.2, 0.5, 0.3] }, null, { n: 300, shares: [0.6, 0.1, 0.3] }];
-    // over the periods, weighted by their stories: 0.5, 0.2, 0.3
+    expect(trendMixColors("grp", cells, 3, [0.1, 0.6, 0.3]).map((c) => c.cls)).toEqual(["pal-group-2", "pal-group-0", "pal-group-1"]);
+    // 2000–2009 with too few stories: over the periods, weighted by their stories (0.5, 0.2, 0.3)
     expect(trendMixColors("grp", cells, 3).map((c) => c.cls)).toEqual(["pal-group-0", "pal-group-2", "pal-group-1"]);
     expect(trendMixColors("band", cells, 3).map((c) => c.cls)).toEqual(["pal-band-0", "pal-band-1", "pal-band-2"]);
   });
@@ -540,13 +541,25 @@ describe("named groups and bands: 100% columns", () => {
     expect(cols[0].getAttribute("aria-label")).toBe(
       "2000–04: First person (I) 69%, First person plural (we) 0%, Second person (you) 0%, Third person 31%, Mixed 0%, 42 stories",
     );
-    const colors = trendMixColors("grp", trendCells(fixtureFile("trends/all/all.json").c.pov_class, true, 30), labels.length);
+    const pov = fixtureFile("trends/all/all.json").c.pov_class;
+    const colors = trendMixColors("grp", trendCells(pov, true, 30), labels.length, pov.t.slice(1));
     const segments = [...cols[0].querySelectorAll(".segment")];
     expect(segments.map((r) => r.getAttribute("class"))).toEqual([`segment ${colors[0].cls}`, `segment ${colors[3].cls}`]); // empty groups draw nothing
     expect([...cols[0].querySelectorAll(".seglab")].map((t) => t.textContent)).toEqual(["69%", "31%"]);
     expect([...document.querySelectorAll(".trend-table .col-head")].map((t) => t.textContent)).toEqual(["Stories"]);
     expect(document.querySelector(".trend-table .gval")).toBeNull();
     expect(document.querySelectorAll(".trend-legend .key-swatch")).toHaveLength(5);
+  });
+
+  it("colors each group as View 2's rows do", async () => {
+    const user = await openTrends("#/trends?var=pov_class");
+    const viewOne = [...document.querySelectorAll(".trend-legend .key-swatch")].map((k) => k.className.match(/pal-group-\d/)[0]);
+    window.location.hash = "#/trends?view=changes";
+    await waitFor(() => expect(document.querySelector(".trend-changes")).toBeTruthy());
+    await user.click([...document.querySelectorAll(".profile-topic summary")].find((x) => x.textContent.startsWith("Narration")));
+    await waitFor(() => expect(document.querySelector(".profile-key")).toBeTruthy());
+    const viewTwo = [...document.querySelectorAll(".profile-key .profile-swatch")].map((k) => k.className.match(/pal-group-\d/)[0]);
+    expect(viewTwo).toEqual(viewOne);
   });
 
   it("hatches a period under 30 stories", async () => {

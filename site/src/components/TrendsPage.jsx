@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { loadTrends } from "../lib/data.js";
 import { breakable } from "../lib/genres.js";
-import { changesQuestion, trendAnnouncement, trendQuestion, trendQuestionText } from "../lib/trends.js";
+import { changesAnnouncement, changesQuestion, trendAnnouncement, trendQuestion, trendQuestionText } from "../lib/trends.js";
 import { TREND_PAGE_EXCLUDED, onTrendsPage, subsetConflict } from "../lib/urlState.js";
 import { BodyPlaceholder, CharacteristicPicker, SlotButton } from "./Controls.jsx";
 import { ChartPlaceholder } from "./Explorer.jsx";
@@ -12,6 +12,7 @@ import { PartBoundary } from "./lazyPart.jsx";
 import LoadError from "./LoadError.jsx";
 import Overlay from "./Overlay.jsx";
 import TrendAnswer from "./TrendAnswer.jsx";
+import TrendChanges from "./TrendChanges.jsx";
 import "../trends.css";
 
 // the picker's Length & structure topic keeps its own blurb ("Word count, paragraphs, series, titles"): without the
@@ -109,7 +110,7 @@ export default function TrendsPage({ meta, state, onChange, onNavigate, onHoldSc
   if (file?.c[state.v]) shownV.current = state.v;
   const view = file ? { ...state, genre: file.g, sub: file.s, v: file.c[state.v] ? state.v : shownV.current } : state;
   const announcement = useAnnouncement(
-    !file || busy || error || changes ? "" : trendAnnouncement(meta, file, view),
+    !file || busy || error ? "" : changes ? changesAnnouncement(meta, file, view) : trendAnnouncement(meta, file, view),
     `${state.view || "chart"}|${state.v}|${state.genre}|${state.sub}`,
   );
 
@@ -248,7 +249,7 @@ export default function TrendsPage({ meta, state, onChange, onNavigate, onHoldSc
       ) : !file ? (
         <ChartPlaceholder />
       ) : changes ? (
-        <article className="chart-panel trends-answer" aria-busy={busy ? "true" : "false"} />
+        <TrendChanges meta={meta} state={view} file={file} busy={busy} onSwitch={switchFromAnswer} onNavigate={onNavigate} headingRef={heading} />
       ) : (
         <TrendAnswer meta={meta} state={view} file={file} busy={busy} onSwitch={switchFromAnswer} headingRef={heading} />
       )}

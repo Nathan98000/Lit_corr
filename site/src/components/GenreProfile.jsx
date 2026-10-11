@@ -1,20 +1,26 @@
 import { useId, useState } from "react";
 import {
+  axisTitle,
   comparisonBar,
   genreProfile,
+  mixLine,
   noDifferenceZone,
   numberPlace,
   profileColumns,
   profileHeading,
   profileHeads,
+  profileNote,
   profileRowName,
   profileTakeaway,
+  sampleLine,
+  takeawayLine,
 } from "../lib/genres.js";
 import { mixColors } from "../lib/genreLayout.js";
 import { PHONE, STACKED, textWidth } from "../lib/rangeLayout.js";
 import CopyLink from "./CopyLink.jsx";
 import { HOW_DECIDED } from "./GenreAnswer.jsx";
 import { ViewLink } from "./GenreDetails.jsx";
+import useMediaQuery from "./useMediaQuery.js";
 import useWidth from "./useWidth.js";
 
 const SHOWN = 7; // rows of a list before "Show all"
@@ -221,9 +227,11 @@ function ProfileBlock({ id, items, marks = false, headRow = false, layout, rowPr
 
 /**
  * "Lower in Romance than in all genres": the first seven, then "Show all 18" / "Show fewer". Wide, its title line ends
- * with the count; stacked, with the two columns' heads, the count left to screen readers ("Show all 18" keeps it).
+ * with the count; stacked, with the two columns' heads, the count left to screen readers ("Show all 18" keeps it). The
+ * first list carries the key (F86): the axis title over its rows (`caption`) and the note after its "Show all"
+ * (`note`); "A different mix" says which bar is which over its rows (`caption`).
  */
-function ProfileList({ title, items, all = false, layout, rowProps }) {
+function ProfileList({ title, items, all = false, caption = null, note = null, layout, rowProps }) {
   const id = useId();
   const [open, setOpen] = useState(false);
   const shown = all || open ? items : items.slice(0, SHOWN);
@@ -244,6 +252,7 @@ function ProfileList({ title, items, all = false, layout, rowProps }) {
           <span className="list-count">{count}</span>
         )}
       </div>
+      {caption}
       <ProfileBlock id={`${id}-list`} items={shown} layout={layout} rowProps={rowProps} />
       {!all && items.length > SHOWN && (
         <button
@@ -256,33 +265,48 @@ function ProfileList({ title, items, all = false, layout, rowProps }) {
           {open ? "Show fewer" : `Show all ${items.length}`}
         </button>
       )}
+      {note}
     </section>
   );
 }
 
+/** The axis title over the first list's rows (F86, S1). */
+const AxisTitle = ({ genre }) => <p className="profile-caption profile-axis-title">{axisTitle(genre)}</p>;
+
+/** Which of a named group's two bars is the genre's (quick win 5): only over rows where named groups are compared. */
+const MixLine = ({ genre }) => <p className="profile-caption profile-mix-line">{mixLine(genre)}</p>;
+
 /**
- * The key of the rows (concept P2, with P1's mix line): what the bar measures, the zone of no clear difference with
- * the link to how it is decided, and, where named groups' rows can be shown, which of their two bars is the genre.
+ * The note under the first list (F84, F86, F87): what a dot compares, with the link to how a difference is decided
+ * (a 44 px target, never broken inside its parentheses), what the gray dots in the topics say, and that a row opens
+ * every genre's numbers ("Tap" on a device that can't hover, else "Click"). In an open topic, when no list is shown,
+ * the gray dots are right there (`inTopic`).
  */
-function ProfileLegend({ genre, zone, mix }) {
+function Note({ genre, inTopic = false }) {
+  const tap = useMediaQuery("(hover: none)");
+  const [before, link, after] = profileNote(genre, { inTopic, tap });
   return (
-    <ul className="legend genre-legend profile-legend">
-      <li className="legend-text">
-        <span className="key key-p2-bar" aria-hidden="true" /> How often a {genre.name} story is the higher one, against a story from
-        all genres (times in 100)
-      </li>
-      <li className="legend-text">
-        <span>
-          <span className="key key-p2-zone" aria-hidden="true" /> No clear difference: {zone[0]} to {zone[1]} in 100 (
-          <a href={HOW_DECIDED}>how this is decided</a>)
-        </span>
-      </li>
-      {mix && (
-        <li className="legend-text">
-          <span className="key key-p2-mix" aria-hidden="true" /> A different mix: {genre.name} above, all genres below
-        </li>
-      )}
-    </ul>
+    <p className="profile-note">
+      {before}
+      <a href={HOW_DECIDED}>{link}</a>
+      {after}
+    </p>
+  );
+}
+
+/**
+ * An open topic's rows: the axis title over them and the note under them when no list carries them (`lead`, nothing
+ * stands out) and the topic has dots; the mix line where its named-group row is compared (quick win 5).
+ */
+function TopicRows({ items, lead, genre, layout, rowProps }) {
+  const dots = lead && items.some((x) => x.r != null && x.kind !== "grp");
+  return (
+    <>
+      {dots && <AxisTitle genre={genre} />}
+      {items.some((x) => x.kind === "grp" && x.r != null) && <MixLine genre={genre} />}
+      <ProfileBlock items={items} marks headRow layout={layout} rowProps={rowProps} />
+      {dots && <Note genre={genre} inTopic />}
+    </>
   );
 }
 
@@ -341,8 +365,11 @@ export default function GenreProfile({ meta, state, file, busy, onSwitch, onNavi
   const few = n < file.rule.min_n;
   const p = genreProfile(meta, file, gi);
   const count = p.flagged.length;
-  const takeaway = profileTakeaway(p.flagged);
+  const takeaway = profileTakeaway(p);
   const zone = noDifferenceZone(file.rule);
+  // the first list with dots carries the axis title and the note; with none (nothing stands out), every open topic
+  // with dots carries them
+  const lead = p.lower.length ? "lower" : p.higher.length ? "higher" : null;
   const layout = { stacked, plotW: plotWidth(width, stacked), heads: profileHeads(genre, stacked, stacked ? NARROW.n : WIDE.n) };
   const rowProps = { genre, sub: state.sub, minN, zone, onNavigate };
   const setTopic = (id, isOpen) =>
@@ -360,6 +387,7 @@ export default function GenreProfile({ meta, state, file, busy, onSwitch, onNavi
         <h2 className="chart-title" ref={headingRef} tabIndex={-1}>
           {few ? tooFewText(genre, subset, file.rule.min_n) : profileHeading(count, genre)}
         </h2>
+        <p className="profile-sample">{sampleLine(n, genre, subset)}</p>
       </header>
       {few ? (
         showAll
@@ -370,15 +398,39 @@ export default function GenreProfile({ meta, state, file, busy, onSwitch, onNavi
               Its stories are close to those of all genres on each of the {p.compared} characteristics compared.
             </p>
           )}
-          {takeaway && <p className="takeaway profile-takeaway">{takeaway}</p>}
-          <ProfileLegend genre={genre} zone={zone} mix={p.items.some((x) => x.kind === "grp")} />
+          {takeaway.length > 0 && (
+            <div className="takeaway profile-takeaway">
+              {takeaway.map((line) => (
+                <p key={line.word}>
+                  <span aria-hidden="true">{line.mark} </span>
+                  <b>{line.word}:</b> {line.items.join(", ")}.
+                </p>
+              ))}
+            </div>
+          )}
           {p.lower.length > 0 && (
-            <ProfileList title={`Lower in ${genre.name} than in all genres`} items={p.lower} layout={layout} rowProps={rowProps} />
+            <ProfileList
+              title={`Lower in ${genre.name} than in all genres`}
+              items={p.lower}
+              caption={lead === "lower" && <AxisTitle genre={genre} />}
+              note={lead === "lower" && <Note genre={genre} />}
+              layout={layout}
+              rowProps={rowProps}
+            />
           )}
           {p.higher.length > 0 && (
-            <ProfileList title={`Higher in ${genre.name} than in all genres`} items={p.higher} layout={layout} rowProps={rowProps} />
+            <ProfileList
+              title={`Higher in ${genre.name} than in all genres`}
+              items={p.higher}
+              caption={lead === "higher" && <AxisTitle genre={genre} />}
+              note={lead === "higher" && <Note genre={genre} />}
+              layout={layout}
+              rowProps={rowProps}
+            />
           )}
-          {p.mix.length > 0 && <ProfileList title="A different mix" items={p.mix} all layout={layout} rowProps={rowProps} />}
+          {p.mix.length > 0 && (
+            <ProfileList title="A different mix" items={p.mix} all caption={<MixLine genre={genre} />} layout={layout} rowProps={rowProps} />
+          )}
         </>
       )}
       <section className="profile-topics" aria-labelledby={`${ids}-topics`}>
@@ -391,7 +443,7 @@ export default function GenreProfile({ meta, state, file, busy, onSwitch, onNavi
                 <h4>{topic.label}</h4>
                 <span className="profile-topic-count">{k ? `${k} of ${compared} stand out` : characteristics(items.length)}</span>
               </summary>
-              {open && <ProfileBlock items={items} marks headRow layout={layout} rowProps={rowProps} />}
+              {open && <TopicRows items={items} lead={!lead} genre={genre} layout={layout} rowProps={rowProps} />}
             </details>
           );
         })}
@@ -403,7 +455,10 @@ export default function GenreProfile({ meta, state, file, busy, onSwitch, onNavi
   );
 }
 
-/** What screen readers hear for one genre: the heading, then the biggest differences (or the "too few" sentence). */
+/**
+ * What screen readers hear for one genre: the heading, then the takeaway's lines without their marks ("Lower: …."), or
+ * the "too few" sentence.
+ */
 export function profileAnnouncement(meta, file, state) {
   const genre = meta.genres.find((g) => g.id === state.genre);
   const gi = file.genres.indexOf(state.genre);
@@ -412,6 +467,5 @@ export function profileAnnouncement(meta, file, state) {
   if (n < meta.min_n) return tooFewText(genre, subset, meta.min_n);
   if (n < file.rule.min_n) return tooFewText(genre, subset, file.rule.min_n);
   const p = genreProfile(meta, file, gi);
-  const takeaway = profileTakeaway(p.flagged);
-  return [`${profileHeading(p.flagged.length, genre)}.`, takeaway].filter(Boolean).join(" ");
+  return [`${profileHeading(p.flagged.length, genre)}.`, ...profileTakeaway(p).map(takeawayLine)].join(" ");
 }

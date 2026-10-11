@@ -1,5 +1,6 @@
 // "One genre" (View 2) after its review (docs/stage2/ONE_GENRE_REVIEW.md, STAGE2_ONE_GENRE_IMPLEMENTATION_PROMPT.md):
-// the row (concept R3: one grid, a stem and a dot, two number columns, the unit line, the row's name).
+// the row (concept R3: one grid, a stem and a dot, two number columns, the unit line, the row's name); the top of the
+// answer (S1: the sample line, the takeaway in two directions, the key folded into the first list).
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { readFileSync } from "node:fs";
@@ -7,7 +8,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "../App.jsx";
-import { plotWidth } from "../components/GenreProfile.jsx";
+import { plotWidth, profileAnnouncement } from "../components/GenreProfile.jsx";
 import { clearCache } from "../lib/data.js";
 import {
   genreProfile,
@@ -17,7 +18,9 @@ import {
   profileColumns,
   profileHeads,
   profileRowName,
+  profileTakeaway,
   profileUnit,
+  takeawayLine,
   trimZeros,
 } from "../lib/genres.js";
 import { fixtureFetch, fixtureFile, fixtureMeta, realMeta } from "./fixtures.js";
@@ -34,6 +37,7 @@ const css = readFileSync(path.join(here, "..", "genres.css"), "utf8");
  * nothing, its rows inside the zone.
  */
 function standOuts(body) {
+  if (body.n[2] < body.rule.min_n) return body; // Romance with too few stories in the option: nothing compared, as built
   const set = (id, r, f) => Object.assign(body.c[id], { r, f });
   set("dlg_word_share", [null, 0.05, -0.32, null], [0, 0, -1, 0]);
   set("emo_anger_per_1k", [null, 0.02, 0.24, null], [0, 0, 1, 0]);
@@ -389,5 +393,205 @@ describe("the columns' heads", () => {
     const topicHead = document.querySelector(".profile-topic .profile-head");
     expect([...topicHead.querySelectorAll(".profile-n-head")].map((s) => s.textContent)).toEqual(["Romance", "All"]);
     expect(topicHead.getAttribute("aria-hidden")).toBe("true");
+  });
+});
+
+// ------------------------------------------------------------------------------------------- the top of the answer
+/** Serves the test data through `edit(body)` for the genres files (and `editMeta(meta)` for meta.json). */
+function serveWith(edit, editMeta = (m) => m) {
+  const serve = fixtureFetch();
+  vi.stubGlobal("fetch", async (url) => {
+    const res = await serve(url);
+    if (String(url).endsWith("meta.json")) {
+      const meta = editMeta(await res.json());
+      return { ok: true, status: 200, json: async () => meta };
+    }
+    if (!String(url).includes("genres/")) return res;
+    const body = edit(standOuts(await res.json()));
+    return { ok: true, status: 200, json: async () => body };
+  });
+}
+
+/** Nine more characteristics like dialogue share, each lower in Romance, so the first list has "Show all 10". */
+const nineMore = [
+  (body) => {
+    for (let i = 0; i < 9; i += 1) body.c[`x${i}`] = { ...body.c.dlg_word_share, r: [null, 0, -0.3 + i / 100, null], f: [0, 0, -1, 0] };
+    return body;
+  },
+  (meta) => {
+    const extra = Array.from({ length: 9 }, (_, i) => ({ ...meta.variables[0], id: `x${i}`, label: `Extra ${i}` }));
+    meta.variables.push(...extra);
+    meta.topics[0].ids.push(...extra.map((v) => v.id));
+    return meta;
+  },
+];
+
+const sample = () => document.querySelector(".profile-sample")?.textContent ?? null;
+
+describe("the sample line (F93)", () => {
+  it("says how many stories, and which, under the heading", async () => {
+    await openGenre("#/genres?view=genre&genre=romance&include=all");
+    expect(sample()).toBe("120 stories in Romance.");
+    expect(document.querySelector(".chart-head").lastElementChild.className).toBe("profile-sample");
+    cleanup();
+    await openGenre("#/genres?view=genre&genre=romance&include=y2020");
+    expect(sample()).toBe("41 stories in Romance match “Published 2020 or later”.");
+  });
+
+  it("is under the small-sample heading too, and left out under 10 stories", async () => {
+    await openGenre("#/genres?view=genre&genre=romance&include=long"); // 15 stories
+    expect(document.querySelector(".chart-title").textContent).toBe("Fewer than 30 stories in Romance match “5,000 words or more”: too few to compare.");
+    expect(sample()).toBe("15 stories in Romance match “5,000 words or more”.");
+    cleanup();
+    await openGenre("#/genres?view=genre&genre=tiny&include=all"); // 8 stories
+    expect(sample()).toBeNull();
+  });
+});
+
+describe("the takeaway (S1, F90)", () => {
+  const item = (id, label, f, kind = "num") => ({ id, kind, f, variable: { label } });
+  const lines = (p) => profileTakeaway({ lower: [], higher: [], mix: [], ...p }).map((l) => `${l.mark} ${takeawayLine(l)}`);
+
+  it("is a line per list: its first three, in its order, as the list words them", async () => {
+    await openGenre("#/genres?view=genre&genre=romance&include=all");
+    const box = document.querySelector(".profile-takeaway");
+    expect([...box.querySelectorAll("p")].map((p) => p.textContent)).toEqual([
+      "▼ Lower: dialogue share.",
+      "▲ Higher: anger, has dialogue.",
+      "≠ A different mix: narrative perspective.",
+    ]);
+    for (const p of box.querySelectorAll("p")) {
+      expect(p.firstElementChild.getAttribute("aria-hidden")).toBe("true"); // the mark
+      expect(p.querySelector("b").textContent).toMatch(/^(Lower|Higher|A different mix):$/);
+    }
+    const four = ["Sexual language", "Sentences with sexual language", "I / me / my in narration", "Anatomical terms"].map((l, i) => item(`v${i}`, l, -1));
+    expect(lines({ lower: four })).toEqual(["▼ Lower: sexual language, sentences with sexual language, I / me / my in narration."]);
+  });
+
+  it("leaves story age out when publication year is shown, and takes the next one; a line left with nothing goes", () => {
+    const year = item("pub_year", "Publication year", -1);
+    const age = item("age_years", "Years online", 1);
+    expect(lines({ lower: [year], higher: [age, item("b", "Anger", 1)] })).toEqual(["▼ Lower: publication year.", "▲ Higher: anger."]);
+    expect(lines({ lower: [year], higher: [age] })).toEqual(["▼ Lower: publication year."]);
+    // publication year not among the three shown: story age stays
+    const three = ["Alpha", "Beta", "Gamma"].map((l, i) => item(`l${i}`, l, -1));
+    expect(lines({ lower: [...three, year], higher: [age] })).toEqual(["▼ Lower: alpha, beta, gamma.", "▲ Higher: years online."]);
+  });
+
+  it("is left out when nothing stands out, and the sentence about all genres stays", async () => {
+    expect(profileTakeaway({ lower: [], higher: [], mix: [] })).toEqual([]);
+    await openGenre("#/genres?view=genre&genre=fetish&include=all");
+    expect(document.querySelector(".profile-takeaway")).toBeNull();
+    expect(document.querySelector(".profile-none").textContent).toMatch(/^Its stories are close to those of all genres/);
+  });
+
+  it("is what screen readers hear after the heading, without its marks", () => {
+    const file = standOuts(fixtureFile("genres/all.json"));
+    expect(profileAnnouncement(fixtureMeta, file, { genre: "romance", sub: "all" })).toBe(
+      "4 characteristics clearly set Romance apart from all genres. Lower: dialogue share. Higher: anger, has dialogue. " +
+        "A different mix: narrative perspective.",
+    );
+    expect(profileAnnouncement(fixtureMeta, file, { genre: "fetish", sub: "all" })).toBe("No characteristic clearly sets Fetish apart from all genres.");
+  });
+});
+
+describe("the key, in the lists (F86)", () => {
+  it("is no list of its own: the axis title is over the first list's rows only, from the genre's name", async () => {
+    await openGenre("#/genres?view=genre&genre=romance&include=all");
+    expect(document.querySelector(".profile-legend, .genre-profile .legend")).toBeNull();
+    const titles = [...document.querySelectorAll(".profile-axis-title")];
+    expect(titles).toHaveLength(1);
+    expect(titles[0].textContent).toBe("How often a story in Romance is the higher one, out of 100");
+    const first = document.querySelector(".profile-list");
+    expect(first.contains(titles[0])).toBe(true);
+    expect(titles[0].nextElementSibling.classList.contains("profile-block")).toBe(true);
+  });
+
+  it("goes over the Higher list when there is no Lower list", async () => {
+    serveWith((body) => {
+      body.c.dlg_word_share.f = [0, 0, 0, 0];
+      return body;
+    });
+    await openGenre("#/genres?view=genre&genre=romance&include=all");
+    const title = document.querySelector(".profile-axis-title");
+    expect(title.closest(".profile-list").querySelector("h3").textContent).toBe("Higher in Romance than in all genres");
+  });
+
+  it("draws the bracket from the rule's zone, never from literals", async () => {
+    serveWith((body) => {
+      body.rule.min_r = 0.3;
+      return body;
+    });
+    await openGenre("#/genres?view=genre&genre=romance&include=all", 1032);
+    const head = document.querySelector(".profile-list .profile-head");
+    expect(head.querySelector(".zone-label").textContent).toBe("35–65: no clear difference");
+    expect([...head.querySelectorAll(".zone-bracket")].map((l) => l.getAttribute("x1"))).toEqual(["35%", "35%", "65%"]);
+    expect(document.querySelector(".profile-row .p2-zone").getAttribute("x")).toBe("35%");
+  });
+
+  it("ends the first list with the note, after its “Show all”, with its link", async () => {
+    serveWith(...nineMore);
+    await openGenre("#/genres?view=genre&genre=romance&include=all");
+    const list = document.querySelector(".profile-list");
+    const note = list.lastElementChild;
+    expect(note.className).toBe("profile-note");
+    expect(note.previousElementSibling.textContent).toBe("Show all 10");
+    expect(note.textContent).toBe(
+      "Each dot compares the story in Romance with a story from all genres; every story counts, not only the medians " +
+        "(how this is decided). Gray dots, in the topics below, show no clear difference. Click a row for every genre’s numbers.",
+    );
+    expect(note.querySelector("a").getAttribute("href")).toBe("#/methodology/genres");
+    expect(document.querySelectorAll(".profile-note")).toHaveLength(1);
+    expect(css).toMatch(/\.profile-note a::after \{[^}]*height: max\(100%, var\(--target\)\);/);
+  });
+
+  it("says “Tap” on a device that can't hover", async () => {
+    vi.stubGlobal("matchMedia", (q) => ({ matches: q === "(hover: none)", media: q, addEventListener() {}, removeEventListener() {} }));
+    await openGenre("#/genres?view=genre&genre=romance&include=all");
+    expect(document.querySelector(".profile-note").textContent).toMatch(/ Tap a row for every genre’s numbers\.$/);
+  });
+
+  it("goes with every open topic that has dots when no list is shown, without “in the topics below”", async () => {
+    const user = await openGenre("#/genres?view=genre&genre=fetish&include=all");
+    expect(document.querySelector(".profile-list, .profile-axis-title, .profile-note")).toBeNull();
+    await openAllTopics(user);
+    const topics = [...document.querySelectorAll(".profile-topic")].filter((t) => t.querySelector(".p2-dot"));
+    expect(topics.length).toBeGreaterThan(1);
+    for (const t of topics) {
+      expect(t.querySelector(".profile-axis-title").textContent).toBe("How often a story in Fetish is the higher one, out of 100");
+      expect(t.querySelector(".profile-note").textContent).toMatch(/\)\. Gray dots show no clear difference\. Click a row/);
+    }
+  });
+
+  it("is left out in the small-sample state: no axis title, note or bracket", async () => {
+    const user = await openGenre("#/genres?view=genre&genre=romance&include=long");
+    await openAllTopics(user);
+    expect(document.querySelector(".profile-axis-title, .profile-note, .profile-mix-line, .zone-label, .profile-bracket, .profile-ticks")).toBeNull();
+    expect(document.querySelectorAll(".profile-topic .profile-row").length).toBeGreaterThan(0);
+  });
+
+  it("says which bar is which only where named groups are compared (quick win 5)", async () => {
+    const user = await openGenre("#/genres?view=genre&genre=romance&include=all");
+    const mix = [...document.querySelectorAll(".profile-list")].find((l) => l.querySelector("h3").textContent === "A different mix");
+    expect(mix.querySelector(".profile-mix-line").textContent).toBe("A different mix: Romance above, all genres below");
+    expect(document.querySelectorAll(".profile-mix-line")).toHaveLength(1);
+    await openAllTopics(user);
+    const withMix = [...document.querySelectorAll(".profile-topic")].filter((t) => t.querySelector(".profile-mix-line"));
+    expect(withMix.map((t) => t.querySelector("summary").textContent)).toEqual([expect.stringMatching(/^Narration/)]);
+    expect(withMix[0].querySelector(".segment")).toBeTruthy();
+  });
+
+  it("never says “a Romance story”: always “a story in Romance”", async () => {
+    const user = await openGenre("#/genres?view=genre&genre=romance&include=all");
+    await openAllTopics(user);
+    for (const g of fixtureMeta.genres) expect(document.body.textContent).not.toMatch(new RegExp(`\\b(a|the) ${g.name} stor(y|ies)`));
+    const src = readFileSync(path.join(here, "..", "components", "GenreProfile.jsx"), "utf8");
+    expect(src).not.toMatch(/a \{genre\.name\} story/);
+  });
+});
+
+describe("the heading (F94)", () => {
+  it("may run to 62ch from a 1,000 px window", () => {
+    expect(css).toMatch(/@media \(min-width: 1000px\) \{\s*\.genre-profile \.chart-title \{\s*max-width: 62ch;/);
   });
 });

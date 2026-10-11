@@ -652,34 +652,68 @@
   color: var(--ink-2);
 }
 
+/* "300 stories in Romance." under the heading (F93) */
+.profile-sample {
+  margin: 2px 0 0;
+  font-size: 15px;
+  color: var(--ink-2);
+}
+
+/* the heading may take one line on wider screens (F94); the question keeps the site's 34ch */
+@media (min-width: 1000px) {
+  .genre-profile .chart-title {
+    max-width: 62ch;
+  }
+}
+
+/* the takeaway (S1, F90): a line per list, its word in 650 */
 .profile-takeaway {
-  margin-bottom: 4px;
+  margin: 12px 0 6px;
 }
 
-/* the key (concept P2): the bar, the zone of no clear difference, the named groups' two bars */
-.profile-legend .key-p2-bar {
-  width: 18px;
-  height: 8px;
-  border-radius: 2px;
-  background: var(--accent-ink);
+.profile-takeaway p {
+  margin: 0;
 }
 
-.profile-legend .key-p2-zone {
-  width: 18px;
-  height: 12px;
-  background: #ece9e2;
-  border-left: 1px solid #8f8a80;
-  border-right: 1px solid #8f8a80;
+.profile-takeaway p + p {
+  margin-top: 4px;
 }
 
-.profile-legend .key-p2-mix {
-  width: 18px;
-  height: 11px;
-  background: linear-gradient(var(--group-0) 0 4px, transparent 4px 7px, var(--group-1) 7px 11px);
+.profile-takeaway b {
+  font-weight: 650;
 }
 
-.profile-legend {
-  max-width: 74ch;
+/* the key in the lists (F86): the axis title over the first list's rows, the mix line over named groups' rows */
+.profile-caption {
+  margin: 8px 0 0;
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--ink-2);
+  text-wrap: balance;
+}
+
+/* the note under the first list: its link's target is 44 px tall, invisibly (quick win 4) */
+.profile-note {
+  max-width: 70ch;
+  margin: 8px 0 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--ink-2);
+}
+
+.profile-note a {
+  position: relative;
+}
+
+.profile-note a::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: max(100%, var(--target));
+  transform: translateY(-50%);
 }
 
 .profile-list {
@@ -1127,20 +1161,5 @@ a.profile-row:hover .profile-label-text {
 
   .profile-axis .zone-bracket {
     stroke: CanvasText;
-  }
-
-  .profile-legend .key-p2-bar,
-  .profile-legend .key-p2-zone,
-  .profile-legend .key-p2-mix {
-    forced-color-adjust: none;
-  }
-
-  .profile-legend .key-p2-bar {
-    background: Highlight;
-  }
-
-  .profile-legend .key-p2-zone {
-    background: Canvas;
-    border-color: CanvasText;
   }
 }

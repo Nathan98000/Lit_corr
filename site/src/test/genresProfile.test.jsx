@@ -1,4 +1,4 @@
-// The Genres page, one genre against all genres (View 2): the heading and its 0 state, the biggest differences,
+// The Genres page, one genre against all genres (View 2): the heading and its 0 state, the takeaway,
 // the lists ordered by the size of the difference with "Show all", the topics folded, the too-few state and the links
 // to every genre's numbers.
 import { render, screen, waitFor, within } from "@testing-library/react";
@@ -10,7 +10,16 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "../App.jsx";
 import { profileAnnouncement } from "../components/GenreProfile.jsx";
 import { clearCache } from "../lib/data.js";
-import { comparisonBar, genreProfile, noDifferenceZone, profileColumns, profileHeading, profileRowName, profileTakeaway } from "../lib/genres.js";
+import {
+  comparisonBar,
+  genreProfile,
+  noDifferenceZone,
+  profileColumns,
+  profileHeading,
+  profileRowName,
+  profileTakeaway,
+  takeawayLine,
+} from "../lib/genres.js";
 import { fixtureFetch, fixtureMeta, realMeta } from "./fixtures.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -71,17 +80,13 @@ describe("the heading and the takeaway", () => {
     expect(profileHeading(28, g)).toBe("28 characteristics clearly set Romance apart from all genres");
   });
 
-  it("name the biggest differences with the D10 words, and the defaults", async () => {
+  it("name the stand-outs in each direction, as the lists word them (S1)", async () => {
     await openGenre("#/genres?view=genre&genre=romance&include=all");
     expect(heading()).toBe("4 characteristics clearly set Romance apart from all genres");
     expect(document.querySelector(".profile-takeaway").textContent).toBe(
-      "Biggest differences: dialogue share (less dialogue), narrative perspective (different mix), anger (higher).",
+      "▼ Lower: dialogue share.▲ Higher: anger, has dialogue.≠ A different mix: narrative perspective.",
     );
-    const one = [{ variable: { noun: "story length in words", more_word: "Longer", less_word: "Shorter", bins: {} }, kind: "num", f: -1 }];
-    expect(profileTakeaway(one)).toBe("Biggest difference: story length in words (shorter).");
-    const yes = [{ variable: { yes_subject: "First-person stories", noun: "first-person narration", bins: {} }, kind: "bin", f: 1 }];
-    expect(profileTakeaway(yes)).toBe("Biggest difference: first-person stories (more common).");
-    expect(profileTakeaway([])).toBeNull();
+    expect(profileTakeaway({ lower: [], higher: [], mix: [] })).toEqual([]);
   });
 
   it("says when nothing stands out, and keeps the topics", async () => {
@@ -345,8 +350,8 @@ describe("one genre on the real data", () => {
     expect(genreProfile(real, file, at("erotic-couplings")).flagged).toHaveLength(10);
     expect(genreProfile(real, file, at("anal-sex-stories")).flagged).toHaveLength(28);
     expect(profileAnnouncement(real, file, { genre: "adult-romance", sub: "all" })).toBe(
-      "28 characteristics clearly set Romance apart from all genres. Biggest differences: sexual language (less), " +
-        "the share of sentences with sexual language (lower), anatomical terms (less).",
+      "28 characteristics clearly set Romance apart from all genres. Lower: sexual language, sentences with sexual " +
+        "language, anatomical terms. Higher: romance language, where the first sex scene starts, words before first explicit term.",
     );
   });
 
@@ -367,18 +372,21 @@ describe("one genre on the real data", () => {
     expect(howTo.topics.reduce((sum, t) => sum + t.compared, 0)).toBe(howTo.compared);
   });
 
-  it.skipIf(!real)("skips story age in the takeaway when publication year is among the three (F78)", () => {
+  it.skipIf(!real)("skips story age in the takeaway when publication year is shown (F78)", () => {
     const file = realFile();
     const chain = genreProfile(real, file, file.genres.indexOf("chain-stories"));
-    const top = chain.flagged.slice(0, 3).map((x) => x.id);
-    expect(top).toContain("pub_year");
-    const takeaway = profileTakeaway(chain.flagged);
-    expect(takeaway).toMatch(/publication year \(older\)/);
-    expect(takeaway).not.toMatch(/story age/);
-    expect(takeaway.split(", ")).toHaveLength(3); // the next one is taken
-    // a noun that ends in a parenthesis takes its word after a comma
-    const one = [{ id: "lex_ttr", variable: { noun: "word variety (type–token ratio)", bins: {} }, kind: "num", f: 1 }];
-    expect(profileTakeaway(one)).toBe("Biggest difference: word variety (type–token ratio), higher.");
+    expect(chain.lower[0].id).toBe("pub_year");
+    expect(chain.higher[0].id).toBe("age_years");
+    expect(profileTakeaway(chain).map(takeawayLine)).toEqual([
+      "Lower: publication year, sexual language, sexual language in the last fifth.",
+      "Higher: italics, author’s story count, vocabulary variety (moving average).", // the next one is taken
+      "A different mix: narrative perspective.",
+    ]);
+    // "5,000 words or more": Fetish's only lower item is story age, so that line goes
+    const long = realFile("long");
+    const fetish = genreProfile(real, long, long.genres.indexOf("fetish-stories"));
+    expect(fetish.lower.map((x) => x.id)).toEqual(["age_years"]);
+    expect(profileTakeaway(fetish).map(takeawayLine)).toEqual(["Higher: shame & embarrassment, number of tags, publication year."]);
   });
 
   it.skipIf(!real)("writes the columns as the copy does (F85, decision 6)", () => {

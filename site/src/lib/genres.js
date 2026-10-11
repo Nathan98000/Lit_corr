@@ -460,20 +460,24 @@ export function standOutWord(item) {
 }
 
 /**
- * "Biggest differences: sexual language (less), …" for the three largest (F78). Story age is the publication year
- * again, so it is skipped when publication year is among the three, and the next one is taken; a noun that ends in a
- * parenthesis takes its word after a comma ("word variety (type–token ratio), higher").
+ * The takeaway (concept S1, F90): a line per list that has items, in the lists' order, each naming its first three as
+ * the list words them (`lowerFirst(label)`): [{ mark: "▼", word: "Lower", items: ["sexual language", …] }, { mark: "▲",
+ * word: "Higher", … }, { mark: "≠", word: "A different mix", … }]. Story age is the publication year again, so it is
+ * left out when publication year is among the items shown, and the next one is taken (F78); a line left with nothing
+ * goes. Empty when nothing stands out.
  */
-export function profileTakeaway(flagged) {
-  if (!flagged.length) return null;
-  const withYear = flagged.slice(0, 3).some((x) => x.id === "pub_year");
-  const list = withYear ? flagged.filter((x) => x.id !== "age_years") : flagged;
-  const top = list.slice(0, 3).map((x) => {
-    const noun = nounOf(x.variable);
-    return noun.endsWith(")") ? `${noun}, ${standOutWord(x)}` : `${noun} (${standOutWord(x)})`;
-  });
-  return `${top.length === 1 ? "Biggest difference" : "Biggest differences"}: ${top.join(", ")}.`;
+export function profileTakeaway(p) {
+  const year = [p.lower, p.higher, p.mix].some((list) => list.slice(0, 3).some((x) => x.id === "pub_year"));
+  const named = (list) => list.filter((x) => !(year && x.id === "age_years")).slice(0, 3).map((x) => lowerFirst(x.variable.label));
+  return [
+    { mark: "▼", word: "Lower", items: named(p.lower) },
+    { mark: "▲", word: "Higher", items: named(p.higher) },
+    { mark: "≠", word: "A different mix", items: named(p.mix) },
+  ].filter((line) => line.items.length);
 }
+
+/** A takeaway line's words, without its mark: "Lower: sexual language, sentences with sexual language, …." */
+export const takeawayLine = (line) => `${line.word}: ${line.items.join(", ")}.`;
 
 /** The group whose share differs most between a genre and all genres (named groups and bands). */
 export function biggestGap(stats, all) {
@@ -648,6 +652,27 @@ export function profileRowName(item, genre, minN) {
  */
 export const sampleLine = (n, genre, subset) =>
   `${formatCount(n)} stories in ${genre.name}${subset.id === "all" ? "" : ` match “${subset.label}”`}.`;
+
+/** The axis title over the first list's rows (F86): what a dot's number is, with "out of 100" kept on one line. */
+export const axisTitle = (genre) => `How often a story in ${genre.name} is the higher one, out\u00a0of\u00a0100`;
+
+/** Which of a named group's two bars is the genre's (quick win 5). */
+export const mixLine = (genre) => `A different mix: ${genre.name} above, all genres below`;
+
+/**
+ * The note under the first list (F84, F86, F87), in three parts, the middle one the link to how a difference is decided
+ * (never broken inside): "Each dot compares the story in Romance with a story from all genres; every story counts, not
+ * only the medians (" · "how this is decided" · "). Gray dots, in the topics below, show no clear difference. Tap a row
+ * for every genre’s numbers." In an open topic, when no list is shown, the gray dots are right there (`inTopic`);
+ * "Click" on a device that can hover (`tap` false).
+ */
+export function profileNote(genre, { inTopic = false, tap = false } = {}) {
+  return [
+    `Each dot compares the story in ${genre.name} with a story from all genres; every story counts, not only the medians (`,
+    "how\u00a0this\u00a0is\u00a0decided",
+    `). Gray dots${inTopic ? "" : ", in the topics below,"} show no clear difference. ${tap ? "Tap" : "Click"} a row for every genre’s numbers.`,
+  ];
+}
 
 /**
  * The heads of the two number columns: wide, the genre's name in up to two lines of `width` px (12 px, 600; a line may

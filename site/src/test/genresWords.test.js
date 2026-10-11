@@ -10,10 +10,16 @@ import {
   chartAnnouncement,
   chartQuestionText,
   genreProfile,
+  axisTitle,
   genreRows,
+  mixLine,
   profileColumns,
+  profileNote,
   profileRowName,
+  profileTakeaway,
   rowDetails,
+  sampleLine,
+  takeawayLine,
 } from "../lib/genres.js";
 import { CAUSAL, UK_SPELLINGS } from "./scans.js";
 import { realMeta } from "./fixtures.js";
@@ -43,7 +49,14 @@ function sentences(meta, file) {
     const genre = meta.genres.find((g) => g.id === file.genres[gi]);
     add(profileAnnouncement(meta, file, { genre: genre.id, sub: file.s }));
     if (file.n[gi] < meta.min_n) continue;
-    for (const item of genreProfile(meta, file, gi).items) {
+    // the top of the answer and the key in the lists
+    const p = genreProfile(meta, file, gi);
+    add(sampleLine(file.n[gi], genre, meta.subsets.find((s) => s.id === file.s)));
+    for (const line of profileTakeaway(p)) add(`${line.mark} ${takeawayLine(line)}`);
+    add(axisTitle(genre));
+    add(mixLine(genre));
+    for (const inTopic of [false, true]) for (const tap of [false, true]) add(profileNote(genre, { inTopic, tap }).join(""));
+    for (const item of p.items) {
       // "One genre"'s rows: the unit line, the two columns and the name
       const cols = profileColumns(item);
       add(cols.unit);

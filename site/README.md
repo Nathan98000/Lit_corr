@@ -17,10 +17,13 @@ over All genres' bar), and, for characteristics where most stories score 0, one 
 median among its stories with any, then that median and how many have any. ▲ ▼ ≠ mark a genre that clearly differs, in
 a column beside its name; the line above the chart says the order ("Genres in alphabetical order", or by median or
 share with its A–Z / By … switch); under the chart, "Download PNG" and "Open in Explore →". "What stands out about
-stories in [Romance]?" lists the characteristics that set one genre apart from all genres, the largest differences
-first, each row on one scale (how often the genre's story is the higher one against a story from all genres, out of
-100, with the no-difference zone at 40–60) and with both genres' values; then every characteristic by topic, and "Copy
-link". On phones a tapped genre's numbers stay at the bottom of the screen while its chart is in view. The tab is
+stories in [Romance]?" gives the genre's number of stories and a line for each direction (▼ Lower, ▲ Higher, ≠ A
+different mix), then lists the characteristics that set the genre apart from all genres, the largest differences
+first. Each row has a dot on one scale (how often a story in the genre is the higher one against a story from all
+genres, out of 100, with the no-difference zone at 40–60 bracketed), the genre's and all genres' numbers in two columns
+with the unit under the label, and "›" for every genre's numbers; the first list's axis title and the note under it are
+the key. Then every characteristic by topic ("1 of 28 stand out"), where gray dots show no clear difference, and "Copy
+link"; Back from every genre's numbers finds the open topics and the lists shown in full as they were. On phones a tapped genre's numbers stay at the bottom of the screen while its chart is in view. The tab is
 named after the question on screen. A genre "clearly differs" only by the rule in How it works (`meta.genre_rule`): a
 rank-biserial correlation of at least 0.2 against all genres (for named groups, a total variation distance of at least
 0.2), clear at the 99.9% level, with at least 30 stories; a genre with fewer is named as too few to compare.
@@ -70,8 +73,8 @@ third). A chart loads one file of about 15–20 KB; the Genres page one file of 
 
 The **first load** is the HTML, the main script, the CSS, the heading font, `meta.json` and the first chart file:
 **148.5 KiB of gzip response bodies in 6 requests** (October 10, 2026, after the simplification and "Download PNG";
-the Genres page's own code, styles and files load only when it is opened: a visit that starts on it is 201.8 KiB in 8
-requests; no layout shift). The budget is **155 KiB of gzip response
+the Genres page's own code, styles and files load only when it is opened: a visit that starts on it is 204.1 KiB in 8
+requests since "One genre"'s review, 201.8 before; no layout shift). The budget is **155 KiB of gzip response
 bodies** for that set, measured on the built site served with gzip (the design review's `firstload.mjs` with
 `serve.mjs`; response headers are not counted).
 
@@ -132,7 +135,8 @@ configuration.
 src/
   App.jsx                 page shell: masthead (How it works leaves it below 560 px, Explore below 360 px), routes,
                           the headline (kicker), footer; remembers the Genres page's last address and the last genre
-                          chosen in the visit (the default of "One genre")
+                          chosen in the visit (the default of "One genre"); an address changed in place keeps the
+                          history entry's state (where "One genre" keeps its open topics)
   genres.css              the Genres page's styles, loaded with its code
   components/
     Explorer.jsx          the explorer: keeps the shown chart until the next one loads, answer heading, takeaway,
@@ -165,9 +169,11 @@ src/
     GenreSwitch.jsx       (lazy) the two-option switches (the view; the order, drawn compact)
     GenreDetails.jsx      (lazy) a genre's details: a compact card on wider charts, or on phones a line that sticks to
                           the bottom of the screen while its chart is in view; the link to the genre's own view
-    GenreProfile.jsx      (lazy) one genre against all genres: stand-outs, the key, lists and topics with each row on
-                          one 0–100 scale, every characteristic by topic, and "Copy link"; the small-sample and
-                          too-few states
+    GenreProfile.jsx      (lazy) one genre against all genres: the sample line and the takeaway (▼ ▲ ≠), the lists
+                          with the first one's axis title and note, every characteristic by topic, and "Copy link";
+                          each row a dot on one 0–100 scale with two number columns, on one grid for the whole page
+                          (stacked under a 900 px chart); the open topics and lists shown in full kept in the history
+                          entry, so Back returns to them; the small-sample and too-few states
     ChartNotes.jsx        the totals box (story age) with its switch, and the three explanations (disclosures at every
                           width)
     DownloadPng.jsx       "Download PNG": the button, its lazy code and its failure message (Explore and "One
@@ -182,8 +188,9 @@ src/
     data.js               loading and reading the aggregates (loadGenres and prefetchGenres for the Genres page)
     rangeLayout.js        the chart's geometry (pure; tested for overlapping labels), with the Genres page's options
                           (a mark column, a value column with its heading, a Stories column, two-line names in a
-                          phone column)
-    genres.js             (lazy) reading genres/<included>.json, every sentence of the Genres page, and numberFormat
+                          phone column); STACKED, the chart width under which "One genre"'s rows stack
+    genres.js             (lazy) reading genres/<included>.json, every sentence of the Genres page (One genre's
+                          columns, unit lines, row names and the dots' numbers' places too), and numberFormat
                           (one number format per chart)
     genreLayout.js        (lazy) the geometry of the 100% bars (with the groups' names and their inks) and of the
                           mostly-zero chart, and their overlap checks
@@ -231,6 +238,8 @@ License 1.1 (`public/fonts/OFL.txt`, taken from `@fontsource/source-serif-4` 5.3
 - Motion is switched off under "reduce motion": another genre glides the marks and the axis together (one scale
   in every frame; the printed values fade in at the end), another measure or characteristic cross-fades, the Genres
   page's rows glide to a new order, and scrolling is smooth.
+- "Show fewer" in "One genre" is the one control that moves the page, on purpose: when the rows it hides take it off
+  the screen, its list's heading is brought into view (at once under reduced motion); focus stays on it.
 - Opening a menu, moving through it or choosing from it never moves the page: the menus scroll inside themselves,
   every focus change prevents scrolling, and a shorter chart keeps the scroll position.
 - "Download PNG" draws the chart as the page shows it, at rest (no hover, tap or glide), from its own `<svg>` and the

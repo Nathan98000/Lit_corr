@@ -1,8 +1,9 @@
 # View 2 ("One genre"): a review of how easy it is to use and how good it looks
 
 *Phases 0–3 of `STAGE2_ONE_GENRE_REVIEW_PROMPT.md`, October 10, 2026. Reviewed: `main` at `692939e` ("Stage 2 genres
-review: before and after, the README and the prompt"). **Status: review only.** Nothing in `site/`, `litcorr/` or
-`tests/` changed, and nothing was committed.*
+review: before and after, the README and the prompt"). **Status: approved and implemented** on branch `one-genre` (from
+`main` at `0d8611d`, October 10–11, 2026), following `STAGE2_ONE_GENRE_IMPLEMENTATION_PROMPT.md`: R3, S1 and T1 with the
+quick wins. Not pushed. What was built, measured and left open is in section 10.*
 
 - **A branch to know about.** While I wrote this, your working copy moved to `simplify-png`: eleven commits after
   `692939e`, since merged into `main` as `0d8611d`. On View 2 it removes three things this review covers:
@@ -923,3 +924,224 @@ Chain Stories (2020 or later) and Romance at 320 px, and
    "Show all", a topic, Copy link) and VoiceOver on three rows.
 8. **`simplify-png`.** If it merges, I'd drop F95, I14 and the table half of F92. F93's line matters more then: only
    the rows' screen-reader names would still give the genre's sample size.
+
+---
+
+## 10. Before and after
+
+Implemented on branch `one-genre`, made from `main` at `0d8611d` (the review itself is its first commit, `7724cb5`),
+following `STAGE2_ONE_GENRE_IMPLEMENTATION_PROMPT.md`: nine commits after the review's own, the last one this write-up,
+not pushed. At the last commit all three checks pass: `npm test` (356 tests in 29 files, was 299 in 28), `npm run
+build`, and `.venv/bin/python -m pytest` (204 tests, as before). No `site-data` run: nothing under
+`site/public/aggregates/` or the test fixtures changed.
+
+**How it was measured.** Copies of the review's scripts and of the earlier rounds', run from a scratch folder outside
+the repository with playwright-core 1.56, axe-core 4.10 and Lighthouse 12.8, in the headless Chromium (build 1243)
+cached on this Mac, against frozen builds of `0d8611d` and of the branch served with gzip. The copies follow the new
+markup and keep each measurement: `p2check.mjs` and `labelsfont.mjs` became one glyph check for View 2
+(`v2glyphs.mjs`), `wraps.mjs` became `v2wraps.mjs`, `approvedmeasure.mjs` and `shape.mjs` became `rows.mjs`; the others
+needed only their paths and selectors. This Mac's sans is San Francisco (the review's container had Inter), and the
+wide font is Verdana standing in for DejaVu Sans, so the table also gives `0d8611d` measured again here. The scripts,
+the copies I changed and their outputs are in `Claude outputs/design-review-2-tools/one-genre-review/after/`.
+
+### 10.1 Headline numbers
+
+| Measure | Review (`692939e`, Linux) | `0d8611d` on this Mac | Approved mock-up | After |
+|---|---|---|---|---|
+| Plot width at 320 / 375 / 768 / 1440 px | 95 / 148 and 118 / 210 and 231 / 522 and 344 (as opened) | lists in full and an open topic: 95 / 118, 118 and 129 / 231, 231 and 244 / 344, 344 and 477 | 284 / 339 / 716 / 564 | **284 / 339 / 716 / 564 px in every list and open topic** |
+| The 50 line's x, the same blocks | 71 / 97 and 82 / 398 and 409 / 734 and 645 | 71 / 82, 82, 88 / 409, 409, 415 / 645, 645, 712 | 160 / 188 / 384 / 750 | **160 / 188 / 384 / 750, one x per width** |
+| Romance's first seven marks' spread at 375 px | 8.9 px | 7.1 (in full) | 20.3 | **20.3 px** (the stems) |
+| "Show all" redrawing a list | 522 → 344 px at 1440 | the same | | **nothing else changes** (rows only) |
+| First row's top / its mark at 375 × 667 | 666 px | 666 / 706 | 655 / 708 | **648 / 701 px** |
+| Page height, Romance, topics closed: 320 / 375 / 768 / 1440 | 2,687 / 2,461 / 1,967 / 2,000 | 2,665 / 2,461 / 1,967 / 2,000 | 3,167 / 2,797 / 2,310 / 2,085 | **3,139 / 2,769 / 2,307 / 2,085** |
+| The same, How To | 2,835 (375) / 2,331 (1440) | 2,915 / 2,704 / 2,240 / 2,255 | | 3,518 / 2,982 / 2,609 / 2,365 |
+| The same, Fetish | 1,235 / 1,127 | 1,366 / 1,235 / 1,170 / 1,127 | | 1,276 / 1,152 / 1,170 / 1,050 |
+| Rows' heights: 375 / 1440 px | 56–69 / 44 | the same | 57–92 / 44–46 | 57–92 / 44–49 (320: 57–108; 768: 55–73) |
+| Numbers on a zone edge or the 50 line, every genre, every topic open | 3,710 of 5,982 at 375; 1,187 at 1440 | 3,710 of 5,982 at 375 (8 past the plot's ends); 1,174 at 1440 | 0 of 195 (Romance) | **0 of 6,026 at 375 and 1440; none past the plot's ends** |
+| Glyph boxes (labels, units, marks, numbers, heads, bracket, ticks, dots): 30 genres × All stories, Under 2,000 words and Published 2020 or later × 320, 375, 768 and 1440 px | | | | **0 problems in 360 pages with the site font and 0 with Verdana** (76,328 rows, 73,616 dots' numbers each); 0 at 360 and 720 px (400% and 200% zoom) |
+| Bad breaks, every genre, lists in full, topics open, both fonts | at 375: 700 values ending in "words" alone, 106 lines starting with "·", 57 topic counts broken | | | **0 units broken or ending in a lone word, 0 lines starting or ending with "·", 0 counts broken**, at 320, 375, 768 and 1440 px |
+| The page moving after a control (`snapgenres.mjs`, 375 / 768 / 1280 / 1440) | 0 px | 0 px | | **0 px in 72 cases**; "Show fewer" moves it on purpose, only when its button has left the screen (375 px) |
+| Layout shift, View 2: another genre / another option (slow 4G) | 0.041 (another genre, `feel.mjs`) | 0.028 / 0.002 at 375; 0.002 / 0.009 at 1440 | | **0.004 / 0.002 at 375; 0.002 / 0.000 at 1440**; the rest of `clsgenres.mjs` unchanged (worst 0.057, View 1's option at 375) |
+| Into View 1 and Back (b07's walk) | topic closed; 2,315 → 1,794 px at 375, 1,300 → 909 at 1440 | the same | | **topic open, 2,315 and 1,300 px** |
+| Time to paint at 375 px, 1× / 4× CPU: "Show all 18"; opening Word choice & style (62 rows); another genre | 106 / 225; 69 / 192; 37 / 135 ms | 134 / 165; 63 / 94; 42 / 60 ms | | 95 / 167; 59 / 90; 27–45 / 63–75 ms |
+| Opening the 62-row topic (`topicopen.mjs`), 4× / 6× CPU | | 51–67 / 84–100 ms; one 51 ms task in 1 of 3 runs at 6× | | 66–79 / 82–105 ms; one 53 ms task in 1 of 3 at 4×, a 60–73 ms task at 6× |
+| The first row's and Copy link's place among the Tab stops (1440, topics closed) | 11th / 36th | 11th / 35th | | **10th / 35th**: the key's link no longer comes first |
+| "how this is decided": its tap area | 116 × 17 px | the same | | **118 × 44 px** |
+| axe-core (WCAG 2.0–2.2 A/AA, best practice) | | | | **none in 30 runs**: View 2's states (Romance, a topic open with "Show all", every topic open, How To, Fetish with a topic open, Chain Stories 2020 or later with a topic open, Transgender 2000–2009, a link copied, the error) and View 1, at 375, 768 and 1440 px |
+| Label in name (axe's rule, as Lighthouse runs it), View 2 at 375 and 1440 | passes | passes | | passes (no row has an `aria-label` for it to check) |
+| Lighthouse (mobile), View 2 | | 97 / 100 / 100 / 100; LCP 2.4 s; TBT 0 ms; CLS 0 | | **97 / 100 / 100 / 100; 2.4 s; 0 ms; 0** |
+| Forced colors, light and dark | readable | | | every mark draws: stand-out dots (10 px, Highlight), gray dots (7 px, GrayText), stems, the zone's edges, the 50 line, the numbers on a Canvas halo, the bracket and the ticks |
+| First load (budget 155 KiB of gzip bodies) | | 148.5 KiB, 6 requests | | **148.5 KiB, 6 requests** (the main script +13 bytes gzipped: `App.jsx`'s state-keeping address change and `STACKED`) |
+| A visit that starts on View 2 | | 201.8 KiB, 8 requests | | 204.1 KiB, 8 requests |
+| The Genres chunk, as Vite counts it | 60.5 kB, 18.5 kB gzipped (with the table) | 52.34 kB, 16.57 kB gzipped; CSS 12.48 kB, 3.16 kB | | **58.06 kB, 18.59 kB gzipped; CSS 13.86 kB, 3.48 kB**: +2.0 kB of gzipped JS (the review estimated 2–3 KiB with T2's find box, which isn't built) |
+
+### 10.2 Every finding, quick win and concept
+
+| ID | What changed | Commit | Before → after |
+|---|---|---|---|
+| F81 | One grid for every list and open topic: wide, the label (its unit under it) in 250 px · the plot · 76 + 76 px of numbers · "›"; stacked under a 900 px chart. `valuesWidth`, `--values-w` and `wrap-words` are gone | `3c4ec6c` | three plot widths on one page → one; "Show all" redraws nothing else ([a02](one-genre-review/a02-romance-whole-page-375-1440.png)) |
+| F82 | The stacked row (R2's layout): the label, the two numbers and "›" on one line, the plot across the row under them | `3c4ec6c` | plot 118–148 → 339 px at 375; spread 8.9 → 20.3 px |
+| F83 | The number beside its dot on a halo of the page's color, 8 px from the dot's edge; inside the zone, 8 px outside its edge; near the ends, on the dot's inner side (`numberPlace`) | `3c4ec6c` | 3,710 of 5,982 numbers on a line → 0 ([a04](one-genre-review/a04-numbers-off-the-lines-375-1440.png)) |
+| F84 | Rows that don't stand out: a 1.5 px stem and a 7 px filled dot in `--quiet-mark` (#857f75); the note and the topics' line say what gray dots mean | `3c4ec6c`, `7199d65`, `30e797e` | every bar blue → blue stand-outs, gray rows ([a03](one-genre-review/a03-open-topic-375-1440.png)) |
+| F85 | The two number columns (`profileColumns`): medians trimmed of trailing zeros each on its own, yes/no shares, mostly-zero shares with any (the medians among those only for a stand-out whose share goes the other way: How To's relationship language and repeated five-word phrases with All stories), median bands, the group that differs most; the unit line (`profileUnit`, decision 7) | `3c4ec6c`, `b0c040a` | "73% with any, median 0.709 · all 43%, 0.422 per 1,000 words" → "73%" · "43%" under "stories with any" |
+| F86 | No key: the axis title over the first list's rows, the zone's bracket "40–60: no clear difference", the note after its "Show all" with an unbroken, 44 px "how this is decided"; the mix line only where named groups are compared; "a story in Romance" everywhere | `7199d65` | a three-line key before any row → the key in the lists |
+| F87 | "›" at the end of every row; "Tap a row for every genre’s numbers." ("Click" where the device can hover) | `3c4ec6c`, `7199d65` | 1/6 stand-ins named the row → 6/6 |
+| F88 | The open topics and the lists in full kept in `history.state` with the scroll position, restored before the first paint and, when clamped, the scroll; "Show fewer" brings its list's heading into view when its button has left the screen | `0ceebe6` | 2,315 → 1,794 px and the topic closed → 2,315 and open ([a08](one-genre-review/a08-into-view-1-and-back-375.png)) |
+| F89 | "Every characteristic, by topic" at 23 px with its line; topics in 16 px sans; "{k} of {m} stand out" always ("0 of 13 stand out"), "{n} characteristics" only when nothing in a topic was compared | `30e797e` | counts worded two ways, 57 broken → one way, none broken |
+| F90 | The takeaway in up to three lines: "▼ Lower: …", "▲ Higher: …", "≠ A different mix: …", the lists' own labels, story age skipped when publication year is shown | `7199d65` | one direction for Romance → both |
+| F91 | Not done: T2 (the find box) and the genres before and after were declined (decision 3) | | |
+| F92 | Rows named by their content: "Sexual language: 26 in 100; Romance 7.8, all genres 19.3 per 1,000 words; clearly less. Opens every genre’s numbers."; topics named "Length & structure, 1 of 28 stand out", with no `h4` inside `<summary>`. The table column is moot | `3c4ec6c`, `e44b0e0`, `30e797e` | about 45 words, the medians twice, no "26" → about 20 words with "26 in 100" (named groups' shares: more) |
+| F93 | The sample line: "300 stories in Romance.", "100 stories in Romance match “Published 2020 or later”.", "12 stories in Chain Stories match …" in the small-sample state, none under 10 | `7199d65` | the genre's count nowhere on View 2 → under the heading ([a07](one-genre-review/a07-chain-stories-2020-375.png)) |
+| F94 | The numbers right after the plot (wide); the heading up to 62ch from a 1,000 px window | `3c4ec6c`, `7199d65` | values 118–434 px after the drawn plot → the columns start 12 px after it; the heading on one line at 1440 |
+| F95 | Moot: there is no table (decision 11) | | |
+| F96 | "1 page" through `withUnit`; no unit a label names already; ticks "0 25 50 75 100"; a stand-out's number in 13 px 600 ink; the named group's name under the label | `3c4ec6c` | "all 1 pages", "100 in 100" → gone |
+| Quick wins | 1 F83; 2 F81; 3 F85's trimmed zeros; 4 the note's link; 5 the mix line only with compared named groups; 6 F88 (its table part moot); 7 the gray dots; 8 F89's sizes; 9 F96's units; 10 F94's heading | `3c4ec6c`, `7199d65`, `30e797e`, `0ceebe6` | |
+| R | R3, the lollipop in R2's layout, with a small filled gray dot for rows that don't stand out (decision 1); the stacked row below a 900 px chart (decision 9) | `3c4ec6c` | [a02](one-genre-review/a02-romance-whole-page-375-1440.png), [a09](one-genre-review/a09-768-stacked-row.png) |
+| S | S1 with the key folded into the first list's axis title and note (decision 2) | `7199d65` | [a01](one-genre-review/a01-first-screens-320-375-768-1440.png) |
+| T | T1 (decision 3) | `30e797e` | [a03](one-genre-review/a03-open-topic-375-1440.png) |
+| I12–I14 | Not done (decision 4) | | |
+| Found in the final checks | Each row's and topic's name is one hidden line, so Chrome reads it exactly; a genre's name in a list title breaks after its slash (Verdana pushed Reluctance/NonConsent's heads past the screen); long units and wide labels wrap in balanced lines and "·" never ends a line (138 units with a lone last word at 375); another genre's or option's answer is drawn anew (the layout shifted 0.136 and 0.143 at 1440 when the takeaway changed height) | `e44b0e0`, `4397dff`, `b0c040a`, `0f92c55` | |
+
+### 10.3 After screenshots
+
+Phones at full size; 768 and 1440 px at half size unless labeled. Palette-compressed (64 colors; a02 40, a12 32). The
+"before" panels are `0d8611d` on this Mac.
+
+| View | Screenshot | Beside |
+|---|---|---|
+| The first screens at 320, 375, 768 and 1440 px | [a01](one-genre-review/a01-first-screens-320-375-768-1440.png) | [b01](one-genre-review/b01-first-screens-320-375-768-1440.png) |
+| Romance's whole page at 375 and 1440 px, before and after | [a02](one-genre-review/a02-romance-whole-page-375-1440.png) | [b02](one-genre-review/b02-romance-whole-page-375-1440.png) |
+| An open topic at 375 and 1440 px: gray dots, marks, heads, the mix line | [a03](one-genre-review/a03-open-topic-375-1440.png) | [b03](one-genre-review/b03-lists-two-scales-375-1440.png) |
+| The numbers by the zone's lines, before and after | [a04](one-genre-review/a04-numbers-off-the-lines-375-1440.png) | [b04](one-genre-review/b04-numbers-on-the-lines-375-1440.png) |
+| How To at 375 px | [a05](one-genre-review/a05-how-to-375.png) | [b06](one-genre-review/b06-edge-states-375.png) |
+| Fetish with a topic open | [a06](one-genre-review/a06-fetish-topic-open-375.png) | [b06](one-genre-review/b06-edge-states-375.png) |
+| Chain Stories with "Published 2020 or later" | [a07](one-genre-review/a07-chain-stories-2020-375.png) | [b06](one-genre-review/b06-edge-states-375.png) |
+| Into View 1 and back, before and after | [a08](one-genre-review/a08-into-view-1-and-back-375.png) | [b07](one-genre-review/b07-into-view-1-and-back-375.png) |
+| 768 px, the stacked row | [a09](one-genre-review/a09-768-stacked-row.png) | |
+| Forced colors, light and dark, and 200% zoom | [a10](one-genre-review/a10-forced-colors-and-200-zoom.png) | [b10](one-genre-review/b10-loading-error-zoom-forced.png) |
+| Long genre names at 320 px | [a11](one-genre-review/a11-long-names-320.png) | [b11](one-genre-review/b11-long-names-320.png) |
+| Squint and grayscale, before and after | [a12](one-genre-review/a12-squint-and-grayscale-375-1440.png) | [b12](one-genre-review/b12-squint-and-grayscale-375-1440.png) |
+
+![Romance before and after, 375 and 1440 px](one-genre-review/a02-romance-whole-page-375-1440.png)
+
+![Into View 1 and back, before and after](one-genre-review/a08-into-view-1-and-back-375.png)
+
+### 10.4 Fresh eyes
+
+The review's stand-in test on the built page: three phone and three desktop subagents, each shown only the screenshot
+paths and `fresh-eyes/questions.txt` with the review's situation line, answering in numbered lines. Phone: Romance at
+375 px scrolled through, then two screens with "Dialogue & characters" open; desktop: Romance at 1440 px, two screens,
+then the topic open. Answers verbatim in `fresh-eyes/built.md`; scored with `scores.md`'s rubric. Q9(c) asks about a
+table that no longer exists and isn't scored.
+
+| Page | Q1: both directions | Q1: "the sex comes later" | Q4 | Q5 | Q7 | Q8 | Q9b: the row | Gray dots read as no clear difference | The mix line confused them | Topic counts confused them | Desktop: "the scales differ" |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| Today (review) | 6/6 | 0/6 | 4.5/6 | 6/6 | 6/6 | 6/6 | 1/6 | (no gray marks) | 6/6 | 5/6 | 3/3 |
+| After, second version (review) | 6/6 | 6/6 | 6/6 (median 4/6) | 6/6 | 6/6 | 6/6 | 6/6 | 6/6 | 0/6 | 0/6 | 0/3 |
+| **Built** | **6/6** | **6/6** | **6/6** (median 2/6) | **6/6** | **6/6** | **6/6** | **6/6** | **6/6** | **6/6** | **0/6** | **0/3** |
+
+- **The aims are met**: Q4, Q5, Q7 and Q9b at 6/6, and the gray dots read as "no clear difference" by 6/6 (aim 5/6).
+  Every stand-in rated the page 3 of 5, as in all 60 earlier runs.
+- **New: the mix line over an open topic** confused 6/6. "In the Dialogue topic, 'A different mix: Romance above, all
+  genres below' sits at the top but seems to describe only the last row's multicolored bars." The approved design puts
+  it over a topic whose named-group row is compared; the review's "after" never showed it there. See 10.6.
+- Still, as in the review's "after": "23% vs 17% looks like a real gap" while "Everyday vocabulary 5.86 vs 5.79" stands
+  out (6/6), "medians" is an unfamiliar word (4/6), "Zipf scale" and "ratio (1 = random order)" are jargon (6/6).
+- New smaller remarks: the decimals look uneven once trailing zeros go ("10 against 3.79", 4/6); on phones the ticks
+  come only under each list (3/3 phone); an open topic's 18 gray rows are "a wall" (3/3 desktop).
+
+### 10.5 Judgment calls
+
+1. **The heads under a list's title** below a 328 px chart (a window under 360 px), as the approved mock-up's rule: at
+   375 px the chart is 343 px, and the approved image keeps the heads on the title line there.
+2. **A dot's number 8 px from the dot's edge**, as written (the mock-up measured 8 px from its center); inside the
+   zone, 8 px outside the zone's edge, as in the mock-up.
+3. **A dot at exactly 50** (r = 0) counts as the higher side: its number goes right of the zone.
+4. **"Each dot compares the story in Romance …"** rather than "the Romance story": a grammar fix built from the
+   genre's name under "a story in {genre} everywhere" ("the Chain Stories story" would misread).
+5. **A row's name is one visually hidden line** holding the whole name, with the visible label, unit, cells and "›"
+   hidden from screen readers: Chrome puts a space before hidden text that follows visible text, so the names read
+   "Sexual language : 26 in 100".
+6. **A topic's name the same way**: one hidden line, "Length & structure, 1 of 28 stand out" (a hidden ", " between
+   the visible parts read "structure , 1 of 28" in Chrome).
+7. **The unit in a row's name is its unit line's text**, after all genres' number through `withUnit`, a scale's text
+   included ("5.79 Zipf scale (higher = more common)"); one that starts with a number follows a comma ("0.468, −1 (all
+   negative) to +1 (all positive)").
+8. **Bands' names in lower case** in a row's name ("median middle"), as the All genres line words them; the visible
+   cell keeps the label's capital.
+9. **A missing median in a mostly-zero name** reads "among those, median 1.19 per 1,000 words in all genres"; the data
+   never has one in the 0–2 rows per option that show the medians.
+10. **Not units:** "1 =" as written, the weekday's "0 = Monday …" and "month (1–12)"; lists of groups (" / ").
+11. **No-break spaces around "·"** in "with any · median among those", so no line starts or ends with it (Verdana broke
+    after it at 320 px).
+12. **Stacked heads stay on one line** at their column's end: in Verdana "Gay Male" is wider than its 58 px estimate.
+13. **A wide head may break after a slash** ("Taboo/" ⏎ "Incest"); with `textWidth`'s generous estimate, Crossdressing,
+    Exhibitionist & Voyeur, Fan Fiction & Celebrities, Toys & Masturbation and Transgender read "Genre" there.
+14. **A list's title breaks after a slash too** (a zero-width space, as the genre select already had; `breakable` moved
+    to `lib/genres.js`).
+15. **Balanced wrapping** for long units and for labels on wider charts; a stacked label keeps normal wrapping, since
+    balanced it split "Anatomical" ⏎ "terms per 1,000 words".
+16. **The first list with dots** carries the axis title and the note (Lower, else Higher); a genre whose only list is
+    "A different mix" (none in the data) would have them in its open topics.
+17. **With no list, an open topic** with a compared named-group row has the axis title, then the mix line: the prompt
+    asks for both.
+18. **The story-age skip works across the lines**: story age goes when publication year is among any line's shown items,
+    and a line left with nothing goes (Transgender with "Under 2,000 words", Fetish with "5,000 words or more").
+19. **The scroll position is kept** when scrolling stops (300 ms), on each change and just before a link inside the
+    answer is followed; `replaceState` errors (Safari limits how often it may run) are caught.
+20. **The scroll is restored only when the browser's own restoration came short** (`scrollY` under the kept position),
+    in a layout effect on mount, with `behavior: "instant"`.
+21. **Every in-place address change in `App.jsx` keeps the entry's state** (`replaceHash`), Explore's and Patterns' too,
+    whose entries' state is empty anyway.
+22. **"Show fewer" looks at its button after its rows go** (a layout effect) and brings the list's heading in with
+    `block: "start"`; focus stays on the button, which can then sit just under the screen's edge.
+23. **Another genre's or option's takeaway and lists are drawn anew** (a keyed fragment): drawn in place, they counted
+    as the page shifting (0.136 and 0.143 at 1440); the heading, where focus goes after "Show all stories", and the
+    topics stay.
+24. **A genre without its numbers** (fewer than 10 stories with a characteristic) shows "–" in its column, hidden from
+    the name, which says "fewer than 10 stories"; rows not compared keep their numbers, muted.
+25. **Tick labels are 12 px when stacked too** (the mock-up's were 11.5), the smallest text on the page as before.
+26. **A topic's marks are 12 px** in their 16 px column, aligned on the label's first line.
+27. **`--quiet-mark` lives in `genres.css`**, which loads with the page, so `styles.css` and the first load don't change.
+28. **`STACKED` lives in `rangeLayout.js` beside `PHONE`**, as asked; with `App.jsx`'s change it adds 13 bytes to the
+    gzipped main script, and the first load still rounds to 148.5 KiB.
+29. **Forced colors**: stand-out marks in Highlight, gray marks in GrayText, numbers in CanvasText on a Canvas halo,
+    the zone's fill as Canvas with its edges in CanvasText, as before.
+30. **The halo is the page's color**, as in the mock-up; on a hovered row it shows faintly against the wash.
+31. **Tests**: this round's are in `oneGenre.test.jsx`; "Show fewer"'s in `noPageMove.test.jsx`; `genresProfile`'s
+    P2 tests follow R3 and S1; the real-data scan covers every new sentence for every genre and option.
+32. **The screenshots** are tall viewports, not Playwright's full-page capture, which on a phone turns "(hover: none)"
+    off for the shot (the note said "Click").
+
+### 10.6 Still open
+
+- **A real phone and VoiceOver** (decision 10): everything was checked in headless Chromium with touch emulation and
+  emulated forced colors, and with Testing Library; not on an iPhone, and not with VoiceOver, TalkBack or NVDA. Safari
+  and Firefox are untested too (`text-wrap: balance` needs Safari 17.5 or Firefox 121; older ones wrap normally).
+- **The mix line in an open topic confused 6/6 stand-ins** (10.4): it sits over the topic's first row, while only one
+  row, the named groups', has the two bars, whose colors have no key on this page. Putting the line right over that
+  row, or keying its groups' colors, would need your yes: the prompt places it over the topic.
+- **What the stand-ins still trip on**, all outside "Copy": the rule judges every story, so "23% vs 17%" can show no
+  clear difference while "5.86 vs 5.79" stands out (6/6); "medians" (4/6); the data's own unit texts "Zipf scale" and
+  "ratio (1 = random order)" (6/6, decision 7 keeps them); uneven decimals once trailing zeros go (4/6); the ticks
+  only under each list on phones (3/3).
+- **One-word last lines in stacked labels**: 1,355 at 375 px and 3,100 at 320 with the site font, as in the approved
+  mock-up's wrapping (`text-wrap: pretty` made it slightly worse). Wide labels: 3 at 1440 (153 before balancing).
+- **Opening the 62-row topic** takes 66–79 ms at 4× CPU (51–67 before), with a 60–73 ms task at 6×: each row has a
+  few more elements (its hidden name, two cells, "›").
+- **Outside View 2's answer, unchanged:** on phones the question's "?" sits alone on a line for Fan Fiction &
+  Celebrities (as in b11), and the kicker's second line starts with "·" (2 of 3 phone stand-ins noticed it).
+- **Chrome keeps `history.state` through a reload**, so a reloaded View 2 also reopens its topics: harmless, and the
+  address still opens a fresh page anywhere else.
+- **A script that changes the genre without focusing the select** (as `effort.mjs` does) leaves focus on the body,
+  since the answer is drawn anew; a keyboard user is always on the select when it changes, and focus stays there.
+
+### 10.7 Not done, on purpose
+
+- **T2**: the find box and the genres before and after (decision 3, F91).
+- **I12–I14** (decision 4).
+- **F95 and F92's table column, and quick win 6's table part**: there is no table on `main` (decision 11).
+- **The hollow gray dot** of the mock-ups: a hollow dot means "fewer than 30 stories" elsewhere (decision 1).
+- **R1, R2's bars and S2**: not chosen.
+- **The D10 word in the unit line** ("later · of the way through the story"): the review's second test found it
+  harder to read, and the mock-up shown dropped it.

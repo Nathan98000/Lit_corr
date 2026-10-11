@@ -804,3 +804,233 @@ change never prints 40 or 60. In bold, the two changes that are not clear with t
 | How To | 136 / 68 | 11 | 8 / 2 / 1 | | Taboo/Incest | 73 / 124 | 22 | 18 / 4 / 0 |
 | Humor & Satire | 101 / 103 | 2 | 2 / 0 / 0 | | Toys & Masturbation | 105 / 87 | 8 | 3 / 5 / 0 |
 | Interracial Love | 73 / 96 | 3 | 3 / 0 / 0 | | Transgender | 19 / 189 | too few | |
+
+## 13. As built
+
+Built on branch `trends-page`, made from `one-genre` at `1756a39` (the proposal is its first commit, `62d8cee`),
+following `STAGE2_TRENDS_PAGE_PROMPT.md`: thirteen commits, the last one this write-up with the prompt, not pushed. At
+every commit `npm test`, `npm run build` and `.venv/bin/python -m pytest tests/test_stage2_site_data.py` pass; at the
+last one `npm test` runs 456 tests in 35 files (360 in 29 at `1756a39`) and the Python suite 213 tests (204). The
+only `site-data` run is the data commit's: 124 new files under `site/public/aggregates/trends/` and `meta.trend`.
+
+**How it was measured.** Copies of the earlier rounds' scripts (axe-core, the glyph checks, taps, snap, layout shift,
+forced colors, the masthead, first-load bodies) and three new ones, run from a scratch folder outside the repository
+with playwright-core in the headless Chromium (build 1243) cached on this Mac, against frozen builds served with gzip.
+This Mac's sans is San Francisco.
+
+### 13.1 Commits
+
+| Commit | What |
+|---|---|
+| `62d8cee` | The proposal and its mock-ups (t01–t12) |
+| `16562fb` | The data: `litcorr/stage2/trends.py`, `trends/<included>/<genre>.json`, `meta.trend`, the Python tests, the fixtures |
+| `e37ecd8` | The shell: addresses, the masthead with five pages and its measured breakpoints, the footer's page line, the lazy page, "Only include" shared with the Genres page |
+| `cfdcb37` | The footer's links spaced as mock-ups t07 and t08 draw them |
+| `f1b9fe7` | View 1 for numbers and yes/no: `trendLayout.js`, the chart, heading, takeaway, fixed-mix line, key, details, keyboard, actions, the PNG |
+| `a7697af` | View 1 for named groups and bands (100% columns) and mostly-zero characteristics (the split chart); the palettes shared |
+| `efbc842` | "One genre" moved into `ComparisonProfile.jsx` unchanged, with its fingerprint and a shared `comparison.css` |
+| `65fd166` | The two shared fixes (a clear change never prints 40 or 60; shares that would print the same get one decimal) |
+| `3c8ad87` | View 2, what changed |
+| `231b2b8` | Explore's "Keep exploring" item, How it works' "Changes over time", the READMEs |
+| `a3bc1e7` | Four fixes from the finishing measurements (13.5) |
+| `f03f60b` | Number charts drawn on their domain, not their outer ticks (13.5) |
+| this one | This write-up, the screenshots and the prompt |
+
+### 13.2 The acceptance numbers, as built
+
+Every number of the prompt's §1.7 reproduces from the built files:
+
+* 180 characteristics: num 114, zero 45, bin 12, band 5, grp 4. 124 files, 3.93 MB raw, **1,642–12,973 bytes
+  gzipped** (All stories: 8,871–12,973). The prompt's 1.6–12.9 KB (8.8–12.9) came from the prototype's files, about 35
+  bytes smaller each: the built files carry the rule (`rule`), as §1.2's format has them. The largest is a fifth under
+  the 16 KB budget.
+* Stories per period, All genres: 903, 1,658, 1,524, 1,565, 3,346. Genre × period cells: 22 of 150 under 30, 4 under 10.
+* All genres, all stories: 26 of 180 clearly changed (21 rose, 5 fell, no named group). The largest: paragraph count, r
+  +0.351 (median 56 → 102). Story length r +0.250 (then 2,810; periods 2,500, 3,010, 3,260, 4,060, 4,100).
+* Not clear: author's note r +0.145 (18.1% → 32.6%); consent language r +0.092; narrative perspective tvd 0.023.
+* Fixed-mix check: 2 verdicts change with all stories (touch words −0.213 → −0.199; build-up of sexual language −0.206
+  → −0.192), and r moves by at most 0.014 among the 26. With the Length options 1, 5 and 4; in "5,000 words or more"
+  all four become clear only with the mix held fixed.
+* Length options, All genres: 8, 16 and 15 of 179 clearly changed.
+* Genres, all stories: 302 of 5,005 comparable pairs; per genre from 2 (BDSM, First Time, Gay Male, Humor & Satire) to
+  23 (Reluctance/NonConsent), median 9.5. Chain Stories and Transgender can't be compared. Romance: 14, story length r
+  +0.385 (2,930 → 5,170).
+* Genres that can't be compared under the Length options: 24, 16 and 29.
+
+Seventeen of the 124 files differ from the prototype's stored output only where a value sits on a rounding midpoint;
+the prototype run again on this Mac gives the built files exactly. The tag counts in How it works, which describe the
+handoff, were checked against it: a median of 10 tags in 2000–04 and 4 in 2005–09, weighted or not (stories from 2005 on
+as a whole: 6), so "before 2005 (a median of 10) and after (4)" stands for the jump.
+
+### 13.3 Measurements
+
+| Measure | Result |
+|---|---|
+| First load (HTML, main script, CSS, font, `meta.json`, the first chart's file) | **149.5 KiB in 6 requests** (148.5 before; budget 155). The Trends page's own code loads only when it is opened |
+| A visit that starts on the page | Trends (either view) **171.1 KiB in 9 requests**; Genres 207.1 KiB in 9 (204.4 in 8 before: the code the two pages share is a chunk of its own) |
+| Trends files | at most **12,973 bytes gzipped** (budget 16 KB) |
+| axe-core (WCAG 2.0–2.2 A/AA, best practice), at 375 and 1440 px | **none in 34 runs**: every View 1 form, a period's details, the fixed-mix line, a genre, too few (Transgender), nothing drawn (How To, 5,000 words or more), the picker open; View 2 for All genres, with a topic open and "Show all", Romance with every topic open, too few (Chain Stories), a link copied; the error |
+| Glyph boxes, View 1: every characteristic × the four options × All genres, Romance, How To, Chain Stories, Transgender and Fan Fiction & Celebrities × 320, 375, 768 and 1440 px | **0 problems in 17,208 charts** (num 10,400, zero 4,128, bin 1,104, grp 368, band 460, too few to draw 748): no text on another, every text inside its chart, every share inside its segment, every mark inside its plot, no sideways scroll |
+| Glyph boxes, View 2: the same genres and options at the same widths, every topic open and every list in full | **0 problems in 96 pages**: 12,480 rows, 12,160 dots' numbers (none on a line or past its plot), 256 mix lines in topics, 272 swatches and 272 keys in place |
+| The chart's own geometry (unit tests): every real number, yes/no, 100% and split chart at 288, 343, 736 and 760 px (split: 288, 343, 712, 720, 1032) | no label on another or outside the chart; every number axis 3–5 ticks with the data on at least 80% of its height |
+| The masthead (`masthead.mjs`), every width from 320 to 1440 px | **no problems at 1,121 widths**; How it works leaves below 602 px, the links tighten below 484, Explore leaves below 414, Patterns below 352; least 8.3 px to spare |
+| Tap areas at 320 and 375 px | every control at least 44 px tall: the key's link 118 × 44, a period's column 47 × 201 (all of it answers), the buttons 44, View 2's rows 75–95, topics 50, the masthead's links 52, the footer's 44. The question's two words are 34–35 px tall, as on the Genres page (the shared sentence) |
+| The page moving after a control (375, 768, 1280, 1440 px) | **nothing a reader is looking at moves in 80 cases** (the picker opened, used and picked from; "Only include"; the genre, on both views; a topic; "Show all"). "Show fewer" moves the page on purpose, as on "One genre" |
+| Layout shift on slow 4G | **worst 0.021** in 16 runs: visits that start on either view, Explore then the masthead's link and the "Keep exploring" item, the view switch, another genre or option on both views |
+| Forced colors, light and dark (375 px) | every mark draws: capsules, dots, the line, bars, segments and their shares, brackets, the split chart's halves, hatching, View 2's dots, stems, zone edges, bars, swatches and keys; the key with system colors |
+| Page height, 375 / 1440 px | View 1: story length 1,076 / 1,004; author's note 1,158 / 1,078; person of the description 1,057 / 970; where sexual language peaks 1,024 / 921; consent (split) 1,537 / 1,000. View 2, All genres: 2,518 / 1,934 (every topic open 16,422 / 10,730); Romance 2,311 / 1,841 |
+| Words (unit tests): every sentence of both views for every characteristic, genre and option | no causal word, UK spelling, gap or note about chance; "clearly" only through the flags; no year written in the page's code |
+
+### 13.4 Screenshots
+
+View 1, numbers (story length), 1440 px:
+
+![View 1, numbers](trends-page/b01-view1-numbers-1440.png)
+
+Yes/no (author's note), named groups (person of the description), bands (where sexual language peaks) and mostly zero
+(consent and check-in language, the split chart), 1440 px:
+
+![View 1, yes/no](trends-page/b02-view1-yes-no-1440.png)
+
+![View 1, named groups](trends-page/b03-view1-named-groups-1440.png)
+
+![View 1, bands](trends-page/b04-view1-bands-1440.png)
+
+![View 1, mostly zero](trends-page/b05-view1-mostly-zero-1440.png)
+
+Numbers at 375 px, and a genre with too few stories (Transgender, 19 from 2000–2009):
+
+![View 1, numbers at 375 px](trends-page/b06-view1-numbers-375.png)
+
+![Too few to compare](trends-page/b08-too-few-375.png)
+
+The fixed-mix line (touch words):
+
+![The fixed-mix line](trends-page/b07-fixed-mix-line-1440.png)
+
+View 2 at 1440 and 375 px:
+
+![What changed, 1440 px](trends-page/b09-what-changed-1440.png)
+
+![What changed, 375 px](trends-page/b10-what-changed-375.png)
+
+The masthead at 320, 375, 560 and 768 px, the footer, and Explore's new item:
+
+![The masthead](trends-page/b11-masthead-320-768.png)
+
+![The footer](trends-page/b12-footer-375.png)
+
+![Keep exploring](trends-page/b13-explore-keep-exploring-1440.png)
+
+A downloaded PNG (`trends-story_words-adult-romance-all.png`):
+
+![A downloaded PNG](trends-page/b14-downloaded-png.png)
+
+### 13.5 Found and fixed while building
+
+* **The details card sat half its width to the left** of its column (`.range-chart .chart-tip` centers the explorer's
+  cards and outranked `.trend-tip`): fixed in `a7697af`.
+* **The comparison's code was in the first load** at the two commits that first extracted it: `ComparisonProfile.jsx`
+  wasn't among `vite.config.js`'s lazy parts, which pulled it and the Genres page's helpers into the main script (about
+  160 KiB, over the budget). Nothing was pushed, so the one-line fix went into the extraction's commit (`efbc842`); no
+  commit is over the budget.
+* **Number charts were drawn on their outer ticks' scale** from `a7697af` to `a3bc1e7`: where the ticks sit inside the
+  domain (the domain kept when growing it to the next tick would leave the data under 80% of the plot), values above
+  the last tick rose past the plot's top, by up to 110 px, in 8,504 of 19,623 number axes. The downloaded PNG of
+  Romance's story length showed it; fixed in `f03f60b`, with a test and a glyph check of every mark.
+* From the finishing measurements (`a3bc1e7`): the key's "how this is decided" answered taps only 17 px tall and broke
+  inside its parentheses at 320 px; a tap on the table under the plot didn't reach its column; the browser anchored the
+  scroll position on a word of the question, so another genre could move the answer by a line at 1440 px; and the key's
+  dot, capsule and hatching drew in the page's color in forced colors.
+
+### 13.6 Judgment calls
+
+**Data and fixtures**
+
+* The periods start at the data's first year, as the prompt words it (2000 today, a five-year boundary either way).
+* The test fixtures get their designed change by reassigning each genre's publication years by dialogue share, so
+  dialogue rises; a new fixture characteristic would have changed `exploreLayoutGuard.test.js`'s fingerprint, which must
+  stay. No fixture genre's mix changes a verdict, so the tests change `fm` to show the fixed-mix line.
+* The thresholds (`TREND_*`) live in `trends.py`, beside the builder.
+
+**The shell**
+
+* The masthead's breakpoints were measured on this Mac with `masthead.mjs`: 602, 484, 414 and 352 px (the proposal's
+  estimates 640, 490, 412 and 350). "To spare" is the room left beyond the row's own 12 px gap.
+* "Only include" moved unchanged from `GenresPage.jsx` to `IncludeSelect.jsx`, used by both pages.
+* The picker's Length & structure topic keeps its own blurb on this page (`keepBlurbs`): without the number of tags and
+  the author's story count it still fits.
+* The kicker holds figure spaces where the years go until `meta.json` arrives, so no year is written in the code.
+* The footer's page line follows mock-ups t07 and t08 (spaced links, no "·").
+
+**View 1**
+
+* One number format per chart, from its own quartiles, as F66 does, but never more decimals than the chart's largest
+  quartile needs for three significant digits (a quartile of 0.993 beside a median of 63.6 doesn't print "63.600").
+  Shares as `formatPercent` writes them, all with one decimal when the chart's largest share is under 10%.
+* The table's values step down from 13 to 12 and 11.5 px (the site's smallest text) where long numbers would crowd a
+  phone's columns (145 of 15,531 charts at 320 px); where even 11.5 px would (3 charts at 320 px, "0.00060" beside
+  "0.0032"), every other value drops a line.
+* Number axes keep three to five ticks; the domain grows to its outer ticks only when the data keep at least 80% of the
+  plot (mock-up t01 grows story length's to 8,000), else the ticks sit inside it (t05 keeps 0 to 0.4, as the Genres
+  page's axes do). The yes/no axis runs to 50% where mock-up t03 drew 40%: the prompt's rule wins.
+* "Fewer than 10" wraps to as many lines as a column needs, its number kept with its word.
+* The yes/no wording takes its phrase from `yes_subject` ("32% with an author's note"; "first-person"), a grammar fix
+  from the data's own field; the yes/no axis title is "{yes_subject}, share of stories", as t03.
+* The numbers line shows only when the windows were compared; with too few in every period the button offers all
+  stories when an option is on, else All genres.
+* A period's details are a card beside its column (at the plot's top, on the side with more room), the line under the
+  chart on phones; the periods take two lines below 58 px columns (375 px).
+* Named groups and bands stack bottom-up in their own order, their shares in segments at least 16 px tall with an ink;
+  they have no axis title (t04). The key is one list (groups, hatching, brackets), so the PNG keeps it; t04 drew the
+  brackets' line first. A named group's colors rank its shares in 2000–2009, so View 1 and View 2 color each group
+  alike (by all periods when 2000–2009 has too few stories); ranks differ by genre, so a group's color can change with
+  the genre.
+* The split chart is one svg, so the PNG keeps both halves; side by side when the chart is at least 712 px wide (728 on
+  a 760 px screen, 713 just above it, where the page's sides grow from 16 to 24 px). A period is one row across both
+  halves, its details in the Genres page's words ("11% with any · among those, median …"), its card beside the half
+  under the pointer. The halves' axis titles are "Share of stories" and the plain unit (t05), else the label.
+* The key's "Share of stories" is a bar with its dot (t03 drew a dot, which the split chart's median needs); the split
+  chart's key is Share of stories · Median · Interquartile range (t05's "Share, median" isn't in the copy).
+* The palettes moved from `genres.css` to `palettes.css`, and "One genre"'s styles to `comparison.css`, both imported by
+  `genres.css` and `trends.css`, so each page loads what it did; the Genres page renders pixel for pixel as before in 14
+  views (named groups, bands, a Length option; "One genre" for Romance, How To, Fetish and Chain Stories with every
+  topic open, at 1440 and 375 px).
+
+**The shared comparison and View 2**
+
+* The fingerprint covers Romance, How To, Fetish and Chain Stories, each with all stories and with "Published 2020 or
+  later", wide and stacked, every topic closed and then one open (a different topic per genre, for every kind of row);
+  for the open state it stores the topic's own markup. 16 files, 788 KB.
+* A row's link is a function the page passes (`row.link`), so every row keeps the same element.
+* `comparisonBar` takes the row's flag and the zone. The shares fix also pairs every group's two shares in a named
+  group's row name, so the name still says each visible number (F92); 82 of the 946 Genres rows it changes still read
+  the same with one decimal.
+* View 2's mix line is "One genre"'s, relabeled from the windows: "A different mix: 2020 or later above, 2000–2009
+  below" over its list, "2020 or later above, 2000–2009 below" over a row in a topic. The copy table has no line for
+  it; its words are the sides' names.
+* View 2's columns run in time's order (2000–09, then 2020+, the second muted, as t07). A list's title breaks after
+  "2000–" at 375 px, as t08 shows.
+* Too few for View 2 comes from the windows' counts; there is no "close to all genres" line (the heading says "No
+  characteristic clearly changed").
+
+**Links in and words**
+
+* Explore's item takes its words from `wording.js`, so the first load gains only the item (+0.13 KB gzipped).
+* A word joiner keeps each range of years in How it works on one line.
+* The words scan bans "at random" and "randomly" rather than "random", which the data's own unit "ratio (1 = random
+  order)" uses.
+* The question is no longer a scroll anchor on this page (`overflow-anchor: none`).
+
+### 13.7 Still open
+
+* **A real phone and VoiceOver.** Everything above ran in headless Chromium; the sticky details line, the tap targets
+  and the live region's words want an iPhone with VoiceOver and an Android phone with TalkBack.
+* **Safari for the PNG.** "Download PNG" was checked in Chromium only; Safari may open the image instead of saving it.
+* **The tie-uncorrected standard error** (§5.1): `rank_biserial_se` assumes no ties, so where many stories tie (yes/no,
+  mostly zero, bands, small whole numbers) the test is stricter than 99.9%, on this page and the Genres page alike; a
+  tie-corrected standard error would be a change for both.
+* **The question's words** are 34–35 px tall tap targets on every page with the sentence.
+* **A named group's color** can change when the genre does, since its colors rank its shares in the genre's 2000–2009.
+* **82 rows** of the Genres page (and some of View 2) read the same even with one decimal.
+* **A visit that starts on the Genres page** makes one more request than before (the chunk it shares with this page).

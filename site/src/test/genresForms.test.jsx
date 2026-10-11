@@ -96,7 +96,7 @@ describe("named groups: 100% bars", () => {
     expect(document.querySelector(".all-line").textContent).toMatch(/^All genres: First person \(I\) \d+%, .* Mixed \d+%\.$/);
     const rows = [...chart.querySelectorAll(".row")];
     expect(rows.map((r) => r.getAttribute("aria-label").split(":")[0])).toEqual(["All genres", "Fetish", "Romance", "Tiny Genre"]);
-    expect(rows[2].getAttribute("aria-label")).toMatch(/^Romance: First person \(I\) \d+%, .*, 120 stories, median age [\d.]+ years, a clearly different mix from all genres$/);
+    expect(rows[2].getAttribute("aria-label")).toMatch(/^Romance: First person \(I\) \d+%, .*, 120 stories, a clearly different mix from all genres$/);
     expect(rows[2].querySelector(".gmark").textContent).toBe("≠");
     expect(rows[1].querySelector(".gmark")).toBeNull();
     // the mark's column sits between the name and the bar
@@ -185,7 +185,7 @@ describe("ordered bands: 100% bars from light to dark", () => {
     const romance = [...document.querySelectorAll(".genre-mix .row")][2];
     expect(romance.querySelector(".gmark").textContent).toBe("▲");
     expect(romance.getAttribute("aria-label")).toBe(
-      "Romance: median 6–20, 1 story 10%, 2–5 20%, 6–20 30%, 21–50 40%, 120 stories, median age 11.5 years, clearly higher than all genres",
+      "Romance: median 6–20, 1 story 10%, 2–5 20%, 6–20 30%, 21–50 40%, 120 stories, clearly higher than all genres",
     );
     expect(screen.queryByRole("radiogroup", { name: "Order" })).toBeNull(); // bands are not put in order
     // the legend keeps the general words, whatever the band's own words (Later / Earlier for the peak positions)
@@ -240,7 +240,7 @@ describe("mostly zero: one chart (D6, concept M1)", () => {
     expect([...romance.querySelectorAll(".gval")].map((t) => t.textContent)).toEqual([expect.stringMatching(/^[\d.]+$/), expect.stringMatching(/^\d+%$/)]);
     expect(romance.querySelector(".share-bar")).toBeTruthy();
     expect(romance.getAttribute("aria-label")).toMatch(
-      /^Romance: \d+% with any, among those, median [\d.]+ per 1,000 words, interquartile range [\d.]+–[\d.]+, 120 stories, median age [\d.]+ years, clearly higher than all genres$/,
+      /^Romance: \d+% with any, among those, median [\d.]+ per 1,000 words, interquartile range [\d.]+–[\d.]+, 120 stories, clearly higher than all genres$/,
     );
     expect(rows[3].querySelector(".gnone").textContent).toBe("Fewer than 10 stories");
     expect(chart.querySelector(".reflab").textContent).toMatch(/^All genres: [\d.]+$/);
@@ -268,7 +268,6 @@ describe("mostly zero: one chart (D6, concept M1)", () => {
       "Median among those",
       "Interquartile range among those",
       "Stories",
-      "Median age",
     ]);
   });
 
@@ -307,6 +306,39 @@ describe("mostly zero: one chart (D6, concept M1)", () => {
     const few = { ...entry, z: [[40, 0.38, 1, 2, 3], [8]] };
     const r2 = genreRows({ genres: [{ id: "all", name: "All genres" }, { id: "g", name: "G" }] }, { genres: ["all", "g"], age: [5, 6], rule: { min_n: 30 }, c: { x: few } }, "x");
     expect(r2[1].stats).toEqual({ n: 50, above: 8, share: 0.16 });
+  });
+});
+
+describe("no median age in a genre's details, in any form (decision 4)", () => {
+  const FORMS = [
+    ["dlg_word_share", ".genre-chart.kind-num"],
+    ["dlg_has_dialogue", ".genre-chart.kind-bin"],
+    ["emo_anger_per_1k", ".genre-any"],
+    ["pov_class", ".genre-mix.kind-grp"],
+    ["author_stories_count", ".genre-mix.kind-band"],
+  ];
+
+  it.each(FORMS)("%s: not in the card, the phone's line or the rows' names", async (v, chart) => {
+    await openGenres(`#/genres?var=${v}`, 1032);
+    let rows = [...document.querySelectorAll(`${chart} .row`)];
+    expect(rows).toHaveLength(4);
+    for (const row of rows) expect(row.getAttribute("aria-label")).not.toMatch(/median age|years/);
+    fireEvent.click(rows[2]); // Romance
+    const card = document.querySelector(".genre-tip");
+    expect(card.querySelector("strong").textContent).toBe("Romance");
+    expect([...card.querySelectorAll("dt")].map((d) => d.textContent)).not.toContain("Median age");
+    expect(card.textContent).not.toMatch(/median age|years/i);
+    expect([...card.querySelectorAll("dt")].pop().textContent).toBe("Stories");
+
+    vi.restoreAllMocks();
+    clearCache();
+    document.body.innerHTML = "";
+    await openGenres(`#/genres?var=${v}`, 343);
+    rows = [...document.querySelectorAll(`${chart} .row`)];
+    fireEvent.click(rows[2]);
+    const line = document.querySelector(".genre-line");
+    expect(line.textContent).toMatch(/^Romance /);
+    expect(line.textContent).not.toMatch(/median age|years/i);
   });
 });
 

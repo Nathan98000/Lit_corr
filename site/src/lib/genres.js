@@ -356,9 +356,8 @@ export function allGenresLine(rows, variable, entry) {
 // ----------------------------------------------------------------------------------------------------- details
 /**
  * A genre's numbers for its details card, details line, row name and table: `items` ([label, value] pairs: the
- * numbers, then Stories and Median age), `comparison` (see comparison(); the card says "Compared with all genres:"
- * and its `short` words), `name` (the row's accessible name) and `line` (the phone's details line, without the
- * genre's name).
+ * numbers, then Stories), `comparison` (see comparison(); the card says "Compared with all genres:" and its `short`
+ * words), `name` (the row's accessible name) and `line` (the phone's details line, without the genre's name).
  */
 export function rowDetails(row, variable, entry, minN) {
   const kind = entry.k;
@@ -394,11 +393,9 @@ export function rowDetails(row, variable, entry, minN) {
       said.push(`${label} ${formatPercent(s.shares[b])}`);
     });
   }
-  const stories = `${formatCount(s.n)} stories`;
-  const age = formatYears(row.age);
-  const items = [...numbers, ["Stories", formatCount(s.n)], ["Median age", age]];
+  const items = [...numbers, ["Stories", formatCount(s.n)]];
   const cmp = comparison(row, variable, kind, minN);
-  const parts = [...said, stories, `median age ${age}`, ...(cmp ? [cmp.long] : [])];
+  const parts = [...said, `${formatCount(s.n)} stories`, ...(cmp ? [cmp.long] : [])];
   return { items, comparison: cmp, name: `${name}: ${parts.join(", ")}`, line: `${parts.join(" · ")}.` };
 }
 

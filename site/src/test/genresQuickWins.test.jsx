@@ -125,7 +125,6 @@ describe("the desktop card (F70)", () => {
       ["Median", "4,390 words"],
       ["Interquartile range", "2,250–8,150"],
       ["Stories", "300"],
-      ["Median age", "10.7 years"],
     ],
     comparison: { short: "No clear difference" },
     line: "",
@@ -134,7 +133,7 @@ describe("the desktop card (F70)", () => {
   it("puts its numbers two pairs to a line, about 140 px tall", () => {
     expect(cardHeight(row, numbers)).toBeLessThanOrEqual(140);
     const groups = { ...numbers, items: [...numbers.items, ["A", "1%"], ["B", "2%"], ["C", "3%"], ["D", "4%"], ["E", "90%"]] };
-    expect(cardHeight(row, groups) - cardHeight(row, numbers)).toBe(3 * 19); // nine numbers: five lines
+    expect(cardHeight(row, groups) - cardHeight(row, numbers)).toBe(2 * 19); // eight numbers: four lines
   });
 
   it("is as wide as its content, up to 420 px", () => {

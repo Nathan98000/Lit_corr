@@ -316,7 +316,7 @@ describe("the chart", () => {
     const values = [...document.querySelectorAll(".genre-chart .gval")].map((t) => t.textContent);
     expect(values.slice(0, 3).every((v) => /^\d+%$/.test(v))).toBe(true);
     expect(rowNames()[1]).toMatch(
-      /^Fetish: median \d+%, interquartile range \d+%–\d+%, 150 stories, median age 4\.1 years, clearly more dialogue than all genres$/,
+      /^Fetish: median \d+%, interquartile range \d+%–\d+%, 150 stories, clearly more dialogue than all genres$/,
     );
     expect(rowNames()[2]).toMatch(/, clearly less dialogue than all genres$/);
   });
@@ -469,7 +469,7 @@ describe("details and the keyboard", () => {
     expect(document.activeElement).toBe(rows[1]);
     const card = document.querySelector(".genre-tip");
     expect(card.querySelector("strong").textContent).toBe("Fetish");
-    expect([...card.querySelectorAll("dt")].map((d) => d.textContent)).toEqual(["Median", "Interquartile range", "Stories", "Median age"]);
+    expect([...card.querySelectorAll("dt")].map((d) => d.textContent)).toEqual(["Median", "Interquartile range", "Stories"]);
     expect(card.querySelector(".tip-compare").textContent).toBe("Compared with all genres: Clearly more dialogue");
     const link = within(card).getByRole("link", { name: "What stands out about stories in Fetish? →" });
     expect(link.getAttribute("href")).toBe("#/genres?view=genre&genre=fetish&include=all");
@@ -506,7 +506,7 @@ describe("details and the keyboard", () => {
     fireEvent.click(rows[2]);
     const line = document.querySelector(".genre-line");
     expect(line.textContent).toMatch(
-      /^Romance median \d+% · interquartile range \d+%–\d+% · 120 stories · median age 16\.2 years · clearly less dialogue than all genres\. What stands out about stories in Romance\? → Tap again to close\.$/,
+      /^Romance median \d+% · interquartile range \d+%–\d+% · 120 stories · clearly less dialogue than all genres\. What stands out about stories in Romance\? → Tap again to close\.$/,
     );
     expect(line.querySelector("[aria-live]").textContent).toMatch(/^Romance median/);
     expect(document.querySelector(".genre-tip")).toBeNull();
@@ -558,17 +558,20 @@ describe("details wording", () => {
   it("names every number of a genre, for numbers and yes/no characteristics", () => {
     const words = { id: "story_words", unit: "words", more_word: "Longer", less_word: "Shorter", bins: { type: "ranges" } };
     const entry = { k: "num", fmt: "num", q: [[8987, 1270, 2050, 3610, 6320, 10900]] }; // all genres' numbers set the decimals
-    const row = { i: 5, genre: { id: "adult-romance", name: "Romance" }, all: false, small: false, f: 0, age: 10.7, stats: { n: 300, p25: 2250, median: 4390, p75: 8150 } };
+    const row = { i: 5, genre: { id: "adult-romance", name: "Romance" }, all: false, small: false, f: 0, stats: { n: 300, p25: 2250, median: 4390, p75: 8150 } };
     const d = rowDetails(row, words, entry, 10);
-    expect(d.name).toBe(
-      "Romance: median 4,390 words, interquartile range 2,250–8,150, 300 stories, median age 10.7 years, no clear difference from all genres",
-    );
-    expect(d.line).toBe("median 4,390 words · interquartile range 2,250–8,150 · 300 stories · median age 10.7 years · no clear difference from all genres.");
+    expect(d.name).toBe("Romance: median 4,390 words, interquartile range 2,250–8,150, 300 stories, no clear difference from all genres");
+    expect(d.line).toBe("median 4,390 words · interquartile range 2,250–8,150 · 300 stories · no clear difference from all genres.");
+    expect(d.items).toEqual([
+      ["Median", "4,390 words"],
+      ["Interquartile range", "2,250–8,150"],
+      ["Stories", "300"],
+    ]);
     expect(rowDetails({ ...row, f: -1 }, words, entry, 10).name).toMatch(/clearly shorter than all genres$/);
     expect(rowDetails({ ...row, stats: null }, words, entry, 10).name).toBe("Romance: fewer than 10 stories");
     const yes = { id: "pov_is_first_person", yes_subject: "First-person stories", bins: { type: "levels" } };
     expect(rowDetails({ ...row, stats: { n: 283, share: 0.72 } }, yes, { k: "bin", q: [[8447, 0.571]] }, 10).name).toBe(
-      "Romance: 72% first-person stories, 283 stories, median age 10.7 years, no clear difference from all genres",
+      "Romance: 72% first-person stories, 283 stories, no clear difference from all genres",
     );
   });
 });

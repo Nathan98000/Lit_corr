@@ -337,6 +337,14 @@ for _part, (_noun, _plural) in _PACE_NOUNS.items():
 # The Genres page compares each genre's stories with all genres. Publication month and weekday are left out: their
 # twelve and seven groups can't be compared genre by genre in one chart.
 GENRE_PAGE_EXCLUDED = {"pub_month", "pub_weekday"}
+# The Trends page compares stories over time. Left out: publication year and years online (the time axis itself), the
+# rest of "When published" (the site's calendar, not the writing), the number of tags (the site's tagging changed in
+# 2005) and the author's number of stories (counted when collected, not when published). In meta.json's order.
+TREND_PAGE_EXCLUDED = ("pub_year", "age_years", "pub_month", "pub_weekday", "pub_is_weekend", "meta_tag_count",
+                       "author_stories_count")
+# Its "Only include" options: All stories and the Length options. The Published options would cut the time axis, and
+# the Readership ones select old and new stories differently (old stories have had longer to gather views).
+TREND_SUBSETS = ["all", "short", "medium", "long"]
 # Words for a genre that clearly differs, higher then lower ("▲ Longer: …", "▼ Shorter: …"; "clearly shorter than all
 # genres"). Characteristics not listed say Higher / Lower (yes/no ones: More common / Less common). The five "where …
 # peaks" positions say Later / Earlier, as where the first sex scene starts does.

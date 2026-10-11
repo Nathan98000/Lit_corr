@@ -16,6 +16,11 @@ Output (default site/public/aggregates/):
                              correlation (or, for named groups, the total variation distance) against all genres and
                              whether the genre clearly differs (GENRE_*); plus each genre's number of stories and
                              median age
+  trends/<included>/<genre>.json
+                             the Trends page (trends.py), for All stories and the Length options: for every
+                             characteristic but the left-out ones, per five-year period of publication year the number
+                             of stories and their quartiles or shares, and the stories from 2020 or later compared with
+                             those from 2000-2009 (TREND_*; for All genres also with the genre mix held fixed)
 
 Only summaries leave this step: groups with fewer than MIN_N stories are left out, and no minimum, maximum
 or per-story value is written. "All genres" weights each story by its category's sampling weight, so big
@@ -570,6 +575,8 @@ def _topics(variables: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 
 def build_site_data(handoff: Path | None = None, out_dir: Path | None = None, workers: int = 0) -> dict[str, Any]:
+    from . import trends as T  # (trends imports this module)
+
     t0 = time.time()
     h = load_handoff(handoff or latest_handoff())
     out_dir = out_dir or DEFAULT_OUT
@@ -596,7 +603,7 @@ def build_site_data(handoff: Path | None = None, out_dir: Path | None = None, wo
     subsets = {sid: _subset_mask(df, col, lo, hi) for sid, _, _, col, lo, hi in subset_defs}
 
     labels = {v["name"]: W.label_for(v["name"], v["label"]) for v in h.dictionary}
-    variables, tasks, genre_tasks = [], [], []
+    variables, tasks, genre_tasks, trend_tasks = [], [], [], []
     for v in h.dictionary:
         name = v["name"]
         if not v.get("explorer") or name in W.EXCLUDED or name not in df.columns or v["ui_group"] not in W.GROUPS:
@@ -633,9 +640,17 @@ def build_site_data(handoff: Path | None = None, out_dir: Path | None = None, wo
             skip = {sid for sid, _, grp, *_ in subset_defs if subset_conflict(grp, name)}
             genre_tasks.append((name, genre_kind(bins), value_style(name, v["kind"], v.get("unit", "")), x, codes,
                                 len(bins.labels), skip))
+        if name not in W.TREND_PAGE_EXCLUDED:
+            skip = {sid for sid, _, grp, *_ in subset_defs if subset_conflict(grp, name)}
+            trend_tasks.append((name, genre_kind(bins), value_style(name, v["kind"], v.get("unit", "")), x, codes,
+                                len(bins.labels), skip))
 
+    year = _numeric(df["pub_year"])
+    periods = T.trend_periods(year[np.isfinite(year)])
+    trend_subsets = [sid for sid in W.TREND_SUBSETS if sid in subsets]
     shared = {"g": g, "w": w, "Y": Y, "age": _numeric(df["age_years"]), "genre_ids": genre_ids, "subsets": subsets,
-              "rating": [m["format"] == "rating" for m in metrics]}
+              "rating": [m["format"] == "rating" for m in metrics], "year": year, "trend_periods": periods,
+              "trend_subsets": trend_subsets}
     if out_dir.exists():
         shutil.rmtree(out_dir)
     (out_dir / "v").mkdir(parents=True)
@@ -643,12 +658,14 @@ def build_site_data(handoff: Path | None = None, out_dir: Path | None = None, wo
     with ProcessPoolExecutor(max_workers=n_workers, initializer=_init, initargs=(shared,)) as ex:
         futures = [ex.submit(_var_task, *t) for t in tasks]
         genre_futures = [ex.submit(_genre_task, *t) for t in genre_tasks]
+        trend_futures = [ex.submit(T.trend_task, *t) for t in trend_tasks]
         for (name, *_), fut in zip(tasks, futures):
             vdir = out_dir / "v" / name
             vdir.mkdir()
             for sid, text in fut.result().items():
                 (vdir / f"{sid}.json").write_text(text, encoding="utf-8")
         genre_entries = {t[0]: fut.result() for t, fut in zip(genre_tasks, genre_futures)}
+        trend_entries = {t[0]: fut.result() for t, fut in zip(trend_tasks, trend_futures)}
 
     excluded = all_rows[~all_rows["analysis_include"].fillna(False).astype(bool)]
     reasons: dict[str, int] = {}
@@ -667,6 +684,7 @@ def build_site_data(handoff: Path | None = None, out_dir: Path | None = None, wo
                    "included": int(len(df)), "excluded_reasons": reasons},
         "min_n": MIN_N, "small_n": SMALL_N,
         "genre_rule": {"min_r": GENRE_MIN_R, "level": 0.999, "min_tvd": GENRE_MIN_TVD, "min_n": SMALL_N},
+        "trend": T.trend_meta(periods, trend_subsets, list(W.TREND_PAGE_EXCLUDED)),
         "genres": [{"id": "all", "name": "All genres", "n": int(len(df))}] + [
             {"id": r.category_slug, "name": r.category_name, "n": int((genre_col == r.category_slug).sum()),
              "size": None if pd.isna(r.estimated_stories_in_category) else int(r.estimated_stories_in_category)}
@@ -688,6 +706,15 @@ def build_site_data(handoff: Path | None = None, out_dir: Path | None = None, wo
         payload = genre_file(sid, smask, g, w, shared["age"], genre_ids, entries)
         (out_dir / "genres" / f"{sid}.json").write_text(json.dumps(payload, separators=(",", ":"), allow_nan=False),
                                                        encoding="utf-8")
+    pmask = [(year >= lo) & (year <= hi) for lo, hi in periods]
+    for sid in trend_subsets:
+        (out_dir / "trends" / sid).mkdir(parents=True)
+        for gi, gid in enumerate(genre_ids):
+            m = subsets[sid] if gid == "all" else subsets[sid] & (g == gi)
+            entries = {name: per[sid][gid] for name, per in trend_entries.items() if sid in per}
+            payload = T.trend_file(sid, gid, periods, [int((m & pm).sum()) for pm in pmask], entries)
+            (out_dir / "trends" / sid / f"{gid}.json").write_text(
+                json.dumps(payload, separators=(",", ":"), allow_nan=False), encoding="utf-8")
     size = sum(p.stat().st_size for p in out_dir.rglob("*.json"))
     files = sum(1 for _ in out_dir.rglob("*.json"))
     summary = {"variables": len(variables), "metrics": len(metrics), "genres": len(genre_ids) - 1,

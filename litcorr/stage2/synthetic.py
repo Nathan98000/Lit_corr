@@ -2,8 +2,9 @@
 
     python -m litcorr.stage2.synthetic site/src/test/fixtures/aggregates
 
-writes the website test fixtures: the aggregates built from this synthetic handoff. The Python tests also use an
-extended version (`extended=True`) with more characteristics, three of which differ between genres on purpose.
+writes the website test fixtures: the aggregates built from this synthetic handoff, in which dialogue rises with the
+publication year on purpose (the Trends page). The Python tests also use an extended version (`extended=True`) with
+more characteristics, three of which differ between genres on purpose.
 """
 
 from __future__ import annotations
@@ -91,6 +92,14 @@ def synthetic_stories(seed: int = 7, extended: bool = False) -> pd.DataFrame:
     rows.append({**rows[0], "story_key": "kexcluded", "analysis_include": False, "has_text": False,
                  "exclusion_reasons": ["no_text"]})
     df = pd.DataFrame(rows)
+    # the Trends page: dialogue rises with the publication year on purpose. Each genre keeps its own years, handed out
+    # again in the order of its stories' dialogue share (with noise), so no characteristic changes, nor any count of
+    # stories in a "Published" option (drawn after everything above, so every other value stays the same)
+    c = np.random.default_rng(seed + 2)
+    for slug, *_ in GENRES:
+        k = np.flatnonzero((df["queue_category_slug"] == slug).to_numpy() & df["analysis_include"].to_numpy())
+        order = np.argsort(df["dlg_word_share"].to_numpy()[k] + c.normal(0, 0.12, len(k)), kind="mergesort")
+        df.loc[k[order], "pub_year"] = np.sort(df["pub_year"].to_numpy()[k])
     if extended:  # drawn after the stories above, so the default handoff stays the same
         x = np.random.default_rng(seed + 1)
         n = len(df)

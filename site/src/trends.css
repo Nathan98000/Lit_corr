@@ -7,6 +7,12 @@
   margin-top: 4px;
 }
 
+/* the browser never anchors the scroll position on the question's words: another genre or characteristic re-wraps
+   them (a slot moving up a line), and following them would move the answer on the screen */
+.trends-page .question {
+  overflow-anchor: none;
+}
+
 .trend-takeaway p {
   margin: 0;
 }
@@ -110,6 +116,27 @@
   border-top: 0;
 }
 
+/* the key's link: never broken inside its parentheses, and a 44 px target, as the note's link in "What changed" */
+.trend-legend a {
+  position: relative;
+  white-space: nowrap;
+}
+
+.trend-legend a::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: max(100%, var(--target));
+  transform: translateY(-50%);
+}
+
+/* the table under the plot lets a tap through to its period's column */
+.trend-chart .trend-table {
+  pointer-events: none;
+}
+
 /* the key of a share column: a bar with its dot on top */
 .trend-legend .key-share {
   width: 12px;
@@ -209,13 +236,28 @@
     fill: Canvas !important; /* not the hatch, which is a style on the bar */
   }
 
-  .trend-legend .key-bracket {
-    border-color: CanvasText;
+  /* the key draws as the explorer's and the Genres page's do */
+  .trend-legend .key {
+    forced-color-adjust: none;
   }
 
+  .trend-legend .key-median {
+    background: Highlight;
+  }
+
+  .trend-legend .key-iqr,
   .trend-legend .key-share {
     background: Canvas;
     border: 1px solid CanvasText;
+  }
+
+  .trend-legend .key-small {
+    background: Canvas;
+    border: 1px dashed CanvasText;
+  }
+
+  .trend-legend .key-bracket {
+    border-color: CanvasText;
   }
 
   /* the 100% columns keep their palette, as the Genres page's bars do */

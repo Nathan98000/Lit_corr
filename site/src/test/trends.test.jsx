@@ -687,6 +687,23 @@ describe("the PNG", () => {
     expect(css).toMatch(/\.range-chart \.chart-tip\.trend-tip \{\s*transform: none;/);
   });
 
+  it("gives the key's link a 44 px target, never broken, and lets a tap on the table reach its period's column", () => {
+    expect(css).toMatch(/\.trend-legend a \{\s*position: relative;\s*white-space: nowrap;/);
+    expect(css).toMatch(/\.trend-legend a::after \{[^}]*height: max\(100%, var\(--target\)\);/);
+    expect(css).toMatch(/\.trend-chart \.trend-table \{\s*pointer-events: none;/);
+  });
+
+  it("never anchors the scroll position on the question's words, which another genre or characteristic re-wraps", () => {
+    expect(css).toMatch(/\.trends-page \.question \{\s*overflow-anchor: none;/);
+  });
+
+  it("draws the key in forced colors as the explorer's is drawn", () => {
+    const forced = css.slice(css.indexOf("@media (forced-colors: active)"));
+    expect(forced).toMatch(/\.trend-legend \.key \{\s*forced-color-adjust: none;/);
+    expect(forced).toMatch(/\.trend-legend \.key-median \{\s*background: Highlight;/);
+    expect(forced).toMatch(/\.trend-legend \.key-small \{\s*background: Canvas;\s*border: 1px dashed CanvasText;/);
+  });
+
   it("keeps the trends chart's look in forced colors", () => {
     expect(css).toMatch(/@media \(forced-colors: active\) \{[^@]*\.trend-chart \.trend-line,\s*\.trend-chart \.bracket path \{\s*stroke: CanvasText;/);
   });

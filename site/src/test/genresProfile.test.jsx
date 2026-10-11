@@ -10,7 +10,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "../App.jsx";
 import { profileAnnouncement } from "../components/GenreProfile.jsx";
 import { clearCache } from "../lib/data.js";
-import { comparisonBar, genreAgeNote, genreProfile, noDifferenceZone, profileHeading, profileRowDescription, profileTakeaway, profileValues } from "../lib/genres.js";
+import { comparisonBar, genreProfile, noDifferenceZone, profileHeading, profileRowDescription, profileTakeaway, profileValues } from "../lib/genres.js";
 import { fixtureFetch, fixtureMeta, realMeta } from "./fixtures.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -225,41 +225,19 @@ describe("edge states", () => {
     await waitFor(() => expect(window.location.hash).toBe("#/genres?view=genre&genre=romance&include=all"));
   });
 
-  it("notes the story age in the small-sample state too, without its button (F60, F71)", async () => {
-    // the test data's "5,000 words or more": Romance has 15 stories; its stories are 6 years older than all genres'
-    const serve = fixtureFetch();
-    vi.stubGlobal("fetch", async (url) => {
-      const res = await serve(url);
-      if (!String(url).includes("genres/")) return res;
-      const body = await res.json();
-      body.age = [11, 10.8, 17, null];
-      return { ok: true, status: 200, json: async () => body };
-    });
-    await openGenre("#/genres?view=genre&genre=romance&include=long");
-    expect(heading()).toBe("Fewer than 30 stories in Romance match “5,000 words or more”: too few to compare.");
-    expect(document.querySelector(".genre-age").textContent).toBe(
-      "Story age. Stories in Romance have a median age of 17.0 years; stories in all genres, 11.0 years.",
-    );
-    expect(screen.queryByRole("button", { name: /^Compare stories/ })).toBeNull();
+  it("has no story-age note, in the full and the small-sample states, even with ages 6 years apart (decision 3)", async () => {
+    const noNote = () => {
+      expect(document.querySelector(".genre-age, .agebox")).toBeNull();
+      expect(document.querySelector(".genres-page").textContent).not.toMatch(/Story age|median ages?/);
+      expect(screen.queryByRole("button", { name: /^Compare stories/ })).toBeNull();
+    };
+    await openGenre("#/genres?view=genre&genre=romance&include=all");
+    expect(heading()).toMatch(/clearly set Romance apart/);
+    noNote();
+    window.location.hash = "#/genres?view=genre&genre=romance&include=long"; // Romance: 15 stories
+    await waitFor(() => expect(heading()).toBe("Fewer than 30 stories in Romance match “5,000 words or more”: too few to compare."));
+    noNote();
     expect(screen.getByRole("button", { name: "Show all stories" })).toBeTruthy();
-  });
-
-  it("notes the story age when the genre's and all genres' are 3 or more years apart, in any option", async () => {
-    const user = await openGenre("#/genres?view=genre&genre=romance&include=all");
-    expect(document.querySelector(".genre-age").textContent).toBe(
-      "Story age. Stories in Romance have a median age of 17.0 years; stories in all genres, 11.0 years. Compare stories published 2020 or later",
-    );
-    await user.click(screen.getByRole("button", { name: "Compare stories published 2020 or later" }));
-    await waitFor(() => expect(window.location.hash).toBe("#/genres?view=genre&genre=romance&include=y2020"));
-    await waitFor(() => expect(document.querySelector(".genres-page .chart-panel[aria-busy='false']")).toBeTruthy());
-    // whatever the option while the ages are 3 or more years apart (F71); the button only with All stories
-    expect(document.querySelector(".genre-age").textContent).toMatch(/^Story age\. Stories in Romance have a median age of [\d.]+ years; stories in all genres, [\d.]+ years\.$/);
-    expect(screen.queryByRole("button", { name: "Compare stories published 2020 or later" })).toBeNull();
-    const file = { age: [9.3, 19.5, 10.1] };
-    expect(genreAgeNote(file, 1, { name: "Chain Stories" })).toBe(
-      "Stories in Chain Stories have a median age of 19.5 years; stories in all genres, 9.3 years.",
-    );
-    expect(genreAgeNote(file, 2, { name: "Romance" })).toBeNull();
   });
 });
 

@@ -140,9 +140,9 @@ export default function GenresPage({ meta, state, onChange, onNavigate, onHoldSc
     onHoldScroll?.();
     onChange(next);
   };
-  // A button inside the answer that changes it (the story-age note's comparison, "Show all stories") goes away with
-  // the change, so focus moves to the answer's heading, without scrolling (F64); again once the new file is drawn,
-  // since one genre's answer can be drawn anew. "Try again" goes away too: focus moves to the heading it brings.
+  // A button inside the answer that changes it (one genre's "Show all stories") goes away with the change, so focus
+  // moves to the answer's heading, without scrolling (F64); again once the new file is drawn, since one genre's answer
+  // can be drawn anew. "Try again" goes away too: focus moves to the heading it brings.
   const heading = useRef(null);
   const focusHeading = useRef(false);
   const toHeading = () => heading.current?.focus({ preventScroll: true });
@@ -355,7 +355,6 @@ export default function GenresPage({ meta, state, onChange, onNavigate, onHoldSc
           file={file}
           busy={busy}
           onChange={keepPlace}
-          onSwitch={switchFromAnswer}
           onNavigate={onNavigate}
           lastExplore={lastExplore}
           headingRef={heading}

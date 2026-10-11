@@ -1,5 +1,5 @@
-// The Genres page review's quick wins (its section 6): focus after the story-age note's comparison and "Show all
-// stories" (F64), the genres file fetched at once when a visit starts on the page (F68), the compact desktop card
+// The Genres page review's quick wins (its section 6): focus after "Show all stories" (F64; the story-age note's
+// comparison is gone), the genres file fetched at once when a visit starts on the page (F68), the compact desktop card
 // (F70), and a pixel more between a genre's name and its count on phones.
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -16,24 +16,10 @@ import { fixtureFetch } from "./fixtures.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 
-/** The test data with its genres published years apart, so the story-age notes show. */
-function agedFetch(ages = [11, 4.1, 16.2, null]) {
-  const serve = fixtureFetch();
-  const fn = async (url) => {
-    const res = await serve(url);
-    if (!String(url).includes("genres/")) return res;
-    const body = await res.json();
-    body.age = ages;
-    return { ok: true, status: 200, json: async () => body };
-  };
-  fn.calls = serve.calls;
-  return fn;
-}
-
 beforeEach(() => {
   clearCache();
   window.history.replaceState(null, "", "/");
-  vi.stubGlobal("fetch", agedFetch());
+  vi.stubGlobal("fetch", fixtureFetch());
 });
 
 afterEach(() => {
@@ -53,31 +39,8 @@ const answerHeading = () => document.querySelector(".genres-page .chart-title");
 const settled = () => waitFor(() => expect(document.querySelector(".genres-page .chart-panel[aria-busy='false']")).toBeTruthy());
 
 describe("focus after a button that changes the answer (F64)", () => {
-  it("moves to the heading, without scrolling, after the story-age note's comparison in View 1", async () => {
-    const focus = vi.spyOn(HTMLElement.prototype, "focus");
-    const user = await openGenres("#/genres?var=dlg_word_share");
-    await user.click(screen.getByRole("button", { name: "Compare stories published 2020 or later" }));
-    expect(document.activeElement).toBe(answerHeading()); // at once: the button goes with the change
-    await waitFor(() => expect(window.location.hash).toBe("#/genres?var=dlg_word_share&include=y2020"));
-    await settled();
-    expect(document.activeElement).toBe(answerHeading());
-    expect(answerHeading().getAttribute("tabindex")).toBe("-1");
-    expect(focus.mock.contexts.filter((el) => el === answerHeading()).length).toBeGreaterThan(0);
-    for (const [options] of focus.mock.calls.filter((_, k) => focus.mock.contexts[k] === answerHeading())) {
-      expect(options).toEqual({ preventScroll: true });
-    }
-  });
-
-  it("moves to the heading after the story-age note's comparison in View 2", async () => {
-    const user = await openGenres("#/genres?view=genre&genre=romance&include=all");
-    await user.click(screen.getByRole("button", { name: "Compare stories published 2020 or later" }));
-    await waitFor(() => expect(window.location.hash).toBe("#/genres?view=genre&genre=romance&include=y2020"));
-    await settled();
-    expect(document.activeElement).toBe(answerHeading());
-  });
-
   it("moves to the heading of the new answer after “Show all stories”", async () => {
-    const serve = agedFetch();
+    const serve = fixtureFetch();
     vi.stubGlobal("fetch", async (url) => {
       const res = await serve(url);
       if (!String(url).includes("genres/y2020")) return res;
@@ -104,7 +67,7 @@ describe("focus after a button that changes the answer (F64)", () => {
 
 describe("focus after “Try again”", () => {
   it("moves to the heading of the answer it brings", async () => {
-    const serve = agedFetch();
+    const serve = fixtureFetch();
     let fail = true;
     vi.stubGlobal("fetch", async (url) => {
       if (fail && String(url).includes("genres/")) throw new Error("Failed to fetch");
@@ -124,7 +87,7 @@ describe("focus after “Try again”", () => {
 describe("a visit that starts on the Genres page (F68)", () => {
   it("fetches the page's file before meta.json has arrived", async () => {
     const asked = [];
-    const serve = agedFetch();
+    const serve = fixtureFetch();
     let release;
     const metaArrives = new Promise((r) => {
       release = r;

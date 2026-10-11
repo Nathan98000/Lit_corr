@@ -1,8 +1,5 @@
 import { useId, useState } from "react";
 import {
-  AGE_CHARACTERISTICS,
-  ageNoteText,
-  ageSpread,
   allGenresLine,
   chartQuestionText,
   genreRows,
@@ -15,7 +12,7 @@ import {
   takeawayLists,
   tooFewLine,
 } from "../lib/genres.js";
-import { subsetConflict, toHash } from "../lib/urlState.js";
+import { toHash } from "../lib/urlState.js";
 import { bandPalette, mixColors } from "../lib/genreLayout.js";
 import CopyLink from "./CopyLink.jsx";
 import GenreChart from "./GenreChart.jsx";
@@ -25,7 +22,6 @@ import Segmented from "./GenreSwitch.jsx";
 import GenreTable from "./GenreTable.jsx";
 
 export const HOW_DECIDED = toHash("methodology", { section: "genres" });
-const RECENT = "y2020"; // "Published 2020 or later", the age notes' comparison
 
 /**
  * The key of the forms: what the marks and lines mean, and the link to how a difference is decided; for named groups
@@ -125,28 +121,6 @@ export function GenreLegend({ kind, anySmall, smallN, groups = null }) {
 }
 
 /**
- * "Story age." in one paragraph, with its one-tap comparison with stories published 2020 or later as an inline button
- * (F69): only with All stories, and only where the characteristic allows that option (F71).
- */
-export function AgeNote({ meta, variable, sub, text, onCompare }) {
-  const recent = meta.subsets.find((s) => s.id === RECENT);
-  const canCompare = sub === "all" && recent && !(variable && subsetConflict(recent, variable));
-  return (
-    <p className="agebox genre-age">
-      <b>Story age.</b> {text}
-      {canCompare && (
-        <>
-          {" "}
-          <button type="button" className="link-button genre-age-button" onClick={() => onCompare(RECENT)}>
-            Compare stories published 2020 or later
-          </button>
-        </>
-      )}
-    </p>
-  );
-}
-
-/**
  * What order the rows are in, on a line of its own between the legend and the chart (F75), with the A–Z / By …
  * toggle at its right for the forms that can be put in order (D3).
  */
@@ -172,11 +146,10 @@ function OrderLine({ kind, sort, onSort }) {
 
 /**
  * One characteristic in every genre (View 1): the verdict heading, the takeaway (▲/▼ lists in the D10 words, then
- * All genres, then the genres with too few stories to compare), the story-age note when the genres' median ages are 5
- * or more years apart (any option; not for the age itself, F71), the legend, the line that says the order (with the
+ * All genres, then the genres with too few stories to compare), the legend, the line that says the order (with the
  * toggle), the chart for the characteristic's form, its numbers and the actions.
  */
-export default function GenreAnswer({ meta, state, file, busy, onChange, onSwitch, onNavigate, lastExplore, headingRef }) {
+export default function GenreAnswer({ meta, state, file, busy, onChange, onNavigate, lastExplore, headingRef }) {
   const [showNumbers, setShowNumbers] = useState(false);
   const numbersId = useId();
   const variable = meta.variables.find((v) => v.id === state.v);
@@ -188,7 +161,6 @@ export default function GenreAnswer({ meta, state, file, busy, onChange, onSwitc
   const lists = takeawayLists(rows, variable, kind);
   const allLine = allGenresLine(rows, variable, entry);
   const tooFew = tooFewLine(rows, meta.min_n);
-  const spread = AGE_CHARACTERISTICS.includes(variable.id) ? null : ageSpread(file);
   const anySmall = rows.some((r) => r.small);
   const question = chartQuestionText(variable);
   const explore = toHash("explore", {
@@ -243,9 +215,6 @@ export default function GenreAnswer({ meta, state, file, busy, onChange, onSwitc
           )}
           {tooFew && <p className="too-few muted">{tooFew}</p>}
         </div>
-      )}
-      {spread && (
-        <AgeNote meta={meta} variable={variable} sub={state.sub} text={ageNoteText(spread)} onCompare={(sub) => onSwitch({ ...state, sub })} />
       )}
       <GenreLegend kind={kind} anySmall={anySmall} smallN={meta.small_n} groups={groups} />
       <OrderLine kind={kind} sort={state.sort} onSort={(o) => onChange({ ...state, sort: o === "value" ? "value" : undefined })} />

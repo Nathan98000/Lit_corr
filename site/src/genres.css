@@ -21,31 +21,6 @@
   font-weight: 650;
 }
 
-/* the story-age note in one paragraph, its comparison an inline link-style button (F69) whose target is 44 px tall */
-.genre-age {
-  max-width: 62ch;
-  margin: 12px 0 4px;
-  line-height: 1.45;
-}
-
-.agebox .genre-age-button {
-  position: relative;
-  display: inline-block;
-  min-height: 0;
-  font-size: inherit;
-  line-height: inherit;
-}
-
-.agebox .genre-age-button::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 50%;
-  height: max(100%, var(--target));
-  transform: translateY(-50%);
-}
-
 /* what order the rows are in, on a line of its own above the chart, with the order's switch at its right (F75) */
 .order-line {
   display: flex;

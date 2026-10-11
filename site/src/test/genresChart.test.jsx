@@ -1,5 +1,5 @@
-// The Genres page, one characteristic in every genre (View 1): headings, lists, order, marks, the age note, details,
-// the keyboard and the table, for numbers and yes/no characteristics.
+// The Genres page, one characteristic in every genre (View 1): headings, lists, order, marks, details, the keyboard
+// and the table, for numbers and yes/no characteristics; no story-age note.
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { readFileSync } from "node:fs";
@@ -9,9 +9,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "../App.jsx";
 import { clearCache } from "../lib/data.js";
 import {
-  AGE_CHARACTERISTICS,
-  ageNoteText,
-  ageSpread,
   allGenresLine,
   chartHeading,
   chartQuestionText,
@@ -445,35 +442,20 @@ describe("the chart", () => {
   });
 });
 
-describe("the story-age note", () => {
-  it("says the genres' median ages in one paragraph, with the comparison as an inline button (F69)", async () => {
+describe("no story-age note (decision 3)", () => {
+  it("is left out even when the genres' median ages are far apart, in any option", async () => {
+    vi.stubGlobal("fetch", flaggedFetch({ ages: [11, 2, 22, null] }));
     const user = await openGenres("#/genres?var=dlg_word_share");
-    const box = document.querySelector(".genre-age");
-    expect(box.tagName).toBe("P");
-    expect(box.textContent).toBe("Story age. The genres’ median ages run from 4.1 to 16.2 years. Compare stories published 2020 or later");
-    await user.click(screen.getByRole("button", { name: "Compare stories published 2020 or later" }));
+    const noNote = () => {
+      expect(document.querySelector(".genre-age, .agebox")).toBeNull();
+      expect(document.querySelector(".genres-page").textContent).not.toMatch(/Story age|median ages?/);
+      expect(screen.queryByRole("button", { name: /^Compare stories/ })).toBeNull();
+    };
+    noNote();
+    await user.selectOptions(screen.getByLabelText("Only include"), "y2020");
     await waitFor(() => expect(window.location.hash).toBe("#/genres?var=dlg_word_share&include=y2020"));
     await waitFor(() => expect(document.querySelector(".genres-page .chart-panel[aria-busy='false']")).toBeTruthy());
-    // with another option the note stays while the ages are 5 or more years apart (F71), without its button
-    expect(document.querySelector(".genre-age").textContent).toBe("Story age. The genres’ median ages run from 4.1 to 16.2 years.");
-    expect(screen.queryByRole("button", { name: "Compare stories published 2020 or later" })).toBeNull();
-  });
-
-  it("is left out when the ages are close, and on the story's age itself (F71)", async () => {
-    vi.stubGlobal("fetch", flaggedFetch({ ages: [11, 9.1, 13.9, null] }));
-    await openGenres("#/genres?var=dlg_word_share");
-    expect(document.querySelector(".genre-age")).toBeNull();
-  });
-
-  it.skipIf(!real)("shows on the real data whenever the genres' ages span 5 years, except for publication year and story age", () => {
-    const shows = (sub) => {
-      const file = realFile(sub);
-      return Object.keys(file.c).filter((id) => !AGE_CHARACTERISTICS.includes(id) && ageSpread(file)).length;
-    };
-    expect(shows("all")).toBe(183);
-    expect(AGE_CHARACTERISTICS).toEqual(["pub_year", "age_years"]);
-    expect(ageSpread(realFile("short"))).toEqual({ lo: 6.1, hi: 20.2 }); // the review's example: no note before
-    expect(ageNoteText(ageSpread(realFile()))).toBe("The genres’ median ages run from 4.7 to 19.5 years.");
+    noNote();
   });
 });
 

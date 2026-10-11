@@ -1,7 +1,6 @@
 import { useId, useState } from "react";
 import {
   comparisonBar,
-  genreAgeNote,
   genreProfile,
   noDifferenceZone,
   profileComparisonWords,
@@ -15,7 +14,7 @@ import {
 import { mixColors } from "../lib/genreLayout.js";
 import { PHONE, textWidth } from "../lib/rangeLayout.js";
 import CopyLink from "./CopyLink.jsx";
-import { AgeNote, HOW_DECIDED } from "./GenreAnswer.jsx";
+import { HOW_DECIDED } from "./GenreAnswer.jsx";
 import { ViewLink } from "./GenreDetails.jsx";
 import { useScrollBox } from "./GenreTable.jsx";
 import useWidth from "./useWidth.js";
@@ -284,8 +283,7 @@ export const tooFewText = (genre, subset, minN) =>
 
 /**
  * One genre against all genres (View 2): how many characteristics clearly set the genre apart, the three biggest
- * differences, the story-age note when its stories' median age and all genres' are 3 or more years apart (any option,
- * F71), the characteristics lower and higher in the genre (ordered by the size of the difference: this ranks
+ * differences, the characteristics lower and higher in the genre (ordered by the size of the difference: this ranks
  * characteristics within one genre, never genres), the named groups with a different mix, and every characteristic by
  * topic, folded (a topic's rows are drawn when it is opened). Every row opens that characteristic's chart with the
  * genre highlighted. With fewer stories than the rule needs, nothing is compared: the heading says so, then "Show all
@@ -330,7 +328,6 @@ export default function GenreProfile({ meta, state, file, busy, onSwitch, onNavi
   const p = genreProfile(meta, file, gi);
   const count = p.flagged.length;
   const takeaway = profileTakeaway(p.flagged);
-  const ageNote = genreAgeNote(file, gi, genre, 3); // whatever the option (F71); its button only with All stories
   const phone = width < PHONE;
   const zone = noDifferenceZone(file.rule);
   const rowProps = { genre, sub: state.sub, minN, zone, onNavigate, phone, width };
@@ -351,12 +348,7 @@ export default function GenreProfile({ meta, state, file, busy, onSwitch, onNavi
         </h2>
       </header>
       {few ? (
-        <>
-          {/* the story-age note shows whenever the ages differ by 3 years or more, in any option (F71); never with
-              its button here, as a small sample is never one of All stories */}
-          {ageNote && <AgeNote meta={meta} variable={null} sub={state.sub} text={ageNote} onCompare={(sub) => onSwitch({ ...state, sub })} />}
-          {showAll}
-        </>
+        showAll
       ) : (
         <>
           {count === 0 && (
@@ -365,7 +357,6 @@ export default function GenreProfile({ meta, state, file, busy, onSwitch, onNavi
             </p>
           )}
           {takeaway && <p className="takeaway profile-takeaway">{takeaway}</p>}
-          {ageNote && <AgeNote meta={meta} variable={null} sub={state.sub} text={ageNote} onCompare={(sub) => onSwitch({ ...state, sub })} />}
           <ProfileLegend genre={genre} zone={zone} mix={p.items.some((x) => x.kind === "grp")} />
           {p.lower.length > 0 && (
             <ProfileList title={`Lower in ${genre.name} than in all genres`} items={p.lower} rowProps={rowProps} />

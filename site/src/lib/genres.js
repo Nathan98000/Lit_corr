@@ -353,28 +353,6 @@ export function allGenresLine(rows, variable, entry) {
   return [`All genres: ${variable.bins.labels.map((l, b) => `${l} ${formatPercent(all.shares[b])}`).join(", ")}.`];
 }
 
-/** The genres' median ages in this option, when they differ by `gap` years or more: { lo, hi }, else null. */
-export function ageSpread(file, gap = 5) {
-  const ages = file.age.slice(1).filter((a) => a != null);
-  if (ages.length < 2) return null;
-  const lo = Math.min(...ages);
-  const hi = Math.max(...ages);
-  return hi - lo >= gap - 1e-9 ? { lo, hi } : null;
-}
-
-export const ageNoteText = ({ lo, hi }) => `The genres’ median ages run from ${formatFixed(lo, 1)} to ${formatFixed(hi, 1)} years.`;
-
-/** Characteristics that are the stories' age themselves: the story-age note would repeat their chart (F71). */
-export const AGE_CHARACTERISTICS = ["pub_year", "age_years"];
-
-/** The story-age note of one genre, when its median age and all genres' differ by `gap` years or more. */
-export function genreAgeNote(file, i, genre, gap = 3) {
-  const a = file.age[i];
-  const all = file.age[0];
-  if (a == null || all == null || Math.abs(a - all) < gap - 1e-9) return null;
-  return `Stories in ${genre.name} have a median age of ${formatFixed(a, 1)} years; stories in all genres, ${formatFixed(all, 1)} years.`;
-}
-
 // ----------------------------------------------------------------------------------------------------- details
 /**
  * A genre's numbers for its details card, details line, row name and table: `items` ([label, value] pairs: the

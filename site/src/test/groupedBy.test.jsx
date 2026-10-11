@@ -48,7 +48,7 @@ describe("above the first row", () => {
   const metric = fixtureMeta.metrics.find((m) => m.id === "pop_fav_per_1k_views");
   const variable = fixtureMeta.variables.find((v) => v.id === "dlg_word_share");
   const binary = fixtureMeta.variables.find((v) => v.id === "dlg_has_dialogue");
-  const stats = (median, n = 100) => ({ n, age: 6, median, p25: median * 0.6, p75: median * 1.4, mean: median * 1.2 });
+  const stats = (median, n = 100) => ({ n, median, p25: median * 0.6, p75: median * 1.4, mean: median * 1.2 });
   const rows = ["Under 10%", "10–20%", "20–25%", "25%+"].map((label, index) => ({ index, label, stats: stats(0.3 + index / 10) }));
   const draw = (props = {}) =>
     render(<RangeChart rows={rows} overall={stats(0.45)} metric={metric} variable={variable} smallN={30} minN={10} title="T" n={400} {...props} />);

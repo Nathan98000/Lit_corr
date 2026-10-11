@@ -442,47 +442,6 @@ h3 {
   font-size: 14px;
 }
 
-.numbers-wrap {
-  margin-top: 12px;
-}
-
-table.numbers {
-  border-collapse: collapse;
-  width: 100%;
-  max-width: 720px;
-  font-size: 14px;
-  font-variant-numeric: tabular-nums;
-}
-
-.numbers th,
-.numbers td {
-  padding: 6px 12px 6px 0;
-  text-align: right;
-  border-bottom: 1px solid var(--rule);
-  white-space: nowrap;
-}
-
-.numbers th:first-child {
-  text-align: left;
-  font-weight: 500;
-}
-
-.numbers thead th {
-  color: var(--ink-3);
-  font-weight: 600;
-  font-size: 12.5px;
-}
-
-.numbers tr.total th,
-.numbers tr.total td {
-  font-weight: 600;
-  border-bottom: 0;
-}
-
-.numbers td.muted {
-  text-align: left;
-}
-
 /* -------------------------------------------------------- compare genres (D2, D1) */
 .compare-caption {
   margin: 12px 0 6px;
@@ -1342,61 +1301,6 @@ table.numbers {
 .row-details b {
   color: var(--ink);
   font-weight: 600;
-}
-
-/* On phones the numbers table becomes one card per group instead of scrolling sideways (F26). */
-@media (max-width: 559px) {
-  table.numbers,
-  table.numbers tbody,
-  table.numbers tr,
-  table.numbers th,
-  table.numbers td {
-    display: block;
-  }
-
-  table.numbers thead {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip: rect(0 0 0 0);
-  }
-
-  table.numbers tr {
-    border: 1px solid var(--rule);
-    border-radius: var(--radius);
-    background: var(--paper);
-    padding: 8px 12px;
-    margin-bottom: 8px;
-  }
-
-  table.numbers th,
-  table.numbers td {
-    border: 0;
-    padding: 2px 0;
-    text-align: left;
-    white-space: normal;
-  }
-
-  table.numbers th {
-    font-weight: 600;
-    margin-bottom: 2px;
-  }
-
-  table.numbers td {
-    display: flex;
-    justify-content: space-between;
-    gap: 12px;
-  }
-
-  table.numbers td::before {
-    content: attr(data-label);
-    color: var(--ink-3);
-  }
-
-  table.numbers td.muted::before {
-    content: none;
-  }
 }
 
 /* ------------------------------------------------------------ takeaway line */

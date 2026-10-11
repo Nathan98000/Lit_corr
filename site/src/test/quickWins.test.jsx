@@ -97,7 +97,7 @@ describe("F53: the compare table's cell details", () => {
 describe("F54: the keyboard in the chart", () => {
   const metric = fixtureMeta.metrics.find((m) => m.id === "pop_fav_per_1k_views");
   const variable = fixtureMeta.variables.find((v) => v.id === "dlg_word_share");
-  const stats = (median) => ({ n: 100, age: 6, median, p25: median * 0.6, p75: median * 1.4, mean: median * 1.2 });
+  const stats = (median) => ({ n: 100, median, p25: median * 0.6, p75: median * 1.4, mean: median * 1.2 });
   const rows = ["Under 10%", "10–20%", "20–25%", "25%+"].map((label, index) => ({ index, label, stats: stats(0.3 + index / 10) }));
   const draw = () =>
     render(

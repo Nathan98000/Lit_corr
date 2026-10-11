@@ -73,20 +73,19 @@ describe("the explorer", () => {
     await waitFor(() => expect(screen.getByText(/Published 2020 or later/, { selector: ".chart-sub" })).toBeTruthy());
   });
 
-  it("shows the right numbers for each group", async () => {
-    const user = await renderApp("#/explore?genre=fetish&var=dlg_word_share&metric=pop_fav_per_1k_views");
-    await user.click(screen.getByRole("button", { name: "Show the numbers" }));
-    const table = screen.getByRole("table");
+  it("gives each group's numbers in its row's name, and the stories shown in the subtitle", async () => {
+    await renderApp("#/explore?genre=fetish&var=dlg_word_share&metric=pop_fav_per_1k_views");
     const data = fixtureFile("v/dlg_word_share/all.json").g.fetish;
-    const rows = within(table).getAllByRole("row").slice(1);
+    const rows = within(document.querySelector(".range-chart svg")).getAllByRole("img");
     const labels = fixtureMeta.variables.find((v) => v.id === "dlg_word_share").bins.labels;
+    expect(rows).toHaveLength(labels.length);
     labels.forEach((label, i) => {
       const cell = data.b[i];
-      const row = rows[i];
-      expect(within(row).getByRole("rowheader").textContent).toBe(label);
-      if (cell) expect(within(row).getAllByRole("cell")[0].textContent).toBe(cell[0].toLocaleString("en-US"));
+      const name = rows[i].getAttribute("aria-label");
+      expect(name.startsWith(`${label}: `)).toBe(true);
+      if (cell) expect(name).toMatch(new RegExp(`: median .*, interquartile range .*, mean .*, ${cell[0].toLocaleString("en-US")} stories$`));
     });
-    expect(within(rows[rows.length - 1]).getAllByRole("cell")[0].textContent).toBe(data.o[0].toLocaleString("en-US"));
+    expect(document.querySelector(".chart-sub").textContent).toBe(`Fetish · ${data.n.toLocaleString("en-US")} stories`);
   });
 
   it("compares genres as small charts, alphabetical, and opens a genre from its card", async () => {

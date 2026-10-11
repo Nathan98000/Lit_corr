@@ -7,10 +7,10 @@ import { fixtureMeta } from "./fixtures.js";
 
 const metric = fixtureMeta.metrics.find((m) => m.id === "pop_fav_per_1k_views");
 const variable = fixtureMeta.variables.find((v) => v.id === "dlg_word_share");
-const stats = (median, n = 2708, age = 12.2) => ({ n, age, median, p25: median * 0.36, p75: median * 2.36, mean: median * 1.64 });
+const stats = (median, n = 2708) => ({ n, median, p25: median * 0.36, p75: median * 2.36, mean: median * 1.64 });
 const rows = [
   { index: 0, label: "Under 2,000", stats: stats(0.28) },
-  { index: 1, label: "2,000–3,000", stats: stats(0.38, 1625, 10.4) },
+  { index: 1, label: "2,000–3,000", stats: stats(0.38, 1625) },
   { index: 2, label: "3–7", stats: null },
 ];
 

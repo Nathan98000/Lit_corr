@@ -1,4 +1,3 @@
-import { useId, useState } from "react";
 import {
   allGenresLine,
   chartQuestionText,
@@ -19,7 +18,6 @@ import GenreChart from "./GenreChart.jsx";
 import GenreMix from "./GenreMix.jsx";
 import GenreAny from "./GenreAny.jsx";
 import Segmented from "./GenreSwitch.jsx";
-import GenreTable from "./GenreTable.jsx";
 
 export const HOW_DECIDED = toHash("methodology", { section: "genres" });
 
@@ -147,11 +145,9 @@ function OrderLine({ kind, sort, onSort }) {
 /**
  * One characteristic in every genre (View 1): the verdict heading, the takeaway (▲/▼ lists in the D10 words, then
  * All genres, then the genres with too few stories to compare), the legend, the line that says the order (with the
- * toggle), the chart for the characteristic's form, its numbers and the actions.
+ * toggle), the chart for the characteristic's form and the actions.
  */
 export default function GenreAnswer({ meta, state, file, busy, onChange, onNavigate, lastExplore, headingRef }) {
-  const [showNumbers, setShowNumbers] = useState(false);
-  const numbersId = useId();
   const variable = meta.variables.find((v) => v.id === state.v);
   const entry = file.c[state.v];
   const kind = entry.k;
@@ -219,25 +215,7 @@ export default function GenreAnswer({ meta, state, file, busy, onChange, onNavig
       <GenreLegend kind={kind} anySmall={anySmall} smallN={meta.small_n} groups={groups} />
       <OrderLine kind={kind} sort={state.sort} onSort={(o) => onChange({ ...state, sort: o === "value" ? "value" : undefined })} />
       <Chart key={`${variable.id}/${file.s}`} {...chartProps} />
-      <GenreTable
-        meta={meta}
-        variable={variable}
-        entry={entry}
-        rows={ordered}
-        id={numbersId}
-        visible={showNumbers}
-        caption={`The numbers behind the chart: ${question}`}
-      />
       <div className="chart-actions">
-        <button
-          type="button"
-          className="btn"
-          aria-expanded={showNumbers}
-          aria-controls={numbersId}
-          onClick={() => setShowNumbers((x) => !x)}
-        >
-          {showNumbers ? "Hide the numbers" : "Show the numbers"}
-        </button>
         <CopyLink />
         {/* the name starts with the visible words (label in name), then the noun as the question has it (F76) */}
         <a className="btn primary" href={explore} aria-label={`Open in Explore: ${nounOf(variable)}`}>

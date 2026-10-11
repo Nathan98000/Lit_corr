@@ -3,20 +3,16 @@ import {
   comparisonBar,
   genreProfile,
   noDifferenceZone,
-  profileComparisonWords,
   profileHeading,
   profileRowDescription,
-  profileTableCells,
   profileTakeaway,
   profileValueParts,
-  standsOutQuestion,
 } from "../lib/genres.js";
 import { mixColors } from "../lib/genreLayout.js";
 import { PHONE, textWidth } from "../lib/rangeLayout.js";
 import CopyLink from "./CopyLink.jsx";
 import { HOW_DECIDED } from "./GenreAnswer.jsx";
 import { ViewLink } from "./GenreDetails.jsx";
-import { useScrollBox } from "./GenreTable.jsx";
 import useWidth from "./useWidth.js";
 
 const SHOWN = 7; // rows of a list before "Show all"
@@ -226,55 +222,6 @@ function ProfileLegend({ genre, zone, mix }) {
 }
 
 /**
- * Every characteristic's numbers in one genre and in all genres (F80), topic by topic, each topic heading its rows,
- * with the comparison in the rows' words. Drawn when "Show the numbers" opens it, under the button: its 185 rows
- * always in the page made switching to this view more than twice as slow (the rows' names say every number meanwhile).
- */
-function ProfileTable({ genre, topics, minN, id, visible }) {
-  const [box, scrollProps] = useScrollBox(visible, `${id}-caption`);
-  if (!visible) return <div ref={box} id={id} className="numbers-wrap genre-numbers" hidden />;
-  return (
-    <div ref={box} id={id} className="numbers-wrap genre-numbers" {...scrollProps}>
-      <table className="numbers profile-numbers">
-        <caption id={`${id}-caption`} className="visually-hidden">
-          The numbers behind the lists: {standsOutQuestion(genre)}
-        </caption>
-        <thead>
-          <tr>
-            <th scope="col">Characteristic</th>
-            <th scope="col">{genre.name}</th>
-            <th scope="col">All genres</th>
-            <th scope="col">Stories in {genre.name}</th>
-            <th scope="col">Compared with all genres</th>
-          </tr>
-        </thead>
-        {topics.map(({ topic, items }) => (
-          <tbody key={topic.id}>
-            <tr className="profile-topic-row">
-              <th scope="colgroup" colSpan={5}>
-                {topic.label}
-              </th>
-            </tr>
-            {items.map((item) => {
-              const c = profileTableCells(item, minN);
-              return (
-                <tr key={item.id}>
-                  <th scope="row">{item.variable.label}</th>
-                  <td data-label={genre.name}>{c.genre}</td>
-                  <td data-label="All genres">{c.all}</td>
-                  <td data-label={`Stories in ${genre.name}`}>{c.stories}</td>
-                  <td data-label="Compared with all genres">{profileComparisonWords(item, item.r == null)}</td>
-                </tr>
-              );
-            })}
-          </tbody>
-        ))}
-      </table>
-    </div>
-  );
-}
-
-/**
  * "Fewer than 10 stories in Chain Stories match “Published 2020 or later”: too few to compare.", or with the rule's
  * min_n ("Fewer than 30 …") when the genre has its numbers but too few stories to be compared (F60).
  */
@@ -287,13 +234,11 @@ export const tooFewText = (genre, subset, minN) =>
  * characteristics within one genre, never genres), the named groups with a different mix, and every characteristic by
  * topic, folded (a topic's rows are drawn when it is opened). Every row opens that characteristic's chart with the
  * genre highlighted. With fewer stories than the rule needs, nothing is compared: the heading says so, then "Show all
- * stories" and the topics, whose rows give the numbers. Under the topics, "Show the numbers" (every characteristic's
- * numbers as a table, which opens under it) and Copy link (F80).
+ * stories" and the topics, whose rows give the numbers. Under the topics, Copy link (F80).
  */
 export default function GenreProfile({ meta, state, file, busy, onSwitch, onNavigate, headingRef }) {
   const [ref, width] = useWidth(720, "genres");
   const [openTopics, setOpenTopics] = useState(() => new Set());
-  const [showNumbers, setShowNumbers] = useState(false);
   const ids = useId();
   const genre = meta.genres.find((g) => g.id === state.genre);
   const subset = meta.subsets.find((s) => s.id === state.sub);
@@ -383,19 +328,8 @@ export default function GenreProfile({ meta, state, file, busy, onSwitch, onNavi
         })}
       </section>
       <div className="chart-actions">
-        <button
-          type="button"
-          className="btn"
-          aria-expanded={showNumbers}
-          aria-controls={`${ids}-numbers`}
-          onClick={() => setShowNumbers((x) => !x)}
-        >
-          {showNumbers ? "Hide the numbers" : "Show the numbers"}
-        </button>
         <CopyLink />
       </div>
-      {/* under its buttons, unlike View 1's: at 8,000 px or more, a table above them would send the button out of sight */}
-      <ProfileTable genre={genre} topics={p.topics} minN={minN} id={`${ids}-numbers`} visible={showNumbers} />
     </article>
   );
 }

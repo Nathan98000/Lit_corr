@@ -138,7 +138,7 @@ describe("F55: story counts", () => {
 describe("F56: the rating axis", () => {
   const rating = { id: "pop_rating", label: "Average rating", format: "rating" };
   const variable = fixtureMeta.variables.find((v) => v.id === "dlg_word_share");
-  const stats = (median) => ({ n: 100, age: 6, median, p25: median - 0.15, p75: median + 0.1, mean: median });
+  const stats = (median) => ({ n: 100, median, p25: median - 0.15, p75: median + 0.1, mean: median });
   const rows = [4.19, 4.4, 4.65].map((m, index) => ({ index, label: `Group ${index + 1}`, stats: stats(m) }));
 
   it("starts a zoomed axis on a labeled tick, and its title is the measure's name alone (the owner's follow-up, 4)", () => {

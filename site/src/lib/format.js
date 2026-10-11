@@ -1,4 +1,4 @@
-// Number formatting for charts, tables and tooltips.
+// Number formatting for charts and their details.
 
 const whole = new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 });
 
@@ -14,13 +14,6 @@ export function formatValue(v, format) {
 }
 
 export const formatCount = (n) => (n == null ? "–" : whole.format(n));
-
-export function formatAge(years) {
-  if (years == null || !Number.isFinite(years)) return "–";
-  if (years < 1) return "under a year";
-  const v = years >= 10 ? Math.round(years) : Math.round(years * 10) / 10;
-  return `${v} year${v === 1 ? "" : "s"}`;
-}
 
 /** A ratio such as 1.3× or 0.8×. */
 export function formatRatio(r) {

@@ -79,7 +79,7 @@ describe("the chart layout", () => {
     values.map((m, index) => ({
       index,
       label: `Group ${index + 1}`,
-      stats: m == null ? null : { n: 100, age: 5, median: m, p25: m * 0.7, p75: m * 1.3, mean: m * 1.1 },
+      stats: m == null ? null : { n: 100, median: m, p25: m * 0.7, p75: m * 1.3, mean: m * 1.1 },
     }));
 
   it("uses 4 ticks on phones (never more than 5) and 6 on wider screens", () => {
@@ -183,7 +183,7 @@ describe("answer heading, takeaway and summary", () => {
 describe("the chart", () => {
   const metric = fixtureMeta.metrics.find((m) => m.id === "pop_fav_per_1k_views");
   const variable = fixtureMeta.variables.find((v) => v.id === "dlg_word_share");
-  const stats = (median, n = 100) => ({ n, age: 6, median, p25: median * 0.6, p75: median * 1.4, mean: median * 1.2 });
+  const stats = (median, n = 100) => ({ n, median, p25: median * 0.6, p75: median * 1.4, mean: median * 1.2 });
   const rows = [
     { index: 0, label: "Under 10%", stats: stats(0.3) },
     { index: 1, label: "10–20%", stats: stats(0.5, 20) },

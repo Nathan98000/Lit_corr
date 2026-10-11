@@ -6,7 +6,6 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import App from "../App.jsx";
-import NumbersTable from "../components/NumbersTable.jsx";
 import RangeChart from "../components/RangeChart.jsx";
 import { clearCache } from "../lib/data.js";
 import { fixtureFetch, fixtureMeta, realMeta } from "./fixtures.js";
@@ -57,13 +56,13 @@ describe("no “typical story”, “typical age” or “middle half” anywher
 describe("the chart's words", () => {
   const metric = fixtureMeta.metrics.find((m) => m.id === "pop_fav_per_1k_views");
   const variable = fixtureMeta.variables.find((v) => v.id === "dlg_word_share");
-  const stats = (median, n = 100) => ({ n, age: 12.2, median, p25: median * 0.36, p75: median * 2.36, mean: median * 1.64 });
+  const stats = (median, n = 100) => ({ n, median, p25: median * 0.36, p75: median * 2.36, mean: median * 1.64 });
   const rows = [
     { index: 0, label: "Under 2,000", stats: stats(0.28, 2708) },
     { index: 1, label: "7,000+", stats: stats(0.89, 20) },
   ];
 
-  it("legend, details card and numbers table say median and interquartile range", () => {
+  it("legend and details card say median and interquartile range", () => {
     const { container } = render(
       <RangeChart rows={rows} overall={stats(0.45, 2728)} metric={metric} variable={variable} smallN={30} minN={10} title="T" n={2728} />,
     );
@@ -83,15 +82,6 @@ describe("the chart's words", () => {
     expect(screen.getAllByRole("img")[0].getAttribute("aria-label")).toBe(
       "Under 2,000: median 0.28, interquartile range 0.10–0.66, mean 0.46, 2,708 stories",
     );
-    render(<NumbersTable rows={rows} overall={stats(0.45, 2728)} metric={metric} minN={10} />);
-    expect(screen.getAllByRole("columnheader").map((th) => th.textContent)).toEqual([
-      "Group",
-      "Stories",
-      "Median",
-      "Interquartile range",
-      "Mean",
-      "Median age",
-    ]);
   });
 });
 

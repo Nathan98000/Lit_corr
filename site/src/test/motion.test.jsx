@@ -77,7 +77,7 @@ describe("the chart in motion (F51)", () => {
   const variable = fixtureMeta.variables.find((v) => v.id === "dlg_word_share");
   const fav = fixtureMeta.metrics.find((m) => m.id === "pop_fav_per_1k_views");
   const views = fixtureMeta.metrics.find((m) => m.id === "pop_views");
-  const stats = (median) => ({ n: 100, age: 6, median, p25: median * 0.6, p75: median * 1.4, mean: median * 1.2 });
+  const stats = (median) => ({ n: 100, median, p25: median * 0.6, p75: median * 1.4, mean: median * 1.2 });
   const rowsOf = (medians) => medians.map((m, index) => ({ index, label: `Group ${index + 1}`, stats: stats(m) }));
   const A = { rows: rowsOf([0.3, 0.5, 0.7]), overall: stats(0.5) };
   const B = { rows: rowsOf([1.2, 1.9, 2.6]), overall: stats(1.8) };

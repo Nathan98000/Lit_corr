@@ -3,7 +3,7 @@
 // nothing here ranks genres, except the "By median" order the reader asks for (D3).
 
 import { formatCount, formatFixed, stepDecimals } from "./format.js";
-import { chartQuestion, chartQuestionText, lowerFirst, standsOutQuestion, upperFirst } from "./wording.js";
+import { chartQuestion, chartQuestionText, lowerFirst, standsOutQuestion } from "./wording.js";
 
 export { chartQuestion, chartQuestionText, standsOutQuestion };
 
@@ -52,7 +52,7 @@ function percentValue(v, d) {
 
 /**
  * How one characteristic's chart prints its numbers, wherever they appear (F66): View 1's value column, the All genres
- * line, the dashed line's label, the details, the row names and the table, and View 2's values, row names and table.
+ * line, the dashed line's label, the details and the row names, and View 2's values and row names.
  * - Numbers (fmt "num"): one number of decimals for the whole chart, the most among All genres' median and
  *   quartiles as the file writes them (among the stories with any, for mostly-zero characteristics), at most 3 ("43.0
  *   words, interquartile range 31.7–62.2"). A value above 0 that those decimals would round to 0, or to a single
@@ -90,9 +90,6 @@ export function numberFormat(variable, entry) {
     withUnit: (v) => withUnit(value(v), unit),
   };
 }
-
-/** A genre's median age in this option: one decimal ("10.7 years"). */
-export const formatYears = (age) => (age == null ? "–" : `${formatFixed(age, 1)} years`);
 
 /**
  * The unit written after a number, when it is a plain unit (words, per 1,000 words, letters, names …): ranges only,
@@ -159,8 +156,8 @@ export function bandAt(shares, q) {
 export const bandQuartiles = (shares) => ({ p25: bandAt(shares, 0.25), median: bandAt(shares, 0.5), p75: bandAt(shares, 0.75) });
 
 /**
- * One row per genre (all genres first), in the file's order (meta.genres: A–Z): { i, genre, all, stats, small, r, f,
- * age }. `small`: fewer than the rule's min_n stories (drawn as uncertain, never flagged).
+ * One row per genre (all genres first), in the file's order (meta.genres: A–Z): { i, genre, all, stats, small, r, f }.
+ * `small`: fewer than the rule's min_n stories (drawn as uncertain, never flagged).
  */
 export function genreRows(meta, file, id) {
   const entry = file.c[id];
@@ -176,7 +173,6 @@ export function genreRows(meta, file, id) {
       small: Boolean(stats) && i > 0 && stats.n < file.rule.min_n,
       r: entry.r[i],
       f: entry.f[i],
-      age: file.age[i],
     };
   });
 }
@@ -225,7 +221,7 @@ export function directionWords(variable, kind) {
 }
 
 /**
- * How a genre compares with all genres, in words: `short` for the details card and the table ("Clearly shorter",
+ * How a genre compares with all genres, in words: `short` for the details card ("Clearly shorter",
  * "No clear difference"), `long` for a row's name ("clearly shorter than all genres"), `mark` (▲ ▼ ≠) and `word`
  * (the D10 word or its default, lower case: "shorter", "more common", "different mix"). All genres has none.
  */
@@ -355,7 +351,7 @@ export function allGenresLine(rows, variable, entry) {
 
 // ----------------------------------------------------------------------------------------------------- details
 /**
- * A genre's numbers for its details card, details line, row name and table: `items` ([label, value] pairs: the
+ * A genre's numbers for its details card, details line and row name: `items` ([label, value] pairs: the
  * numbers, then Stories), `comparison` (see comparison(); the card says "Compared with all genres:" and its `short`
  * words), `name` (the row's accessible name) and `line` (the phone's details line, without the genre's name).
  */
@@ -539,29 +535,6 @@ export function comparisonBar(r) {
 
 /** The zone of "no clear difference" on that scale, from the rule (40 to 60 in 100 for min_r 0.2). */
 export const noDifferenceZone = (rule) => [Math.round(50 * (1 - rule.min_r)), Math.round(50 * (1 + rule.min_r))];
-
-/** The comparison words of a row and of the table in "One genre": "Clearly less", "No clear difference", … */
-export const profileComparisonWords = (item, small) => upperFirst(profileComparison(item, small));
-
-/**
- * One characteristic's cells in "One genre"'s table (F80), as View 2 writes its values: the genre's and all genres'
- * (num: "7.8 per 1,000 words"; mostly zero: "76% with any, median 2.57 per 1,000 words"; named groups: every group's
- * share), and the genre's stories. The table wraps its cells to fit its box, so a number keeps its unit's first word,
- * and a group its share, on its line (no-break spaces).
- */
-export function profileTableCells(item, minN) {
-  const { kind, stats: g, all: a, variable, nf } = item;
-  const glue = (text) => text.replace(" ", "\u00a0");
-  const cell = (s) => {
-    if (!s) return `Fewer than ${minN} stories`;
-    if (kind === "num") return glue(nf.withUnit(s.median));
-    if (kind === "bin") return formatPercent(s.share);
-    if (kind === "zero") return `${formatPercent(s.share)}\u00a0with any${s.median != null ? `, median\u00a0${glue(nf.withUnit(s.median))}` : ""}`;
-    if (kind === "band") return variable.bins.labels[bandQuartiles(s.shares).median];
-    return variable.bins.labels.map((l, b) => `${l}\u00a0${formatPercent(s.shares[b])}`).join(", ");
-  };
-  return { genre: cell(g), all: cell(a), stories: g ? formatCount(g.n) : "–" };
-}
 
 /** How one stand-out compares, at the end of a row's name: "clearly lower", "no clear difference". */
 function profileComparison(item, small) {

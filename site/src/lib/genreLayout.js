@@ -54,7 +54,7 @@ export function rowGrid({ rows, width, top = TOP }) {
 // largest group across all genres darkest; ordered bands --band-0 … in a palette per number of bands (.bands-3 to
 // .bands-8), light to dark blue on an even scale of contrast. Here: which ink a share printed on each color takes,
 // "white" or "dark" where it reaches 4.5:1 there, "" where neither does (the share is then only in the details and
-// the table). A test reads genres.css and checks these.
+// the row's name). A test reads genres.css and checks these.
 export const GROUP_INKS = ["white", "dark", "dark", "dark", "dark", "dark"];
 export const BAND_INKS = {
   3: ["dark", "dark", "white"],

@@ -22,7 +22,6 @@ import Controls, { preloadMenus } from "./Controls.jsx";
 import CopyLink from "./CopyLink.jsx";
 import { PartBoundary, lazyPart, whenIdle } from "./lazyPart.jsx";
 import LoadError from "./LoadError.jsx";
-import NumbersTable from "./NumbersTable.jsx";
 import { GenresPage, PatternBrowser } from "./pages.js";
 import RangeChart from "./RangeChart.jsx";
 import useMediaQuery from "./useMediaQuery.js";
@@ -413,27 +412,9 @@ export default function Explorer({ meta, state, onChange, onAsk, onHoldScroll })
                   n={d.gd?.n}
                   emptyActions={wayOut}
                 />
-                <NumbersTable
-                  id={numbersId}
-                  rows={d.rows}
-                  overall={d.overall}
-                  metric={d.metric}
-                  minN={meta.min_n}
-                  visible={showNumbers}
-                  caption={`The numbers behind the chart: ${d.title}`}
-                />
               </div>
               <ChartNotes meta={meta} d={d} view={view} wide={wide} onChange={keepPlace} />
               <div className="chart-actions">
-                <button
-                  type="button"
-                  className="btn"
-                  aria-expanded={showNumbers}
-                  aria-controls={numbersId}
-                  onClick={() => setShowNumbers((x) => !x)}
-                >
-                  {showNumbers ? "Hide the numbers" : "Show the numbers"}
-                </button>
                 <CopyLink />
                 <button
                   type="button"

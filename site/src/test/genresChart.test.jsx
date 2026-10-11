@@ -1,5 +1,5 @@
 // The Genres page, one characteristic in every genre (View 1): headings, lists, order, marks, details, the keyboard
-// and the table, for numbers and yes/no characteristics; no story-age note.
+// and the actions, for numbers and yes/no characteristics; no story-age note.
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { readFileSync } from "node:fs";
@@ -515,28 +515,12 @@ describe("details and the keyboard", () => {
   });
 });
 
-describe("the numbers and the actions", () => {
-  it("shows every genre's numbers and comparison, and opens the characteristic in Explore", async () => {
-    const user = await openGenres("#/genres?var=dlg_word_share&genre=romance");
-    await user.click(screen.getByRole("button", { name: "Show the numbers" }));
-    const table = screen.getByRole("table");
-    expect(within(table).getAllByRole("columnheader").map((h) => h.textContent)).toEqual([
-      "Genre",
-      "Stories",
-      "Median",
-      "Interquartile range",
-      "Median age",
-      "Compared with all genres",
-    ]);
-    const rows = within(table).getAllByRole("row").slice(1);
-    expect(rows.map((r) => within(r).getByRole("rowheader").textContent)).toEqual(["All genres", "Fetish", "Romance", "Tiny Genre"]);
-    expect(rows[1].lastElementChild.textContent).toBe("▲ Clearly more dialogue");
-    expect(rows[3].textContent).toBe("Tiny GenreFewer than 10 stories");
-    const explore = screen.getByRole("link", { name: "Open in Explore: dialogue share" }) // starts with its visible words (F76);
+describe("the actions and what screen readers hear", () => {
+  it("open the characteristic in Explore", async () => {
+    await openGenres("#/genres?var=dlg_word_share&genre=romance");
+    const explore = screen.getByRole("link", { name: "Open in Explore: dialogue share" }); // starts with its visible words (F76)
     expect(explore.textContent).toBe("Open in Explore →");
     expect(explore.getAttribute("href")).toBe("#/explore?mode=one&genre=romance&var=dlg_word_share&include=all");
-    window.location.hash = "#/genres?var=dlg_has_dialogue";
-    await waitFor(() => expect(within(screen.getByRole("table")).getAllByRole("columnheader")[2].textContent).toBe("Share"));
   });
 
   it("announces the heading and the takeaway, and only the order's words when the order changes (F75)", async () => {

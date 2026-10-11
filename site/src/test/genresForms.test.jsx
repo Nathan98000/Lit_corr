@@ -1,5 +1,5 @@
 // The Genres page's other forms (View 1): 100% bars for named groups (grp) and ordered bands (band), and the split
-// chart of mostly-zero characteristics (zero, D6); their tables, colors and geometry.
+// chart of mostly-zero characteristics (zero, D6); their colors and geometry.
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { readFileSync } from "node:fs";
 import path from "node:path";
@@ -84,8 +84,6 @@ async function openGenres(hash, width = null) {
   await waitFor(() => expect(document.querySelector(".genres-page .chart-panel[aria-busy='false']")).toBeTruthy());
 }
 
-const columns = () => within(screen.getByRole("table", { hidden: true })).getAllByRole("columnheader", { hidden: true }).map((h) => h.textContent);
-
 describe("named groups: 100% bars", () => {
   it("draw a bar per genre, the ≠ mark in its own column, and name every share", async () => {
     await openGenres("#/genres?var=pov_class");
@@ -116,7 +114,6 @@ describe("named groups: 100% bars", () => {
       "≠ A clearly different mix (how this is decided)",
     ]);
     expect(within(legend).getByRole("link", { name: "how this is decided" }).getAttribute("href")).toBe("#/methodology/genres");
-    expect(columns()).toEqual(["Genre", "Stories", "First person (I)", "First person plural (we)", "Second person (you)", "Third person", "Mixed", "Median age", "Compared with all genres"]);
   });
 
   it("give the darkest color to the group that is largest across all genres", () => {
@@ -252,15 +249,6 @@ describe("mostly zero: one chart (D6, concept M1)", () => {
     expect(document.querySelector(".genre-legend").textContent).toMatch(/^\s*Median and interquartile range among stories with any▲▼ Clearly higher/);
     expect(document.querySelector(".genre-legend").textContent).not.toMatch(/Share of stories/);
     expect(screen.getByRole("radio", { name: "By share with any" })).toBeTruthy();
-    expect(columns()).toEqual([
-      "Genre",
-      "Stories",
-      "With any",
-      "Median among those",
-      "Interquartile range among those",
-      "Median age",
-      "Compared with all genres",
-    ]);
     fireEvent.click(romance);
     const card = document.querySelector(".genre-tip");
     expect([...card.querySelectorAll("dt")].map((d) => d.textContent)).toEqual([
@@ -300,11 +288,11 @@ describe("mostly zero: one chart (D6, concept M1)", () => {
 
   it("works out a genre's share above 0 from its two counts (the file leaves it out)", () => {
     const entry = { k: "zero", fmt: "num", q: [[100], [50]], z: [[40, 0.38, 1, 2, 3], [20, 1.5, 2, 2.5]], r: [null, 0.3], f: [0, 1] };
-    const rows = genreRows({ genres: [{ id: "all", name: "All genres" }, { id: "g", name: "G" }] }, { genres: ["all", "g"], age: [5, 6], rule: { min_n: 30 }, c: { x: entry } }, "x");
+    const rows = genreRows({ genres: [{ id: "all", name: "All genres" }, { id: "g", name: "G" }] }, { genres: ["all", "g"], rule: { min_n: 30 }, c: { x: entry } }, "x");
     expect(rows[0].stats).toEqual({ n: 100, above: 40, share: 0.38, p25: 1, median: 2, p75: 3 });
     expect(rows[1].stats).toEqual({ n: 50, above: 20, share: 0.4, p25: 1.5, median: 2, p75: 2.5 });
     const few = { ...entry, z: [[40, 0.38, 1, 2, 3], [8]] };
-    const r2 = genreRows({ genres: [{ id: "all", name: "All genres" }, { id: "g", name: "G" }] }, { genres: ["all", "g"], age: [5, 6], rule: { min_n: 30 }, c: { x: few } }, "x");
+    const r2 = genreRows({ genres: [{ id: "all", name: "All genres" }, { id: "g", name: "G" }] }, { genres: ["all", "g"], rule: { min_n: 30 }, c: { x: few } }, "x");
     expect(r2[1].stats).toEqual({ n: 50, above: 8, share: 0.16 });
   });
 });

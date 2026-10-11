@@ -326,68 +326,12 @@ describe("one scale for every row (concept P2, F67)", () => {
     }
   });
 
-  it("gives every characteristic's numbers as a table, topic by topic, and a link to copy (F80)", async () => {
-    const user = await openGenre("#/genres?view=genre&genre=romance&include=all");
-    const button = screen.getByRole("button", { name: "Show the numbers" });
-    expect(button.getAttribute("aria-expanded")).toBe("false");
-    // drawn when shown (its rows made the view switch twice as slow); the box it controls is there, hidden
-    expect(document.getElementById(button.getAttribute("aria-controls")).hidden).toBe(true);
-    expect(screen.queryByRole("table", { hidden: true })).toBeNull();
-    expect(screen.getByRole("button", { name: /Copy link/ })).toBeTruthy();
-    await user.click(button);
-    const table = screen.getByRole("table");
-    // it opens under its button, which stays where it was
-    expect(button.compareDocumentPosition(table) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(table.querySelector("caption").textContent).toBe("The numbers behind the lists: What stands out about stories in Romance?");
-    expect([...table.querySelectorAll("thead th")].map((h) => h.textContent)).toEqual([
-      "Characteristic",
-      "Romance",
-      "All genres",
-      "Stories in Romance",
-      "Compared with all genres",
-    ]);
-    const groups = [...table.querySelectorAll("tbody")];
-    expect(groups.map((g) => g.querySelector(".profile-topic-row th").textContent)).toEqual(fixtureMeta.topics.map((t) => t.label));
-    const dialogue = within(table).getByRole("rowheader", { name: "Dialogue share" }).closest("tr");
-    expect([...dialogue.querySelectorAll("td")].map((td) => td.textContent)).toEqual([
-      expect.stringMatching(/^\d+%$/),
-      expect.stringMatching(/^\d+%$/),
-      "120",
-      "Clearly less dialogue",
-    ]);
-    const mixRow = within(table).getByRole("rowheader", { name: "Narrative perspective" }).closest("tr");
-    // a group keeps its share on its line (a no-break space): the table wraps its cells to fit its box
-    expect(mixRow.querySelectorAll("td")[0].textContent).toMatch(/^First person \(I\)\u00a0[\d.]+%, .*Mixed\u00a0[\d.<]+%$/);
-    expect(mixRow.querySelectorAll("td")[3].textContent).toBe("A clearly different mix");
-    expect(screen.getByRole("button", { name: "Hide the numbers" }).getAttribute("aria-expanded")).toBe("true");
-    // the table fits its box here: the box takes no tab stop
-    expect(table.closest(".genre-numbers").hasAttribute("tabindex")).toBe(false);
-  });
-
-  it("gives a table box that scrolls sideways a tab stop, named by the table's caption (View 2 and View 1)", async () => {
-    // jsdom lays nothing out: the tables' boxes say they are narrower than their tables
-    const box = (el) => el.classList?.contains("genre-numbers");
-    vi.spyOn(HTMLElement.prototype, "scrollWidth", "get").mockImplementation(function () {
-      return box(this) ? 900 : 0;
-    });
-    vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockImplementation(function () {
-      return box(this) ? 700 : 0;
-    });
-    const user = await openGenre("#/genres?view=genre&genre=romance&include=all");
-    await user.click(screen.getByRole("button", { name: "Show the numbers" }));
-    const region = screen.getByRole("region", { name: "The numbers behind the lists: What stands out about stories in Romance?" });
-    expect(region.getAttribute("tabindex")).toBe("0");
-    expect(within(region).getByRole("table")).toBeTruthy();
-    await user.click(screen.getByRole("link", { name: /^Narrative perspective/ }));
-    await waitFor(() => expect(document.querySelector(".genre-answer")).toBeTruthy());
-    // View 1's table is in the page while hidden, without a tab stop; shown, its box takes one
-    const hidden = document.querySelector(".genre-answer .genre-numbers");
-    expect(hidden.hasAttribute("tabindex")).toBe(false);
-    await user.click(screen.getByRole("button", { name: "Show the numbers" }));
-    const shown = document.querySelector(".genre-answer .genre-numbers");
-    expect(shown.getAttribute("tabindex")).toBe("0");
-    expect(shown.getAttribute("role")).toBe("region");
-    expect(document.getElementById(shown.getAttribute("aria-labelledby")).tagName).toBe("CAPTION");
+  it("ends with Copy link, under the topics (F80)", async () => {
+    await openGenre("#/genres?view=genre&genre=romance&include=all");
+    const copy = screen.getByRole("button", { name: "Copy link" });
+    const topics = document.querySelector(".profile-topics");
+    expect(topics.compareDocumentPosition(copy) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(copy.closest(".chart-actions").querySelectorAll("button, a")).toHaveLength(1);
   });
 });
 

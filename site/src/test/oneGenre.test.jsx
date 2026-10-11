@@ -732,3 +732,19 @@ describe("the way back (F88, quick win 6)", () => {
     expect(kept()).toMatchObject({ y: 640 });
   });
 });
+
+describe("another genre or option (layout shift)", () => {
+  it("draws the takeaway and lists anew, so rows of the last answer don't count as moving; the topics stay", async () => {
+    const user = await openGenre("#/genres?view=genre&genre=romance&include=all");
+    await user.click(document.querySelectorAll(".profile-topic summary")[1]);
+    const [list, takeaway, topics, heading] = [".profile-list", ".profile-takeaway", ".profile-topics", ".chart-title"].map((s) => document.querySelector(s));
+    await user.selectOptions(screen.getByLabelText("Only include"), "y2020");
+    await waitFor(() => expect(window.location.hash).toBe("#/genres?view=genre&genre=romance&include=y2020"));
+    await waitFor(() => expect(document.querySelector(".genres-page .chart-panel[aria-busy='false']")).toBeTruthy());
+    expect(document.querySelector(".profile-list")).not.toBe(list);
+    expect(document.querySelector(".profile-takeaway")).not.toBe(takeaway);
+    expect(document.querySelector(".profile-topics")).toBe(topics);
+    expect(document.querySelector(".chart-title")).toBe(heading); // focus after "Show all stories" goes here
+    expect(document.querySelectorAll(".profile-topic")[1].open).toBe(true);
+  });
+});

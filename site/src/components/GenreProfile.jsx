@@ -1,4 +1,4 @@
-import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import {
   axisTitle,
   breakable,
@@ -482,7 +482,9 @@ export default function GenreProfile({ meta, state, file, busy, onSwitch, onNavi
       {few ? (
         showAll
       ) : (
-        <>
+        // another genre's or option's answer is drawn anew (its open topics and lists in full are kept above), so its
+        // rows don't count as rows that moved: a takeaway of another height must not register as the page shifting
+        <Fragment key={`${state.genre}|${state.sub}`}>
           {count === 0 && (
             <p className="profile-none">
               Its stories are close to those of all genres on each of the {p.compared} characteristics compared.
@@ -519,7 +521,7 @@ export default function GenreProfile({ meta, state, file, busy, onSwitch, onNavi
           {p.mix.length > 0 && (
             <ProfileList title="A different mix" items={p.mix} all caption={<MixLine genre={genre} />} {...listProps("mix")} />
           )}
-        </>
+        </Fragment>
       )}
       <section className="profile-topics" aria-labelledby={`${ids}-topics`}>
         <h3 id={`${ids}-topics`}>Every characteristic, by topic</h3>

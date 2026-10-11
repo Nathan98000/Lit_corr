@@ -9,6 +9,7 @@ import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "../App.jsx";
 import { TrendLegend, trendsImage } from "../components/TrendAnswer.jsx";
+import TrendChart from "../components/TrendChart.jsx";
 import TrendMix from "../components/TrendMix.jsx";
 import useRowDetails from "../components/useRowDetails.js";
 import { keyItems } from "../lib/chartImage.js";
@@ -115,6 +116,21 @@ describe("the chart's geometry (trendLayout)", () => {
     expect(lines(288)).toEqual(["Fewer", "than", "10"]);
     expect(lines(343)).toEqual(["Fewer", "than 10"]);
     expect(lines(736)).toEqual(["Fewer than 10"]);
+  });
+
+  it("draws every mark inside the plot when the ticks stop short of the domain's top", () => {
+    vi.spyOn(Element.prototype, "getBoundingClientRect").mockReturnValue({ width: 736, height: 0, top: 0, left: 0, right: 736, bottom: 0 });
+    // story length in Romance: the quartiles reach 11,200, the ticks stop at 10,000
+    const q = [[32, 1450, 2160, 3450], [55, 1980, 3250, 5180], [44, 2100, 4350, 7170], [69, 3700, 5870, 11200], [100, 2900, 5170, 9700]];
+    const entry = num(q, [87, 1700, 2930, 4400], 0.385, 1);
+    const input = trendChartInput(fixtureMeta, WORDS, entry, FILE);
+    expect(input.axis.ticks[input.axis.ticks.length - 1]).toBe(10000);
+    expect(input.axis.hi).toBeGreaterThan(11200);
+    const layout = trendLayout({ width: 736, ...input });
+    render(<TrendChart meta={fixtureMeta} variable={WORDS} entry={entry} file={FILE} title="Story length in Romance" />);
+    const tops = [...document.querySelectorAll(".trend-chart .iqr")].map((r) => Number(r.getAttribute("y")));
+    expect(Math.min(...tops)).toBeGreaterThanOrEqual(layout.top - 0.01);
+    expect(Math.min(...tops)).toBeCloseTo(layout.y(11200), 5);
   });
 
   it("brackets the two windows compared, their labels inside the chart", () => {

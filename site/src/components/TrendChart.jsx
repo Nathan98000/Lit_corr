@@ -9,12 +9,12 @@ import useWidth from "./useWidth.js";
 const sameTick = (a, b) => Math.abs(a.v - b.v) < 1e-9;
 
 /**
- * An axis gliding to another genre or option (useGlide): the domain and the marks glide together on one scale in every
- * frame; the old ticks fade out while the new ones fade in. `marks`: per period an array of numbers or null. Returns
- * { y, marks, ticks (with their opacity), gliding }.
+ * An axis gliding to another genre or option (useGlide): the domain (the layout's, which may reach past its outer
+ * ticks) and the marks glide together on one scale in every frame; the old ticks fade out while the new ones fade in.
+ * `marks`: per period an array of numbers or null. Returns { y, marks, ticks (with their opacity), gliding }.
  */
 export function useAxisGlide(layout, marks, key) {
-  const glide = useGlide([[layout.ticks[0].v, layout.ticks[layout.ticks.length - 1].v], ...marks], key, layout.ticks);
+  const glide = useGlide([layout.domain, ...marks], key, layout.ticks);
   const [[lo, hi], ...now] = glide.values;
   const y = (v) => layout.bottom - ((v - lo) / (hi - lo || 1)) * layout.plotH;
   const ticks =

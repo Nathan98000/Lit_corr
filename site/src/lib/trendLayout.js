@@ -200,6 +200,7 @@ export function trendLayout({ width, kind, cells, periods, then, now, texts, val
     bottom,
     plotH,
     y,
+    domain: [axis.lo, axis.hi],
     valueSize,
     stagger,
     ticks: axis.ticks.map((t, k) => ({ v: t, y: y(t), text: tickTexts[k], x: gutter - 8 })),

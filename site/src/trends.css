@@ -1,4 +1,128 @@
-/* The Trends page (loaded with its code, like genres.css): its controls, its charts over time and its answer. */
+/* The Trends page (loaded with its code, like genres.css): its controls, its charts over time and its answer. The
+   charts draw with the explorer's marks (.range-chart in styles.css: capsules, dots, hatching, hover and focus). */
 .trends-controls {
   margin-top: 4px;
+}
+
+.trend-takeaway p {
+  margin: 0;
+}
+
+.trend-takeaway p + p {
+  margin-top: 4px;
+}
+
+.trend-too-few {
+  margin: 14px 0 4px;
+}
+
+/* ------------------------------------------------------------------ View 1's chart: at most 760 px wide (§3.1) */
+.trend-chart {
+  max-width: 760px;
+}
+
+.trend-chart .trend-axis-title {
+  margin: 14px 0 4px;
+  color: var(--ink);
+}
+
+/* the thin line through the medians (or the shares), under the marks */
+.trend-chart .trend-line {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1.5;
+  stroke-opacity: 0.8;
+}
+
+/* yes/no: a bar from 0 to the share, the dot on top */
+.trend-chart .share-bar {
+  fill: var(--accent-bar);
+}
+
+.trend-chart .row.small .share-bar {
+  stroke: var(--accent);
+  stroke-width: 1;
+  stroke-dasharray: 3 2;
+}
+
+/* the table under the plot: the periods, their medians (or shares) in bold, their stories muted */
+.trend-chart .period {
+  fill: var(--ink-2);
+  font-size: 12.5px;
+}
+
+.trend-chart .col-head {
+  fill: var(--ink-2);
+}
+
+.trend-chart .gn {
+  font-size: 12px;
+}
+
+/* the two windows compared, bracketed under their periods */
+.trend-chart .bracket path {
+  fill: none;
+  stroke: var(--ink-3);
+  stroke-width: 1;
+}
+
+.trend-chart .bracket text {
+  fill: var(--ink-2);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* a period's details on wider charts: a card beside its column, at the plot's top */
+.trend-tip {
+  transform: none;
+  max-width: 280px;
+}
+
+.trend-tip p {
+  color: var(--ink-2);
+}
+
+/* phones: the period's line under the chart sticks to the screen's bottom while the chart is on screen (as the Genres
+   page's does, concept Q1) */
+.row-details.trend-line-details.empty {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.row-details.trend-line-details:not(.empty) {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  border-radius: var(--radius) var(--radius) 0 0;
+  box-shadow: 0 -6px 18px rgb(28 28 34 / 0.12);
+}
+
+/* the key of the brackets: ⎵ */
+.trend-legend .key-bracket {
+  width: 20px;
+  height: 7px;
+  border: 1px solid var(--ink-3);
+  border-top: 0;
+}
+
+/* ---------------------------------------------------------------------- forced colors */
+@media (forced-colors: active) {
+  .trend-chart .trend-line,
+  .trend-chart .bracket path {
+    stroke: CanvasText;
+  }
+
+  .trend-chart .share-bar {
+    fill: Canvas;
+    stroke: CanvasText;
+  }
+
+  .trend-chart .row.small .share-bar {
+    fill: Canvas !important; /* not the hatch, which is a style on the bar */
+  }
+
+  .trend-legend .key-bracket {
+    border-color: CanvasText;
+  }
 }

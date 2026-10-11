@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 
 const KEYS = ["ArrowDown", "ArrowUp", "Home", "End"];
+const COLUMN_KEYS = [...KEYS, "ArrowRight", "ArrowLeft"];
 
 /**
  * The rows of a chart as one tab stop with details on demand (F54, concept K1), shared by the explorer's chart and the
@@ -11,9 +12,9 @@ const KEYS = ["ArrowDown", "ArrowUp", "Home", "End"];
  *
  * Returns `shown` ({ i, by: "hover" | "focus" | "tap" } or null), `hide()` and `rowProps(position, id)`: the tab stop
  * (the focused row's, ↑/↓, Home and End move it), hover, focus, and a tap that keeps the details until the same row is
- * tapped again; Escape hides them.
+ * tapped again; Escape hides them. `columns` (the Trends page's charts, whose periods stand side by side) adds → and ←.
  */
-export default function useRowDetails({ ids, frame, phone, within = null }) {
+export default function useRowDetails({ ids, frame, phone, within = null, columns = false }) {
   const [shown, setShown] = useState(null);
   const [focusIdx, setFocusIdx] = useState(0); // the row that holds the chart's tab stop
   const rowEls = useRef([]);
@@ -37,10 +38,17 @@ export default function useRowDetails({ ids, frame, phone, within = null }) {
   const tabRow = Math.min(focusIdx, Math.max(0, ids.length - 1));
 
   const onRowKey = (e, ri) => {
-    if (!KEYS.includes(e.key)) return;
+    if (!(columns ? COLUMN_KEYS : KEYS).includes(e.key)) return;
     e.preventDefault();
     const last = ids.length - 1;
-    const next = { ArrowDown: Math.min(last, ri + 1), ArrowUp: Math.max(0, ri - 1), Home: 0, End: last }[e.key];
+    const next = {
+      ArrowDown: Math.min(last, ri + 1),
+      ArrowRight: Math.min(last, ri + 1),
+      ArrowUp: Math.max(0, ri - 1),
+      ArrowLeft: Math.max(0, ri - 1),
+      Home: 0,
+      End: last,
+    }[e.key];
     setShown({ i: ids[next], by: "focus" });
     setFocusIdx(next);
     rowEls.current[next]?.focus();

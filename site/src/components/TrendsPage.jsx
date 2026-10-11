@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { loadTrends } from "../lib/data.js";
 import { breakable } from "../lib/genres.js";
-import { changesQuestion, trendQuestion, trendQuestionText } from "../lib/trends.js";
+import { changesQuestion, trendAnnouncement, trendQuestion, trendQuestionText } from "../lib/trends.js";
 import { TREND_PAGE_EXCLUDED, onTrendsPage, subsetConflict } from "../lib/urlState.js";
 import { BodyPlaceholder, CharacteristicPicker, SlotButton } from "./Controls.jsx";
 import { ChartPlaceholder } from "./Explorer.jsx";
@@ -11,6 +11,7 @@ import InlineSelect, { SlotWords } from "./InlineSelect.jsx";
 import { PartBoundary } from "./lazyPart.jsx";
 import LoadError from "./LoadError.jsx";
 import Overlay from "./Overlay.jsx";
+import TrendAnswer from "./TrendAnswer.jsx";
 import "../trends.css";
 
 // the picker's Length & structure topic keeps its own blurb ("Word count, paragraphs, series, titles"): without the
@@ -46,6 +47,27 @@ function useShownTrends(sub, genre) {
 }
 
 /**
+ * What the polite live region says: `text` once the file is on screen, said again when `key` (the question shown)
+ * changes even if the words are the same (as on the Genres page).
+ */
+function useAnnouncement(text, key) {
+  const [said, setSaid] = useState("");
+  const last = useRef(null);
+  useEffect(() => {
+    if (!text) return undefined;
+    if (last.current === key) {
+      setSaid((s) => (s === "" ? s : text));
+      return undefined;
+    }
+    last.current = key;
+    setSaid("");
+    const t = setTimeout(() => setSaid(text), 60);
+    return () => clearTimeout(t);
+  }, [text, key]);
+  return said;
+}
+
+/**
  * The Trends page (R1): how one characteristic changed over time (View 1), or what changed in a genre's stories (View
  * 2), stories from 2020 or later compared with stories from 2000-2009 by the rule in meta.trend (D2). Controls change
  * the address in place; the view switch and the links between the views add a history entry, so Back returns. The page
@@ -66,6 +88,30 @@ export default function TrendsPage({ meta, state, onChange, onNavigate, onHoldSc
     onHoldScroll?.();
     onChange(next);
   };
+  // a button inside the answer that changes it ("Show all stories") goes away with the change, so focus moves to the
+  // answer's heading, without scrolling, and again once the new file is drawn; "Try again" too
+  const heading = useRef(null);
+  const focusHeading = useRef(false);
+  const toHeading = () => heading.current?.focus({ preventScroll: true });
+  const switchFromAnswer = (next) => {
+    focusHeading.current = true;
+    keepPlace(next);
+    toHeading();
+  };
+  useEffect(() => {
+    if (!focusHeading.current || busy || !file) return;
+    focusHeading.current = false;
+    toHeading();
+  }, [file, busy]);
+  // while another genre's or option's file loads, the answer on screen keeps describing its own file (its genre, its
+  // option, and a characteristic it has)
+  const shownV = useRef(state.v);
+  if (file?.c[state.v]) shownV.current = state.v;
+  const view = file ? { ...state, genre: file.g, sub: file.s, v: file.c[state.v] ? state.v : shownV.current } : state;
+  const announcement = useAnnouncement(
+    !file || busy || error || changes ? "" : trendAnnouncement(meta, file, view),
+    `${state.view || "chart"}|${state.v}|${state.genre}|${state.sub}`,
+  );
 
   // the tab's title is the question on screen, once its file is (as on the Genres page)
   const question = changes ? changesQuestion(genre) : trendQuestionText(variable, genre);
@@ -186,14 +232,25 @@ export default function TrendsPage({ meta, state, onChange, onNavigate, onHoldSc
           </PartBoundary>
         </Overlay>
       )}
+      <p className="visually-hidden" aria-live="polite">
+        {announcement}
+      </p>
       {error ? (
         <article className="chart-panel">
-          <LoadError onRetry={retry} detail={error} />
+          <LoadError
+            onRetry={() => {
+              focusHeading.current = true;
+              retry();
+            }}
+            detail={error}
+          />
         </article>
       ) : !file ? (
         <ChartPlaceholder />
-      ) : (
+      ) : changes ? (
         <article className="chart-panel trends-answer" aria-busy={busy ? "true" : "false"} />
+      ) : (
+        <TrendAnswer meta={meta} state={view} file={file} busy={busy} onSwitch={switchFromAnswer} headingRef={heading} />
       )}
     </section>
   );

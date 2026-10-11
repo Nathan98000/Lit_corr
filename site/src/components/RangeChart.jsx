@@ -178,6 +178,8 @@ export default function RangeChart({
           aria-labelledby={titleId}
           aria-describedby={descId}
         >
+          {/* the hatch of a group with few stories: set as a style on its bar, since the bar's class sets a fill that
+              would win over the fill attribute */}
           <defs>
             <pattern id={hatchId} width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
               <rect width="5" height="5" fill="#fff" />
@@ -238,7 +240,7 @@ export default function RangeChart({
                       width={bar.width}
                       height={12}
                       rx={6}
-                      fill={r.small ? `url(#${hatchId})` : undefined}
+                      style={r.small ? { fill: `url(#${hatchId})` } : undefined}
                     />
                     <circle className="median" cx={x(m[2])} cy={r.cy} r={7} />
                     <text className="gval" x={r.value.x} y={r.value.y}>

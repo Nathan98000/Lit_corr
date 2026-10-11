@@ -2165,6 +2165,7 @@ summary.pattern-topic-head::after {
   }
 
   .range-chart .row.small .iqr {
+    fill: Canvas !important; /* not the hatch, which is a style on the bar */
     stroke-dasharray: 3 2;
   }
 

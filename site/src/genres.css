@@ -254,6 +254,10 @@
     stroke: CanvasText;
   }
 
+  .genre-chart .row.small .share-bar {
+    fill: Canvas !important; /* not the hatch, which is a style on the bar */
+  }
+
   .genre-chart .row.all .glabel,
   .genre-chart .row.all .gn,
   .genre-chart .row.all .gval {

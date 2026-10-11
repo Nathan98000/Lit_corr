@@ -126,7 +126,7 @@ export default function GenreAny({ meta, variable, entry, rows, sub, title, onNa
                 aria-label={rowDetails(row, variable, entry, meta.min_n).name}
                 data-glide={row.all ? undefined : String(r.index)}
               >
-                <AnyRow r={r} layout={layout} fill={row.small ? `url(#${hatchId})` : undefined} />
+                <AnyRow r={r} layout={layout} hatch={row.small ? { fill: `url(#${hatchId})` } : undefined} />
               </g>
             );
           })}
@@ -146,8 +146,12 @@ export default function GenreAny({ meta, variable, entry, rows, sub, title, onNa
   );
 }
 
-/** One genre's row: its name and stories, its mark, the range among its stories with any, the median and the share. */
-function AnyRow({ r, layout, fill }) {
+/**
+ * One genre's row: its name and stories, its mark, the range among its stories with any, the median and the share.
+ * `hatch` hatches the bars of a genre with few stories, as a style (the bars' classes set a fill that would win over the
+ * fill attribute).
+ */
+function AnyRow({ r, layout, hatch }) {
   return (
     <>
       <rect className="row-hit" x={0} y={r.y0} width={layout.width} height={r.y1 - r.y0} />
@@ -173,7 +177,7 @@ function AnyRow({ r, layout, fill }) {
       )}
       {r.bar && (
         <>
-          <rect className="iqr" x={r.bar.x} y={r.cy - 5} width={r.bar.width} height={10} rx={5} fill={fill} />
+          <rect className="iqr" x={r.bar.x} y={r.cy - 5} width={r.bar.width} height={10} rx={5} style={hatch} />
           <circle className="median" cx={r.dotX} cy={r.cy} r={6} />
           <text className="gval" x={r.median.x} y={r.median.y} textAnchor="end">
             {r.median.text}
@@ -192,7 +196,7 @@ function AnyRow({ r, layout, fill }) {
       {r.share && r.share.bar && (
         <>
           <rect className="share-track" x={r.share.bar.x} y={r.cy - 4} width={layout.shareBarW} height={8} rx={2} />
-          <rect className="share-bar" x={r.share.bar.x} y={r.cy - 4} width={r.share.bar.width} height={8} rx={2} fill={fill} />
+          <rect className="share-bar" x={r.share.bar.x} y={r.cy - 4} width={r.share.bar.width} height={8} rx={2} style={hatch} />
         </>
       )}
       {r.share && (

@@ -289,6 +289,16 @@ describe("units and formats", () => {
 });
 
 describe("the chart", () => {
+  it("hatches the bar of a genre with fewer stories than the rule needs, as a style", async () => {
+    await openGenres("#/genres?var=dlg_word_share&include=long"); // Romance: 15 stories
+    const hatch = document.querySelector(".genre-chart pattern").id;
+    const romance = [...document.querySelectorAll(".genre-chart .row")].find((r) => r.getAttribute("aria-label").startsWith("Romance:"));
+    expect(romance.classList.contains("small")).toBe(true);
+    expect(romance.querySelector(".iqr").style.fill).toBe(`url("#${hatch}")`);
+    const fetish = [...document.querySelectorAll(".genre-chart .row")].find((r) => r.getAttribute("aria-label").startsWith("Fetish:"));
+    expect(fetish.querySelector(".iqr").style.fill).toBe("");
+  });
+
   it("draws numbers as ranges and yes/no characteristics as shares, All genres first", async () => {
     await openGenres("#/genres?var=dlg_word_share");
     const chart = document.querySelector(".genre-chart");

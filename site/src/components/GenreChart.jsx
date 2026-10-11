@@ -144,8 +144,12 @@ export default function GenreChart({ meta, variable, entry, rows, sub, title, on
   );
 }
 
-/** What a row draws: its name and stories, its mark, its range (or share) and median, and its value. */
+/**
+ * What a row draws: its name and stories, its mark, its range (or share) and median, and its value. A genre with few
+ * stories has its bar hatched, as a style: the bar's class sets a fill that would win over the fill attribute.
+ */
 function RowParts({ r, kind, x, width, hatchId }) {
+  const hatch = r.small ? { fill: `url(#${hatchId})` } : undefined;
   return (
     <>
       <rect className="row-hit" x={0} y={r.y0} width={width} height={r.y1 - r.y0} />
@@ -174,10 +178,10 @@ function RowParts({ r, kind, x, width, hatchId }) {
               width={Math.max(1, r.dotX - x(0))}
               height={10}
               rx={5}
-              fill={r.small ? `url(#${hatchId})` : undefined}
+              style={hatch}
             />
           ) : (
-            <rect className="iqr" x={r.bar.x} y={r.cy - 5} width={r.bar.width} height={10} rx={5} fill={r.small ? `url(#${hatchId})` : undefined} />
+            <rect className="iqr" x={r.bar.x} y={r.cy - 5} width={r.bar.width} height={10} rx={5} style={hatch} />
           )}
           <circle className="median" cx={r.dotX} cy={r.cy} r={6} />
           <text className="gval" x={r.value.x} y={r.value.y} textAnchor="end">

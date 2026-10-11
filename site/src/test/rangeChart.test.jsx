@@ -213,6 +213,10 @@ describe("the chart", () => {
     expect(rowsEl[0].getAttribute("tabindex")).toBe("0");
     expect(rowsEl[0].getAttribute("aria-label")).toBe("Under 10%: median 0.30, interquartile range 0.18–0.42, mean 0.36, 100 stories");
     expect(rowsEl[1].getAttribute("class")).toMatch(/small/);
+    // a small group's bar is hatched, as a style (the bar's class sets a fill that would win over the attribute)
+    const hatch = container.querySelector("pattern").id;
+    expect(rowsEl[1].querySelector(".iqr").style.fill).toBe(`url("#${hatch}")`);
+    expect(rowsEl[0].querySelector(".iqr").style.fill).toBe("");
     expect(screen.getByText("20 stories*")).toBeTruthy(); // jsdom draws at 720 px: n under the label
     expect(screen.getByText("Too few stories to show")).toBeTruthy();
     expect(screen.getByText(/Fewer than 30 stories/, { selector: "li" })).toBeTruthy();

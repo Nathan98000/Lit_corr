@@ -1,5 +1,5 @@
 // A row's details on phones (F43, concept K1): a line under the chart, inside its frame, above the caption.
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import RangeChart from "../components/RangeChart.jsx";
@@ -39,7 +39,7 @@ describe("the details line on phones", () => {
     const [first] = screen.getAllByRole("img");
     fireEvent.click(first);
     expect(shownLine()).toBe(
-      "Under 2,000 median 0.28 · interquartile range 0.10–0.66 · mean 0.46 · 2,708 stories · median age 12 years. Tap again to close.",
+      "Under 2,000 median 0.28 · interquartile range 0.10–0.66 · mean 0.46 · 2,708 stories. Tap again to close.",
     );
     expect(frame.contains(lines()[0])).toBe(true); // inside the chart frame, at its end: under the rows
     expect(frame.lastElementChild).toBe(lines()[1]);
@@ -72,12 +72,34 @@ describe("the details line on phones", () => {
     const user = userEvent.setup();
     draw();
     await user.tab();
-    expect(shownLine()).toMatch(/^Under 2,000 median 0\.28 .* median age 12 years\.$/); // no "Tap again"
+    expect(shownLine()).toMatch(/^Under 2,000 median 0\.28 .* 2,708 stories\.$/); // no "Tap again"
     expect(lines()[0].textContent).toBe(""); // the live line stays quiet: the row's name says the same
     await user.keyboard("{ArrowDown}");
     expect(shownLine()).toMatch(/^2,000–3,000 /);
     await user.keyboard("{Escape}");
     expect(shownLine()).toBe("");
+  });
+
+  it("never says the median age: not in the phone's line, the card or the rows' names (decision 2)", () => {
+    const { container } = draw();
+    for (const row of screen.getAllByRole("img")) {
+      expect(row.getAttribute("aria-label")).not.toMatch(/age/i);
+      fireEvent.click(row);
+      expect(shownLine()).not.toMatch(/age|year/i);
+      fireEvent.click(row);
+    }
+    vi.restoreAllMocks();
+    phoneWidth(720);
+    const wide = draw();
+    fireEvent.click(within(wide.container).getAllByRole("img")[0]);
+    expect(wide.container.querySelector(".chart-tip").textContent).not.toMatch(/age|year/i);
+    expect([...wide.container.querySelectorAll(".chart-tip dt")].map((dt) => dt.textContent)).toEqual([
+      "Median",
+      "Interquartile range",
+      "Mean",
+      "Stories",
+    ]);
+    expect(container.textContent).not.toMatch(/median age/i);
   });
 
   it("keeps the floating card on wider charts", () => {

@@ -359,8 +359,8 @@ export default function Methodology({ meta, section }) {
           A story’s age is the time from its publication date to the day its numbers were recorded. Age matters a lot
           here: a 15-year-old story has had 15 years to collect views, and newer stories tend to collect far more
           favorites, ratings and reading-list adds per 1,000 views than older ones. That is why the site offers views
-          per month alongside raw views, shows each group’s median age, warns when the groups being compared differ
-          in age, and lets you look at stories published in the same period.
+          per month alongside raw views, warns when a measure is a total that grows with time online, and lets you
+          look at stories published in the same period with “Only include”.
         </p>
 
         <h2 id="measures" tabIndex={-1}>How the story characteristics were measured</h2>
@@ -411,8 +411,8 @@ export default function Methodology({ meta, section }) {
           For each characteristic, stories are split into groups: ranges chosen so that each holds a similar share of
           stories (with readable round boundaries), a separate “None” group when many stories have none at all, or
           the natural categories (first person, third person …). For each group the charts show the median, the
-          interquartile range, the number of stories and their median age. The mean (which a few very popular stories
-          can pull up) is in each group’s details and in “Show the numbers”.
+          interquartile range and the number of stories. The mean (which a few very popular stories can pull up) is in
+          each group’s details.
         </p>
         <p>
           Every genre was sampled equally, but Literotica’s genres differ a lot in size. “All genres” therefore

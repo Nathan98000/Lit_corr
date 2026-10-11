@@ -211,7 +211,7 @@ describe("the chart", () => {
     const rowsEl = screen.getAllByRole("img");
     expect(rowsEl).toHaveLength(3);
     expect(rowsEl[0].getAttribute("tabindex")).toBe("0");
-    expect(rowsEl[0].getAttribute("aria-label")).toBe("Under 10%: median 0.30, interquartile range 0.18–0.42, mean 0.36, 100 stories, median age 6 years");
+    expect(rowsEl[0].getAttribute("aria-label")).toBe("Under 10%: median 0.30, interquartile range 0.18–0.42, mean 0.36, 100 stories");
     expect(rowsEl[1].getAttribute("class")).toMatch(/small/);
     expect(screen.getByText("20 stories*")).toBeTruthy(); // jsdom draws at 720 px: n under the label
     expect(screen.getByText("Too few stories to show")).toBeTruthy();

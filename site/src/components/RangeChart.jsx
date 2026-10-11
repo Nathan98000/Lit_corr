@@ -1,5 +1,5 @@
 import { useId, useRef } from "react";
-import { formatAge, formatCount, formatFixed, formatRange, columnDecimals } from "../lib/format.js";
+import { formatCount, formatFixed, formatRange, columnDecimals } from "../lib/format.js";
 import { PHONE, capsule, rangeLayout, scaleX } from "../lib/rangeLayout.js";
 import { chartSummary, groupedBy } from "../lib/wording.js";
 import useGlide from "./useGlide.js";
@@ -16,10 +16,9 @@ function rowDetails(row, format, minN) {
     range: formatRange(s.p25, s.p75, d),
     mean: formatFixed(s.mean, d),
     stories: formatCount(s.n),
-    age: formatAge(s.age),
     label:
       `${row.label}: median ${formatFixed(s.median, d)}, interquartile range ${formatRange(s.p25, s.p75, d)}, ` +
-      `mean ${formatFixed(s.mean, d)}, ${formatCount(s.n)} stories, median age ${formatAge(s.age)}`,
+      `mean ${formatFixed(s.mean, d)}, ${formatCount(s.n)} stories`,
   };
 }
 
@@ -114,7 +113,7 @@ export default function RangeChart({
       {activeDetails.median ? (
         <>
           median {activeDetails.median} · interquartile range {activeDetails.range} · mean {activeDetails.mean} ·{" "}
-          {activeDetails.stories} stories · median age {activeDetails.age}.
+          {activeDetails.stories} stories.
           {shown.by === "tap" && <span className="muted"> Tap again to close.</span>}
         </>
       ) : (
@@ -286,8 +285,6 @@ export default function RangeChart({
                 <dd>{activeDetails.mean}</dd>
                 <dt>Stories</dt>
                 <dd>{activeDetails.stories}</dd>
-                <dt>Median age</dt>
-                <dd>{activeDetails.age}</dd>
               </dl>
             ) : (
               <p>Fewer than {minN} stories, so this group is not shown.</p>

@@ -79,10 +79,9 @@ describe("the chart's words", () => {
       "Interquartile range",
       "Mean",
       "Stories",
-      "Median age",
     ]);
     expect(screen.getAllByRole("img")[0].getAttribute("aria-label")).toBe(
-      "Under 2,000: median 0.28, interquartile range 0.10–0.66, mean 0.46, 2,708 stories, median age 12 years",
+      "Under 2,000: median 0.28, interquartile range 0.10–0.66, mean 0.46, 2,708 stories",
     );
     render(<NumbersTable rows={rows} overall={stats(0.45, 2728)} metric={metric} minN={10} />);
     expect(screen.getAllByRole("columnheader").map((th) => th.textContent)).toEqual([
@@ -123,8 +122,8 @@ describe("compare mode and How it works", () => {
     );
     const text = document.querySelector(".methodology").textContent.replace(/\s+/g, " ");
     expect(text).toContain(
-      "For each group the charts show the median, the interquartile range, the number of stories and their median " +
-        "age. The mean (which a few very popular stories can pull up) is in each group’s details and in “Show the numbers”.",
+      "For each group the charts show the median, the interquartile range and the number of stories. The mean " +
+        "(which a few very popular stories can pull up) is in each group’s details.",
     );
     expect(text).toContain("and the medians of the lowest and highest groups must differ by at least 10% (or 0.1 stars for ratings)");
     expect(text).toContain("Even a clear pattern describes the medians; individual stories vary widely.");

@@ -143,7 +143,7 @@ describe("F54: the keyboard in the chart", () => {
     await user.keyboard("{Escape}");
     expect(card()).toBeNull();
     // the row names keep every number
-    expect(rowEls[1].getAttribute("aria-label")).toBe("10–20%: median 0.40, interquartile range 0.24–0.56, mean 0.48, 100 stories, median age 6 years");
+    expect(rowEls[1].getAttribute("aria-label")).toBe("10–20%: median 0.40, interquartile range 0.24–0.56, mean 0.48, 100 stories");
   });
 
   it("no longer pins the details with Enter or Space", async () => {

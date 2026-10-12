@@ -29,7 +29,7 @@ import {
 } from "../lib/trendLayout.js";
 import { formatPercent } from "../lib/genres.js";
 import {
-  mixFixedLine,
+  borderlineLine,
   numbersLine,
   periodWords,
   trendAxisTitle,
@@ -38,6 +38,7 @@ import {
   trendHeading,
   trendCells,
   trendMixColors,
+  trendMixGroups,
   trendSplitInputs,
   trendsFileName,
   yesPhrase,
@@ -345,25 +346,49 @@ describe("the heading, the numbers line and the fixed-mix line", () => {
     expect(words({ noun: "narrative perspective", bins: { type: "levels" } }, { k: "grp", q: [], t: [9], r: 0.02, f: 0 })).toBeNull();
   });
 
-  it("says the fixed-mix check only for All genres, and only when it gives another verdict", () => {
-    expect(mixFixedLine({ k: "num", r: -0.213, f: -1, rm: -0.199, fm: 0 }, "all")).toBe(
-      "Holding each genre’s share of stories fixed, the change is not clear.",
+  it("says borderline only for All genres, only when the fixed-mix check disagrees, in place of the fixed-mix line (O6)", () => {
+    const link = "how\u00a0this\u00a0is\u00a0decided";
+    const touch = { k: "num", r: -0.213, f: -1, rm: -0.199, fm: 0 };
+    expect(borderlineLine(touch, "all")).toEqual([
+      "By the site’s rule it clearly fell, but not once each genre’s share of stories is held fixed (",
+      link,
+      ").",
+    ]);
+    expect(borderlineLine({ k: "num", r: 0.196, f: 0, rm: 0.208, fm: 1 }, "all")).toEqual([
+      "By the site’s rule the change is not clear, but it clearly rose once each genre’s share of stories is held fixed (",
+      link,
+      ").",
+    ]);
+    expect(borderlineLine({ k: "band", r: 0.196, f: 0, rm: 0.208, fm: -1 }, "all")[0]).toMatch(/it clearly moved earlier once each/);
+    expect(borderlineLine({ k: "num", r: 0.25, f: 1, rm: 0.246, fm: 1 }, "all")).toBeNull();
+    expect(borderlineLine({ k: "num", r: null, f: 0, rm: null, fm: 0 }, "all")).toBeNull();
+    expect(borderlineLine({ k: "num", r: -0.3, f: -1 }, "adult-romance")).toBeNull();
+    const heading = (variable, entry, genre = ALL) => trendHeading({ variable, entry, genre, subset: { id: "all" }, file: { ...FILE, g: genre.id } });
+    const touchWords = { id: "sense_touch_per_1k", label: "Touch words", noun: "touch words", plural: true, unit: "per 1,000 words", bins: { type: "ranges" } };
+    expect(heading(touchWords, touch)).toBe("Touch words: a borderline change from 2000–2009 to 2020 or later");
+    expect(heading(NOTE, { k: "bin", r: 0.19, f: 0, rm: 0.21, fm: 1 })).toBe(
+      "The share of stories with an author’s note: a borderline change from 2000–2009 to 2020 or later",
     );
-    expect(mixFixedLine({ k: "num", r: 0.196, f: 0, rm: 0.208, fm: 1 }, "all")).toBe("Holding each genre’s share of stories fixed, it clearly rose.");
-    expect(mixFixedLine({ k: "band", r: 0.196, f: 0, rm: 0.208, fm: -1 }, "all")).toBe("Holding each genre’s share of stories fixed, it clearly moved earlier.");
-    expect(mixFixedLine({ k: "num", r: 0.25, f: 1, rm: 0.246, fm: 1 }, "all")).toBeNull();
-    expect(mixFixedLine({ k: "num", r: null, f: 0, rm: null, fm: 0 }, "all")).toBeNull();
-    expect(mixFixedLine({ k: "num", r: -0.3, f: -1 }, "adult-romance")).toBeNull();
+    // every other heading is unchanged
+    expect(heading(touchWords, { ...touch, fm: -1 })).toBe("Touch words clearly fell from 2000–2009 to 2020 or later");
+    expect(heading(touchWords, { k: "num", r: -0.213, f: -1 }, ROMANCE)).toBe("Touch words clearly fell from 2000–2009 to 2020 or later");
   });
 
-  it.skipIf(!real)("shows the mix line exactly where the file's f and fm differ (the real data)", () => {
+  it.skipIf(!real)("says borderline exactly where the file's f and fm differ (the real data)", () => {
     const counts = {};
     for (const sub of real.trend.subsets) {
       const file = realTrends(sub, "all");
-      counts[sub] = Object.values(file.c).filter((e) => mixFixedLine(e, "all")).length;
+      const subset = real.subsets.find((x) => x.id === sub);
+      counts[sub] = Object.entries(file.c).filter(([id, e]) => {
+        const said = trendHeading({ variable: real.variables.find((v) => v.id === id), entry: e, genre: ALL, subset, file }).includes("borderline");
+        expect(said, id).toBe(Boolean(borderlineLine(e, "all")));
+        return said;
+      }).length;
       expect(counts[sub]).toBe(Object.values(file.c).filter((e) => e.r != null && e.f !== e.fm).length);
     }
-    expect(counts).toEqual({ all: 2, short: 1, medium: 5, long: 4 }); // the acceptance numbers (§1.7)
+    expect(counts).toEqual({ all: 2, short: 1, medium: 5, long: 4 }); // the acceptance numbers
+    const touch = realTrends("all", "all").c.sense_touch_per_1k;
+    expect([touch.r, touch.rm]).toEqual([-0.213, -0.199]);
   });
 });
 
@@ -374,7 +399,8 @@ describe("View 1 on the page", () => {
     const takeaway = document.querySelector(".trend-takeaway").textContent;
     expect(takeaway).toMatch(/^Median \d+% in 2000–2009, \d+% in 2020 or later\.$/);
     const legend = [...document.querySelectorAll(".trend-legend li")].map((li) => li.textContent);
-    expect(legend).toEqual([" Median", " Interquartile range", " The periods compared (how this is decided)"]);
+    expect(legend).toEqual([" Median and interquartile range", " The periods compared (how this is decided)"]);
+    expect(document.querySelector(".trend-legend .key-range")).toBeTruthy(); // a dot inside a capsule
     expect(document.querySelector(".trend-legend a").getAttribute("href")).toBe("#/methodology/trends");
     const cols = [...document.querySelectorAll(".trend-chart g.col[role='img']")];
     expect(cols).toHaveLength(5);
@@ -382,7 +408,14 @@ describe("View 1 on the page", () => {
     expect(document.querySelector(".trend-chart .trend-axis-title").textContent).toBe("Dialogue share");
     const table = document.querySelector(".trend-table");
     expect(table.getAttribute("aria-hidden")).toBe("true");
-    expect([...table.querySelectorAll(".bracket text")].map((t) => t.textContent)).toEqual(["2000–2009", "2020 or later"]);
+    // each bracket carries its window's number, the takeaway's (one line each at 720 px)
+    const [, then, now] = takeaway.match(/^Median (\d+%) in 2000–2009, (\d+%) in 2020 or later\.$/);
+    expect([...table.querySelectorAll(".bracket text")].map((t) => t.textContent)).toEqual([
+      `2000–2009 · median ${then}`,
+      `2020 or later · median ${now}`,
+    ]);
+    expect(table.querySelector(".not-compared").textContent).toBe("not compared");
+    expect([...document.querySelectorAll(".trend-chart g.col")].map((g) => g.classList.contains("middle"))).toEqual([false, false, true, true, false]);
     expect([...table.querySelectorAll(".col-head")].map((t) => t.textContent)).toEqual(["Median", "Stories"]);
     expect(document.querySelectorAll(".trend-chart .iqr")).toHaveLength(5);
     expect(document.querySelector(".trend-chart .trend-line").getAttribute("d")).toMatch(/^M[\d.]+,[\d.]+( L[\d.]+,[\d.]+){4}$/);
@@ -453,7 +486,7 @@ describe("View 1 on the page", () => {
     const small = document.querySelectorAll(".trend-chart g.col.small");
     expect(small.length).toBe(4); // Romance's periods: 23, 18, 18, 20 and 41 stories
     expect([...document.querySelectorAll(".trend-table .gn")].map((t) => t.textContent)).toEqual(["23*", "18*", "18*", "20*", "41"]);
-    expect([...document.querySelectorAll(".trend-legend li")].map((li) => li.textContent)).toContain(" Fewer than 30 stories");
+    expect([...document.querySelectorAll(".trend-legend li")].map((li) => li.textContent)).toContain(" Fewer than 30 stories (*)");
     window.location.hash = "#/trends?var=dlg_word_share&genre=romance&include=medium";
     await waitFor(() => expect(document.querySelectorAll(".trend-chart .gnone").length).toBeGreaterThan(0));
     const none = [...document.querySelectorAll(".trend-chart g.col")].filter((g) => g.querySelector(".gnone"));
@@ -468,21 +501,34 @@ describe("View 1 on the page", () => {
       /^Stories with dialogue made up \d+% of stories in 2000–2009, \d+% in 2020 or later\.$/,
     );
     expect([...document.querySelectorAll(".trend-legend li")][0].textContent).toBe(" Share of stories");
-    expect(document.querySelectorAll(".trend-chart .share-bar")).toHaveLength(5);
+    expect(document.querySelector(".trend-legend .key-share")).toBeTruthy(); // a dot on a short line
+    // no share bar: a dot on the line, as for numbers
+    expect(document.querySelectorAll(".trend-chart .share-bar")).toHaveLength(0);
+    expect(document.querySelectorAll(".trend-chart .median")).toHaveLength(5);
     expect([...document.querySelectorAll(".trend-table .col-head")][0].textContent).toBe("Share");
+    expect([...document.querySelectorAll(".trend-table .bracket text")].map((t) => t.textContent)).toEqual([
+      expect.stringMatching(/^2000–2009 · \d+%$/),
+      expect.stringMatching(/^2020 or later · \d+%$/),
+    ]);
   });
 
-  it("adds the fixed-mix line for All genres when it gives another verdict, and never for a genre", async () => {
+  it("says borderline for All genres when the fixed-mix check disagrees, with its line and link, and never for a genre", async () => {
     const notClear = (body) => {
       Object.assign(body.c.dlg_word_share, { fm: 0, rm: 0.15 });
       return body;
     };
     await openTrends("#/trends?var=dlg_word_share", { change: notClear });
-    expect(document.querySelector(".trend-mix").textContent).toBe("Holding each genre’s share of stories fixed, the change is not clear.");
+    expect(screen.getByRole("heading", { level: 2 }).textContent).toBe("Dialogue share: a borderline change from 2000–2009 to 2020 or later");
+    const line = document.querySelector(".trend-borderline");
+    expect(line.textContent).toBe(
+      "By the site’s rule it clearly rose, but not once each genre’s share of stories is held fixed (how\u00a0this\u00a0is\u00a0decided).",
+    );
+    expect(within(line).getByRole("link").getAttribute("href")).toBe("#/methodology/trends");
     window.location.hash = "#/trends?var=dlg_word_share&genre=fetish";
     await waitFor(() => expect(screen.getByLabelText("Genre").value).toBe("fetish"));
     await waitFor(() => expect(document.querySelector(".trend-answer[aria-busy='false']")).toBeTruthy());
-    expect(document.querySelector(".trend-mix")).toBeNull();
+    expect(document.querySelector(".trend-borderline")).toBeNull();
+    expect(screen.getByRole("heading", { level: 2 }).textContent).not.toMatch(/borderline/);
   });
 
   it("says when a window has too few stories, and still draws the chart", async () => {
@@ -551,8 +597,11 @@ describe("named groups and bands: 100% columns", () => {
     expect(screen.getByRole("heading", { level: 2 }).textContent).toBe("No clear change in narrative perspective from 2000–2009 to 2020 or later");
     expect(document.querySelector(".trend-takeaway")).toBeNull(); // no numbers line: the shares are in the chart
     const labels = fixtureMeta.variables.find((v) => v.id === "pov_class").bins.labels;
+    // the three groups under 3% in every period are one "Other" (the test data has no story in them)
     expect([...document.querySelectorAll(".trend-legend li")].map((li) => li.textContent.trim())).toEqual([
-      ...labels,
+      "First person (I)",
+      "Third person",
+      "Other (first person plural (we), second person (you), mixed)",
       "The periods compared (how this is decided)",
     ]);
     const cols = [...document.querySelectorAll(".trend-mix g.col[role='img']")];
@@ -567,24 +616,47 @@ describe("named groups and bands: 100% columns", () => {
     expect([...cols[0].querySelectorAll(".seglab")].map((t) => t.textContent)).toEqual(["69%", "31%"]);
     expect([...document.querySelectorAll(".trend-table .col-head")].map((t) => t.textContent)).toEqual(["Stories"]);
     expect(document.querySelector(".trend-table .gval")).toBeNull();
-    expect(document.querySelectorAll(".trend-legend .key-swatch")).toHaveLength(5);
+    expect(document.querySelectorAll(".trend-legend .key-swatch")).toHaveLength(3);
+    expect(document.querySelector(".trend-legend .key-swatch.pal-other")).toBeTruthy();
+    // named groups and bands keep their colors between the windows, and get only "not compared"
+    expect([...document.querySelectorAll(".trend-table .bracket text")].map((t) => t.textContent)).toEqual(["2000–2009", "2020 or later"]);
+    expect(document.querySelector(".trend-table .not-compared")).toBeTruthy();
+  });
+
+  it("merges two or more named groups under 3% in every period drawn into “Other”, never one alone, never bands", () => {
+    const labels = ["First person (I)", "First person plural (we)", "Second person (you)", "Third person", "Mixed"];
+    const cell = (shares, n = 100) => ({ n, shares });
+    const cells = [cell([0.57, 0.004, 0.02, 0.39, 0.016]), null, cell([0.55, 0.005, 0.025, 0.4, 0.02]), cell([0.54, 0.006, 0.01, 0.44, 0.004])];
+    const groups = trendMixGroups("grp", cells, labels, [0.57, 0.004, 0.02, 0.39, 0.016]);
+    expect(groups.map((g) => g.label)).toEqual(["First person (I)", "Third person", "Other (first person plural (we), second person (you), mixed)"]);
+    expect(groups[2]).toMatchObject({ cls: "pal-other", ink: "dark", members: [1, 2, 4] });
+    // one group under 3% stays itself
+    const one = trendMixGroups("grp", [cell([0.6, 0.02, 0.38])], ["A", "B", "C"]);
+    expect(one.map((g) => g.label)).toEqual(["A", "B", "C"]);
+    // a group under 3% in one period but not another stays itself
+    const mixed = trendMixGroups("grp", [cell([0.9, 0.02, 0.08]), cell([0.9, 0.05, 0.01]), cell([0.9, 0.02, 0.01])], ["A", "B", "C"]);
+    expect(mixed.map((g) => g.label)).toEqual(["A", "B", "C"]);
+    expect(trendMixGroups("band", cells, labels).map((g) => g.label)).toEqual(labels);
   });
 
   it("colors each group as View 2's rows do", async () => {
     const user = await openTrends("#/trends?var=pov_class");
-    const viewOne = [...document.querySelectorAll(".trend-legend .key-swatch")].map((k) => k.className.match(/pal-group-\d/)[0]);
+    const swatch = (li) => li.querySelector(".key-swatch, .profile-swatch").className.match(/pal-\w+-?\d*/)[0];
+    const viewOne = Object.fromEntries([...document.querySelectorAll(".trend-legend li")].filter((li) => li.querySelector(".key-swatch")).map((li) => [li.textContent.trim(), swatch(li)]));
     window.location.hash = "#/trends?view=changes";
     await waitFor(() => expect(document.querySelector(".trend-changes")).toBeTruthy());
     await user.click([...document.querySelectorAll(".profile-topic summary")].find((x) => x.textContent.startsWith("Narration")));
     await waitFor(() => expect(document.querySelector(".profile-key")).toBeTruthy());
-    const viewTwo = [...document.querySelectorAll(".profile-key .profile-swatch")].map((k) => k.className.match(/pal-group-\d/)[0]);
-    expect(viewTwo).toEqual(viewOne);
+    const viewTwo = Object.fromEntries([...document.querySelectorAll(".profile-key .profile-key-item")].map((li) => [li.textContent.trim(), swatch(li)]));
+    // the groups View 1 draws on their own have View 2's colors ("Other" is View 1's)
+    for (const [label, cls] of Object.entries(viewOne)) if (cls !== "pal-other") expect(viewTwo[label], label).toBe(cls);
+    expect(Object.keys(viewOne)).toHaveLength(3);
   });
 
   it("hatches a period under 30 stories", async () => {
     await openTrends("#/trends?var=pov_class&genre=romance");
     expect(document.querySelectorAll(".trend-mix .small-over")).toHaveLength(4); // 23, 18, 18 and 20 stories
-    expect([...document.querySelectorAll(".trend-legend li")].map((li) => li.textContent.trim())).toContain("Fewer than 30 stories");
+    expect([...document.querySelectorAll(".trend-legend li")].map((li) => li.textContent.trim())).toContain("Fewer than 30 stories (*)");
   });
 
   it("draws ordered bands from light to dark, the first at the bottom, with the ink each color takes", () => {
@@ -629,13 +701,24 @@ describe("mostly zero: the split chart", () => {
     expect(any.querySelector(".gn").textContent).toBe("42");
     expect(among.querySelector(".gn").textContent).toBe("22*"); // the stories with any, hatched under 30
     expect(cols[0].querySelectorAll(".half")[1].classList.contains("small")).toBe(true);
+    // the split chart's two dots differ in the key: a dot on a line, a dot inside a capsule
     expect([...document.querySelectorAll(".trend-legend li")].map((li) => li.textContent.trim())).toEqual([
       "Share of stories",
-      "Median",
-      "Interquartile range",
-      "Fewer than 30 stories",
+      "Median and interquartile range",
+      "Fewer than 30 stories (*)",
       "The periods compared (how this is decided)",
     ]);
+    expect(document.querySelectorAll(".trend-legend li:nth-child(3) .key")).toHaveLength(2); // a hollow dot, a hatched capsule
+    // each half's brackets carry its numbers: the share with any, the median among those
+    expect([...any.querySelectorAll(".bracket text")].map((t) => t.textContent)).toEqual([
+      expect.stringMatching(/^2000–2009 · \d+% with any$/),
+      expect.stringMatching(/^2020 or later · \d+% with any$/),
+    ]);
+    expect([...among.querySelectorAll(".bracket text")].map((t) => t.textContent)).toEqual([
+      expect.stringMatching(/^2000–2009 · median [\d.]+$/),
+      expect.stringMatching(/^2020 or later · median [\d.]+$/),
+    ]);
+    expect(chart.querySelectorAll(".not-compared")).toHaveLength(2);
     expect(document.querySelector(".trend-takeaway").textContent).toMatch(
       /^Stories with any, \d+% in 2000–2009 and \d+% in 2020 or later; among those, median [\d.]+ and [\d.]+ per 1,000 words\.$/,
     );
@@ -707,8 +790,8 @@ describe("the PNG", () => {
   });
 
   it("gives the key's link a 44 px target, never broken, and lets a tap on the table reach its period's column", () => {
-    expect(css).toMatch(/\.trend-legend a \{\s*position: relative;\s*white-space: nowrap;/);
-    expect(css).toMatch(/\.trend-legend a::after \{[^}]*height: max\(100%, var\(--target\)\);/);
+    expect(css).toMatch(/\.trend-legend a,\s*\.trend-borderline a \{\s*position: relative;\s*white-space: nowrap;/);
+    expect(css).toMatch(/\.trend-legend a::after,\s*\.trend-borderline a::after \{[^}]*height: max\(100%, var\(--target\)\);/);
     expect(css).toMatch(/\.trend-chart \.trend-table \{\s*pointer-events: none;/);
   });
 
@@ -719,12 +802,18 @@ describe("the PNG", () => {
   it("draws the key in forced colors as the explorer's is drawn", () => {
     const forced = css.slice(css.indexOf("@media (forced-colors: active)"));
     expect(forced).toMatch(/\.trend-legend \.key \{\s*forced-color-adjust: none;/);
-    expect(forced).toMatch(/\.trend-legend \.key-median \{\s*background: Highlight;/);
+    expect(forced).toMatch(/\.trend-legend \.key-share \{\s*background:\s*radial-gradient\(circle at 50% 50%, Highlight/);
+    expect(forced).toMatch(/\.trend-legend \.key-range \{\s*background: radial-gradient\(circle at 50% 50%, Highlight/);
+    expect(forced).toMatch(/\.trend-legend \.key-small-dot \{\s*background: Canvas;\s*border-color: Highlight;/);
     expect(forced).toMatch(/\.trend-legend \.key-small \{\s*background: Canvas;\s*border: 1px dashed CanvasText;/);
   });
 
-  it("keeps the trends chart's look in forced colors", () => {
-    expect(css).toMatch(/@media \(forced-colors: active\) \{[^@]*\.trend-chart \.trend-line,\s*\.trend-chart \.bracket path \{\s*stroke: CanvasText;/);
+  it("keeps the trends chart's look in forced colors: the gray periods and the line in GrayText", () => {
+    const forced = css.slice(css.indexOf("@media (forced-colors: active)"));
+    expect(forced).toMatch(/\.trend-chart \.bracket path \{\s*stroke: CanvasText;/);
+    expect(forced).toMatch(/\.trend-chart \.bracket text,\s*\.trend-chart \.not-compared \{\s*fill: CanvasText;/);
+    expect(forced).toMatch(/\.trend-chart \.trend-line \{\s*stroke: GrayText;/);
+    expect(forced).toMatch(/\.trend-chart \.row\.middle \.median \{\s*fill: GrayText;/);
   });
 });
 

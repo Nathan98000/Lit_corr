@@ -1,14 +1,15 @@
 import { bandPalette } from "../lib/genreLayout.js";
 import { nounOf } from "../lib/genres.js";
 import {
+  borderlineLine,
   genreWords,
-  mixFixedLine,
   nothingToDraw,
   numbersLine,
+  pathLine,
   trendCells,
   trendFormat,
   trendHeading,
-  trendMixColors,
+  trendMixGroups,
   trendQuestionText,
   trendsFileName,
   tooFewHeading,
@@ -44,10 +45,12 @@ export function ChartLink({ to, onNavigate, className, label, children }) {
 }
 
 /**
- * The chart's key: only what the chart shows (§3), with the link to how a change is decided. Numbers: the median and
- * the interquartile range; yes/no: the share of stories; mostly zero: both; named groups and bands: every group's
- * swatch (`groups`: [{ label, cls }]), above the chart since a column is too narrow for names; the hatching when a
- * period has fewer than SMALL_N stories; the brackets of the periods compared.
+ * The chart's key: only what the chart shows (§3), with the link to how a change is decided. Numbers: "Median and
+ * interquartile range", a dot inside a capsule; yes/no: "Share of stories", a dot on a short line (so the split chart's
+ * two dots differ in the key as they do in the chart); mostly zero: both; named groups and bands: every group's swatch
+ * (`groups`: [{ label, cls }], "Other (…)" among them), above the chart since a column is too narrow for names; when a
+ * period has fewer than SMALL_N stories, "Fewer than 30 stories (*)", the table's asterisk, with the marks it draws
+ * (a hollow dot, a hatched capsule or column); the brackets of the periods compared.
  */
 export function TrendLegend({ kind, anySmall, minStories, groups = null }) {
   const share = (
@@ -56,14 +59,9 @@ export function TrendLegend({ kind, anySmall, minStories, groups = null }) {
     </li>
   );
   const range = (
-    <>
-      <li>
-        <span className="key key-median" aria-hidden="true" /> Median
-      </li>
-      <li>
-        <span className="key key-iqr" aria-hidden="true" /> Interquartile range
-      </li>
-    </>
+    <li>
+      <span className="key key-range" aria-hidden="true" /> Median and interquartile range
+    </li>
   );
   const bands = kind === "band" ? ` bands-${bandPalette(groups.length)}` : "";
   return (
@@ -83,7 +81,8 @@ export function TrendLegend({ kind, anySmall, minStories, groups = null }) {
       ))}
       {anySmall && (
         <li>
-          <span className="key key-small" aria-hidden="true" /> Fewer than {minStories} stories
+          {(kind === "bin" || kind === "zero") && <span className="key key-small-dot" aria-hidden="true" />}
+          {kind !== "bin" && <span className="key key-small" aria-hidden="true" />} Fewer than {minStories} stories (*)
         </li>
       )}
       <li className="legend-text">
@@ -111,11 +110,12 @@ export function trendsImage({ variable, genre, heading, subset, state }, panel) 
 }
 
 /**
- * One characteristic over time (View 1, section 3): the verdict heading, the takeaway (the windows' numbers and, for
- * All genres, the fixed-mix line when it gives another verdict), the key, the chart and the actions: "See all changes
- * →" (what changed in the same genre and option, a new history entry), "Compare genres →" and "Download PNG". A genre
- * with fewer than MIN_N stories in every period gets the too-few sentence and a way out: all stories when an option is
- * on, else All genres.
+ * One characteristic over time (View 1, section 3): the verdict heading ("borderline" for All genres when the check
+ * with each genre's share held fixed disagrees), the takeaway (the windows' numbers; what happened in between, when a
+ * period outside the windows lies beyond both; the borderline line), the key, the chart and the actions: "See all
+ * changes →" (what changed in the same genre and option, a new history entry), "Compare genres →" and "Download PNG".
+ * A genre with fewer than MIN_N stories in every period gets the too-few sentence and a way out: all stories when an
+ * option is on, else All genres.
  */
 export default function TrendAnswer({ meta, state, file, busy, onSwitch, onNavigate, headingRef }) {
   const variable = meta.variables.find((v) => v.id === state.v);
@@ -145,14 +145,14 @@ export default function TrendAnswer({ meta, state, file, busy, onSwitch, onNavig
   const fmt = trendFormat(variable, entry, file.g === "all", smallN);
   const heading = trendHeading({ variable, entry, genre, subset, file });
   const numbers = numbersLine({ variable, entry, file, fmt, smallN });
-  const mix = mixFixedLine(entry, file.g);
+  const path = pathLine({ entry, file, fmt, smallN });
+  const border = borderlineLine(entry, file.g);
   const kind = entry.k;
   const cells = trendCells(entry, file.g === "all", smallN);
   // hatched: a period under SMALL_N stories (or, among a mostly-zero characteristic's stories with any, under SMALL_N)
   const anySmall = cells.some((c) => c && (c.small || (kind === "zero" && c.median != null && c.any < smallN)));
   const mixed = kind === "grp" || kind === "band";
-  const colors = mixed && trendMixColors(kind, cells, variable.bins.labels.length, entry.t && entry.t.slice(1));
-  const groups = mixed ? variable.bins.labels.map((label, b) => ({ label, cls: colors[b].cls })) : null;
+  const groups = mixed ? trendMixGroups(kind, cells, variable.bins.labels, entry.t && entry.t.slice(1)) : null;
   const Chart = kind === "zero" ? TrendSplit : mixed ? TrendMix : TrendChart;
   const image = (panel) => trendsImage({ variable, genre, heading, subset, state }, panel);
   const question = trendQuestionText(variable, genre);
@@ -164,14 +164,21 @@ export default function TrendAnswer({ meta, state, file, busy, onSwitch, onNavig
           {heading}
         </h2>
       </header>
-      {(numbers || mix) && (
+      {(numbers || path || border) && (
         <div className="takeaway trend-takeaway">
           {numbers && (
             <p>
               {numbers.map((seg, i) => (typeof seg === "string" ? seg : <strong key={i}>{seg.strong}</strong>))}
             </p>
           )}
-          {mix && <p className="trend-mix">{mix}</p>}
+          {path && <p className="trend-path">{path}</p>}
+          {border && (
+            <p className="trend-borderline">
+              {border[0]}
+              <a href={HOW_DECIDED}>{border[1]}</a>
+              {border[2]}
+            </p>
+          )}
         </div>
       )}
       <TrendLegend kind={kind} anySmall={anySmall} minStories={file.rule.min_n} groups={groups} />

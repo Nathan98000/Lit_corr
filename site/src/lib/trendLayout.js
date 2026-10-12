@@ -17,6 +17,8 @@ const STORIES_SIZE = 12;
 const NONE_SIZE = 12.5;
 const SEGMENT_SIZE = 12;
 const BRACKET_SIZE = 12;
+const NOT_COMPARED_SIZE = 12;
+const LABEL_GAP = 12; // between the two brackets' labels on one line
 
 /** "2000–04" (the end's last two digits when both years share their century), "2020–26". */
 export function periodLabel([lo, hi]) {
@@ -108,12 +110,29 @@ function noneLines(text, maxW) {
  * 100% columns), with `n` (stories with the characteristic) and `small` (under SMALL_N), or null under MIN_N; `periods`
  * and the two windows (`then`, `now`) from the file; `texts`: per period { value, stories } as the table under the plot
  * prints them; `valueHead` "Median", "Share" or null (no row of values: 100% columns print their shares in the
- * columns); `windows`: { then, now } words ("2000–2009", "2020 or later"); `axis` from trendTicks; `percent` for the
- * ticks; `top`: where the plot starts (lower under the split chart's titles). Returns the plot's box, the y scale, the
- * ticks, a column per period (x, its marks' positions, the table's texts and positions, "Fewer than 10" where nothing is
- * drawn) and the two brackets.
+ * columns); `windows`: { then, now } words ("2000–2009", "2020 or later"); `windowValues`: { then, now } numbers for
+ * the brackets' labels ("median 2,810"; trendChartInput), or null; `axis` from trendTicks; `percent` for the ticks;
+ * `top`: where the plot starts (lower under the split chart's titles). Returns the plot's box, the y scale, the ticks, a
+ * column per period (x, its marks' positions, the table's texts and positions, "Fewer than 10" where nothing is drawn,
+ * `middle` for a period outside both windows), the two brackets with their labels' lines, and "not compared" under the
+ * middle periods.
  */
-export function trendLayout({ width, kind, cells, periods, then, now, texts, valueHead, windows, axis, percent, noneText, top = 10 }) {
+export function trendLayout({
+  width,
+  kind,
+  cells,
+  periods,
+  then,
+  now,
+  texts,
+  valueHead,
+  windows,
+  windowValues = null,
+  axis,
+  percent,
+  noneText,
+  top = 10,
+}) {
   const W = Math.max(240, Math.min(TREND_MAX_W, Math.floor(width)));
   const phone = W < PHONE;
   const mix = kind === "grp" || kind === "band";
@@ -140,9 +159,9 @@ export function trendLayout({ width, kind, cells, periods, then, now, texts, val
   const storiesY = valueHead ? valueY + (stagger ? 33 : 18) : rowY;
   const bracketY = storiesY + 15;
   const bracketLabelY = bracketY + 17;
-  const height = bracketLabelY + 6;
-  // a yes/no bar; a 100% column, wide enough for the shares printed in it
-  const barW = mix ? Math.min(52, colW * 0.72) : Math.min(28, colW * 0.42);
+  const inWindow = (p, [a, b]) => p[0] >= a && p[1] <= b;
+  // a 100% column, wide enough for the shares printed in it (a yes/no share is a dot on the line, as a median is)
+  const barW = Math.min(52, colW * 0.72);
   const columns = periods.map((p, i) => {
     const x = gutter + colW * (i + 0.5);
     const c = cells[i];
@@ -153,6 +172,7 @@ export function trendLayout({ width, kind, cells, periods, then, now, texts, val
       x1: gutter + colW * (i + 1),
       ok: Boolean(c),
       small: Boolean(c?.small),
+      middle: !inWindow(p, then) && p[0] < now[0], // outside both windows: drawn quiet, "not compared"
       period: periodLabel(p),
       lines: two ? periodLines(p).map((t, k) => ({ text: t, y: periodY[k] })) : [{ text: periodLabel(p), y: periodY[0] }],
       value: valueHead ? { text: texts[i].value, x, y: valueY + (stagger && i % 2 ? 15 : 0) } : null,
@@ -166,7 +186,6 @@ export function trendLayout({ width, kind, cells, periods, then, now, texts, val
       col.bar = { x: x - barW / 2, width: barW };
     } else if (kind === "bin") {
       col.dotY = y(c.share);
-      col.bar = { x: x - barW / 2, y: col.dotY, width: barW, height: Math.max(1, bottom - col.dotY) };
     } else {
       col.dotY = y(c.median);
       col.capsule = { x: x - 6, y: y(c.p75), width: 12, height: Math.max(12, y(c.p25) - y(c.p75)) };
@@ -174,21 +193,37 @@ export function trendLayout({ width, kind, cells, periods, then, now, texts, val
     }
     return col;
   });
-  // the brackets under the windows compared: the first periods (2000–2009) and the last (2020 or later); a label stays
-  // inside the chart
-  const inWindow = (p, [a, b]) => p[0] >= a && p[1] <= b;
-  const bracket = (idx, label) => {
+  // the brackets under the windows compared: the first periods (2000–2009) and the last (2020 or later), each labeled
+  // with its window and the number the takeaway gives ("2000–2009 · median 2,810"); where the two labels don't fit on
+  // one line side by side (phones), each number takes a second line under its window. A label stays inside the chart.
+  const bracket = (idx, label, value) => {
     if (!idx.length) return null;
     const x0 = columns[idx[0]].x0 + 6;
     const x1 = columns[idx[idx.length - 1]].x1 - 6;
-    const half = textWidth(label, BRACKET_SIZE, 600) / 2;
-    const cx = Math.min(Math.max((x0 + x1) / 2, half + 1), W - half - 1);
-    return { x0, x1, y: bracketY, label, labelX: cx, labelY: bracketLabelY };
+    return { x0, x1, y: bracketY, label, value: value || null };
   };
   const brackets = [
-    bracket(periods.map((p, i) => (inWindow(p, then) ? i : -1)).filter((i) => i >= 0), windows.then),
-    bracket(periods.map((p, i) => (p[0] >= now[0] ? i : -1)).filter((i) => i >= 0), windows.now),
+    bracket(periods.map((p, i) => (inWindow(p, then) ? i : -1)).filter((i) => i >= 0), windows.then, windowValues?.then),
+    bracket(periods.map((p, i) => (p[0] >= now[0] ? i : -1)).filter((i) => i >= 0), windows.now, windowValues?.now),
   ].filter(Boolean);
+  const place = (b, text, y) => {
+    const half = textWidth(text, BRACKET_SIZE, 600) / 2;
+    const x = Math.min(Math.max((b.x0 + b.x1) / 2, half + 1), W - half - 1);
+    return { text, x, y, x0: x - half, x1: x + half };
+  };
+  const oneLine = brackets.map((b) => place(b, b.value ? `${b.label} · ${b.value}` : b.label, bracketLabelY));
+  const twoLines = brackets.some((b) => b.value) && oneLine.some((l, k) => k > 0 && l.x0 < oneLine[k - 1].x1 + LABEL_GAP);
+  brackets.forEach((b, k) => {
+    b.lines = twoLines
+      ? [place(b, b.label, bracketLabelY), ...(b.value ? [place(b, b.value, bracketLabelY + 15)] : [])]
+      : [oneLine[k]];
+  });
+  const height = bracketLabelY + (twoLines ? 15 : 0) + 6;
+  // the periods outside both windows (2010–14, 2015–19): "not compared", in the brackets' row, between them
+  const middles = columns.filter((c) => c.middle);
+  const notCompared = middles.length
+    ? { text: "not compared", x: (middles[0].x0 + middles[middles.length - 1].x1) / 2, y: bracketY + 2 }
+    : null;
   return {
     width: W,
     height,
@@ -207,7 +242,8 @@ export function trendLayout({ width, kind, cells, periods, then, now, texts, val
     heads: [...(valueHead ? [{ text: valueHead, x: 0, y: valueY }] : []), { text: "Stories", x: 0, y: storiesY }],
     columns,
     brackets,
-    line: mix ? [] : columns.filter((c) => c.ok).map((c) => [c.x, c.dotY]),
+    twoLines,
+    notCompared,
   };
 }
 
@@ -280,7 +316,8 @@ export function splitOverlaps(split) {
 
 /**
  * Text boxes that overlap in a layout (for the tests): the period labels, the table's values and counts, the row
- * heads, the tick labels and the brackets' labels, each estimated with textWidth; and anything outside the chart.
+ * heads, the tick labels, the brackets' labels (each line) and "not compared", each estimated with textWidth, and the
+ * brackets' lines; and anything outside the chart.
  */
 export function trendOverlaps(layout) {
   const boxes = [];
@@ -297,7 +334,11 @@ export function trendOverlaps(layout) {
   }
   for (const h of layout.heads) add("head", h.text, h.x, h.y, HEAD_SIZE, "start");
   for (const t of layout.ticks) add("tick", t.text, t.x, t.y + 4, TICK_SIZE, "end");
-  for (const b of layout.brackets) add("bracket", b.label, b.labelX, b.labelY, BRACKET_SIZE, "middle", 600);
+  for (const b of layout.brackets) {
+    for (const l of b.lines) add("bracket", l.text, l.x, l.y, BRACKET_SIZE, "middle", 600);
+    boxes.push({ kind: "bracket line", text: b.label, x0: b.x0, x1: b.x1, y0: b.y - 5, y1: b.y + 0.5 });
+  }
+  if (layout.notCompared) add("not compared", layout.notCompared.text, layout.notCompared.x, layout.notCompared.y, NOT_COMPARED_SIZE);
   const out = [];
   for (let i = 0; i < boxes.length; i += 1) {
     const a = boxes[i];

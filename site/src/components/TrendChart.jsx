@@ -43,7 +43,8 @@ export function Ticks({ layout, ticks, y }) {
 /**
  * The table under the plot, aligned with the columns and hidden from screen readers (each period's name says its
  * numbers): the periods, the medians or shares (smaller when long values would crowd a phone: trendLayout), the stories,
- * the rows' heads and the brackets of the two windows compared.
+ * the rows' heads, the brackets of the two windows compared with their numbers ("2000–2009 · median 2,810", on two
+ * lines where they don't fit), and "not compared" between them, under the periods outside both windows.
  */
 export function Table({ layout }) {
   const valueStyle = layout.valueSize !== 13 ? { fontSize: `${layout.valueSize}px` } : undefined;
@@ -74,21 +75,35 @@ export function Table({ layout }) {
       {layout.brackets.map((b) => (
         <g key={b.label} className="bracket">
           <path d={`M${b.x0},${b.y - 5} V${b.y} H${b.x1} V${b.y - 5}`} />
-          <text x={b.labelX} y={b.labelY} textAnchor="middle">
-            {b.label}
-          </text>
+          {b.lines.map((l) => (
+            <text key={l.y} x={l.x} y={l.y} textAnchor="middle">
+              {l.text}
+            </text>
+          ))}
         </g>
       ))}
+      {layout.notCompared && (
+        <text className="not-compared" x={layout.notCompared.x} y={layout.notCompared.y} textAnchor="middle">
+          {layout.notCompared.text}
+        </text>
+      )}
     </g>
   );
 }
 
-/** The hatching of a period under SMALL_N stories, as the explorer's capsules have it. */
+/**
+ * The hatching of a period under SMALL_N stories, as the explorer's capsules have it; in gray (`${id}-mid`) for a period
+ * outside both windows.
+ */
 export const Hatch = ({ id }) => (
   <defs>
     <pattern id={id} width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
       <rect width="5" height="5" fill="#fff" />
       <line x1="0" y1="0" x2="0" y2="5" className="hatch-line" />
+    </pattern>
+    <pattern id={`${id}-mid`} width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <rect width="5" height="5" fill="#fff" />
+      <line x1="0" y1="0" x2="0" y2="5" className="hatch-line mid" />
     </pattern>
   </defs>
 );
@@ -149,22 +164,16 @@ function Card({ label, words, at, width, cardRef, pinned }) {
   );
 }
 
-/** A num or bin column's marks: the capsule (or the bar) and the dot, hatched under SMALL_N; "Fewer than 10" under MIN_N. */
-function ColumnMarks({ kind, layout, col, m, y, hatchId, dx = 0, dy = 0 }) {
-  const hatch = col.small ? { fill: `url(#${hatchId})` } : undefined;
+/**
+ * A num or bin column's marks: the capsule (num) and the dot, the capsule hatched and the dot hollow under SMALL_N (a
+ * yes/no share is a dot alone, as on a line chart); "Fewer than 10" under MIN_N. A period outside both windows draws in
+ * gray (the row's class "middle"; its hatching gray too).
+ */
+function ColumnMarks({ kind, col, m, y, hatchId, dx = 0, dy = 0 }) {
+  const hatch = col.small ? { fill: `url(#${hatchId}${col.middle ? "-mid" : ""})` } : undefined;
   const x = col.x + dx;
   return (
     <>
-      {m && kind === "bin" && (
-        <rect
-          className="share-bar"
-          x={col.bar.x + dx}
-          y={dy + y(m[0])}
-          width={col.bar.width}
-          height={Math.max(1, layout.bottom - y(m[0]))}
-          style={hatch}
-        />
-      )}
       {m && kind !== "bin" && (
         <rect
           className="iqr"
@@ -186,12 +195,19 @@ function ColumnMarks({ kind, layout, col, m, y, hatchId, dx = 0, dy = 0 }) {
   );
 }
 
-/** The thin line through the medians (or the shares), under the marks. */
+/**
+ * The thin gray line through the medians (or the shares), under the marks; it breaks where a period isn't drawn (fewer
+ * than MIN_N stories), so no segment joins the periods on either side of it.
+ */
 function medianLine(layout, marks, y, kind) {
-  return marks
-    .map((m, i) => (m ? [layout.columns[i].x, y(kind === "bin" ? m[0] : m[1])] : null))
-    .filter(Boolean)
-    .map(([x, yy], k) => `${k ? "L" : "M"}${x.toFixed(1)},${yy.toFixed(1)}`)
+  const runs = [[]];
+  marks.forEach((m, i) => {
+    if (m) runs[runs.length - 1].push([layout.columns[i].x, y(kind === "bin" ? m[0] : m[1])]);
+    else runs.push([]);
+  });
+  return runs
+    .filter((r) => r.length > 1) // a period alone between two gaps has its dot and no line
+    .map((r) => r.map(([x, yy], k) => `${k ? "L" : "M"}${x.toFixed(1)},${yy.toFixed(1)}`).join(" "))
     .join(" ");
 }
 
@@ -199,11 +215,13 @@ const markValues = (kind) => (c) => (c ? (kind === "bin" ? [c.share] : [c.p25, c
 
 /**
  * One characteristic over time (View 1, section 3.1), for numbers (num: each period's interquartile range as an upright
- * capsule and its median as a dot) and yes/no characteristics (bin: a bar from 0 to the share of stories that have
- * it, with a dot on top), the dots joined by a thin line; under the plot, aligned with the columns, the periods, their
- * medians (or shares) and their stories (an asterisk under SMALL_N), and the brackets of the two windows compared. A
- * period with fewer than SMALL_N stories is hatched with a hollow dot; under MIN_N nothing is drawn and the column says
- * "Fewer than 10". The table and the brackets are hidden from screen readers: each period's name says its numbers.
+ * capsule and its median as a dot) and yes/no characteristics (bin: a dot at the share of stories that have it), the
+ * dots joined by a thin gray line that breaks where a period isn't drawn; the two windows compared in blue, the periods
+ * between them in gray ("not compared"); under the plot, aligned with the columns, the periods, their medians (or
+ * shares) and their stories (an asterisk under SMALL_N), and the brackets of the two windows compared, with the
+ * windows' numbers. A period with fewer than SMALL_N stories has a hollow dot (and a hatched capsule); under MIN_N
+ * nothing is drawn and the column says "Fewer than 10". The table and the brackets are hidden from screen readers:
+ * each period's name says its numbers.
  *
  * One tab stop: ← → (and ↑ ↓), Home and End move between the periods; the focused or hovered period's details show as a
  * card beside its column (wider charts) or a line under the chart (phones). Another genre or option glides the marks
@@ -254,11 +272,11 @@ export default function TrendChart({ meta, variable, entry, file, title }) {
             {line && <path className="trend-line" d={line} />}
           </g>
           {layout.columns.map((c, ci) => {
-            const cls = ["row", "col", c.small && "small", !c.ok && "hidden-group", d.active === c.i && "active"];
+            const cls = ["row", "col", c.small && "small", c.middle && "middle", !c.ok && "hidden-group", d.active === c.i && "active"];
             return (
               <g key={c.i} {...d.rowProps(ci, c.i)} className={cls.filter(Boolean).join(" ")} role="img" aria-label={periodName(c.period, words[ci])}>
                 <rect className="row-hit" x={c.x0} y={0} width={c.x1 - c.x0} height={layout.height - 30} />
-                <ColumnMarks kind={kind} layout={layout} col={c} m={g.marks[ci]} y={g.y} hatchId={hatchId} />
+                <ColumnMarks kind={kind} col={c} m={g.marks[ci]} y={g.y} hatchId={hatchId} />
               </g>
             );
           })}
@@ -340,7 +358,7 @@ export function TrendSplit({ meta, variable, entry, file, title }) {
             </g>
           ))}
           {A.layout.columns.map((c, ci) => {
-            const cls = ["row", "col", !c.ok && "hidden-group", d.active === c.i && "active"];
+            const cls = ["row", "col", c.middle && "middle", !c.ok && "hidden-group", d.active === c.i && "active"];
             return (
               <g key={c.i} {...d.rowProps(ci, c.i)} className={cls.filter(Boolean).join(" ")} role="img" aria-label={periodName(c.period, words[ci])}>
                 {split.halves.map((h, k) => {
@@ -356,7 +374,6 @@ export function TrendSplit({ meta, variable, entry, file, title }) {
                       />
                       <ColumnMarks
                         kind={kinds[k]}
-                        layout={h.layout}
                         col={col}
                         m={glides[k].marks[ci]}
                         y={glides[k].y}

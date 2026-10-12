@@ -1,6 +1,7 @@
 // Every sentence the Trends page builds, for every characteristic, genre and option of the real data: no causal
-// language, US spelling, no gaps, no notes about chance; "clearly" only through the file's flags; and no year written
-// into the page's code (the years come from the files and meta.trend).
+// language, US spelling, no gaps, no notes about chance; "clearly" only through the file's flags, and "borderline" only
+// where the fixed-mix check disagrees with them (O6); and no year written into the page's code (the years come from the
+// files and meta.trend).
 import { readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -14,9 +15,11 @@ import {
   changesTakeaway,
   changesTooFewHeading,
   changesWords,
-  mixFixedLine,
+  borderline,
+  borderlineLine,
   nothingToDraw,
   numbersLine,
+  pathLine,
   periodName,
   periodWords,
   trendAnnouncement,
@@ -28,6 +31,8 @@ import {
   trendProfile,
   trendSplitInputs,
   tooFewHeading,
+  windowNumbers,
+  windowWords,
   windowsCompared,
 } from "../lib/trends.js";
 import { realMeta } from "./fixtures.js";
@@ -48,21 +53,30 @@ function* sentences(meta, file) {
   for (const [id, entry] of Object.entries(file.c)) {
     const variable = meta.variables.find((v) => v.id === id);
     const at = `${file.s}/${file.g} ${id}`;
-    // "clearly" is said only by the heading (the flag f) and the fixed-mix line (fm), and the announcement repeats them
-    const mix = mixFixedLine(entry, file.g);
+    // "clearly" is said only by the heading (the flag f) and the borderline line (f or fm), and the announcement
+    // repeats them; "borderline" only where f and fm disagree (All genres)
+    const border = borderlineLine(entry, file.g);
+    const isBorder = borderline(entry, file.g);
     const shown = !nothingToDraw(entry) && entry.r != null;
-    const clearly = shown && (Boolean(entry.f) || Boolean(mix && entry.fm));
-    yield { at, text: trendQuestionText(variable, genre), clearly: false };
-    yield { at, text: trendAnnouncement(meta, file, { v: id, genre: file.g, sub: file.s }), clearly };
+    const clearly = shown && (Boolean(entry.f) || isBorder);
+    yield { at, text: trendQuestionText(variable, genre), clearly: false, border: false };
+    yield { at, text: trendAnnouncement(meta, file, { v: id, genre: file.g, sub: file.s }), clearly, border: shown && isBorder };
     if (nothingToDraw(entry)) {
-      yield { at, text: tooFewHeading({ entry, genre, subset, file }), clearly: false };
+      yield { at, text: tooFewHeading({ entry, genre, subset, file }), clearly: false, border: false };
       continue;
     }
-    yield { at, text: trendHeading({ variable, entry, genre, subset, file }), clearly: shown && Boolean(entry.f) };
+    yield { at, text: trendHeading({ variable, entry, genre, subset, file }), clearly: shown && Boolean(entry.f) && !isBorder, border: isBorder };
     const fmt = trendFormat(variable, entry, all, meta.small_n);
-    const numbers = numbersLine({ variable, entry, genre, file, fmt, smallN: meta.small_n });
-    if (numbers) yield { at, text: numbers.map((s) => (typeof s === "string" ? s : s.strong)).join(""), clearly: false };
-    if (mix) yield { at, text: mix, clearly: Boolean(entry.fm) };
+    const numbers = numbersLine({ variable, entry, file, fmt, smallN: meta.small_n });
+    if (numbers) yield { at, text: numbers.map((s) => (typeof s === "string" ? s : s.strong)).join(""), clearly: false, border: false };
+    const path = pathLine({ entry, file, fmt, smallN: meta.small_n });
+    if (path) yield { at, text: path, clearly: false, border: false };
+    if (border) yield { at, text: border.join(""), clearly: true, border: false };
+    const w = windowWords(file);
+    for (const kind of entry.k === "zero" ? ["any", "among"] : [entry.k]) {
+      const nums = windowNumbers({ entry, file, fmt, kind, smallN: meta.small_n });
+      for (const k of ["then", "now"]) if (nums?.[k]) yield { at, text: `${w[k]} · ${nums[k]}`, clearly: false, border: false };
+    }
     if (entry.k === "num" || entry.k === "bin") yield { at, text: trendAxisTitle(variable, entry), clearly: false };
     if (entry.k === "zero") for (const h of trendSplitInputs(meta, variable, entry, file)) yield { at, text: `${h.title}: ${h.axisTitle}`, clearly: false };
     const cells = trendCells(entry, all, meta.small_n);
@@ -109,6 +123,7 @@ describe("the Trends page's sentences on the real data", () => {
           expect(s.text, s.at).not.toMatch(NOT_SAID);
           expect(s.text, `${s.at}: ${s.text}`).not.toMatch(GAPS);
           if (s.clearly !== null) expect(/\bclearly\b/.test(s.text), `${s.at}: ${s.text}`).toBe(s.clearly);
+          if (s.border != null) expect(/\bborderline\b/.test(s.text), `${s.at}: ${s.text}`).toBe(s.border);
         }
       }
     }

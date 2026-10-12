@@ -3,7 +3,7 @@ import { bandPalette } from "../lib/genreLayout.js";
 import { formatPercent } from "../lib/genres.js";
 import { PHONE } from "../lib/rangeLayout.js";
 import { mixSegments, trendLayout } from "../lib/trendLayout.js";
-import { periodName, periodWords, trendChartInput, trendMixColors } from "../lib/trends.js";
+import { groupShares, periodName, periodWords, trendChartInput, trendMixGroups } from "../lib/trends.js";
 import { Table, Ticks, usePeriodDetails } from "./TrendChart.jsx";
 import useGlide from "./useGlide.js";
 import useWidth from "./useWidth.js";
@@ -11,11 +11,13 @@ import useWidth from "./useWidth.js";
 /**
  * Named groups (grp) and ordered bands (band) over time (View 1, section 3.1): one 100% column per period, the groups
  * in their own order from the bottom up, in the Genres page's colors (mixColors: the rank palette for named groups, the
- * largest in 2000–2009 darkest, as on View 2; light to dark blues for bands; the palettes are in palettes.css). Shares
- * are printed inside segments at least 16 px tall where their ink reaches 4.5:1; every share is in the details and the
- * period's name. Under the plot the periods and their stories, and the brackets of the two windows compared. A period
- * under SMALL_N stories is hatched; under MIN_N nothing is drawn. One tab stop and details as TrendChart; another
- * genre or option glides the segments.
+ * largest in 2000–2009 darkest, as on View 2; light to dark blues for bands; the palettes are in palettes.css); two or
+ * more named groups under 3% in every period drawn make one "Other" segment on top, in a neutral color
+ * (trendMixGroups). Shares are printed inside segments at least 16 px tall where their ink reaches 4.5:1; every
+ * group's share is in the details and the period's name. Under the plot the periods and their stories, the brackets of
+ * the two windows compared and "not compared" under the periods between them (whose columns keep their colors). A
+ * period under SMALL_N stories is hatched; under MIN_N nothing is drawn. One tab stop and details as TrendChart;
+ * another genre or option glides the segments.
  */
 export default function TrendMix({ meta, variable, entry, file, title }) {
   const kind = entry.k;
@@ -28,7 +30,7 @@ export default function TrendMix({ meta, variable, entry, file, title }) {
   const layout = trendLayout({ width, ...input });
   const phone = layout.width < PHONE;
   const labels = variable.bins.labels;
-  const colors = trendMixColors(kind, input.cells, labels.length, entry.t && entry.t.slice(1));
+  const groups = trendMixGroups(kind, input.cells, labels, entry.t && entry.t.slice(1));
   const glide = useGlide(
     input.cells.map((c) => (c ? c.shares : null)),
     `${variable.id}|${kind}|${layout.width}|${file.periods.length}`,
@@ -45,7 +47,7 @@ export default function TrendMix({ meta, variable, entry, file, title }) {
   });
   const ticks = layout.ticks.map((t) => ({ ...t, fade: 1 }));
   const y = layout.y;
-  const inks = colors.map((c) => c.ink);
+  const inks = groups.map((g) => g.ink);
   const bands = kind === "band" ? ` bands-${bandPalette(labels.length)}` : "";
 
   return (
@@ -73,15 +75,15 @@ export default function TrendMix({ meta, variable, entry, file, title }) {
             <Ticks layout={layout} ticks={ticks} y={y} />
           </g>
           {layout.columns.map((c, ci) => {
-            const shares = glide.values[ci];
-            const cls = ["row", "col", c.small && "small", !c.ok && "hidden-group", d.active === c.i && "active"];
+            const shares = glide.values[ci] && groupShares(groups, glide.values[ci]);
+            const cls = ["row", "col", c.small && "small", c.middle && "middle", !c.ok && "hidden-group", d.active === c.i && "active"];
             const segments = shares ? mixSegments(layout, c, shares, inks, formatPercent) : [];
             return (
               <g key={c.i} {...d.rowProps(ci, c.i)} className={cls.filter(Boolean).join(" ")} role="img" aria-label={periodName(c.period, words[ci])}>
                 <rect className="row-hit" x={c.x0} y={0} width={c.x1 - c.x0} height={layout.height - 30} />
                 {segments.map((s) =>
                   s.height > 0 ? (
-                    <rect key={s.b} className={`segment ${colors[s.b].cls}`} x={c.bar.x} y={s.y} width={c.bar.width} height={s.height} />
+                    <rect key={s.b} className={`segment ${groups[s.b].cls}`} x={c.bar.x} y={s.y} width={c.bar.width} height={s.height} />
                   ) : null,
                 )}
                 {shares && c.small && (
@@ -90,7 +92,7 @@ export default function TrendMix({ meta, variable, entry, file, title }) {
                 {shares && <rect className="bar-outline" x={c.bar.x} y={layout.top} width={c.bar.width} height={layout.plotH} />}
                 {segments.map((s) =>
                   s.label ? (
-                    <text key={`t${s.b}`} className={`seglab seg-ink-${colors[s.b].ink}`} x={s.label.x} y={s.label.y} textAnchor="middle">
+                    <text key={`t${s.b}`} className={`seglab seg-ink-${groups[s.b].ink}`} x={s.label.x} y={s.label.y} textAnchor="middle">
                       {s.label.text}
                     </text>
                   ) : null,

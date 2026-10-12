@@ -35,23 +35,51 @@
   color: var(--ink);
 }
 
-/* the thin line through the medians (or the shares), under the marks */
+/* the thin line through the medians (or the shares), under the marks: gray throughout, the compared windows' marks
+   blue; it breaks where a period isn't drawn */
 .trend-chart .trend-line {
   fill: none;
-  stroke: var(--accent);
+  stroke: var(--quiet-mark);
   stroke-width: 1.5;
-  stroke-opacity: 0.8;
 }
 
-/* yes/no: a bar from 0 to the share, the dot on top */
-.trend-chart .share-bar {
-  fill: var(--accent-bar);
+/* the periods outside both windows (2010–14, 2015–19): not compared, so drawn quiet, as "What changed" draws a row that
+   doesn't stand out: the dot and the capsule's outline in --quiet-mark (3.80:1 on the page), the capsule a light
+   neutral, the hatching gray; "not compared" under them, between the brackets */
+.trend-chart {
+  --quiet-fill: #ece9e2;
 }
 
-.trend-chart .row.small .share-bar {
-  stroke: var(--accent);
-  stroke-width: 1;
-  stroke-dasharray: 3 2;
+.trend-chart .row.middle .iqr {
+  fill: var(--quiet-fill);
+  stroke: var(--quiet-mark);
+}
+
+.trend-chart .row.middle .median {
+  fill: var(--quiet-mark);
+}
+
+.trend-chart .row.middle.small .median,
+.trend-split .row.middle .half.small .median {
+  fill: #fff;
+  stroke: var(--quiet-mark);
+}
+
+.trend-chart .hatch-line.mid {
+  stroke: #d9d4ca;
+}
+
+.trend-chart .not-compared {
+  fill: var(--ink-3);
+  font-size: 12px;
+  font-style: italic;
+}
+
+/* named groups that are each under 3% in every period: one "Other" segment in a neutral color (5.4:1 with the dark
+   ink; 3.3:1 on the page) */
+.pal-other {
+  fill: #8f8a80;
+  background: #8f8a80;
 }
 
 /* the table under the plot: the periods, their medians (or shares) in bold, their stories muted */
@@ -68,7 +96,7 @@
   font-size: 12px;
 }
 
-/* the two windows compared, bracketed under their periods */
+/* the two windows compared, bracketed under their periods, each with its window's number */
 .trend-chart .bracket path {
   fill: none;
   stroke: var(--ink-3);
@@ -116,13 +144,16 @@
   border-top: 0;
 }
 
-/* the key's link: never broken inside its parentheses, and a 44 px target, as the note's link in "What changed" */
-.trend-legend a {
+/* the key's and the borderline line's links: never broken inside their parentheses, and a 44 px target, as the note's
+   link in "What changed" */
+.trend-legend a,
+.trend-borderline a {
   position: relative;
   white-space: nowrap;
 }
 
-.trend-legend a::after {
+.trend-legend a::after,
+.trend-borderline a::after {
   content: "";
   position: absolute;
   left: 0;
@@ -137,13 +168,41 @@
   pointer-events: none;
 }
 
-/* the key of a share column: a bar with its dot on top */
+/* the key of a share: a dot on a short line, as the chart draws it */
 .trend-legend .key-share {
-  width: 12px;
-  height: 18px;
+  width: 20px;
+  height: 12px;
   background:
-    radial-gradient(circle at 50% 6px, var(--accent-ink) 0 5px, transparent 5.5px),
-    linear-gradient(var(--accent-bar), var(--accent-bar)) 1px 6px / 10px 12px no-repeat;
+    radial-gradient(circle at 50% 50%, var(--accent-ink) 0 5px, transparent 5.5px),
+    linear-gradient(var(--quiet-mark), var(--quiet-mark)) 0 50% / 100% 1.5px no-repeat;
+}
+
+/* the key of a median and its interquartile range: a dot inside an upright capsule, as the chart draws them */
+.trend-legend .key-range {
+  width: 12px;
+  height: 22px;
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  background: radial-gradient(circle at 50% 50%, var(--accent-ink) 0 4px, transparent 4.5px), var(--accent-bar);
+}
+
+/* fewer than 30 stories: a hollow dot (a share, or a median), an upright hatched capsule (numbers) */
+.trend-legend .key-small-dot {
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--accent-ink);
+  border-radius: 50%;
+  background: #fff;
+}
+
+.trend-legend .key-small {
+  width: 12px;
+  height: 22px;
+  border-radius: 6px;
+}
+
+.trend-legend li .key + .key {
+  margin-left: -3px;
 }
 
 /* the groups' swatches of the 100% columns (their colors are in palettes.css) */
@@ -208,12 +267,6 @@
   stroke-dasharray: 3 2;
 }
 
-.trend-split .half.small .share-bar {
-  stroke: var(--accent);
-  stroke-width: 1;
-  stroke-dasharray: 3 2;
-}
-
 .trend-split .half.small .median {
   fill: #fff;
   stroke: var(--accent-ink);
@@ -222,18 +275,34 @@
 
 /* ---------------------------------------------------------------------- forced colors */
 @media (forced-colors: active) {
-  .trend-chart .trend-line,
   .trend-chart .bracket path {
     stroke: CanvasText;
   }
 
-  .trend-chart .share-bar {
-    fill: Canvas;
-    stroke: CanvasText;
+  .trend-chart .bracket text,
+  .trend-chart .not-compared {
+    fill: CanvasText;
   }
 
-  .trend-chart .row.small .share-bar {
-    fill: Canvas !important; /* not the hatch, which is a style on the bar */
+  /* gray throughout, as the periods outside the windows */
+  .trend-chart .trend-line {
+    stroke: GrayText;
+  }
+
+  .trend-chart .row.middle .iqr {
+    fill: Canvas;
+    stroke: GrayText;
+  }
+
+  .trend-chart .row.middle .median {
+    fill: GrayText;
+    stroke: Canvas;
+  }
+
+  .trend-chart .row.middle.small .median,
+  .trend-split .row.middle .half.small .median {
+    fill: Canvas;
+    stroke: GrayText;
   }
 
   /* the key draws as the explorer's and the Genres page's do */
@@ -241,14 +310,20 @@
     forced-color-adjust: none;
   }
 
-  .trend-legend .key-median {
-    background: Highlight;
+  .trend-legend .key-share {
+    background:
+      radial-gradient(circle at 50% 50%, Highlight 0 5px, transparent 5.5px),
+      linear-gradient(GrayText, GrayText) 0 50% / 100% 1.5px no-repeat;
   }
 
-  .trend-legend .key-iqr,
-  .trend-legend .key-share {
+  .trend-legend .key-range {
+    background: radial-gradient(circle at 50% 50%, Highlight 0 4px, transparent 4.5px), Canvas;
+    border-color: CanvasText;
+  }
+
+  .trend-legend .key-small-dot {
     background: Canvas;
-    border: 1px solid CanvasText;
+    border-color: Highlight;
   }
 
   .trend-legend .key-small {
@@ -297,8 +372,7 @@
     fill: CanvasText;
   }
 
-  .trend-split .half.small .iqr,
-  .trend-split .half.small .share-bar {
+  .trend-split .half.small .iqr {
     fill: Canvas !important; /* not the hatch, which is a style on the mark */
   }
 

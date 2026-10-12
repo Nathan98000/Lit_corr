@@ -9,7 +9,19 @@ import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "../App.jsx";
 import { clearCache } from "../lib/data.js";
-import { changesQuestion, changesSampleLine, trendQuestion, trendQuestionText } from "../lib/trends.js";
+import TrendChart from "../components/TrendChart.jsx";
+import { TrendLegend } from "../components/TrendAnswer.jsx";
+import { trendLayout, trendOverlaps } from "../lib/trendLayout.js";
+import {
+  changesQuestion,
+  changesSampleLine,
+  pathLine,
+  trendChartInput,
+  trendFormat,
+  trendQuestion,
+  trendQuestionText,
+  windowNumbers,
+} from "../lib/trends.js";
 import { onTrendsPage } from "../lib/urlState.js";
 import { changedOverTime } from "../lib/wording.js";
 import { fixtureFetch, fixtureMeta, realMeta } from "./fixtures.js";
@@ -262,5 +274,118 @@ describe("the default view, the switch and the actions (phase 3)", () => {
       unmount();
     }
     expect(styles).not.toMatch(/copy-link|copy-manual/);
+  });
+});
+
+describe("View 1's chart tells the same story as its verdict (phase 4)", () => {
+  const FILE = {
+    g: "all",
+    s: "all",
+    rule: { min_r: 0.2, z: 3.29, min_tvd: 0.2, min_n: 30 },
+    periods: [[2000, 2004], [2005, 2009], [2010, 2014], [2015, 2019], [2020, 2026]],
+    then: [2000, 2009],
+    now: [2020, 2026],
+    n: [901, 1657, 1522, 1564, 3343],
+  };
+  const WORDS = { id: "story_words", label: "Word count", noun: "story length in words", unit: "words", bins: { type: "ranges" } };
+  const CONT = { id: "end_to_be_continued", label: "Announces a continuation", noun: "announces a continuation", unit: "yes/no", yes_subject: "Stories that announce a continuation", bins: { type: "levels" } };
+  // the real data's story length and continuation, All genres, All stories
+  const length = { k: "num", fmt: "num", q: [[901, 1640, 2500, 4220], [1657, 1740, 3010, 5110], [1522, 1940, 3260, 6000], [1564, 2340, 4060, 7200], [3343, 2310, 4100, 7210]], t: [2558, 1680, 2810, 4760], r: 0.25, f: 1, rm: 0.246, fm: 1 };
+  const cont = { k: "bin", q: [[901, 0.112], [1657, 0.075], [1522, 0.052], [1564, 0.081], [3343, 0.091]], t: [2558, 0.089], r: 0.002, f: 0, rm: 0.004, fm: 0 };
+  const fmt = (variable, entry) => trendFormat(variable, entry, true, 30);
+
+  it("puts each window's pooled number on its bracket: median, share, share with any, median among those", () => {
+    expect(windowNumbers({ entry: length, file: FILE, fmt: fmt(WORDS, length) })).toEqual({ then: "median 2,810", now: "median 4,100" });
+    expect(windowNumbers({ entry: cont, file: FILE, fmt: fmt(CONT, cont) })).toEqual({ then: "9%", now: "9%" });
+    const consent = { k: "zero", fmt: "num", q: [null, null, null, null, [3346, 700, 0.21, 0.098, 0.196, 0.395]], t: [2561, 233, 0.11, 0.144, 0.229, 0.388], r: 0.092, f: 0 };
+    const unit = { id: "rel_consent_per_1k", label: "Consent", noun: "consent language", unit: "per 1,000 words", bins: { type: "ranges" } };
+    expect(windowNumbers({ entry: consent, file: FILE, fmt: fmt(unit, consent), kind: "any" })).toEqual({ then: "11% with any", now: "21% with any" });
+    expect(windowNumbers({ entry: consent, file: FILE, fmt: fmt(unit, consent), kind: "among" })).toEqual({ then: "median 0.229", now: "median 0.196" });
+    // named groups and bands keep their words; nothing when the windows weren't compared
+    expect(windowNumbers({ entry: { k: "grp", q: [], t: [9], r: 0.02, f: 0 }, file: FILE, fmt: null })).toBeNull();
+    expect(windowNumbers({ entry: { ...length, r: null }, file: FILE, fmt: fmt(WORDS, length) })).toBeNull();
+  });
+
+  it("writes a bracket's number on its line where the labels fit side by side, else on a second line under the window", () => {
+    const input = trendChartInput(fixtureMeta, WORDS, length, FILE);
+    const wide = trendLayout({ width: 736, ...input });
+    expect(wide.twoLines).toBe(false);
+    expect(wide.brackets.map((b) => b.lines.map((l) => l.text))).toEqual([["2000–2009 · median 2,810"], ["2020 or later · median 4,100"]]);
+    for (const width of [288, 343]) {
+      const narrow = trendLayout({ width, ...input });
+      expect(narrow.twoLines).toBe(true);
+      expect(narrow.brackets.map((b) => b.lines.map((l) => l.text))).toEqual([
+        ["2000–2009", "median 2,810"],
+        ["2020 or later", "median 4,100"],
+      ]);
+      expect(narrow.height).toBe(trendLayout({ width, ...input, windowValues: null }).height + 15);
+    }
+    for (const width of [288, 343, 375, 736, 760]) expect(trendOverlaps(trendLayout({ width, ...input })), `${width}`).toEqual([]);
+  });
+
+  it("marks the periods outside both windows and puts “not compared” between the brackets, under them", () => {
+    const layout = trendLayout({ width: 343, ...trendChartInput(fixtureMeta, WORDS, length, FILE) });
+    expect(layout.columns.map((c) => c.middle)).toEqual([false, false, true, true, false]);
+    const nc = layout.notCompared;
+    expect(nc.text).toBe("not compared");
+    expect(nc.x).toBeCloseTo((layout.columns[2].x0 + layout.columns[3].x1) / 2);
+    expect(nc.y).toBe(layout.brackets[0].y + 2);
+    expect(nc.x).toBeGreaterThan(layout.brackets[0].x1);
+    expect(nc.x).toBeLessThan(layout.brackets[1].x0);
+  });
+
+  it("names a period between the windows that lies beyond both, by more than 3 points or 10% of the larger median", () => {
+    expect(pathLine({ entry: cont, file: FILE, fmt: fmt(CONT, cont) })).toBe("In between, it dipped to 5% in 2010–14.");
+    // story length: 3,260 and 4,060 lie between 2,810 and 4,100
+    expect(pathLine({ entry: length, file: FILE, fmt: fmt(WORDS, length) })).toBeNull();
+    // a rise beyond both by more than 10% of the larger median; the most extreme period is named, with its unit
+    const peak = { ...length, q: length.q.map((c, i) => (i === 3 ? [1564, 2340, 4600, 7200] : i === 2 ? [1522, 1940, 4700, 6000] : c)) };
+    expect(pathLine({ entry: peak, file: FILE, fmt: fmt(WORDS, peak) })).toBe("In between, the median rose to 4,700 words in 2010–14.");
+    // 4,500 is not 10% above 4,100
+    const near = { ...length, q: length.q.map((c, i) => (i === 3 ? [1564, 2340, 4500, 7200] : c)) };
+    expect(pathLine({ entry: near, file: FILE, fmt: fmt(WORDS, near) })).toBeNull();
+    // never a period under 30 stories, and nothing when the windows weren't compared
+    const few = { ...cont, q: cont.q.map((c, i) => (i === 2 ? [29, 0.02] : c)) };
+    expect(pathLine({ entry: few, file: FILE, fmt: fmt(CONT, few) })).toBeNull();
+    expect(pathLine({ entry: { ...cont, r: null }, file: FILE, fmt: fmt(CONT, cont) })).toBeNull();
+    // it never says "clearly"
+    expect(pathLine({ entry: cont, file: FILE, fmt: fmt(CONT, cont) })).not.toMatch(/clearly/);
+  });
+
+  it("draws a yes/no share as a dot on the line, the middle periods quiet, and breaks the line where a period isn't drawn", () => {
+    vi.spyOn(Element.prototype, "getBoundingClientRect").mockReturnValue({ width: 736, height: 0, top: 0, left: 0, right: 736, bottom: 0 });
+    const { unmount } = render(<TrendChart meta={fixtureMeta} variable={CONT} entry={cont} file={FILE} title="Continuation" />);
+    expect(document.querySelectorAll(".trend-chart .share-bar")).toHaveLength(0);
+    expect(document.querySelectorAll(".trend-chart .median")).toHaveLength(5);
+    expect([...document.querySelectorAll(".trend-chart g.col")].map((g) => g.classList.contains("middle"))).toEqual([false, false, true, true, false]);
+    unmount();
+    // Chain Stories: no story drawn in 2015–19, so no segment joins 2010–14 to 2020–26
+    const chain = { ...length, q: length.q.map((c, i) => (i === 3 ? null : c)) };
+    render(<TrendChart meta={fixtureMeta} variable={WORDS} entry={chain} file={FILE} title="Chain" />);
+    const d = document.querySelector(".trend-chart .trend-line").getAttribute("d");
+    expect(d).toMatch(/^M[\d.]+,[\d.]+ L[\d.]+,[\d.]+ L[\d.]+,[\d.]+$/); // 2000–04 to 2010–14; 2020–26 alone has no line
+  });
+
+  it("keys a share as a dot on a short line, a median as a dot inside a capsule, and the asterisk", () => {
+    const entries = (kind) => {
+      const { unmount } = render(<TrendLegend kind={kind} anySmall minStories={30} />);
+      const out = [...document.querySelectorAll(".trend-legend li")].map((li) => [li.textContent.trim(), [...li.querySelectorAll(".key")].map((k) => k.classList[1])]);
+      unmount();
+      return out;
+    };
+    expect(entries("num")).toEqual([
+      ["Median and interquartile range", ["key-range"]],
+      ["Fewer than 30 stories (*)", ["key-small"]],
+      ["The periods compared (how this is decided)", ["key-bracket"]],
+    ]);
+    expect(entries("bin").slice(0, 2)).toEqual([
+      ["Share of stories", ["key-share"]],
+      ["Fewer than 30 stories (*)", ["key-small-dot"]],
+    ]);
+    expect(entries("zero").slice(0, 3)).toEqual([
+      ["Share of stories", ["key-share"]],
+      ["Median and interquartile range", ["key-range"]],
+      ["Fewer than 30 stories (*)", ["key-small-dot", "key-small"]],
+    ]);
   });
 });

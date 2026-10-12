@@ -179,15 +179,24 @@ function tooFewSentence(genre, subset, file, which) {
 }
 
 /**
+ * Is All genres' verdict borderline (O6): does the check with each genre's share of stories held fixed (`fm`) disagree
+ * with the site's rule (`f`)? Today 2 characteristics with All stories, and 1, 5 and 4 with the Length options.
+ */
+export const borderline = (entry, genreId) =>
+  genreId === "all" && entry.r != null && entry.fm !== undefined && entry.f !== entry.fm;
+
+/**
  * View 1's heading: "Story length in words clearly rose from 2000–2009 to 2020 or later", "The share of stories with an
  * author’s note clearly fell …", "Where sexual language peaks clearly moved later …", "Narrative perspective clearly
- * changed …", "No clear change in … from 2000–2009 to 2020 or later", or the too-few sentence when a window has fewer
+ * changed …", "No clear change in … from 2000–2009 to 2020 or later", "Touch words: a borderline change from 2000–2009
+ * to 2020 or later" (All genres, when the fixed-mix check disagrees), or the too-few sentence when a window has fewer
  * than the rule's stories (r is null).
  */
 export function trendHeading({ variable, entry, genre, subset, file }) {
   if (entry.r == null) return tooFewHeading({ entry, genre, subset, file });
   const w = windowWords(file);
   const noun = trendNoun(variable);
+  if (borderline(entry, file.g)) return `${upperFirst(noun)}: a borderline change from ${w.then} to ${w.now}`;
   if (!entry.f) return `No clear change in ${noun} from ${w.then} to ${w.now}`;
   return `${upperFirst(noun)} clearly ${changeWords(entry.k, entry.f)} from ${w.then} to ${w.now}`;
 }
@@ -224,14 +233,77 @@ export function numbersLine({ variable, entry, file, fmt, smallN = 30 }) {
 }
 
 /**
- * The fixed-mix line, for All genres when holding each genre's share of stories fixed gives another verdict (D12):
- * "Holding each genre’s share of stories fixed, the change is not clear." or "…, it clearly rose." (fell, moved later,
- * moved earlier, changed); null otherwise.
+ * The borderline line (O6), in place of D12's fixed-mix line, for All genres when the check with each genre's share of
+ * stories held fixed disagrees with the site's rule; three parts, the middle one the link to how a change is decided:
+ * "By the site’s rule it clearly fell, but not once each genre’s share of stories is held fixed (how this is
+ * decided)." or "By the site’s rule the change is not clear, but it clearly rose once each genre’s share of stories is
+ * held fixed (how this is decided)." Null otherwise.
  */
-export function mixFixedLine(entry, genreId) {
-  if (genreId !== "all" || entry.r == null || entry.fm === undefined || entry.f === entry.fm) return null;
-  if (!entry.fm) return "Holding each genre’s share of stories fixed, the change is not clear.";
-  return `Holding each genre’s share of stories fixed, it clearly ${changeWords(entry.k, entry.fm)}.`;
+export function borderlineLine(entry, genreId) {
+  if (!borderline(entry, genreId)) return null;
+  const link = "how\u00a0this\u00a0is\u00a0decided";
+  if (entry.f) {
+    return [`By the site’s rule it clearly ${changeWords(entry.k, entry.f)}, but not once each genre’s share of stories is held fixed (`, link, ")."];
+  }
+  return [
+    `By the site’s rule the change is not clear, but it clearly ${changeWords(entry.k, entry.fm)} once each genre’s share of stories is held fixed (`,
+    link,
+    ").",
+  ];
+}
+
+/** Does a period lie outside both windows compared (2010–14 and 2015–19 today), by the file's windows? */
+export const middlePeriod = (p, file) => !(p[0] >= file.then[0] && p[1] <= file.then[1]) && p[0] < file.now[0];
+
+/**
+ * The path line (numbers, yes/no, and mostly zero's share of stories with any): when a period between the windows, with
+ * at least SMALL_N stories, lies beyond both windows' values by more than 3 percentage points (shares) or 10% of the
+ * larger window's median (numbers), the most extreme one is named, so "No clear change" never sits silently beside a
+ * dip: "In between, it dipped to 5% in 2010–14." or "In between, the median rose to 4,920 words in 2015–19." It
+ * describes; it never says "clearly". Null otherwise, and when the windows weren't compared.
+ */
+export function pathLine({ entry, file, fmt, smallN = 30 }) {
+  if (entry.r == null || !["num", "bin", "zero"].includes(entry.k)) return null;
+  const all = file.g === "all";
+  const share = entry.k !== "num";
+  const value = (c) => (c ? (share ? c.share : c.median) : null);
+  const ends = [trendCell(entry.k, entry.t, all, smallN), trendCell(entry.k, entry.q[entry.q.length - 1], all, smallN)].map(value);
+  if (ends.some((v) => v == null)) return null;
+  const [lo, hi] = [Math.min(...ends), Math.max(...ends)];
+  const margin = share ? 0.03 : 0.1 * Math.max(...ends.map(Math.abs));
+  let best = null;
+  file.periods.forEach((p, i) => {
+    if (!middlePeriod(p, file)) return;
+    const c = trendCell(entry.k, entry.q[i], all, smallN);
+    const v = value(c);
+    if (v == null || c.n < smallN) return;
+    const beyond = v > hi + margin ? v - hi : v < lo - margin ? lo - v : 0;
+    if (beyond > 0 && (!best || beyond > best.beyond)) best = { beyond, v, up: v > hi, period: periodLabel(p) };
+  });
+  if (!best) return null;
+  const moved = best.up ? "rose" : "dipped";
+  return share
+    ? `In between, it ${moved} to ${fmt.share(best.v)} in ${best.period}.`
+    : `In between, the median ${moved} to ${fmt.withUnit(best.v)} in ${best.period}.`;
+}
+
+/**
+ * The numbers on the brackets of the two windows compared, as the takeaway gives them, in the chart's own format
+ * (`kind`: num, bin, or a mostly-zero chart's halves "any" and "among"): { then, now }, each "median 2,810", "9%",
+ * "57% with any" or null (no number: too few stories in that window, or among its stories with any); null when the
+ * windows weren't compared, and for named groups and bands, whose brackets keep their words.
+ */
+export function windowNumbers({ entry, file, fmt, kind = entry.k, smallN = 30 }) {
+  if (entry.r == null || !["num", "bin", "any", "among"].includes(kind)) return null;
+  const all = file.g === "all";
+  const words = (cell) => {
+    const c = trendCell(entry.k, cell, all, smallN);
+    if (!c) return null;
+    if (kind === "bin") return fmt.share(c.share);
+    if (kind === "any") return `${fmt.share(c.share)} with any`;
+    return c.median != null ? `median ${fmt.value(c.median)}` : null;
+  };
+  return { then: words(entry.t), now: words(entry.q[entry.q.length - 1]) };
 }
 
 /**
@@ -258,6 +330,7 @@ export function trendChartInput(meta, variable, entry, file) {
       stories: storiesText(c),
     })),
     valueHead: mix ? null : kind === "bin" ? "Share" : "Median",
+    windowValues: windowNumbers({ entry, file, fmt, smallN: meta.small_n }),
     ...periodsInput(meta, file),
   };
 }
@@ -298,6 +371,7 @@ export function trendSplitInputs(meta, variable, entry, file) {
         percent: true,
         texts: shares.map((c) => ({ value: c ? fmt.share(c.share) : "–", stories: storiesText(c) })),
         valueHead: "Share",
+        windowValues: windowNumbers({ entry, file, fmt, kind: "any", smallN: meta.small_n }),
         ...periodsInput(meta, file),
       },
     },
@@ -312,6 +386,7 @@ export function trendSplitInputs(meta, variable, entry, file) {
         percent: fmt.fmt === "percent",
         texts: among.map((c) => ({ value: c ? fmt.value(c.median) : "–", stories: storiesText(c) })),
         valueHead: "Median",
+        windowValues: windowNumbers({ entry, file, fmt, kind: "among", smallN: meta.small_n }),
         ...periodsInput(meta, file),
       },
     },
@@ -331,6 +406,30 @@ export function trendMixColors(kind, cells, count, reference = null) {
   const overall = Array.from({ length: count }, (_, b) => (total ? shown.reduce((t, c) => t + c.n * c.shares[b], 0) / total : 0));
   return mixColors(kind, overall);
 }
+
+/**
+ * The groups the 100% columns draw, in their own order, with their colors (trendMixColors): named groups that are under
+ * 3% in every period drawn, when there are two or more, become one "Other" segment in a neutral color, last, its key
+ * naming them ("Other (first person plural (we), second person (you), mixed)"); one such group stays itself, and bands
+ * never merge. [{ label, cls, ink, members (the groups' indices) }]; the details keep every group's share.
+ */
+export function trendMixGroups(kind, cells, labels, reference = null) {
+  const colors = trendMixColors(kind, cells, labels.length, reference);
+  const drawn = cells.filter(Boolean);
+  const small = kind === "grp" && drawn.length ? labels.map((_, b) => b).filter((b) => drawn.every((c) => c.shares[b] < 0.03)) : [];
+  const merged = new Set(small.length >= 2 ? small : []);
+  const groups = labels
+    .map((label, b) => ({ label, cls: colors[b].cls, ink: colors[b].ink, members: [b] }))
+    .filter((g) => !merged.has(g.members[0]));
+  if (merged.size) {
+    const names = [...merged].map((b) => lowerFirst(labels[b])).join(", ");
+    groups.push({ label: `Other (${names})`, cls: "pal-other", ink: "dark", members: [...merged] });
+  }
+  return groups;
+}
+
+/** A column's shares by the groups drawn (trendMixGroups): the merged groups' shares added up. */
+export const groupShares = (groups, shares) => groups.map((g) => g.members.reduce((t, b) => t + shares[b], 0));
 
 // ---------------------------------------------------------------------------------------------- periods' details
 /**
@@ -371,12 +470,14 @@ export function trendAnnouncement(meta, file, state) {
   if (nothingToDraw(entry)) return `${question} ${tooFewHeading({ entry, genre, subset, file })}.`;
   const fmt = trendFormat(variable, entry, file.g === "all", meta.small_n);
   const numbers = numbersLine({ variable, entry, file, fmt, smallN: meta.small_n });
-  const mix = mixFixedLine(entry, file.g);
+  const path = pathLine({ entry, file, fmt, smallN: meta.small_n });
+  const border = borderlineLine(entry, file.g);
   return [
     question,
     `${trendHeading({ variable, entry, genre, subset, file })}.`,
     numbers ? numbers.map((seg) => (typeof seg === "string" ? seg : seg.strong)).join("") : "",
-    mix || "",
+    path || "",
+    border ? border.join("").replace(/\u00a0/g, " ") : "",
   ]
     .filter(Boolean)
     .join(" ");

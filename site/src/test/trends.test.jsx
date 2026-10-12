@@ -795,8 +795,8 @@ describe("the PNG", () => {
     expect(css).toMatch(/\.trend-chart \.trend-table \{\s*pointer-events: none;/);
   });
 
-  it("never anchors the scroll position on the question's words, which another genre or characteristic re-wraps", () => {
-    expect(css).toMatch(/\.trends-page \.question \{\s*overflow-anchor: none;/);
+  it("never anchors the scroll position on the question's words, which another genre or characteristic re-wraps, nor inside “Only include”, which changes form with word count", () => {
+    expect(css).toMatch(/\.trends-page \.question,\s*\.trends-page \.trends-controls \.include-row > \* \{\s*overflow-anchor: none;/);
   });
 
   it("draws the key in forced colors as the explorer's is drawn", () => {

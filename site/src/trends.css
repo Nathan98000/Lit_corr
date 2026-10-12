@@ -9,8 +9,11 @@
 }
 
 /* the browser never anchors the scroll position on the question's words: another genre or characteristic re-wraps
-   them (a slot moving up a line), and following them would move the answer on the screen */
-.trends-page .question {
+   them (a slot moving up a line), and following them would move the answer on the screen. Nor inside "Only include",
+   which changes form with word count (a select, or plain words, the same height): the row itself, which stays, is
+   the anchor there (anchored on words that went away, the page moved 8 px on a phone) */
+.trends-page .question,
+.trends-page .trends-controls .include-row > * {
   overflow-anchor: none;
 }
 
@@ -33,10 +36,13 @@
   color: var(--ink);
 }
 
-/* "Only include" with nothing to choose (word count: the Length options don't apply): plain text and a short note */
+/* "Only include" with nothing to choose (word count: the Length options don't apply): plain text and a short note;
+   wrapped on a phone, its two lines fit the select's 44 px, so going to or from word count never moves the answer */
 .include-fixed {
   flex-wrap: wrap;
-  column-gap: 6px;
+  align-content: center;
+  gap: 0 6px;
+  line-height: 1.25;
 }
 
 .include-fixed .include-value {

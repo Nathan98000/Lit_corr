@@ -3,15 +3,18 @@ import { comparisonBar, noDifferenceZone, numberPlace } from "../lib/genres.js";
 import { mixColors } from "../lib/genreLayout.js";
 import { scrollBehavior } from "../lib/motion.js";
 import { PHONE, STACKED, textWidth } from "../lib/rangeLayout.js";
+import DownloadPng from "./DownloadPng.jsx";
 import useMediaQuery from "./useMediaQuery.js";
 import useWidth from "./useWidth.js";
 
 // A comparison of two sides, characteristic by characteristic (D10): the Genres page's "One genre" (a genre's stories
 // against all genres') and the Trends page's "What changed" (stories from 2020 or later against stories from
-// 2000–2009). The rows (concept R3), the lists, the topics, the notes and the way back are here; each page
-// gives its words (the two sides' names and short heads, the list titles, the axis title, the zone's words, the note,
-// the topics' line) and its row (the columns' numbers, the row's name and where it leads). The styles are in
-// comparison.css, which genres.css and trends.css import.
+// 2000–2009). The rows (concept R3), the lists, the topics, the notes, the way back and "Download PNG" of the lists are
+// here; each page gives its words (the two sides' names and short heads, the list titles, the axis title, the zone's
+// words, the note, the topics' line) and its row (the columns' numbers, the row's name and where it leads). "What
+// changed" opts in to its own row and lists (`changes`: values first, a zoomed scale, the note above the lists, marked
+// titles, the bars in time's order, tags on the unit line); without it, "One genre" draws as it always has. The styles
+// are in comparison.css, which genres.css and trends.css import (the opt-ins' in trends.css).
 
 const SHOWN = 7; // rows of a list before "Show all"
 
@@ -27,12 +30,30 @@ const NARROW = { n: 58, chev: 12, gap: 12 };
 const PAD = 2;
 const UNIT_KEPT = 18; // a unit line up to this long never breaks inside; a longer one takes a line of its own
 const TICKS = [0, 25, 50, 75, 100];
+const FULL = { lo: 0, hi: 100, ticks: TICKS }; // the whole 0–100 scale ("One genre")
+const VALUES = { min: 120, max: 180, size: 13.5, room: 8 }; // the values' column: its widest value and some room
 const DOT = { out: 5, quiet: 3.5 }; // radii: a 10 px dot for a stand-out, 7 px for a row that doesn't stand out
 const HEADS_UNDER = 328; // a chart this narrow (a window under 360 px) puts a list's columns' heads under its title
 
-/** The plot's width in px, for the numbers' placement: the same in every list and open topic. */
-export const plotWidth = (width, stacked) =>
-  stacked ? width - 2 * PAD : width - WIDE.label - 2 * WIDE.n - WIDE.chev - 4 * WIDE.gap - 2 * PAD;
+/**
+ * The plot's width in px, for the numbers' placement: the same in every list and open topic. With the values first
+ * (`valuesW`: their column's width), wide: the label · the values · the plot · "›".
+ */
+export const plotWidth = (width, stacked, valuesW = null) => {
+  if (stacked) return width - 2 * PAD;
+  if (valuesW != null) return width - WIDE.label - valuesW - WIDE.chev - 3 * WIDE.gap - 2 * PAD;
+  return width - WIDE.label - 2 * WIDE.n - WIDE.chev - 4 * WIDE.gap - 2 * PAD;
+};
+
+/** A place on the plot's scale as a percent of its width: itself on the whole scale, else within { lo, hi }. */
+const placeOn = (scale) => (scale === FULL ? (v) => v : (v) => ((v - scale.lo) / (scale.hi - scale.lo)) * 100);
+
+/**
+ * The values' column for "What changed" (values first): as wide as its widest value on the page, every list and topic
+ * alike, with some room, within VALUES' bounds.
+ */
+export const valuesWidth = (texts) =>
+  Math.min(VALUES.max, Math.max(VALUES.min, Math.ceil(Math.max(0, ...texts.map((t) => textWidth(t, VALUES.size)))) + VALUES.room));
 
 /**
  * The plot of one row (concept R3), on one scale for every row: how often a story from the first side is the higher
@@ -40,10 +61,12 @@ export const plotWidth = (width, stacked) =>
  * its edges drawn (they carry the rule's thresholds), with a line at 50; a stem runs from 50 to 50 × (1 + r) with a dot
  * at its end: a 10 px accent dot for a stand-out, a 7 px gray dot otherwise (a hollow dot means "fewer than 30
  * stories" elsewhere on the site, so these are filled). The number sits beside the dot (numberPlace). Named groups keep
- * their two thin 100% bars, the first side's above the second's. The geometry is in percent of the plot, so the plot
- * takes whatever width its cell has. Rows not compared say so instead.
+ * their two thin 100% bars, the first side's above the second's (`thenAbove`: the second side's above, "What
+ * changed"'s time order). The geometry is in percent of the plot, so the plot takes whatever width its cell has; a
+ * zoomed `scale` shows part of the 0–100 scale. With the values first, every number is drawn alike, the values being
+ * the row's main read (`plain`). Rows not compared say so instead.
  */
-function RowPlot({ item, zone, plotW }) {
+function RowPlot({ item, zone, plotW, scale = FULL, thenAbove = false, plain = false }) {
   if (item.r == null) return <span className="profile-few">Too few stories to compare</span>;
   if (item.kind === "grp") {
     const colors = mixColors("grp", item.all.shares);
@@ -57,26 +80,28 @@ function RowPlot({ item, zone, plotW }) {
         ) : null;
       });
     };
+    const [top, under] = thenAbove ? [item.all.shares, item.stats.shares] : [item.stats.shares, item.all.shares];
     return (
       <svg width="100%" height={20} className="profile-plot">
-        {bar(item.stats.shares, 1)}
-        {bar(item.all.shares, 12)}
+        {bar(top, 1)}
+        {bar(under, 12)}
       </svg>
     );
   }
   const b = comparisonBar(item.r, { flagged: Boolean(item.f), zone });
+  const x = placeOn(scale);
   const quiet = item.f ? "" : " quiet";
   const dotR = item.f ? DOT.out : DOT.quiet;
-  const textW = item.f ? textWidth(String(b.times), 13, 600) : textWidth(String(b.times), 12);
-  const at = numberPlace(item.r, zone, { plotW, dotR, textW });
+  const textW = item.f && !plain ? textWidth(String(b.times), 13, 600) : textWidth(String(b.times), 12);
+  const at = numberPlace(item.r, zone, { plotW, dotR, textW, scale: scale === FULL ? null : scale });
   return (
     <svg width="100%" height={22} className="profile-plot">
-      <rect className="p2-zone" x={`${zone[0]}%`} y={2} width={`${zone[1] - zone[0]}%`} height={18} />
-      <line className="p2-edge" x1={`${zone[0]}%`} x2={`${zone[0]}%`} y1={2} y2={20} />
-      <line className="p2-edge" x1={`${zone[1]}%`} x2={`${zone[1]}%`} y1={2} y2={20} />
-      <line className="p2-mid" x1="50%" x2="50%" y1={0} y2={22} />
-      {b.to > b.from && <line className={`p2-stem${quiet}`} x1={`${b.from}%`} x2={`${b.to}%`} y1={11} y2={11} />}
-      <circle className={`p2-dot${quiet}`} cx={`${b.end}%`} cy={11} r={dotR} />
+      <rect className="p2-zone" x={`${x(zone[0])}%`} y={2} width={`${x(zone[1]) - x(zone[0])}%`} height={18} />
+      <line className="p2-edge" x1={`${x(zone[0])}%`} x2={`${x(zone[0])}%`} y1={2} y2={20} />
+      <line className="p2-edge" x1={`${x(zone[1])}%`} x2={`${x(zone[1])}%`} y1={2} y2={20} />
+      <line className="p2-mid" x1={`${x(50)}%`} x2={`${x(50)}%`} y1={0} y2={22} />
+      {b.to > b.from && <line className={`p2-stem${quiet}`} x1={`${x(b.from)}%`} x2={`${x(b.to)}%`} y1={11} y2={11} />}
+      <circle className={`p2-dot${quiet}`} cx={`${x(b.end)}%`} cy={11} r={dotR} />
       <text className={`p2-num${quiet}`} x={`${at.x}%`} dx={at.dx} y={15.5} textAnchor={at.anchor}>
         {b.times}
       </text>
@@ -129,9 +154,41 @@ function GroupKey({ labels, colors }) {
 }
 
 /**
+ * A row's unit lines (F85, decision 7), with the page's tags at the end of the last one ("per 1,000 words ·
+ * borderline"; `row.tags`): { unit, of, tags }, a line with tags given as its pieces (the line's words, then each tag;
+ * `tags` alone when the row has no unit line). Without tags, the lines' words as before.
+ */
+function unitLines(cols, tags) {
+  if (!tags.length) return { unit: cols.unit, of: cols.of, tags: null };
+  if (cols.of) return { unit: cols.unit, of: [cols.of, ...tags], tags: null };
+  if (cols.unit && cols.group == null) return { unit: [cols.unit, ...tags], of: null, tags: null };
+  return { unit: cols.unit, of: null, tags };
+}
+
+/** A unit line's words as one string (the image's, which wraps them itself): "per 1,000 words · borderline". */
+const lineWords = (line) => (Array.isArray(line) ? line.join("\u00a0·\u00a0") : line);
+
+/**
+ * A unit line with tags: each piece kept whole (a unit never breaks inside; a long tag wraps between its words), each
+ * tag led by its "·", which is clipped when the tag starts a line, so no line starts or ends with it (trends.css, as the
+ * kicker's separators).
+ */
+const TaggedLine = ({ pieces }) => (
+  <span className="profile-tagged">
+    {pieces.map((t, k) => (
+      <span key={t} className={`profile-tag-piece${t.length > UNIT_KEPT ? " long" : ""}`}>
+        {k > 0 && <span className="profile-tag-sep"> · </span>}
+        {t}
+      </span>
+    ))}
+  </span>
+);
+
+/**
  * One characteristic (concept R3, F85, F87, F92): a link (the page's `row.link`) to its numbers elsewhere. Its label,
  * with its unit line, the plot, the two columns' numbers (`row.columns`: { genre, all, unit, group, of }, the first
- * side's column and the second's) and "›". Its accessible name is its content, with no aria-label: one visually hidden
+ * side's column and the second's) and "›"; with the values first ("What changed", `layout.valuesFirst`), the label,
+ * the values (`row.values`: "51.6 → 38.8 (−25%)"), the plot and "›". Its accessible name is its content, with no aria-label: one visually hidden
  * line that says the label, the dot's number, the numbers in reading order, the unit and how it compares (`row.name`);
  * the visible parts are hidden from screen readers, since their words are all there in that order. (Visible text
  * followed by hidden text would read "Sexual language : 26 in 100" in Chrome, which puts a space before a box taken
@@ -140,9 +197,18 @@ function GroupKey({ labels, colors }) {
  * stories to compare), the name follows a swatch of that group's color and the bars have a key of every group under
  * them.
  */
-function ProfileRow({ item, row, zone, plotW, marks }) {
+function ProfileRow({ item, row, zone, layout, marks }) {
+  const { plotW, valuesFirst } = layout;
   const cols = row.columns(item);
+  const lines = unitLines(cols, row.tags ? row.tags(item) : []);
+  const values = valuesFirst && row.values(item);
   const colors = cols.group != null && item.r != null && mixColors("grp", item.all.shares);
+  const plot = (
+    <span className="profile-plot-cell" aria-hidden="true">
+      <RowPlot item={item} zone={zone} plotW={plotW} scale={layout.scale} thenAbove={layout.thenAbove} plain={valuesFirst} />
+      {colors && <GroupKey labels={item.variable.bins.labels} colors={colors} />}
+    </span>
+  );
   const children = (
     <>
       <span className={`profile-label${marks ? " has-mark" : ""}`}>
@@ -156,27 +222,47 @@ function ProfileRow({ item, row, zone, plotW, marks }) {
             {item.variable.label}
           </span>
           <span className="visually-hidden">{row.name(item)}</span>
-          {cols.unit && (
+          {lines.unit && (
             <>
               {" "}
-              <span className={`profile-unit${cols.unit.length > UNIT_KEPT ? " long" : ""}`} aria-hidden="true">
-                {colors ? <GroupName name={cols.unit} cls={colors[cols.group].cls} /> : cols.unit}
-              </span>
+              {Array.isArray(lines.unit) ? (
+                <span className="profile-unit long" aria-hidden="true">
+                  <TaggedLine pieces={lines.unit} />
+                </span>
+              ) : (
+                <span className={`profile-unit${lines.unit.length > UNIT_KEPT ? " long" : ""}`} aria-hidden="true">
+                  {colors ? <GroupName name={lines.unit} cls={colors[cols.group].cls} /> : lines.unit}
+                </span>
+              )}
             </>
           )}
-          {cols.of && (
+          {lines.of && (
             <span className="profile-unit profile-of" aria-hidden="true">
-              {cols.of}
+              {Array.isArray(lines.of) ? <TaggedLine pieces={lines.of} /> : lines.of}
+            </span>
+          )}
+          {lines.tags && (
+            <span className="profile-unit profile-of" aria-hidden="true">
+              <TaggedLine pieces={lines.tags} />
             </span>
           )}
         </span>
       </span>
-      <span className="profile-plot-cell" aria-hidden="true">
-        <RowPlot item={item} zone={zone} plotW={plotW} />
-        {colors && <GroupKey labels={item.variable.bins.labels} colors={colors} />}
-      </span>
-      <Numbers col={cols.genre} />
-      <Numbers col={cols.all} all />
+      {values ? (
+        <>
+          <span className="profile-values" aria-hidden="true">
+            {values.text}
+            {values.second && <small>{values.second}</small>}
+          </span>
+          {plot}
+        </>
+      ) : (
+        <>
+          {plot}
+          <Numbers col={cols.genre} />
+          <Numbers col={cols.all} all />
+        </>
+      )}
       <span className="profile-chev" aria-hidden="true">
         ›
       </span>
@@ -189,37 +275,42 @@ function ProfileRow({ item, row, zone, plotW, marks }) {
  * The zone's bracket ("40–60: no clear difference", from the rule's thresholds and the page's words) over a block's
  * plots: wide, in the block's head row with the tick labels under it (`ticks`); stacked, over the first row.
  */
-function Bracket({ zone, words, ticks = false }) {
+function Bracket({ zone, words, ticks = false, scale = FULL }) {
   const [lo, hi] = zone;
+  const x = placeOn(scale);
   const y = ticks ? 14 : 13; // the bracket's line, its ends 5 px down
   return (
     <svg width="100%" height={ticks ? 30 : 18} className="profile-axis">
-      <text className="zone-label" x="50%" y={y - 3} textAnchor="middle">
+      <text className="zone-label" x={`${x(50)}%`} y={y - 3} textAnchor="middle">
         {lo}–{hi}: {words}
       </text>
-      <line className="zone-bracket" x1={`${lo}%`} x2={`${hi}%`} y1={y} y2={y} />
-      <line className="zone-bracket" x1={`${lo}%`} x2={`${lo}%`} y1={y} y2={y + 5} />
-      <line className="zone-bracket" x1={`${hi}%`} x2={`${hi}%`} y1={y} y2={y + 5} />
-      {ticks && <TickLabels y={28} />}
+      <line className="zone-bracket" x1={`${x(lo)}%`} x2={`${x(hi)}%`} y1={y} y2={y} />
+      <line className="zone-bracket" x1={`${x(lo)}%`} x2={`${x(lo)}%`} y1={y} y2={y + 5} />
+      <line className="zone-bracket" x1={`${x(hi)}%`} x2={`${x(hi)}%`} y1={y} y2={y + 5} />
+      {ticks && <TickLabels y={28} scale={scale} />}
     </svg>
   );
 }
 
-const TickLabels = ({ y }) =>
-  TICKS.map((t) => (
-    <text key={t} className="tick-label" x={`${t}%`} y={y} textAnchor={t === 0 ? "start" : t === 100 ? "end" : "middle"}>
+/** The scale's labels: "0" to "100" (or a zoomed scale's, every 10), the end ones kept inside the plot. */
+const TickLabels = ({ y, scale = FULL }) => {
+  const x = placeOn(scale);
+  return scale.ticks.map((t) => (
+    <text key={t} className="tick-label" x={`${x(t)}%`} y={y} textAnchor={x(t) === 0 ? "start" : x(t) === 100 ? "end" : "middle"}>
       {t}
     </text>
   ));
+};
 
 /** The scale under a stacked block's last row: "0" to "100" (never "in 100", F96) on 4 px tick marks. */
-function Ticks() {
+function Ticks({ scale = FULL }) {
+  const x = placeOn(scale);
   return (
     <svg width="100%" height={20} className="profile-axis">
-      {TICKS.map((t) => (
-        <line key={t} className="zone-bracket" x1={`${t}%`} x2={`${t}%`} y1={0} y2={4} />
+      {scale.ticks.map((t) => (
+        <line key={t} className="zone-bracket" x1={`${x(t)}%`} x2={`${x(t)}%`} y1={0} y2={4} />
       ))}
-      <TickLabels y={16} />
+      <TickLabels y={16} scale={scale} />
     </svg>
   );
 }
@@ -240,33 +331,39 @@ const MixLine = ({ words, inTopic = false }) => (
  * mix line sits right over each compared named-group row, in its list item.
  */
 function ProfileBlock({ id, items, marks = false, headRow = false, mixLines = false, layout, rowProps }) {
-  const { stacked, heads } = layout;
+  const { stacked, heads, scale, valuesFirst } = layout;
   const dots = items.some((x) => x.r != null && x.kind !== "grp");
+  const bracket = (ticks) => <Bracket zone={rowProps.zone} words={rowProps.words.zone} ticks={ticks} scale={scale} />;
   return (
     <div className={`profile-block${marks ? " marks" : ""}`}>
       {(!stacked || headRow) && (
         <div className="profile-head" aria-hidden="true">
-          {!stacked && <span className="profile-plot-cell">{dots && <Bracket zone={rowProps.zone} words={rowProps.words.zone} ticks />}</span>}
-          <span className="profile-n-head g">{heads[0]}</span>
-          <span className="profile-n-head a">{heads[1]}</span>
+          {valuesFirst && <span className="profile-values-head">{layout.valuesHead}</span>}
+          {!stacked && <span className="profile-plot-cell">{dots && bracket(true)}</span>}
+          {!valuesFirst && (
+            <>
+              <span className="profile-n-head g">{heads[0]}</span>
+              <span className="profile-n-head a">{heads[1]}</span>
+            </>
+          )}
         </div>
       )}
       {stacked && dots && (
         <div className="profile-bracket" aria-hidden="true">
-          <Bracket zone={rowProps.zone} words={rowProps.words.zone} />
+          {bracket(false)}
         </div>
       )}
       <ul className="profile-rows" id={id}>
         {items.map((item) => (
           <li key={item.id}>
             {mixLines && item.kind === "grp" && item.r != null && <MixLine words={rowProps.words} inTopic />}
-            <ProfileRow item={item} marks={marks} plotW={layout.plotW} row={rowProps.row} zone={rowProps.zone} />
+            <ProfileRow item={item} marks={marks} layout={layout} row={rowProps.row} zone={rowProps.zone} />
           </li>
         ))}
       </ul>
       {stacked && dots && (
         <div className="profile-ticks" aria-hidden="true">
-          <Ticks />
+          <Ticks scale={scale} />
         </div>
       )}
     </div>
@@ -301,15 +398,31 @@ function ProfileList({ title, items, all = false, open = false, onOpen, caption 
     <section className="profile-list" aria-labelledby={`${id}-h`}>
       <div className="profile-list-head">
         <h3 id={`${id}-h`} ref={heading}>
-          {title}
+          {typeof title === "string" ? (
+            title
+          ) : (
+            // "▼ Fell" on screen; its name the whole title, as one hidden line (as a row's)
+            <>
+              <span className="visually-hidden">{title.full}</span>
+              <span aria-hidden="true">
+                <span className="profile-title-mark">{title.mark}</span> {title.word}
+              </span>
+            </>
+          )}
         </h3>
         {layout.stacked ? (
           <>
             <span className="visually-hidden">{count}</span>
-            <span className="profile-heads" aria-hidden="true">
-              <span>{layout.heads[0]}</span>
-              <span>{layout.heads[1]}</span>
-            </span>
+            {layout.valuesFirst ? (
+              <span className="profile-heads values-heads" aria-hidden="true">
+                <span>{layout.valuesHead}</span>
+              </span>
+            ) : (
+              <span className="profile-heads" aria-hidden="true">
+                <span>{layout.heads[0]}</span>
+                <span>{layout.heads[1]}</span>
+              </span>
+            )}
           </>
         ) : (
           <span className="list-count">{count}</span>
@@ -371,6 +484,68 @@ function TopicRows({ items, lead, layout, rowProps }) {
       {dots && <Note words={rowProps.words} inTopic />}
     </>
   );
+}
+
+/** The lists shown, as the page shows them: [{ id, items }], each list's first seven or all of them ("Show all"). */
+function listsShown(p, open) {
+  return [
+    ["lower", p.lower],
+    ["higher", p.higher],
+    ["mix", p.mix],
+  ]
+    .filter(([, items]) => items.length)
+    .map(([id, items]) => ({ id, items: id === "mix" || open.has(id) ? items : items.slice(0, SHOWN), all: items.length }));
+}
+
+/**
+ * What "Download PNG" draws of the lists (O2), as plain data (the image is made from the data, not from the page's
+ * rows): each list's visible title and count, its caption (the axis title over the first list with dots, the mix line
+ * over "A different mix"), and its rows as shown: the label, the unit lines (with the page's tags), the values (values
+ * first) or the two columns' numbers, the dot (its place on the scale, its number, stand-out or not) or a named group's
+ * two bars in their order with the key of every group, or "Too few stories to compare"; and the scale, the zone and its
+ * words, the heads.
+ */
+export function listsPlan({ lists, lead, words, row, zone, layout }) {
+  const title = (t) => (typeof t === "string" ? t : `${t.mark} ${t.word}`);
+  const rows = (items) =>
+    items.map((item) => {
+      const cols = row.columns(item);
+      const lines = unitLines(cols, row.tags ? row.tags(item) : []);
+      const grp = item.kind === "grp" && item.r != null;
+      const colors = grp ? mixColors("grp", item.all.shares) : null;
+      const bar = item.r != null && !grp ? comparisonBar(item.r, { flagged: Boolean(item.f), zone }) : null;
+      return {
+        label: item.variable.label,
+        unit: lineWords(lines.unit) || null,
+        of: lineWords(lines.of) || null,
+        tags: lineWords(lines.tags) || null,
+        swatch: colors && cols.group != null ? colors[cols.group].cls : null,
+        values: layout.valuesFirst ? row.values(item) : null,
+        numbers: layout.valuesFirst ? null : [cols.genre, cols.all],
+        few: item.r == null,
+        dot: bar && { r: item.r, end: bar.end, from: bar.from, to: bar.to, times: bar.times, flagged: Boolean(item.f) },
+        bars: grp ? (layout.thenAbove ? [item.all.shares, item.stats.shares] : [item.stats.shares, item.all.shares]) : null,
+        colors: colors ? colors.map((c) => c.cls) : null,
+        key: grp ? item.variable.bins.labels : null,
+      };
+    });
+  const { scale } = layout;
+  return {
+    valuesFirst: layout.valuesFirst,
+    valuesHead: layout.valuesHead,
+    heads: words.heads(false, WIDE.n),
+    scale,
+    zone,
+    zoneWords: words.zone,
+    // where a dot's number goes on a plot `plotW` px wide (numberPlace, as on the page)
+    place: (r, opts) => numberPlace(r, zone, { ...opts, scale: scale === FULL ? null : scale }),
+    lists: lists.map((l) => ({
+      title: title(words.lists[l.id]),
+      count: characteristics(l.all),
+      caption: l.id === "mix" ? words.mixLine({}) : l.id === lead ? words.axisTitle : null,
+      rows: rows(l.items),
+    })),
+  };
 }
 
 /** The place in this history entry's state ({ topics, all, y }) under `key`, or null: a new entry starts with nothing open. */
@@ -457,9 +632,16 @@ function useWayBack(ref, key) {
  *   topics and lists in full are kept above), so its rows don't count as rows that moved.
  * - `words`: { heads(stacked, width), lists: { lower, higher, mix }, axisTitle, zone, note({ inTopic, tap }), decided
  *   (the note's link), mixLine({ inTopic }), topicsLine, topicCount(t), countWord }.
- * - `row`: { columns(item), name(item), link({ item, className, children }) (the row's link element) }.
+ * - `row`: { columns(item), name(item), link({ item, className, children }) (the row's link element), and with the
+ *   values first values(item) ({ text, second }), tags(item) (words for the end of the unit line) }.
  * - `className`: the article's own class; `placeKey`: where the way back keeps its place in history.state;
  *   `widthKey`: useWidth's.
+ * - `png`: { label, image(panel, lists) }: "Download PNG" of the lists as shown, right after them (both pages);
+ *   `image` gets the panel and the lists' plan (listsPlan) and gives what the image draws.
+ * - "What changed"'s opt-ins (each off for "One genre"): `valuesFirst` (the values right after the label, its head
+ *   `words.valuesHead`, every dot's number alike), `scale` (a zoomed { lo, hi, ticks }), `noteFirst` (the note above
+ *   the first list, under the takeaway), `thenAbove` (a named group's second side's bar above the first's); list
+ *   titles given as { mark, word, full } ("▼ Fell", named "Fell from 2000–2009 to 2020 or later").
  */
 export default function ComparisonProfile({
   className,
@@ -476,6 +658,11 @@ export default function ComparisonProfile({
   row,
   placeKey,
   widthKey,
+  png = null,
+  valuesFirst = false,
+  scale = FULL,
+  noteFirst = false,
+  thenAbove = false,
 }) {
   const [ref, width] = useWidth(720, widthKey);
   const place = useWayBack(ref, placeKey);
@@ -501,24 +688,37 @@ export default function ComparisonProfile({
   // the first list with dots carries the axis title and the note; with none (nothing stands out), every open topic
   // with dots carries them
   const lead = p.lower.length ? "lower" : p.higher.length ? "higher" : null;
-  const layout = { stacked, plotW: plotWidth(width, stacked), heads: words.heads(stacked, stacked ? NARROW.n : WIDE.n) };
+  // the values' column fits the widest value on the page, so every list and topic has the same grid
+  const valuesW = valuesFirst ? valuesWidth(p.items.map((x) => row.values(x).text)) : null;
+  const layout = {
+    stacked,
+    plotW: plotWidth(width, stacked, valuesW),
+    heads: words.heads(stacked, stacked ? NARROW.n : WIDE.n),
+    scale,
+    valuesFirst,
+    valuesHead: words.valuesHead,
+    thenAbove,
+  };
   const rowProps = { zone, words, row };
   const listProps = (id) => ({ open: place.lists.has(id), onOpen: (on) => place.setList(id, on), layout, rowProps });
+  const lists = few ? [] : listsShown(p, place.lists);
+  const plan = () => listsPlan({ lists, lead, words, row, zone, layout });
 
   return (
-    <article className={panel} aria-busy={busy} ref={ref}>
+    <article className={panel} aria-busy={busy} ref={ref} style={valuesW ? { "--values-w": `${valuesW}px` } : undefined}>
       {header}
       {few ? (
         showAll
       ) : (
         <Fragment key={answerKey}>
           {top}
+          {noteFirst && lead && <Note words={words} />}
           {p.lower.length > 0 && (
             <ProfileList
               title={words.lists.lower}
               items={p.lower}
               caption={lead === "lower" && <AxisTitle words={words} />}
-              note={lead === "lower" && <Note words={words} />}
+              note={lead === "lower" && !noteFirst && <Note words={words} />}
               {...listProps("lower")}
             />
           )}
@@ -527,11 +727,17 @@ export default function ComparisonProfile({
               title={words.lists.higher}
               items={p.higher}
               caption={lead === "higher" && <AxisTitle words={words} />}
-              note={lead === "higher" && <Note words={words} />}
+              note={lead === "higher" && !noteFirst && <Note words={words} />}
               {...listProps("higher")}
             />
           )}
           {p.mix.length > 0 && <ProfileList title={words.lists.mix} items={p.mix} all caption={<MixLine words={words} />} {...listProps("mix")} />}
+          {/* the image of the lists, by them (O2): the page's question, heading and sample line, then the lists as shown */}
+          {png && lists.length > 0 && (
+            <div className="chart-actions profile-png">
+              <DownloadPng label={png.label} busy={busy} image={(el) => ({ ...png.image(el, plan()), panel: el })} />
+            </div>
+          )}
         </Fragment>
       )}
       <section className="profile-topics" aria-labelledby={`${ids}-topics`}>

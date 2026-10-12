@@ -458,6 +458,9 @@ export const periodName = (label, words) => `${label}: ${words.join(", ")}`;
 /** "Download PNG"'s file name: the characteristic's, the genre's and the option's ids, in lower case. */
 export const trendsFileName = (state) => `trends-${state.v}-${state.genre}-${state.sub}.png`.toLowerCase();
 
+/** View 2's "Download PNG" (its lists): "trends-changes-all-all.png", the genre's and the option's ids (the file's). */
+export const changesFileName = (file) => `trends-changes-${file.g}-${file.s}.png`.toLowerCase();
+
 /** What the polite live region says when View 1's characteristic, genre or option changes: the question (which names
  * the genre, as the takeaway no longer does), the heading, then the takeaway's lines. */
 export function trendAnnouncement(meta, file, state) {
@@ -552,11 +555,90 @@ export function trendProfile(meta, file) {
   };
 }
 
-/** "26 characteristics clearly changed from 2000–2009 to 2020 or later", "1 characteristic …", "No characteristic …". */
-export function changesHeading(count, file) {
+/**
+ * "26 of 180 characteristics clearly changed from 2000–2009 to 2020 or later", "1 of 180 characteristics …", "None of
+ * the 180 characteristics …": `count` of the `compared` characteristics (those compared in this file: 180 with All
+ * stories, 179 with a Length option, fewer in a genre where some have too few stories).
+ */
+export function changesHeading(count, compared, file) {
   const w = windowWords(file);
-  const what = count === 0 ? "No characteristic" : count === 1 ? "1 characteristic" : `${count} characteristics`;
+  const m = formatCount(compared);
+  const what = count === 0 ? `None of the ${m} characteristics` : `${formatCount(count)} of ${m} characteristics`;
   return `${what} clearly changed from ${w.then} to ${w.now}`;
+}
+
+/**
+ * The length line, first in the takeaway when word count is in the file and clearly changed: "Stories got longer:
+ * median 2,810 words in 2000–2009, 4,100 in 2020 or later." ("shorter" when it fell); null otherwise, and with the
+ * Length options, which leave word count out. Its numbers as View 1's chart prints them.
+ */
+export function lengthLine(p, file) {
+  const item = p.items.find((x) => x.id === "story_words");
+  if (!item?.f || item.all?.median == null || item.stats?.median == null) return null;
+  const w = windowWords(file);
+  const moved = item.f > 0 ? "longer" : "shorter";
+  return `Stories got ${moved}: median ${item.nf.withUnit(item.all.median)} in ${w.then}, ${item.nf.value(item.stats.median)} in ${w.now}.`;
+}
+
+/** The words of a change that no length band holds (All genres with All stories): a row's tag and its takeaway line. */
+export const NOT_IN_BANDS = "not clear within any length band";
+
+/**
+ * The clear changes that are clear within no length band: each with an entry in the Length options' files (`bands`:
+ * trends/short, medium and long's all.json) and f = 0 in every one of them (word count, which those files leave out,
+ * never). A Set of ids. It says only what the rule found in each band.
+ */
+export function notClearInBands(p, bands) {
+  const out = new Set();
+  for (const x of p.flagged) {
+    const entries = bands.map((b) => b.c[x.id]).filter(Boolean);
+    if (entries.length && entries.every((e) => !e.f)) out.add(x.id);
+  }
+  return out;
+}
+
+/** The takeaway's last line: "6 of these changes are not clear within any length band." ("1 of these changes is …"). */
+export const bandsLine = (j) => (j > 0 ? `${formatCount(j)} of these changes ${j === 1 ? "is" : "are"} ${NOT_IN_BANDS}.` : null);
+
+/**
+ * What a row of "What changed" adds at the end of its unit line: "not clear within any length band" (a clear change
+ * that no length band holds, `inBands`), "borderline" (All genres, where the fixed-mix check disagrees, O6).
+ */
+export function changesTags(item, file, inBands = null) {
+  return [...(inBands?.has(item.id) ? [NOT_IN_BANDS] : []), ...(borderline(item.entry, file.g) ? ["borderline"] : [])];
+}
+
+/**
+ * A row's values, right after its label (item 4): the 2000–2009 window's, then the 2020-or-later window's, as the
+ * columns print them (profileColumns: medians trimmed of trailing zeros, shares, the shares with any, median bands,
+ * the named group that changed most), with the medians' relative change, rounded, for numbers with a plain unit
+ * (words, sentences, per 1,000 words …) and both medians above 0: "51.6 → 38.8 (−25%)", "57% → 40%". { text, change
+ * (the percent, or null), second (the medians among those with any, under a mostly-zero row whose share goes the other
+ * way from its dot), unit }.
+ */
+export function changesValues(item) {
+  const cols = changesColumns(item);
+  const then = cols.genre ? cols.genre[0] : "–";
+  const now = cols.all ? cols.all[0] : "–";
+  const plain = item.kind === "num" && Boolean(item.nf.unit);
+  const change = plain && item.all?.median > 0 && item.stats?.median > 0 ? Math.round(((item.stats.median - item.all.median) / item.all.median) * 100) || 0 : null;
+  const pct = change == null ? "" : ` (${change > 0 ? "+" : change < 0 ? "−" : ""}${Math.abs(change)}%)`;
+  const second = cols.genre?.[1] && cols.all?.[1] ? `${cols.genre[1]} → ${cols.all[1]}` : null;
+  return { text: `${then} → ${now}${pct}`, change, second, unit: cols.unit };
+}
+
+/**
+ * The scale of "What changed"'s dots (item 4): 50 ± d out of 100, for the whole view (every list and topic of the
+ * file, so opening a topic never rescales anything): d is the largest distance from 50 among the compared rows' dots,
+ * plus 5, rounded up to a multiple of 5, between 20 and 50 (25 for All genres with All stories: 34 to 68). Ticks every
+ * 10. { lo, hi, d, ticks }.
+ */
+export function changesScale(p) {
+  const far = Math.max(0, ...p.items.filter((x) => x.r != null && x.kind !== "grp").map((x) => 50 * Math.abs(x.r)));
+  const d = Math.min(50, Math.max(20, Math.ceil((far + 5) / 5 - 1e-9) * 5));
+  const ticks = [];
+  for (let t = Math.ceil((50 - d) / 10) * 10; t <= 50 + d; t += 10) ticks.push(t);
+  return { lo: 50 - d, hi: 50 + d, d, ticks };
 }
 
 /**
@@ -596,13 +678,13 @@ export function changesColumns(item) {
  * "2000–2009 11% with any, 2020 or later 21%", with "; among those, median …" where the medians show; bands: "median
  * …"; named groups: "% of stories", then every group's share in both.
  */
-export function changesRowName(item, file, minN) {
+export function changesRowName(item, file, minN, tags = []) {
   const { kind, variable } = item;
   const w = windowWords(file);
   const cols = changesColumns(item);
   const [then, now] = [item.all, item.stats];
   const cmp = item.r == null ? "too few stories to compare" : !item.f ? "no clear change" : `clearly ${changeWords(kind, item.f)}`;
-  const end = `; ${cmp}. Opens its chart over time.`;
+  const end = `; ${[cmp, ...tags].join("; ")}. Opens its chart over time.`;
   const bar = comparisonBar(item.r, { flagged: Boolean(item.f), zone: item.zone });
   const times = item.r == null || kind === "grp" ? "" : ` ${bar.times} in 100;`;
   const few = `fewer than ${minN} stories`;
@@ -634,7 +716,10 @@ export function changesRowName(item, file, minN) {
   const unit = kind === "num" ? cols.unit : "";
   // a scale's text that starts with a number follows a comma ("0.468, −1 (all negative) to +1 (all positive)")
   const last = !cols.all ? nowN : /^[−+\d]/.test(unit) ? `${nowN}, ${unit}` : withUnit(nowN, unit);
-  return `${variable.label}:${times} ${w.then} ${thenN}, ${w.now} ${last}${end}`;
+  // the medians' relative change, as the row prints it ("51.6 → 38.8 (−25%)")
+  const { change } = changesValues(item);
+  const pct = change == null ? "" : ` (${change > 0 ? "+" : change < 0 ? "−" : ""}${Math.abs(change)}%)`;
+  return `${variable.label}:${times} ${w.then} ${thenN}, ${w.now} ${last}${pct}${end}`;
 }
 
 /**
@@ -644,12 +729,17 @@ export function changesRowName(item, file, minN) {
 export function changesWords(file) {
   const w = windowWords(file);
   const heads = [periodLabel(file.then), `${file.now[0]}+`];
+  const title = (mark, word) => ({ mark, word, full: `${word} from ${w.then} to ${w.now}` });
   return {
     heads: () => heads,
+    // the values' head, "2000–09 → 2020+" (values first, item 4)
+    valuesHead: heads.join(" → "),
+    // "▼ Fell" on screen, the marks hidden; screen readers keep "Fell from 2000–2009 to 2020 or later" (the periods are
+    // in the heading)
     lists: {
-      lower: `Fell from ${w.then} to ${w.now}`,
-      higher: `Rose from ${w.then} to ${w.now}`,
-      mix: `A different mix from ${w.then} to ${w.now}`,
+      lower: title("▼", "Fell"),
+      higher: title("▲", "Rose"),
+      mix: title("≠", "A different mix"),
     },
     axisTitle: `How often a story from ${w.now} is the higher one against a story from ${w.then}, out\u00a0of\u00a0100`,
     zone: "no clear change",
@@ -658,7 +748,8 @@ export function changesWords(file) {
       "how\u00a0this\u00a0is\u00a0decided",
       `). Gray dots${inTopic ? "" : ", in the topics below,"} show no clear change. ${tap ? "Tap" : "Click"} a row for its chart over time.`,
     ],
-    mixLine: ({ inTopic = false } = {}) => `${inTopic ? "" : "A different mix: "}${w.now} above, ${w.then} below`,
+    // the bars in time's order, 2000–2009 above (item 4)
+    mixLine: ({ inTopic = false } = {}) => `${inTopic ? "" : "A different mix: "}${w.then} above, ${w.now} below`,
     topicsLine: "How many characteristics in each topic changed. Open a topic to see them all: blue dots changed, gray dots show no clear change.",
     topicCount: (t) => {
       if (t.compared) return { k: t.count, m: t.compared, text: `${t.count} of ${t.compared} changed` };
@@ -679,5 +770,5 @@ export function changesAnnouncement(meta, file, state) {
   if (!windowsCompared(file)) return `${question} ${changesTooFewHeading(file, genre, subset)}.`;
   const p = trendProfile(meta, file);
   const lines = changesTakeaway(p).map((line) => `${line.word}: ${line.items.join(", ")}.`);
-  return [question, `${changesHeading(p.flagged.length, file)}.`, ...lines].join(" ");
+  return [question, `${changesHeading(p.flagged.length, p.compared, file)}.`, lengthLine(p, file), ...lines].filter(Boolean).join(" ");
 }

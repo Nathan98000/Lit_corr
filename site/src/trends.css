@@ -322,6 +322,113 @@
   stroke-width: 2;
 }
 
+/* ------------------------------------------------- What changed: the values first, on a zoomed scale (item 4) */
+/* wide (a chart of 900 px or more): the label with its unit · the values ("51.6 → 38.8 (−25%)", as wide as the widest,
+   --values-w) · the plot (the rest) · "›"; the values are the row's main read, so every dot's number is alike */
+.trend-changes .profile-row,
+.trend-changes .profile-head {
+  grid-template-columns: 250px var(--values-w, 150px) minmax(0, 1fr) 14px;
+}
+
+.trend-changes .profile-head .profile-plot-cell {
+  grid-column: 3;
+}
+
+.trend-changes .profile-values-head {
+  grid-column: 2;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+
+.trend-changes .profile-values {
+  font-size: 13.5px;
+  line-height: 1.25;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap; /* a value never breaks inside */
+}
+
+.trend-changes .profile-values small {
+  display: block;
+  font-size: 12px;
+  color: var(--ink-3);
+}
+
+.trend-changes .profile-row.few .profile-values {
+  color: var(--ink-3);
+}
+
+.trend-changes .p2-num {
+  font-size: 12px;
+  font-weight: 400;
+  fill: var(--ink-2);
+}
+
+/* a unit line with tags ("per 1,000 words · borderline"): the unit and each tag kept whole (a long tag wraps between its
+   words), each "·" leading its tag in a box it is pulled back by and the gap makes up for, clipped when its tag starts
+   a line, so no line starts or ends with it (the kicker's way, styles.css) */
+.profile-tagged {
+  --tag-sep: 1em;
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: var(--tag-sep);
+  overflow: hidden;
+}
+
+.profile-tag-piece {
+  white-space: nowrap;
+}
+
+.profile-tag-piece.long {
+  white-space: normal;
+}
+
+.profile-tag-piece + .profile-tag-piece {
+  margin-left: calc(-1 * var(--tag-sep));
+}
+
+.profile-tag-sep {
+  display: inline-block;
+  width: var(--tag-sep);
+  text-align: center;
+}
+
+/* over a named-group row in a topic, the mix line starts where its bars do: after the label, the values and the gaps */
+.trend-changes .profile-mix-line.over-row {
+  padding-left: calc(276px + var(--values-w, 150px));
+}
+
+/* stacked (a chart under 900 px): the label with its unit, the values and "›" on one line, the plot under them */
+.trend-changes.stacked .profile-row {
+  grid-template-columns: minmax(0, 1fr) var(--values-w, 150px) 12px;
+  grid-template-areas: "label values chev" "plot plot plot";
+}
+
+.trend-changes.stacked .profile-values {
+  grid-area: values;
+  justify-self: end;
+  text-align: right;
+}
+
+.trend-changes.stacked .profile-head {
+  grid-template-columns: minmax(0, 1fr) var(--values-w, 150px) 12px;
+}
+
+.trend-changes.stacked .profile-values-head {
+  justify-self: end;
+}
+
+.trend-changes .profile-heads.values-heads {
+  grid-template-columns: var(--values-w, 150px) 12px;
+}
+
+.trend-changes .profile-heads.values-heads > span {
+  justify-self: end;
+}
+
 /* ---------------------------------------------------------------------- forced colors */
 @media (forced-colors: active) {
   .trend-chart .bracket path {

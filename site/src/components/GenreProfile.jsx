@@ -10,11 +10,12 @@ import {
   profileRowName,
   profileTakeaway,
   sampleLine,
+  standsOutQuestion,
   takeawayLine,
   topicCount,
 } from "../lib/genres.js";
 import ComparisonProfile from "./ComparisonProfile.jsx";
-import { HOW_DECIDED } from "./GenreAnswer.jsx";
+import { HOW_DECIDED, oneGenreFileName } from "./GenreAnswer.jsx";
 import { ViewLink } from "./GenreDetails.jsx";
 
 export { plotWidth } from "./ComparisonProfile.jsx";
@@ -29,10 +30,10 @@ export const tooFewText = (genre, subset, minN) =>
 /**
  * One genre against all genres (View 2), drawn by ComparisonProfile: how many characteristics clearly set the genre
  * apart, the three biggest differences, the characteristics lower and higher in the genre (ordered by the size of the
- * difference: this ranks characteristics within one genre, never genres), the named groups with a different mix, and
- * every characteristic by topic, folded (a topic's rows are drawn when it is opened). Every row opens that
- * characteristic's chart in every genre. With fewer stories than the rule needs, nothing is compared: the heading says
- * so, then "Show all stories" and the topics, whose rows give the numbers.
+ * difference: this ranks characteristics within one genre, never genres), the named groups with a different mix,
+ * "Download PNG" of those lists, and every characteristic by topic, folded (a topic's rows are drawn when it is
+ * opened). Every row opens that characteristic's chart in every genre. With fewer stories than the rule needs, nothing
+ * is compared: the heading says so, then "Show all stories" and the topics, whose rows give the numbers.
  */
 export default function GenreProfile({ meta, state, file, busy, onSwitch, onNavigate, headingRef }) {
   const genre = meta.genres.find((g) => g.id === state.genre);
@@ -65,12 +66,14 @@ export default function GenreProfile({ meta, state, file, busy, onSwitch, onNavi
   const p = genreProfile(meta, file, gi);
   const count = p.flagged.length;
   const takeaway = profileTakeaway(p);
+  const heading = few ? tooFewText(genre, subset, file.rule.min_n) : profileHeading(count, genre);
+  const sample = sampleLine(n, genre, subset);
   const header = (
     <header className="chart-head">
       <h2 className="chart-title" ref={headingRef} tabIndex={-1}>
-        {few ? tooFewText(genre, subset, file.rule.min_n) : profileHeading(count, genre)}
+        {heading}
       </h2>
-      <p className="profile-sample">{sampleLine(n, genre, subset)}</p>
+      <p className="profile-sample">{sample}</p>
     </header>
   );
   const top = (
@@ -116,6 +119,16 @@ export default function GenreProfile({ meta, state, file, busy, onSwitch, onNavi
       </ViewLink>
     ),
   };
+  // the lists' image (O2): the question, the heading and the sample line, then the lists as shown
+  const png = {
+    label: "Download PNG of what stands out",
+    image: (panel, lists) => ({
+      title: [standsOutQuestion(genre)],
+      subtitle: [heading, sample],
+      lists,
+      fileName: oneGenreFileName(state),
+    }),
+  };
 
   return (
     <ComparisonProfile
@@ -128,6 +141,7 @@ export default function GenreProfile({ meta, state, file, busy, onSwitch, onNavi
       answerKey={`${state.genre}|${state.sub}`}
       words={words}
       row={row}
+      png={png}
     />
   );
 }

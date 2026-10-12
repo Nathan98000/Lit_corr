@@ -613,16 +613,18 @@ export const noDifferenceZone = (rule) => [Math.round(50 * (1 - rule.min_r)), Ma
  * `gap` px from the dot's edge; a dot inside the zone of no clear difference has its number `gap` px outside the zone's
  * edge on the dot's side, so no number sits on a line; near the scale's ends, a number that would pass the plot's edge
  * goes on the dot's inner side (its halo over the stem). `plotW`: the plot's width, `dotR`: the dot's radius and
- * `textW`: the number's width, in px. Returns { x (percent of the plot), dx (px), anchor ("start" or "end") }.
+ * `textW`: the number's width, in px; `scale`: { lo, hi } when the plot shows part of the 0–100 scale ("What changed"'s
+ * zoomed scale), else all of it. Returns { x (percent of the plot), dx (px), anchor ("start" or "end") }.
  */
-export function numberPlace(r, zone, { plotW, dotR, textW, gap = 8 }) {
+export function numberPlace(r, zone, { plotW, dotR, textW, gap = 8, scale = null }) {
+  const pct = scale ? (v) => ((v - scale.lo) / (scale.hi - scale.lo)) * 100 : (v) => v;
   const end = 50 * (1 + r);
   const left = r < 0;
-  if (end > zone[0] && end < zone[1]) return left ? { x: zone[0], dx: -gap, anchor: "end" } : { x: zone[1], dx: gap, anchor: "start" };
+  if (end > zone[0] && end < zone[1]) return left ? { x: pct(zone[0]), dx: -gap, anchor: "end" } : { x: pct(zone[1]), dx: gap, anchor: "start" };
   const off = dotR + gap;
-  const at = (end / 100) * plotW;
+  const at = (pct(end) / 100) * plotW;
   const passes = left ? at - off - textW < 0 : at + off + textW > plotW;
-  return left !== passes ? { x: end, dx: -off, anchor: "end" } : { x: end, dx: off, anchor: "start" };
+  return left !== passes ? { x: pct(end), dx: -off, anchor: "end" } : { x: pct(end), dx: off, anchor: "start" };
 }
 
 /** How one row compares, at the end of its name: "clearly less", "no clear difference", "too few stories to compare". */

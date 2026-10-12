@@ -535,9 +535,12 @@ export async function drawChartImage(spec) {
   return canvas;
 }
 
-/** Make the image and save it as `spec.fileName` (iOS Safari may open it instead, which is fine). */
+/**
+ * Make the image and save it as `spec.fileName` (iOS Safari may open it instead, which is fine): a chart's, or the
+ * comparisons' lists' (`spec.lists`).
+ */
 export async function downloadChartImage(spec) {
-  const canvas = await drawChartImage(spec);
+  const canvas = spec.lists ? await drawListsImage(spec) : await drawChartImage(spec);
   const blob = await new Promise((resolve, reject) =>
     canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("The image could not be made"))), "image/png"),
   );
@@ -550,4 +553,334 @@ export async function downloadChartImage(spec) {
   a.click();
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 40000); // a browser may still be reading it
+}
+
+// ------------------------------------------------------------------------------------- the comparisons' lists (O2)
+// "Download PNG" of the Genres page's "One genre" and the Trends page's "What changed": their lists as the page shows
+// them, made from the lists' plan (ComparisonProfile's listsPlan), not from the page's rows, always 760 CSS px wide on
+// every screen, at 2×: the question as the title, the heading and the sample line as the subtitle, then each list's
+// title and count, its caption (the axis title, or the mix line), the zone's bracket and the scale's ticks, and its
+// rows (the label and unit lines; the values, or the two columns' numbers under their heads; the dot and its number,
+// or a named group's two bars with the key of every group); no "›", no buttons, no link. The rows are one SVG, the
+// titles canvas text in the page's own fonts, drawn through the same pipeline as the charts' images.
+export const LISTS_W = 760;
+const LIST = { label: 220, n: 70, gap: 12, pad: 4, row: 44, values: [110, 180] };
+const ZONE_FILL = "#ece9e2"; // comparison.css's zone and edges
+const ZONE_EDGE = "#8f8a80";
+
+const xmlText = (t) =>
+  String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/\u200b/g, "");
+const cssVar = (name, fallback) => getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback;
+
+/** What the lists' image says, top to bottom, without drawing it (for the tests): every text in drawing order. */
+export function listsImagePlan({ title, subtitle, lists }) {
+  return {
+    title: title.filter(Boolean),
+    subtitle: subtitle.filter(Boolean),
+    lists: lists.lists.map((l) => ({
+      title: l.title,
+      count: l.count,
+      caption: l.caption,
+      rows: l.rows.map((r) => ({
+        label: r.label,
+        unit: [r.unit, r.of, r.tags].filter(Boolean),
+        values: r.values ? [r.values.text, r.values.second].filter(Boolean) : null,
+        numbers: r.numbers ? r.numbers.map((c) => (c ? c.filter(Boolean).join(" ") : "–")) : null,
+        dot: r.dot ? r.dot.times : null,
+        bars: Boolean(r.bars),
+        few: r.few,
+      })),
+    })),
+    credit: CREDIT,
+  };
+}
+
+/** A text style the page gives `el` (or a stand-in of `tag.className` in `panel`), at a fixed size for the image. */
+function fixedStyle(panel, el, tag, className, size, lineHeight) {
+  const style = styleOf(panel, el, tag, className);
+  return { ...style, font: style.font.replace(/(\d+(\.\d+)?)px/, `${size}px`), size, lineHeight };
+}
+
+/** The color the page gives a palette class (`pal-group-0` …), from a stand-in in `panel`. */
+function paletteColor(panel, cls) {
+  const probe = document.createElement("span");
+  probe.className = cls;
+  probe.style.cssText = "position:absolute;left:0;top:0;width:1px;height:1px;visibility:hidden";
+  panel.appendChild(probe);
+  const color = getComputedStyle(probe).backgroundColor;
+  probe.remove();
+  return color;
+}
+
+/**
+ * The lists as one SVG (CSS px, `width` wide) and the canvas texts that go with it (the lists' titles and counts, in
+ * the page's own fonts): { xml, height, texts: [{ text, x, y, style, align }] }.
+ */
+function listsSvg(plan, { width, panel, sans, styles, ctx }) {
+  const ink = cssVar("--ink", "#1c1c22");
+  const ink2 = cssVar("--ink-2", "#45454f");
+  const ink3 = cssVar("--ink-3", "#6b6b75");
+  const rule = cssVar("--rule", "#e7e4dd");
+  const rule2 = cssVar("--rule-2", "#d2cec5");
+  const accent = cssVar("--accent-ink", "#2b63c6");
+  const quiet = cssVar("--quiet-mark", "#857f75");
+  const control = cssVar("--control", "#8f8a80");
+  const white = paper();
+  const font = (size, weight = 400) => `${weight} ${size}px ${sans}`;
+  const measure = (text, size, weight = 400) => {
+    ctx.font = font(size, weight);
+    return ctx.measureText(text).width;
+  };
+  const wrapped = (text, size, maxW, weight = 400) => {
+    ctx.font = font(size, weight);
+    return wrap(ctx, text, maxW);
+  };
+  const fam = xmlText(sans);
+  const parts = [];
+  const text = (t, x, y, { size = 12, weight = 400, fill = ink, anchor = "start", italic = false, nums = false, halo = false } = {}) =>
+    parts.push(
+      `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" font-family="${fam}" font-size="${size}" font-weight="${weight}" fill="${fill}"` +
+        ` text-anchor="${anchor}"${italic ? ' font-style="italic"' : ""}${nums ? ' style="font-variant-numeric:tabular-nums"' : ""}` +
+        `${halo ? ` stroke="${white}" stroke-width="4" stroke-linejoin="round" paint-order="stroke"` : ""}>${xmlText(t)}</text>`,
+    );
+  const line = (x1, y1, x2, y2, stroke, w = 1) =>
+    parts.push(`<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="${stroke}" stroke-width="${w}"/>`);
+  const rect = (x, y, w, h, fill, stroke = null) =>
+    parts.push(
+      `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${Math.max(0, w).toFixed(1)}" height="${h.toFixed(1)}" fill="${fill}"${stroke ? ` stroke="${stroke}" stroke-width="1"` : ""}/>`,
+    );
+  const colors = new Map();
+  const colorOf = (cls) => {
+    if (!colors.has(cls)) colors.set(cls, paletteColor(panel, cls));
+    return colors.get(cls);
+  };
+
+  // the columns: the label · the values · the plot (values first), or the label · the plot · the two numbers
+  const rows = plan.lists.flatMap((l) => l.rows);
+  const vf = plan.valuesFirst;
+  const valuesW = vf
+    ? Math.min(LIST.values[1], Math.max(LIST.values[0], Math.ceil(Math.max(...rows.map((r) => measure(r.values.text, 13.5)))) + 8))
+    : 0;
+  const plotX = vf ? LIST.label + LIST.gap + valuesW + LIST.gap : LIST.label + LIST.gap;
+  const plotW = vf ? width - plotX : width - plotX - 2 * (LIST.gap + LIST.n);
+  const n1 = plotX + plotW + LIST.gap + LIST.n; // the right edges of the two number columns
+  const n2 = n1 + LIST.gap + LIST.n;
+  const inner = { x: plotX + LIST.pad, w: plotW - 2 * LIST.pad };
+  const { scale, zone } = plan;
+  const pct = (v) => ((v - scale.lo) / (scale.hi - scale.lo)) * 100;
+  const X = (v) => inner.x + (pct(v) / 100) * inner.w;
+  // the two columns' heads ("Romance", "All genres"), each in up to two lines of its column (a name may break after its
+  // slash), else "Genre", as the page's wide heads
+  const heads = vf
+    ? null
+    : plan.heads.map((h) => {
+        const ls = wrapped(h.replace(/\u200b/g, " "), 12, LIST.n, 600);
+        return ls.length <= 2 ? ls : ["Genre"];
+      });
+
+  const texts = [];
+  let y = 0;
+  plan.lists.forEach((l, k) => {
+    if (k) y += 26;
+    // the title and its count, on the canvas in the page's fonts; a rule under them
+    texts.push({ text: l.title, x: 0, y, style: styles.listTitle });
+    texts.push({ text: l.count, x: width, y: y + (styles.listTitle.lineHeight - styles.count.lineHeight) * 0.7, style: styles.count, align: "right" });
+    y += styles.listTitle.lineHeight + 6;
+    line(0, y, width, y, rule2);
+    y += 1;
+    if (l.caption) {
+      y += 8;
+      for (const t of wrapped(l.caption, 12.5, width, 600)) {
+        text(t, 0, y + 12.5, { size: 12.5, weight: 600, fill: ink2 });
+        y += 17;
+      }
+    }
+    // the head row: the zone's bracket over the ticks, and the columns' heads
+    const dots = l.rows.some((r) => r.dot);
+    const headH = Math.max(30, heads ? 16 * Math.max(...heads.map((h) => h.length)) + 4 : 30);
+    const base = y + headH - 2;
+    if (dots) {
+      text(`${zone[0]}–${zone[1]}: ${plan.zoneWords}`, X(50), base - 17, { size: 11.5, fill: ink2, anchor: "middle" });
+      const by = base - 14;
+      line(X(zone[0]), by, X(zone[1]), by, ZONE_EDGE);
+      line(X(zone[0]), by, X(zone[0]), by + 5, ZONE_EDGE);
+      line(X(zone[1]), by, X(zone[1]), by + 5, ZONE_EDGE);
+      for (const t of scale.ticks) {
+        const at = pct(t);
+        text(String(t), X(t), base, { size: 12, fill: ink3, anchor: at <= 0.01 ? "start" : at >= 99.99 ? "end" : "middle", nums: true });
+      }
+    }
+    if (vf) text(plan.valuesHead, LIST.label + LIST.gap, base, { size: 12, weight: 600, fill: ink2 });
+    else {
+      heads.forEach((h, c) => {
+        h.forEach((t, j) => text(t, c ? n2 : n1, base - 16 * (h.length - 1 - j), { size: 12, weight: 600, fill: ink2, anchor: "end" }));
+      });
+    }
+    y += headH + 2;
+    // the rows
+    for (const r of l.rows) {
+      const label = wrapped(r.label, 14.5, LIST.label);
+      const units = [r.unit, r.of, r.tags].filter(Boolean).flatMap((u, j) => wrapped(u, 12.5, LIST.label - (j === 0 && r.swatch ? 15 : 0)));
+      // a named group's key under its bars: every group's swatch and name, an item never broken
+      const keyLines = [];
+      if (r.bars) {
+        let current = [];
+        let x = 0;
+        for (const [b, name] of r.key.entries()) {
+          const w = 15 + measure(name, 12);
+          if (x && x + w > plotW) {
+            keyLines.push(current);
+            current = [];
+            x = 0;
+          }
+          current.push({ b, name, x });
+          x += w + 12;
+        }
+        keyLines.push(current);
+      }
+      const textH = label.length * 19 + units.length * 16;
+      const plotH = r.bars ? 20 + 4 + keyLines.length * 16 : 22;
+      const h = Math.max(LIST.row, textH + 12, plotH + 12);
+      const mid = y + h / 2;
+      let ty = mid - textH / 2;
+      for (const t of label) {
+        text(t, 0, ty + 14, { size: 14.5, fill: ink });
+        ty += 19;
+      }
+      units.forEach((t, j) => {
+        let x = 0;
+        if (j === 0 && r.swatch) {
+          rect(0.5, ty + 3.5, 9, 9, colorOf(r.swatch), control);
+          x = 15;
+        }
+        text(t, x, ty + 12, { size: 12.5, fill: ink3 });
+        ty += 16;
+      });
+      // the values (values first) or the two numbers
+      if (vf) {
+        const two = Boolean(r.values.second);
+        text(r.values.text, LIST.label + LIST.gap, mid + (two ? -2 : 5), { size: 13.5, fill: r.few ? ink3 : ink, nums: true });
+        if (two) text(r.values.second, LIST.label + LIST.gap, mid + 13, { size: 12, fill: ink3, nums: true });
+      } else {
+        r.numbers.forEach((col, c) => {
+          const x = c ? n2 : n1;
+          const two = Boolean(col?.[1]);
+          text(col ? col[0] : "–", x, mid + (two ? -2 : 5), { size: 13.5, fill: r.few ? ink3 : c ? ink2 : ink, anchor: "end", nums: true });
+          if (two) text(col[1], x, mid + 13, { size: 12, fill: ink3, anchor: "end", nums: true });
+        });
+      }
+      // the plot
+      if (r.few) {
+        text("Too few stories to compare", plotX, mid + 4, { size: 12.5, fill: ink3, italic: true });
+      } else if (r.bars) {
+        const top = mid - plotH / 2;
+        r.bars.forEach((shares, j) => {
+          let x = plotX + 2;
+          shares.forEach((share, b) => {
+            const w = share * (plotW - 4);
+            if (w > 0) rect(x, top + 1 + j * 11, w, 7, colorOf(r.colors[b]), "#fff");
+            x += w;
+          });
+        });
+        keyLines.forEach((items, j) => {
+          const ky = top + 24 + j * 16;
+          for (const it of items) {
+            rect(plotX + it.x + 0.5, ky + 1.5, 9, 9, colorOf(r.colors[it.b]), control);
+            text(it.name, plotX + it.x + 15, ky + 10, { size: 12, fill: ink2 });
+          }
+        });
+      } else if (r.dot) {
+        const d = r.dot;
+        rect(X(zone[0]), mid - 9, X(zone[1]) - X(zone[0]), 18, ZONE_FILL);
+        line(X(zone[0]), mid - 9, X(zone[0]), mid + 9, ZONE_EDGE);
+        line(X(zone[1]), mid - 9, X(zone[1]), mid + 9, ZONE_EDGE);
+        line(X(50), mid - 11, X(50), mid + 11, ink3);
+        const color = d.flagged ? accent : quiet;
+        if (d.to > d.from) line(X(d.from), mid, X(d.to), mid, color, d.flagged ? 2 : 1.5);
+        const dotR = d.flagged ? 5 : 3.5;
+        parts.push(`<circle cx="${X(d.end).toFixed(1)}" cy="${mid.toFixed(1)}" r="${dotR}" fill="${color}"/>`);
+        const loud = d.flagged && !vf;
+        const size = loud ? 13 : 12;
+        const weight = loud ? 600 : 400;
+        // the page's own placement (numberPlace, in the plan: this module imports nothing the pages load)
+        const at = plan.place(d.r, { plotW: inner.w, dotR, textW: measure(String(d.times), size, weight) });
+        text(String(d.times), inner.x + (at.x / 100) * inner.w + at.dx, mid + 4.5, {
+          size,
+          weight,
+          fill: vf ? ink2 : d.flagged ? ink : ink3,
+          anchor: at.anchor,
+          nums: true,
+          halo: true,
+        });
+      }
+      y += h;
+      line(0, y, width, y, rule);
+    }
+  });
+  const height = Math.ceil(y + 1);
+  const xml =
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${width * SCALE}" height="${height * SCALE}" viewBox="0 0 ${width} ${height}">` +
+    `${parts.join("")}</svg>`;
+  return { xml, height, texts };
+}
+
+/** The lists' image on a canvas at 2× pixels (LISTS_W CSS px wide), from the spec the page's button gives. */
+export async function drawListsImage(spec) {
+  const plan = spec.lists;
+  const panel = spec.panel;
+  if (!plan?.lists?.length || !panel) throw new Error("No lists to draw");
+  if (document.fonts?.ready) await document.fonts.ready;
+  const W = LISTS_W;
+  const width = W - 2 * PAD;
+  const titleStyle = fixedStyle(panel, null, "h2", "chart-title", 24, 29);
+  const subStyle = fixedStyle(panel, null, "p", "chart-sub", 14, 20);
+  const styles = {
+    listTitle: fixedStyle(panel, panel.querySelector(".profile-list-head h3"), "h3", "", 19, 25),
+    count: fixedStyle(panel, null, "span", "list-count", 14, 20),
+  };
+  const creditStyle = styleOf(panel, null, "p", "axis-caption");
+  const ctx = document.createElement("canvas").getContext("2d");
+  const ops = [];
+  let y = PAD;
+  const textBlock = (texts, style) => {
+    for (const text of texts) {
+      setFont(ctx, style);
+      const lines = wrap(ctx, text, width);
+      ops.push({ kind: "text", lines, style, x: PAD, y });
+      y += lines.length * style.lineHeight;
+    }
+  };
+  textBlock(spec.title.filter(Boolean), titleStyle);
+  y += 6;
+  textBlock(spec.subtitle.filter(Boolean), subStyle);
+  y += 20;
+  const sans = getComputedStyle(panel).fontFamily;
+  const lists = listsSvg(plan, { width, panel, sans, styles, ctx });
+  const top = y;
+  ops.push({ kind: "lists", x: PAD, y: top, w: width, h: lists.height });
+  for (const t of lists.texts) {
+    ops.push({ kind: "text", lines: [t.text], style: t.style, x: PAD + t.x, y: top + t.y, align: t.align || "left" });
+  }
+  y = top + lists.height + 16;
+  ops.push({ kind: "text", lines: [CREDIT], style: creditStyle, x: W - PAD, y, align: "right" });
+  y += creditStyle.lineHeight + PAD;
+  const H = Math.ceil(y);
+
+  const { img, url } = await svgPicture(lists.xml);
+  const canvas = document.createElement("canvas");
+  canvas.width = W * SCALE;
+  canvas.height = H * SCALE;
+  const out = canvas.getContext("2d");
+  out.scale(SCALE, SCALE);
+  out.fillStyle = paper();
+  out.fillRect(0, 0, W, H);
+  try {
+    for (const op of ops) {
+      if (op.kind === "lists") out.drawImage(img, op.x, op.y, op.w, op.h);
+      else drawLines(out, op);
+    }
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+  return canvas;
 }

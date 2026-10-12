@@ -11,12 +11,16 @@ import {
   changesAnnouncement,
   changesHeading,
   changesRowName,
+  changesTags,
+  changesValues,
   changesSampleLine,
   changesTakeaway,
   changesTooFewHeading,
   changesWords,
+  bandsLine,
   borderline,
   borderlineLine,
+  lengthLine,
   nothingToDraw,
   numbersLine,
   pathLine,
@@ -98,16 +102,25 @@ function* changesSentences(meta, file) {
     return;
   }
   const p = trendProfile(meta, file);
-  yield { at, text: changesHeading(p.flagged.length, file), clearly: true };
+  yield { at, text: changesHeading(p.flagged.length, p.compared, file), clearly: true };
   yield { at, text: changesSampleLine(file, genre, subset), clearly: false };
+  const length = lengthLine(p, file);
+  if (length) yield { at, text: length, clearly: false, border: false };
+  for (const j of [1, 6]) yield { at, text: bandsLine(j), clearly: false, border: false };
   for (const line of changesTakeaway(p)) yield { at, text: `${line.word}: ${line.items.join(", ")}.`, clearly: false };
   const w = changesWords(file);
-  for (const text of [...w.heads(), ...Object.values(w.lists), w.axisTitle, w.zone, w.mixLine({}), w.mixLine({ inTopic: true }), w.topicsLine]) {
+  const titles = Object.values(w.lists).flatMap((t) => [t.full, `${t.mark} ${t.word}`]);
+  for (const text of [...w.heads(), w.valuesHead, ...titles, w.axisTitle, w.zone, w.mixLine({}), w.mixLine({ inTopic: true }), w.topicsLine]) {
     yield { at, text, clearly: false };
   }
   for (const inTopic of [false, true]) for (const tap of [false, true]) yield { at, text: w.note({ inTopic, tap }).join(""), clearly: false };
   for (const t of p.topics) yield { at, text: `${t.topic.label}, ${w.topicCount(t).text}`, clearly: false };
-  for (const item of p.items) yield { at: `${at} ${item.id}`, text: changesRowName(item, file, meta.min_n), clearly: Boolean(item.f) };
+  for (const item of p.items) {
+    // the tags a row can carry: "not clear within any length band" is only ever said of a clear change
+    const tags = changesTags(item, file, item.f ? new Set([item.id]) : null);
+    yield { at: `${at} ${item.id}`, text: changesRowName(item, file, meta.min_n, tags), clearly: Boolean(item.f), border: borderline(item.entry, file.g) };
+    yield { at: `${at} ${item.id}`, text: changesValues(item).text, clearly: false, border: false };
+  }
 }
 
 describe("the Trends page's sentences on the real data", () => {

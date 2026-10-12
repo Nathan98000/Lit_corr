@@ -390,6 +390,11 @@ a.profile-row:hover .profile-label-text {
   font-variant-numeric: tabular-nums;
 }
 
+/* "Download PNG" of the lists, right after them (both pages) */
+.profile-png {
+  margin-top: 20px;
+}
+
 .show-all {
   display: inline-flex;
   align-items: center;

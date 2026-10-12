@@ -8,14 +8,22 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "../App.jsx";
+import { downloadChartImage, listsImagePlan } from "../lib/chartImage.js";
 import { clearCache } from "../lib/data.js";
 import TrendChart from "../components/TrendChart.jsx";
 import { TrendLegend } from "../components/TrendAnswer.jsx";
 import { plotHeight, trendLayout, trendOverlaps } from "../lib/trendLayout.js";
 import {
+  bandsLine,
+  changesHeading,
   changesQuestion,
   changesSampleLine,
+  changesScale,
+  changesValues,
+  lengthLine,
+  notClearInBands,
   pathLine,
+  trendProfile,
   trendChartInput,
   trendFormat,
   trendQuestion,
@@ -24,9 +32,13 @@ import {
 } from "../lib/trends.js";
 import { onTrendsPage } from "../lib/urlState.js";
 import { changedOverTime } from "../lib/wording.js";
-import { fixtureFetch, fixtureMeta, realMeta } from "./fixtures.js";
+import { fixtureFetch, fixtureFile, fixtureMeta, realMeta } from "./fixtures.js";
+
+vi.mock("../lib/chartImage.js", async (original) => ({ ...(await original()), downloadChartImage: vi.fn(async () => {}) }));
 
 const here = path.dirname(fileURLToPath(import.meta.url));
+const realTrends = (sub, g) =>
+  JSON.parse(readFileSync(path.join(here, "..", "..", "public", "aggregates", "trends", sub, `${g}.json`), "utf8"));
 const styles = readFileSync(path.join(here, "..", "styles.css"), "utf8");
 const trendsCss = readFileSync(path.join(here, "..", "trends.css"), "utf8");
 const real = realMeta();
@@ -432,5 +444,238 @@ describe("View 1's layout (phase 5)", () => {
     expect(plotHeight(false, 600)).toBe(200);
     expect(plotHeight(false, null)).toBe(250);
     expect(plotHeight(true, 900)).toBe(200);
+  });
+});
+
+describe("View 2 (phase 6)", () => {
+  const trends = ".trends-page .chart-panel[aria-busy='false']";
+  /** Opens an address with the trends files changed by `change(body, url)`. */
+  async function openChanged(hash, change) {
+    const serve = fixtureFetch();
+    vi.stubGlobal("fetch", async (url) => {
+      const res = await serve(url);
+      if (!String(url).includes("trends/") && !String(url).includes("genres/")) return res;
+      const body = change(await res.json(), String(url));
+      return { ok: true, status: 200, json: async () => body };
+    });
+    return open(hash, { ready: trends.replace(".trends-page", String(hash).includes("genres") ? ".genres-page" : ".trends-page") });
+  }
+
+  it.skipIf(!real)("counts the characteristics compared: 26 of 180 for All genres, 8, 16 and 15 of 179 with the Length options", () => {
+    const counts = Object.fromEntries(
+      real.trend.subsets.map((sub) => {
+        const file = realTrends(sub, "all");
+        const p = trendProfile(real, file);
+        return [sub, changesHeading(p.flagged.length, p.compared, file)];
+      }),
+    );
+    expect(counts).toEqual({
+      all: "26 of 180 characteristics clearly changed from 2000–2009 to 2020 or later",
+      short: "8 of 179 characteristics clearly changed from 2000–2009 to 2020 or later",
+      medium: "16 of 179 characteristics clearly changed from 2000–2009 to 2020 or later",
+      long: "15 of 179 characteristics clearly changed from 2000–2009 to 2020 or later",
+    });
+  });
+
+  it.skipIf(!real)("says how long stories got first, and which changes no length band holds last (All genres, All stories)", () => {
+    const file = realTrends("all", "all");
+    const p = trendProfile(real, file);
+    expect(lengthLine(p, file)).toBe("Stories got longer: median 2,810 words in 2000–2009, 4,100 in 2020 or later.");
+    // the Length options leave word count out
+    expect(lengthLine(trendProfile(real, realTrends("medium", "all")), realTrends("medium", "all"))).toBeNull();
+    const bands = ["short", "medium", "long"].map((sub) => realTrends(sub, "all"));
+    const tagged = notClearInBands(p, bands);
+    expect([...tagged].sort()).toEqual(
+      ["char_recurring_names", "dlg_word_share", "pace_dialogue_late", "qe_question_sentence_share", "qe_question_sentences_per_1k", "story_pages"].sort(),
+    );
+    expect(tagged.has("story_words")).toBe(false); // no entry in the length files
+    expect(tagged.has("story_paragraphs")).toBe(false); // clear in all three bands
+    expect(bandsLine(tagged.size)).toBe("6 of these changes are not clear within any length band.");
+  });
+
+  it("words the length line both ways and leaves it out without a clear change in word count", () => {
+    const file = { then: [2000, 2009], now: [2020, 2026] };
+    const nf = trendFormat({ unit: "words", bins: { type: "ranges" } }, { k: "num", fmt: "num", q: [[100, 1, 2810, 5000]], t: [100, 1, 4100, 5000] }, true, 30);
+    const p = (f) => ({ items: [{ id: "story_words", f, all: { median: 4100 }, stats: { median: 2810 }, nf }] });
+    expect(lengthLine(p(-1), file)).toBe("Stories got shorter: median 4,100 words in 2000–2009, 2,810 in 2020 or later.");
+    expect(lengthLine(p(1), file)).toMatch(/^Stories got longer: /);
+    expect(lengthLine(p(0), file)).toBeNull();
+    expect(lengthLine({ items: [] }, file)).toBeNull();
+    expect(bandsLine(1)).toBe("1 of these changes is not clear within any length band.");
+    expect(bandsLine(0)).toBeNull();
+  });
+
+  it("tags a row no length band holds, and a borderline one, at the end of its unit line and in its name", async () => {
+    // dialogue share: borderline for All genres (fm 0); has dialogue: not clear in any length band (f 0 in medium)
+    await openChanged("#/trends", (body, url) => {
+      if (url.includes("trends/all/all.json")) Object.assign(body.c.dlg_word_share, { fm: 0, rm: 0.15 });
+      if (url.includes("trends/medium/all.json")) Object.assign(body.c.dlg_has_dialogue, { f: 0 });
+      return body;
+    });
+    await waitFor(() => expect(document.querySelector(".changes-bands")).toBeTruthy());
+    expect(document.querySelector(".changes-bands").textContent).toBe("1 of these changes is not clear within any length band.");
+    const rows = [...document.querySelectorAll(".profile-list .profile-row")];
+    const row = (label) => rows.find((r) => r.querySelector(".profile-label-text").textContent === label);
+    expect(row("Has dialogue").querySelector(".profile-tagged").textContent).toBe("not clear within any length band");
+    expect(row("Has dialogue").querySelector(".visually-hidden").textContent).toMatch(/; clearly rose; not clear within any length band\. Opens its chart over time\.$/);
+    expect(row("Dialogue share").querySelector(".profile-tagged").textContent).toBe("borderline");
+    expect(row("Dialogue share").querySelector(".visually-hidden").textContent).toMatch(/; clearly rose; borderline\. Opens/);
+    // a piece never breaks inside, and each tag's "·" leads it (clipped at a line's start)
+    const tagged = trendsCss.slice(trendsCss.indexOf(".profile-tagged {"));
+    expect(tagged).toMatch(/\.profile-tag-piece \{\s*white-space: nowrap;/);
+  });
+
+  it("puts the note above the first list, titles the lists “▼ Fell” and “▲ Rose”, and names them in full", async () => {
+    await open("#/trends", { ready: trends });
+    const answer = document.querySelector(".trend-changes");
+    const note = answer.querySelector(".profile-note");
+    const first = answer.querySelector(".profile-list");
+    expect(note.compareDocumentPosition(first) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(answer.querySelector(".profile-takeaway").compareDocumentPosition(note) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.getByRole("heading", { level: 3, name: "Rose from 2000–2009 to 2020 or later" })).toBeTruthy();
+    expect(first.querySelector("h3 [aria-hidden='true']").textContent).toBe("▲ Rose");
+  });
+
+  it.skipIf(!real)("prints the values first, with the medians' relative change only for numbers with a plain unit", () => {
+    const p = trendProfile(real, realTrends("all", "all"));
+    const values = (id) => changesValues(p.items.find((x) => x.id === id)).text;
+    expect(values("story_mean_paragraph_words")).toBe("51.6 → 38.8 (−25%)");
+    expect(values("story_paragraphs")).toBe("56 → 102 (+82%)");
+    expect(values("story_words")).toBe("2,810 → 4,100 (+46%)");
+    // shares, the shares with any, scales, bands and named groups: no percent
+    expect(values("story_long_paragraph_share")).toBe("57% → 40%"); // mostly zero: the shares with any
+    expect(values("story_has_author_note")).toBe("18% → 33%");
+    expect(values("dlg_word_share")).toMatch(/^\d+% → \d+%$/); // a share, written as a percent
+    expect(values("lex_mean_word_zipf")).toMatch(/^[\d.]+ → [\d.]+$/); // "Zipf scale (higher = more common)"
+    expect(values("read_grade_composite")).toMatch(/^[\d.]+ → [\d.]+$/); // "US school grade"
+    expect(values("pace_sex_peak_position")).toMatch(/^[^→()]+ → [^→()]+$/); // median bands
+    expect(values("desc_pov")).toMatch(/^[\d.]+% → [\d.]+%$/); // the named group that changed most
+    // a median of 0 has no relative change
+    const zero = p.items.find((x) => x.id === "story_words");
+    expect(changesValues({ ...zero, all: { ...zero.all, median: 0 } }).change).toBeNull();
+  });
+
+  it("zooms the dots' scale to 50 ± d for the whole view, d from the farthest dot, between 20 and 50, ticks every 10", () => {
+    const items = (rs) => ({ items: rs.map((r) => ({ r, kind: "num" })) });
+    expect(changesScale(items([0.351, -0.322, 0.1]))).toEqual({ lo: 25, hi: 75, d: 25, ticks: [30, 40, 50, 60, 70] });
+    expect(changesScale(items([0.05]))).toMatchObject({ d: 20, lo: 30, hi: 70 });
+    expect(changesScale(items([0.96]))).toMatchObject({ d: 50, lo: 0, hi: 100, ticks: [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100] });
+    // named groups' distances and rows not compared don't count
+    expect(changesScale({ items: [{ r: 0.9, kind: "grp" }, { r: null, kind: "num" }, { r: 0.2, kind: "bin" }] }).d).toBe(20);
+  });
+
+  it.skipIf(!real)("gives All genres with All stories the 25–75 scale: its dots run from 34 to 68", () => {
+    expect(changesScale(trendProfile(real, realTrends("all", "all")))).toEqual({ lo: 25, hi: 75, d: 25, ticks: [30, 40, 50, 60, 70] });
+  });
+
+  it("draws a named group's bars in time's order, 2000–2009 above, and says so", async () => {
+    const user = await open("#/trends", { ready: trends });
+    await user.click([...document.querySelectorAll(".profile-topic summary")].find((x) => x.textContent.startsWith("Narration")));
+    await waitFor(() => expect(document.querySelector(".profile-topic .profile-plot rect")).toBeTruthy());
+    const pov = fixtureFile("trends/all/all.json").c.pov_class;
+    const row = [...document.querySelectorAll(".profile-topic .profile-row")].find((r) => r.querySelector(".profile-label-text").textContent === "Narrative perspective");
+    const width = (y) => [...row.querySelectorAll(`.profile-plot rect[y='${y}']`)].map((r) => parseFloat(r.getAttribute("width")));
+    expect(width(1)).toEqual(pov.t.slice(1).filter((x) => x > 0).map((x) => expect.closeTo(x * 100, 6))); // 2000–2009 above
+    expect(width(12)).toEqual(pov.q[4].slice(1).filter((x) => x > 0).map((x) => expect.closeTo(x * 100, 6)));
+    expect(row.closest("li").querySelector(".profile-mix-line").textContent).toBe("2000–2009 above, 2020 or later below");
+  });
+
+  it("puts one Download PNG of these changes right after the lists, and gives the image the question, heading, sample line and rows shown", async () => {
+    downloadChartImage.mockClear();
+    const user = await open("#/trends", { ready: trends });
+    const button = screen.getByRole("button", { name: "Download PNG of these changes" });
+    expect(button.textContent).toBe("Download PNG");
+    const lists = [...document.querySelectorAll(".trend-changes .profile-list")];
+    expect(lists[lists.length - 1].compareDocumentPosition(button) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(button.compareDocumentPosition(document.querySelector(".profile-topics")) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.getAllByRole("button", { name: /^Download PNG/ })).toHaveLength(1);
+    await user.click(button);
+    await waitFor(() => expect(downloadChartImage).toHaveBeenCalledTimes(1));
+    const spec = downloadChartImage.mock.calls[0][0];
+    expect(spec.fileName).toBe("trends-changes-all-all.png");
+    expect(spec.panel.classList.contains("trend-changes")).toBe(true);
+    const plan = listsImagePlan(spec);
+    expect(plan.title).toEqual(["What has changed in stories across all genres?"]);
+    expect(plan.subtitle).toEqual([
+      "2 of 4 characteristics clearly changed from 2000–2009 to 2020 or later",
+      "86 stories from 2000–2009 and 87 from 2020 or later across all genres.",
+    ]);
+    expect(plan.lists.map((l) => [l.title, l.count, l.caption])).toEqual([
+      ["▲ Rose", "2 characteristics", "How often a story from 2020 or later is the higher one against a story from 2000–2009, out\u00a0of\u00a0100"],
+    ]);
+    expect(plan.lists[0].rows.map((r) => r.label)).toEqual(["Dialogue share", "Has dialogue"]);
+    expect(plan.lists[0].rows[0].values[0]).toMatch(/^\d+% → \d+%$/);
+    expect(spec.lists.scale).toMatchObject({ lo: expect.any(Number), hi: expect.any(Number) });
+  });
+
+  it("draws the rows the lists show, a named group's in the mix list", async () => {
+    downloadChartImage.mockClear();
+    // every characteristic of the test data's All genres clearly changed
+    const user = await openChanged("#/trends", (body, url) => {
+      if (url.includes("trends/all/all.json")) for (const e of Object.values(body.c)) Object.assign(e, { r: e.r ?? 0.3, f: 1 });
+      return body;
+    });
+    const button = () => screen.getByRole("button", { name: "Download PNG of these changes" });
+    await user.click(button());
+    await waitFor(() => expect(downloadChartImage).toHaveBeenCalledTimes(1));
+    const plan = listsImagePlan(downloadChartImage.mock.calls[0][0]);
+    const shown = [...document.querySelectorAll(".profile-list .profile-row .profile-label-text")].map((t) => t.textContent);
+    expect(plan.lists.flatMap((l) => l.rows.map((r) => r.label))).toEqual(shown);
+    expect(plan.lists.map((l) => l.title)).toEqual(["▲ Rose", "≠ A different mix"]);
+    expect(plan.lists[1].caption).toBe("A different mix: 2000–2009 above, 2020 or later below");
+  });
+
+  it("has no Download PNG when nothing changed or the windows have too few stories", async () => {
+    await openChanged("#/trends", (body) => {
+      for (const e of Object.values(body.c)) e.f = 0;
+      return body;
+    });
+    expect(document.querySelector(".profile-list")).toBeNull();
+    expect(screen.queryByRole("button", { name: /^Download PNG/ })).toBeNull();
+    window.location.hash = "#/trends?genre=tiny";
+    await waitFor(() => expect(screen.getByRole("button", { name: "Show All genres" })).toBeTruthy());
+    expect(screen.queryByRole("button", { name: /^Download PNG/ })).toBeNull();
+  });
+
+  it("gives “One genre” the same button after its lists, named for what stands out, and its own rows in the image", async () => {
+    downloadChartImage.mockClear();
+    // Romance standing out on purpose, as in genresProfile.test.jsx: less dialogue, more anger, a different mix
+    const user = await openChanged("#/genres?view=genre&genre=romance&include=all", (body, url) => {
+      if (!url.includes("genres/")) return body;
+      const set = (id, r, f) => Object.assign(body.c[id], { r, f });
+      set("dlg_word_share", [null, 0.05, -0.32, null], [0, 0, -1, 0]);
+      set("emo_anger_per_1k", [null, 0.02, 0.24, null], [0, 0, 1, 0]);
+      set("pov_class", [null, 0.03, 0.27, null], [0, 0, 1, 0]);
+      return body;
+    });
+    const button = screen.getByRole("button", { name: "Download PNG of what stands out" });
+    const lists = [...document.querySelectorAll(".genre-profile .profile-list")];
+    expect(lists.length).toBeGreaterThan(0);
+    expect(lists[lists.length - 1].compareDocumentPosition(button) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(button.compareDocumentPosition(document.querySelector(".profile-topics")) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    await user.click(button);
+    await waitFor(() => expect(downloadChartImage).toHaveBeenCalledTimes(1));
+    const spec = downloadChartImage.mock.calls[0][0];
+    expect(spec.fileName).toBe("genres-genre-romance-all.png");
+    const plan = listsImagePlan(spec);
+    expect(plan.title).toEqual(["What stands out about stories in Romance?"]);
+    expect(plan.subtitle[1]).toBe(document.querySelector(".profile-sample").textContent);
+    // its own rows: two columns' numbers under the genre's and all genres' heads, the whole 0–100 scale
+    expect(spec.lists.valuesFirst).toBe(false);
+    expect(spec.lists.heads).toEqual(["Romance", "All genres"]);
+    expect(spec.lists.scale).toMatchObject({ lo: 0, hi: 100, ticks: [0, 25, 50, 75, 100] });
+    expect(plan.lists.map((l) => l.title)).toEqual(["Lower in Romance than in all genres", "Higher in Romance than in all genres", "A different mix"]);
+    expect(plan.lists[0].rows[0].numbers).toHaveLength(2);
+    expect(plan.lists[2].caption).toBe("A different mix: Romance above, all genres below");
+    expect(plan.lists[2].rows[0]).toMatchObject({ label: "Narrative perspective", bars: true });
+  });
+
+  it("has no Download PNG on “One genre” when nothing stands out", async () => {
+    await openChanged("#/genres?view=genre&genre=romance&include=all", (body, url) => {
+      if (url.includes("genres/")) for (const e of Object.values(body.c)) e.f = e.f.map(() => 0);
+      return body;
+    });
+    expect(document.querySelector(".genre-profile .profile-list")).toBeNull();
+    expect(screen.queryByRole("button", { name: /^Download PNG/ })).toBeNull();
   });
 });

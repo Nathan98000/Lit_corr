@@ -70,9 +70,10 @@ describe("the windows and the words", () => {
 
   it("words the heading, the sample line and the too-few heading from the file", () => {
     const file = fixtureFile("trends/all/all.json");
-    expect(changesHeading(26, file)).toBe("26 characteristics clearly changed from 2000–2009 to 2020 or later");
-    expect(changesHeading(1, file)).toBe("1 characteristic clearly changed from 2000–2009 to 2020 or later");
-    expect(changesHeading(0, file)).toBe("No characteristic clearly changed from 2000–2009 to 2020 or later");
+    // the denominator: the characteristics compared in the file (the trends review)
+    expect(changesHeading(26, 180, file)).toBe("26 of 180 characteristics clearly changed from 2000–2009 to 2020 or later");
+    expect(changesHeading(1, 179, file)).toBe("1 of 179 characteristics clearly changed from 2000–2009 to 2020 or later");
+    expect(changesHeading(0, 180, file)).toBe("None of the 180 characteristics clearly changed from 2000–2009 to 2020 or later");
     expect(changesSampleLine(file, ALL, { id: "all", label: "All stories" })).toBe("86 stories from 2000–2009 and 87 from 2020 or later across all genres.");
     const medium = fixtureFile("trends/medium/all.json");
     expect(changesSampleLine(medium, ALL, { id: "medium", label: "2,000–5,000 words" })).toBe(
@@ -91,19 +92,22 @@ describe("the windows and the words", () => {
     const w = changesWords(fixtureFile("trends/all/all.json"));
     expect(w.heads(true, 58)).toEqual(["2000–09", "2020+"]);
     expect(w.heads(false, 76)).toEqual(["2000–09", "2020+"]);
+    // "▼ Fell" on screen, the full title for screen readers (the trends review)
     expect(w.lists).toEqual({
-      lower: "Fell from 2000–2009 to 2020 or later",
-      higher: "Rose from 2000–2009 to 2020 or later",
-      mix: "A different mix from 2000–2009 to 2020 or later",
+      lower: { mark: "▼", word: "Fell", full: "Fell from 2000–2009 to 2020 or later" },
+      higher: { mark: "▲", word: "Rose", full: "Rose from 2000–2009 to 2020 or later" },
+      mix: { mark: "≠", word: "A different mix", full: "A different mix from 2000–2009 to 2020 or later" },
     });
+    expect(w.valuesHead).toBe("2000–09 → 2020+");
     expect(w.axisTitle).toBe("How often a story from 2020 or later is the higher one against a story from 2000–2009, out of 100");
     expect(w.zone).toBe("no clear change");
     expect(w.note({ tap: false }).join("")).toBe(
       "Each dot compares a story from 2020 or later with a story from 2000–2009; every story counts, not only the medians (how this is decided). Gray dots, in the topics below, show no clear change. Click a row for its chart over time.",
     );
     expect(w.note({ inTopic: true, tap: true })[2]).toBe("). Gray dots show no clear change. Tap a row for its chart over time.");
-    expect(w.mixLine({})).toBe("A different mix: 2020 or later above, 2000–2009 below");
-    expect(w.mixLine({ inTopic: true })).toBe("2020 or later above, 2000–2009 below");
+    // the bars in time's order (the trends review)
+    expect(w.mixLine({})).toBe("A different mix: 2000–2009 above, 2020 or later below");
+    expect(w.mixLine({ inTopic: true })).toBe("2000–2009 above, 2020 or later below");
     expect(w.topicsLine).toBe(
       "How many characteristics in each topic changed. Open a topic to see them all: blue dots changed, gray dots show no clear change.",
     );
@@ -134,7 +138,8 @@ describe("the rows", () => {
     const file = realTrends("all", "all");
     const p = trendProfile(real, file);
     const name = (id) => changesRowName(p.items.find((x) => x.id === id), file, real.min_n);
-    expect(name("story_paragraphs")).toBe("Paragraph count: 68 in 100; 2000–2009 56, 2020 or later 102 paragraphs; clearly rose. Opens its chart over time.");
+    // the values' relative change, as the row prints it (the trends review)
+    expect(name("story_paragraphs")).toBe("Paragraph count: 68 in 100; 2000–2009 56, 2020 or later 102 paragraphs (+82%); clearly rose. Opens its chart over time.");
     expect(name("story_has_author_note")).toBe("Has an author’s note: 57 in 100; 2000–2009 18%, 2020 or later 33%; no clear change. Opens its chart over time.");
     expect(name("rel_consent_per_1k")).toMatch(
       /^Consent and check-in language: \d+ in 100; 2000–2009 11% with any, 2020 or later 21%; no clear change\. Opens its chart over time\.$/,
@@ -170,16 +175,17 @@ describe("View 2 on the page", () => {
     await openChanges("#/trends?view=changes");
     expect(document.querySelector(".trends-page .sentence").textContent.replace(/⁠/g, "")).toMatch(/^What has changed in stories across .*all genres.*\?$/);
     const answer = document.querySelector(".trend-changes");
-    expect(within(answer).getByRole("heading", { level: 2 }).textContent).toBe("2 characteristics clearly changed from 2000–2009 to 2020 or later");
+    expect(within(answer).getByRole("heading", { level: 2 }).textContent).toBe("2 of 4 characteristics clearly changed from 2000–2009 to 2020 or later");
     expect(answer.querySelector(".profile-sample").textContent).toBe("86 stories from 2000–2009 and 87 from 2020 or later across all genres.");
     expect(answer.querySelector(".profile-takeaway").textContent).toBe("▲ Rose: dialogue share, has dialogue.");
-    const lists = [...answer.querySelectorAll(".profile-list h3")].map((h) => h.textContent);
-    expect(lists).toEqual(["Rose from 2000–2009 to 2020 or later"]);
+    const lists = [...answer.querySelectorAll(".profile-list h3")];
+    expect(lists.map((h) => h.querySelector("[aria-hidden='true']").textContent)).toEqual(["▲ Rose"]);
+    expect(lists.map((h) => h.querySelector(".visually-hidden").textContent)).toEqual(["Rose from 2000–2009 to 2020 or later"]);
     expect(answer.querySelector(".profile-axis-title").textContent).toBe(
       "How often a story from 2020 or later is the higher one against a story from 2000–2009, out of 100",
     );
     expect(answer.querySelector(".zone-label").textContent).toBe("40–60: no clear change");
-    expect([...answer.querySelectorAll(".profile-n-head")].map((h) => h.textContent)).toEqual(["2000–09", "2020+"]);
+    expect([...answer.querySelectorAll(".profile-values-head")].map((h) => h.textContent)).toEqual(["2000–09 → 2020+"]);
     const row = answer.querySelector(".profile-list .profile-row");
     expect(row.getAttribute("href")).toBe("#/trends?var=dlg_word_share&genre=all&include=all");
     expect(row.querySelector(".visually-hidden").textContent).toMatch(/^Dialogue share: \d+ in 100; 2000–2009 \d+%, 2020 or later \d+%; clearly rose\. Opens its chart over time\.$/);
@@ -197,7 +203,7 @@ describe("View 2 on the page", () => {
     const region = document.querySelector(".trends-page p.visually-hidden[aria-live='polite']");
     await waitFor(() =>
       expect(region.textContent).toBe(
-        "What has changed in stories across all genres? 2 characteristics clearly changed from 2000–2009 to 2020 or later. Rose: dialogue share, has dialogue.",
+        "What has changed in stories across all genres? 2 of 4 characteristics clearly changed from 2000–2009 to 2020 or later. Rose: dialogue share, has dialogue.",
       ),
     );
     expect(changesAnnouncement(fixtureMeta, fixtureFile("trends/all/tiny.json"), {})).toBe(
@@ -211,7 +217,7 @@ describe("View 2 on the page", () => {
     await user.click(narration);
     await waitFor(() => expect(narration.closest("details").querySelector(".profile-row")).toBeTruthy());
     // over the compared named group, which bar is which
-    expect(narration.closest("details").querySelector(".profile-mix-line").textContent).toBe("2020 or later above, 2000–2009 below");
+    expect(narration.closest("details").querySelector(".profile-mix-line").textContent).toBe("2000–2009 above, 2020 or later below");
     const row = narration.closest("details").querySelector(".profile-row");
     expect(row.getAttribute("href")).toBe("#/trends?var=pov_class&genre=all&include=all");
     await user.click(row);
@@ -228,7 +234,7 @@ describe("View 2 on the page", () => {
     await openChanges("#/trends?view=changes", 720);
     const answer = document.querySelector(".trend-changes");
     expect(answer.classList.contains("stacked")).toBe(true);
-    expect([...answer.querySelectorAll(".profile-heads span")].map((s) => s.textContent)).toEqual(["2000–09", "2020+"]);
+    expect([...answer.querySelectorAll(".profile-heads span")].map((s) => s.textContent)).toEqual(["2000–09 → 2020+"]);
   });
 
   it("says when a window has too few stories, with no lists or topics, and offers all stories, else All genres", async () => {

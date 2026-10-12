@@ -807,6 +807,9 @@ change never prints 40 or 60. In bold, the two changes that are not clear with t
 
 ## 13. As built
 
+*Since then:* the page's design review is built; what changed (it opens on all changes, View 1's brackets and rail,
+View 2's values first, Download PNG for the lists, no Copy link) is in [TRENDS_REVIEW.md](TRENDS_REVIEW.md).
+
 Built on branch `trends-page`, made from `one-genre` at `1756a39` (the proposal is its first commit, `62d8cee`),
 following `STAGE2_TRENDS_PAGE_PROMPT.md`: thirteen commits, the last one this write-up with the prompt, not pushed. At
 every commit `npm test`, `npm run build` and `.venv/bin/python -m pytest tests/test_stage2_site_data.py` pass; at the

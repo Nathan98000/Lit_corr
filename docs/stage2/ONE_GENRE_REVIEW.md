@@ -930,6 +930,9 @@ Chain Stories (2020 or later) and Romance at 320 px, and
 
 ## 10. Before and after
 
+*Since then:* "One genre"'s Copy link was replaced by a "Download PNG" of its lists, in the Trends page's review
+([TRENDS_REVIEW.md](TRENDS_REVIEW.md), O2).
+
 Implemented on branch `one-genre`, made from `main` at `0d8611d` (the review itself is its first commit, `7724cb5`),
 following `STAGE2_ONE_GENRE_IMPLEMENTATION_PROMPT.md`: nine commits after the review's own, the last one this write-up,
 not pushed. At the last commit all three checks pass: `npm test` (356 tests in 29 files, was 299 in 28), `npm run

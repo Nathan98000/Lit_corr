@@ -38,7 +38,7 @@ DICTIONARY = {"variables": [
 
 # The extended handoff's extra characteristics (for the Genres page's tests): publication year, story length and age
 # (which some "Only include" options leave out), publication month (left out of that page), the author's number of
-# stories (ordered bands), and three that differ between genres on purpose.
+# stories (ordered bands), three that differ between genres on purpose, and one whose noun is plural (commas).
 EXTENDED = [
     {"name": "pub_year", "label": "Publication year", "group": "Publication", "ui_group": "Publication",
      "kind": "count", "unit": "year", "description": "Year of publication.", "caveat": "", "explorer": True},
@@ -60,6 +60,9 @@ EXTENDED = [
     {"name": "pov_is_first_person", "label": "First-person narration", "group": "Narration",
      "ui_group": "Narration", "kind": "binary", "unit": "1 = first, 0 = third", "description": "First person.",
      "caveat": "", "explorer": True},
+    {"name": "punct_comma_per_1k", "label": "Commas", "group": "Punctuation", "ui_group": "Style",
+     "kind": "continuous", "unit": "per 1,000 words", "description": "Commas per 1,000 words.", "caveat": "",
+     "explorer": True},
 ]
 
 MANIFEST = {"processed_at": "2026-10-08T17:00:26+00:00", "collection_first_session": "2026-10-01T13:54:49",
@@ -115,6 +118,7 @@ def synthetic_stories(seed: int = 7, extended: bool = False) -> pd.DataFrame:
         first = np.where(rom, x.uniform(size=n) < 0.85, x.uniform(size=n) < 0.4).astype(float)
         first[x.uniform(size=n) < 0.1] = np.nan  # second person or mixed: neither
         df["pov_is_first_person"] = first
+        df["punct_comma_per_1k"] = np.round(x.lognormal(3.8, 0.3, n), 1)  # a plural noun ("commas")
     return df
 
 

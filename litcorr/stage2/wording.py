@@ -323,6 +323,35 @@ MORE = {
 _PACE_NOUNS = {"sex": ("sexual language", False), "emotion": ("emotional language", False),
                "dialogue": ("dialogue", False), "action": ("action verbs", True),
                "descriptive": ("descriptive and sensory language", False)}
+# Characteristics whose noun is grammatically plural, so a sentence says "how have very long paragraphs changed" (meta's
+# `plural`, as the measures have it). Decided by the head word, not by a trailing "s": "very long paragraphs", "commas",
+# "sex scenes per 10,000 words", "syllables per word", "words before the first explicit term" are plural; "the number
+# of pages", "story length in words", "reliance on a few words", "overlap between neighboring sentences", "part number
+# in a series", "the use of 'we / us / our'" are not. Two nouns joined by "and" are plural ("affection and love",
+# "control and restraint"), but not when they only describe one ("consent and check-in language"). Yes/no
+# characteristics are asked about through "the share of …", which is singular.
+PLURAL = {
+    "story_one_sentence_paragraph_share", "story_long_paragraph_share", "story_scene_breaks_per_1k",
+    "dlg_segments_per_1k", "dlg_question_share", "dlg_exclamation_share", "dlg_bare_line_share",
+    "dlg_adverb_tag_share", "char_name_mentions_per_1k",
+    "punct_ellipsis_per_1k", "punct_dash_per_1k", "punct_semicolon_per_1k", "punct_colon_per_1k",
+    "punct_comma_per_1k", "punct_quote_marks_per_1k", "punct_parentheses_per_1k",
+    "qe_question_sentence_share", "qe_exclamation_sentence_share", "qe_question_sentences_per_1k",
+    "qe_exclamation_sentences_per_1k", "read_mean_syllables_per_word", "read_polysyllable_share",
+    "syn_commas_per_sentence", "syn_subordinators_per_sentence", "syn_long_sentence_share", "syn_short_sentence_share",
+    "lex_unique_words", "lex_rare_word_share", "lex_unrecognized_word_share", "lex_long_word_share",
+    "rep_bigram_repeat_share", "rep_trigram_repeat_share", "rep_same_start_share", "rep_immediate_word_repeats_per_1k",
+    "rep_repeated_5gram_per_1k", "style_all_caps_words_per_1k", "style_ly_adverbs_per_1k", "style_action_verbs_per_1k",
+    "style_descriptive_words_per_1k", "style_italics_per_1k", "style_elongated_per_1k", "mech_errors_per_1k",
+    "sex_anatomy_per_1k", "sex_action_per_1k", "sex_other_per_1k", "sex_words_before_first", "sex_scene_count",
+    "sex_scenes_per_10k", "emo_overall_per_1k", "emo_affection_per_1k", "emo_anxiety_per_1k", "emo_arousal_per_1k",
+    "emo_shame_per_1k", "emo_jealousy_per_1k", "humor_per_1k", "psy_mental_verbs_per_1k",
+    "psy_perception_verbs_per_1k", "psy_filter_words_per_1k", "psy_distancing_per_1k", "psy_immediacy_per_1k",
+    "hedge_modal_per_1k", "sense_touch_per_1k", "sense_sight_per_1k", "sense_sound_per_1k", "sense_smell_per_1k",
+    "sense_taste_per_1k", "sense_body_per_1k", "setting_home_per_1k", "setting_public_per_1k",
+    "setting_outdoors_per_1k", "agency_passive_per_1k", "agency_passive_sentence_share", "agency_volition_per_1k",
+    "agency_control_per_1k", "agency_commands_per_1k", "time_jump_per_1k",
+}
 for _part, (_noun, _plural) in _PACE_NOUNS.items():
     _peaks, _builds = ("peak", "build") if _plural else ("peaks", "builds")
     NOUN[f"pace_{_part}_early"] = f"{_noun} in the first fifth"
@@ -333,6 +362,8 @@ for _part, (_noun, _plural) in _PACE_NOUNS.items():
     MORE[f"pace_{_part}_late"] = f"Stories with more {_noun} near the end"
     MORE[f"pace_{_part}_shift"] = f"Stories in which {_noun} {_builds} up more"
     MORE[f"pace_{_part}_peak_position"] = f"Stories in which {_noun} {_peaks} later"
+    if _plural:  # "action verbs in the first fifth", but "the build-up of action verbs" and "where action verbs peak"
+        PLURAL |= {f"pace_{_part}_early", f"pace_{_part}_late"}
 
 # The Genres page compares each genre's stories with all genres. Publication month and weekday are left out: their
 # twelve and seven groups can't be compared genre by genre in one chart.

@@ -163,8 +163,25 @@ def trend_file(sid: str, gid: str, periods: list[list[int]], n: list[int], entri
             "periods": periods, "then": list(TREND_THEN), "now": [TREND_NOW_FROM, periods[-1][1]], "n": n, "c": entries}
 
 
-def trend_meta(periods: list[list[int]], subsets: list[str], excluded: list[str]) -> dict[str, Any]:
-    """meta.json's "trend": the periods, the windows, the rule, the options and the left-out characteristics."""
+def window_counts(periods: list[list[int]], n: list[int]) -> tuple[int, int]:
+    """The two windows' stories from the periods' counts (a file's `n`): the periods inside TREND_THEN, and those from
+    TREND_NOW_FROM on (the page's windowCounts in lib/trends.js)."""
+    then = sum(k for (lo, hi), k in zip(periods, n) if lo >= TREND_THEN[0] and hi <= TREND_THEN[1])
+    now = sum(k for (lo, _), k in zip(periods, n) if lo >= TREND_NOW_FROM)
+    return then, now
+
+
+def trend_too_few(periods: list[list[int]], counts: dict[str, dict[str, list[int]]]) -> dict[str, list[str]]:
+    """For each option, the genres whose two windows can't be compared (fewer than SMALL_N stories in either; the page's
+    windowsCompared), their ids A-Z: the genre select says so before the reader picks one."""
+    return {sid: sorted(gid for gid, n in per.items() if min(window_counts(periods, n)) < sd.SMALL_N)
+            for sid, per in counts.items()}
+
+
+def trend_meta(periods: list[list[int]], subsets: list[str], excluded: list[str],
+               counts: dict[str, dict[str, list[int]]]) -> dict[str, Any]:
+    """meta.json's "trend": the periods, the windows, the rule, the options, the left-out characteristics and, per
+    option, the genres too few to compare (`counts`: the stories per period of every option and genre)."""
     return {"periods": periods, "then": list(TREND_THEN), "now": [TREND_NOW_FROM, periods[-1][1]],
             "rule": {"min_r": TREND_MIN_R, "level": 0.999, "min_tvd": TREND_MIN_TVD, "min_n": sd.SMALL_N},
-            "subsets": subsets, "excluded": excluded}
+            "subsets": subsets, "excluded": excluded, "too_few": trend_too_few(periods, counts)}

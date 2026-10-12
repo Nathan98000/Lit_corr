@@ -188,7 +188,7 @@ def _visitor_strings(meta):
     """Every string in meta.json that a visitor can read (not ids, dates or file names, and not the search-only
     synonyms, which keep the spellings people type, such as "humour")."""
     skip = {"id", "generated_at", "source", "var", "metric", "genre", "kind", "unit", "ids", "topic",
-            "default_metric", "format", "excluded_reasons", "syn"}
+            "default_metric", "format", "excluded_reasons", "syn", "too_few"}
     out = []
 
     def walk(x, key=None):
@@ -496,7 +496,8 @@ def test_excluded_characteristics_and_conflicting_options_are_absent(built_genre
     kinds = {i: e["k"] for i, e in _genres(out)["c"].items()}
     assert kinds == {"dlg_word_share": "num", "dlg_has_dialogue": "bin", "pov_class": "grp", "emo_anger_per_1k": "zero",
                      "pub_year": "num", "story_words": "num", "age_years": "num", "author_stories_count": "band",
-                     "sex_terms_per_1k": "num", "narr_tense_class": "grp", "pov_is_first_person": "bin"}
+                     "sex_terms_per_1k": "num", "narr_tense_class": "grp", "pov_is_first_person": "bin",
+                     "punct_comma_per_1k": "num"}
 
 
 def test_genres_and_trends_output_is_deterministic(built_genres, tmp_path):
@@ -697,7 +698,8 @@ def test_trend_left_out_characteristics_and_conflicting_options_are_absent(built
     assert "story_words" in _trend(out, "all", "romance")["c"] and "story_words" not in _trend(out, "medium", "all")["c"]
     kinds = {i: e["k"] for i, e in _trend(out, "all", "all")["c"].items()}
     assert kinds == {"dlg_word_share": "num", "dlg_has_dialogue": "bin", "pov_class": "grp", "emo_anger_per_1k": "zero",
-                     "story_words": "num", "sex_terms_per_1k": "num", "narr_tense_class": "grp", "pov_is_first_person": "bin"}
+                     "story_words": "num", "sex_terms_per_1k": "num", "narr_tense_class": "grp", "pov_is_first_person": "bin",
+                     "punct_comma_per_1k": "num"}
 
 
 def test_trends_builder_reads_only_the_characteristic_genre_weight_year_and_length(built_genres):
@@ -734,3 +736,78 @@ def test_real_trends_files_are_small_and_whole():
                 assert cell is None or cell[0] >= sd.MIN_N
                 if cell is not None and e["k"] in ("grp", "band"):
                     assert abs(sum(cell[1:]) - 1) <= 0.002, f.name
+
+
+# ------------------------------------------------------------------------------- the Trends review: meta additions
+# The two small additions to meta.json the owner approved (O5): `plural` on characteristics whose noun is plural, and
+# meta.trend.too_few. Nothing else in meta changes.
+VARIABLE_KEYS = {"id", "label", "topic", "subgroup", "kind", "unit", "description", "caveat", "bins", "noun", "n", "syn",
+                 "yes", "no", "yes_subject", "no_subject", "more", "more_word", "less_word", "plural"}
+
+
+def test_plural_nouns_are_decided_by_their_head_word():
+    plural = {"story_long_paragraph_share": "very long paragraphs", "punct_comma_per_1k": "commas",
+              "sex_scenes_per_10k": "sex scenes per 10,000 words", "read_mean_syllables_per_word": "syllables per word",
+              "pace_action_early": "action verbs in the first fifth", "setting_home_per_1k": "home settings",
+              "emo_affection_per_1k": "affection and love"}
+    singular = {"story_pages": "the number of pages", "story_words": "story length in words",
+                "pace_action_shift": "the build-up of action verbs", "pace_action_peak_position": "where action verbs peak",
+                "rep_top10_content_share": "reliance on a few words",
+                "rep_adjacent_sentence_overlap": "overlap between neighboring sentences",
+                "series_part_number": "part number in a series", "rel_consent_per_1k": "consent and check-in language"}
+    labels = {"punct_comma_per_1k": "Commas", "sex_scenes_per_10k": "Sex scenes per 10,000 words",
+              "read_mean_syllables_per_word": "Syllables per word", "setting_home_per_1k": "Home settings",
+              "emo_affection_per_1k": "Affection & love", "rel_consent_per_1k": "Consent and check-in language"}
+    for name, noun in {**plural, **singular}.items():
+        assert W.us_english(W.noun_for(name, labels.get(name, ""))) == noun, name
+    assert set(plural) <= W.PLURAL and not set(singular) & W.PLURAL
+    assert not W.PLURAL & set(W.BINARY)  # yes/no characteristics are asked about through "the share of …"
+
+
+def test_meta_marks_plural_nouns_and_adds_nothing_else(built, built_genres):
+    for meta in (built[1], built_genres[1]):
+        for v in meta["variables"]:
+            assert set(v) <= VARIABLE_KEYS, v["id"]
+            assert v.get("plural") is (True if v["id"] in W.PLURAL else None), v["id"]
+    assert [v["id"] for v in built_genres[1]["variables"] if v.get("plural")] == ["punct_comma_per_1k"]
+    if REAL_META.exists():
+        real = json.loads(REAL_META.read_text())
+        ids = {v["id"] for v in real["variables"]}
+        assert W.PLURAL <= ids  # every name in the list is a characteristic on the site
+        trends = [v for v in real["variables"] if v["id"] not in real["trend"]["excluded"]]
+        assert len(trends) == 180 and sum(bool(v.get("plural")) for v in trends) == len(W.PLURAL) == 78
+
+
+def test_too_few_lists_the_genres_whose_windows_cannot_be_compared(built, built_genres):
+    for _, meta, out, *_ in (built, built_genres):
+        t = meta["trend"]
+        assert list(t) == ["periods", "then", "now", "rule", "subsets", "excluded", "too_few"]
+        assert list(t["too_few"]) == t["subsets"]
+        for sid in t["subsets"]:
+            assert t["too_few"][sid] == sorted(t["too_few"][sid])  # ids, A-Z
+            for gid in [g["id"] for g in meta["genres"]]:
+                d = _trend(out, sid, gid)
+                then = sum(k for (lo, hi), k in zip(d["periods"], d["n"]) if lo >= d["then"][0] and hi <= d["then"][1])
+                now = sum(k for (lo, _), k in zip(d["periods"], d["n"]) if lo >= d["now"][0])
+                assert (gid in t["too_few"][sid]) == (min(then, now) < d["rule"]["min_n"]), (sid, gid)
+                # nothing is compared in such a file: every r is null
+                if gid in t["too_few"][sid]:
+                    assert all(e["r"] is None for e in d["c"].values()), (sid, gid)
+    assert built[1]["trend"]["too_few"]["all"] == ["tiny"]  # the synthetic data has a genre too small to compare
+
+
+def test_meta_is_deterministic_but_for_its_time(built, tmp_path):
+    path = sorted(built[2].parent.glob("*.zip"))[0]
+    again = tmp_path / "again"
+    sd.build_site_data(path, again, workers=1)
+    a, b = json.loads((built[2] / "meta.json").read_text()), json.loads((again / "meta.json").read_text())
+    a.pop("generated_at"), b.pop("generated_at")
+    assert a == b
+
+
+def test_real_too_few_genres():
+    if not REAL_META.exists():
+        pytest.skip("site aggregates not generated")
+    too_few = json.loads(REAL_META.read_text())["trend"]["too_few"]
+    assert too_few["all"] == ["chain-stories", "transgender"]
+    assert {sid: len(ids) for sid, ids in too_few.items()} == {"all": 2, "short": 24, "medium": 16, "long": 29}

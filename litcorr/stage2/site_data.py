@@ -4,7 +4,8 @@ Input: data/handoff/litcorr_stage2_handoff_YYYYMMDD.zip (the authoritative corpu
 Output (default site/public/aggregates/):
 
   meta.json                  genres, popularity measures, story characteristics (labels, descriptions,
-                             groups of stories), the "stories included" options and collection facts
+                             groups of stories, and whether their noun is plural), the "stories included" options,
+                             collection facts, and the Trends page's periods, rule and genres too few to compare
   v/<characteristic>/<included>.json
                              for every genre (and "all"): per group of stories, the number of stories, their
                              median age, and per popularity measure the median, quartiles and mean; plus the
@@ -624,7 +625,8 @@ def build_site_data(handoff: Path | None = None, out_dir: Path | None = None, wo
                  "unit": v.get("unit", ""),
                  "description": W.us_english(W.SITE_DESCRIPTION.get(name) or W.site_text(v.get("description", ""), labels)),
                  "caveat": W.site_text(v.get("caveat", ""), labels),
-                 "bins": bins.to_json(), "noun": W.us_english(W.noun_for(name, label)), "n": int((codes >= 0).sum())}
+                 "bins": bins.to_json(), "noun": W.us_english(W.noun_for(name, label)),
+                 **({"plural": True} if name in W.PLURAL else {}), "n": int((codes >= 0).sum())}
         syn = W.synonyms_for(name)
         if syn:
             entry["syn"] = syn
@@ -667,6 +669,12 @@ def build_site_data(handoff: Path | None = None, out_dir: Path | None = None, wo
         genre_entries = {t[0]: fut.result() for t, fut in zip(genre_tasks, genre_futures)}
         trend_entries = {t[0]: fut.result() for t, fut in zip(trend_tasks, trend_futures)}
 
+    # the Trends page's stories per period, for every option and genre (its files' `n`, and meta's genres too few to
+    # compare)
+    pmask = [(year >= lo) & (year <= hi) for lo, hi in periods]
+    trend_counts = {sid: {gid: [int(((subsets[sid] if gid == "all" else subsets[sid] & (g == gi)) & pm).sum())
+                                for pm in pmask] for gi, gid in enumerate(genre_ids)} for sid in trend_subsets}
+
     excluded = all_rows[~all_rows["analysis_include"].fillna(False).astype(bool)]
     reasons: dict[str, int] = {}
     for rs in excluded["exclusion_reasons"]:
@@ -684,7 +692,7 @@ def build_site_data(handoff: Path | None = None, out_dir: Path | None = None, wo
                    "included": int(len(df)), "excluded_reasons": reasons},
         "min_n": MIN_N, "small_n": SMALL_N,
         "genre_rule": {"min_r": GENRE_MIN_R, "level": 0.999, "min_tvd": GENRE_MIN_TVD, "min_n": SMALL_N},
-        "trend": T.trend_meta(periods, trend_subsets, list(W.TREND_PAGE_EXCLUDED)),
+        "trend": T.trend_meta(periods, trend_subsets, list(W.TREND_PAGE_EXCLUDED), trend_counts),
         "genres": [{"id": "all", "name": "All genres", "n": int(len(df))}] + [
             {"id": r.category_slug, "name": r.category_name, "n": int((genre_col == r.category_slug).sum()),
              "size": None if pd.isna(r.estimated_stories_in_category) else int(r.estimated_stories_in_category)}
@@ -706,13 +714,11 @@ def build_site_data(handoff: Path | None = None, out_dir: Path | None = None, wo
         payload = genre_file(sid, smask, g, w, shared["age"], genre_ids, entries)
         (out_dir / "genres" / f"{sid}.json").write_text(json.dumps(payload, separators=(",", ":"), allow_nan=False),
                                                        encoding="utf-8")
-    pmask = [(year >= lo) & (year <= hi) for lo, hi in periods]
     for sid in trend_subsets:
         (out_dir / "trends" / sid).mkdir(parents=True)
-        for gi, gid in enumerate(genre_ids):
-            m = subsets[sid] if gid == "all" else subsets[sid] & (g == gi)
+        for gid in genre_ids:
             entries = {name: per[sid][gid] for name, per in trend_entries.items() if sid in per}
-            payload = T.trend_file(sid, gid, periods, [int((m & pm).sum()) for pm in pmask], entries)
+            payload = T.trend_file(sid, gid, periods, trend_counts[sid][gid], entries)
             (out_dir / "trends" / sid / f"{gid}.json").write_text(
                 json.dumps(payload, separators=(",", ":"), allow_nan=False), encoding="utf-8")
     size = sum(p.stat().st_size for p in out_dir.rglob("*.json"))

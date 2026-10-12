@@ -105,6 +105,7 @@ main.wrap:focus {
 
 main.wrap {
   min-height: 100vh; /* the footer never jumps up into view while the first chart loads */
+  padding-bottom: 64px; /* clear space between a page's last button, list or topic and the footer's line (O3) */
 }
 
 /* A chart that is being replaced stays on screen, dimmed, until the next one has loaded. */
@@ -252,7 +253,17 @@ h3 {
   padding: 22px 0 6px;
 }
 
+/* The kicker in pieces (App.jsx): the title, then the counts, which take a line of their own when the kicker wraps.
+   Each "·" leads its piece in a box of --kicker-sep, pulled back by as much and made up for by the gap: in the middle
+   of a line it sits between two pieces, and at a line's start it falls left of the box and is clipped, so no line
+   starts or ends with it. */
 .kicker {
+  --kicker-sep: 1.25em;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: var(--kicker-sep);
+  overflow: hidden;
   margin: 0;
   font-family: var(--sans);
   font-size: 13px;
@@ -265,7 +276,33 @@ h3 {
 }
 
 .kicker-counts {
+  display: flex;
+  align-items: baseline;
+  margin-left: calc(-1 * var(--kicker-sep));
+}
+
+.kicker-pieces {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: var(--kicker-sep);
+  overflow: hidden;
+  min-width: min-content; /* a box that clips may otherwise shrink past its widest piece */
+}
+
+.kicker-piece {
   white-space: nowrap;
+}
+
+.kicker-piece + .kicker-piece {
+  margin-left: calc(-1 * var(--kicker-sep));
+}
+
+.kicker-sep {
+  display: inline-block;
+  flex: none;
+  width: var(--kicker-sep);
+  text-align: center;
 }
 
 .explorer {
@@ -739,20 +776,28 @@ h3 {
   margin: 0 0 10px;
 }
 
-/* every page, in the masthead's order (D7), as the mock-up draws them: spaced links, each a 44 px target */
+/* every page, in the masthead's order (D7), as the mock-up draws them: spaced links, each a 44 px target; when they
+   don't fit on one line they wrap in balanced lines, so no link sits alone on a line */
 .footer-pages {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0 16px;
   margin: 0;
   padding: 0;
   list-style: none;
+  text-wrap: balance;
+}
+
+.footer-pages li {
+  display: inline;
 }
 
 .footer-pages a {
   display: inline-flex;
   align-items: center;
   min-height: var(--target);
+  margin-right: 16px;
+}
+
+.footer-pages li:last-child a {
+  margin-right: 0;
 }
 
 
@@ -761,6 +806,10 @@ h3 {
 @media (max-width: 760px) {
   .wrap {
     padding: 0 16px;
+  }
+
+  main.wrap {
+    padding-bottom: 48px;
   }
 
   .masthead nav {

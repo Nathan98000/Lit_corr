@@ -139,7 +139,7 @@ describe("the page shell", () => {
     expect(screen.getByRole("heading", { level: 1 }).textContent).toBe(
       "How have the stories changed? · 278 stories · 2000–2026", // the years from meta.trend
     );
-    await waitFor(() => expect(document.title).toBe("In All genres, how has dialogue share changed over time?"));
+    await waitFor(() => expect(document.title).toBe("Across all genres, how has dialogue share changed over time?"));
     await user.click(screen.getByText("Skip to content"));
     expect(document.activeElement.id).toBe("question");
   });

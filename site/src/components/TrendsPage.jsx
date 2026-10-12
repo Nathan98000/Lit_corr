@@ -1,7 +1,15 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { loadTrends } from "../lib/data.js";
 import { breakable } from "../lib/genres.js";
-import { changesAnnouncement, changesQuestion, trendAnnouncement, trendQuestion, trendQuestionText } from "../lib/trends.js";
+import {
+  changesAnnouncement,
+  changesQuestion,
+  changesQuestionStart,
+  genreWords,
+  trendAnnouncement,
+  trendQuestion,
+  trendQuestionText,
+} from "../lib/trends.js";
 import { TREND_PAGE_EXCLUDED, onTrendsPage, subsetConflict } from "../lib/urlState.js";
 import { BodyPlaceholder, CharacteristicPicker, SlotButton } from "./Controls.jsx";
 import { ChartPlaceholder } from "./Explorer.jsx";
@@ -138,7 +146,7 @@ export default function TrendsPage({ meta, state, onChange, onNavigate, onHoldSc
       id={`${ids}-genre`}
       label="Genre"
       value={genre.id}
-      text={breakable(genre.name)}
+      text={breakable(genreWords(genre))}
       onChange={(g) => keepPlace({ ...state, genre: g })}
     >
       {meta.genres.map((g) => (
@@ -153,12 +161,13 @@ export default function TrendsPage({ meta, state, onChange, onNavigate, onHoldSc
   if (changes) {
     sentence = (
       <p className="sentence">
-        What has changed in stories in {genreSlot}
+        {changesQuestionStart(genre)}
+        {genreSlot}
         {"⁠?"}
       </p>
     );
   } else {
-    const q = trendQuestion(variable);
+    const q = trendQuestion(variable, genre);
     sentence = (
       <p className="sentence">
         {q.before}

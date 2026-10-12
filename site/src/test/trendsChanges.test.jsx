@@ -73,10 +73,10 @@ describe("the windows and the words", () => {
     expect(changesHeading(26, file)).toBe("26 characteristics clearly changed from 2000–2009 to 2020 or later");
     expect(changesHeading(1, file)).toBe("1 characteristic clearly changed from 2000–2009 to 2020 or later");
     expect(changesHeading(0, file)).toBe("No characteristic clearly changed from 2000–2009 to 2020 or later");
-    expect(changesSampleLine(file, ALL, { id: "all", label: "All stories" })).toBe("86 stories from 2000–2009 and 87 from 2020 or later in All genres.");
+    expect(changesSampleLine(file, ALL, { id: "all", label: "All stories" })).toBe("86 stories from 2000–2009 and 87 from 2020 or later across all genres.");
     const medium = fixtureFile("trends/medium/all.json");
     expect(changesSampleLine(medium, ALL, { id: "medium", label: "2,000–5,000 words" })).toBe(
-      "43 stories from 2000–2009 and 52 from 2020 or later in All genres match “2,000–5,000 words”.",
+      "43 stories from 2000–2009 and 52 from 2020 or later across all genres match “2,000–5,000 words”.",
     );
     const tiny = { id: "tiny", name: "Tiny" };
     expect(changesTooFewHeading(fixtureFile("trends/all/tiny.json"), tiny, { id: "all" })).toBe(
@@ -168,10 +168,10 @@ describe("the rows", () => {
 describe("View 2 on the page", () => {
   it("asks what changed, says how many characteristics clearly changed, and lists them with the windows' numbers", async () => {
     await openChanges("#/trends?view=changes");
-    expect(document.querySelector(".trends-page .sentence").textContent.replace(/⁠/g, "")).toMatch(/^What has changed in stories in .*All genres.*\?$/);
+    expect(document.querySelector(".trends-page .sentence").textContent.replace(/⁠/g, "")).toMatch(/^What has changed in stories across .*all genres.*\?$/);
     const answer = document.querySelector(".trend-changes");
     expect(within(answer).getByRole("heading", { level: 2 }).textContent).toBe("2 characteristics clearly changed from 2000–2009 to 2020 or later");
-    expect(answer.querySelector(".profile-sample").textContent).toBe("86 stories from 2000–2009 and 87 from 2020 or later in All genres.");
+    expect(answer.querySelector(".profile-sample").textContent).toBe("86 stories from 2000–2009 and 87 from 2020 or later across all genres.");
     expect(answer.querySelector(".profile-takeaway").textContent).toBe("▲ Rose: dialogue share, has dialogue.");
     const lists = [...answer.querySelectorAll(".profile-list h3")].map((h) => h.textContent);
     expect(lists).toEqual(["Rose from 2000–2009 to 2020 or later"]);
@@ -189,15 +189,19 @@ describe("View 2 on the page", () => {
       "How many characteristics in each topic changed. Open a topic to see them all: blue dots changed, gray dots show no clear change.",
     );
     expect(screen.getByRole("button", { name: "Copy link" })).toBeTruthy();
-    expect(document.title).toBe("What has changed in stories in All genres?");
+    expect(document.title).toBe("What has changed in stories across all genres?");
   });
 
-  it("says the heading and the takeaway in the polite live region", async () => {
+  it("says the question, the heading and the takeaway in the polite live region", async () => {
     await openChanges("#/trends?view=changes");
     const region = document.querySelector(".trends-page p.visually-hidden[aria-live='polite']");
-    await waitFor(() => expect(region.textContent).toBe("2 characteristics clearly changed from 2000–2009 to 2020 or later. Rose: dialogue share, has dialogue."));
+    await waitFor(() =>
+      expect(region.textContent).toBe(
+        "What has changed in stories across all genres? 2 characteristics clearly changed from 2000–2009 to 2020 or later. Rose: dialogue share, has dialogue.",
+      ),
+    );
     expect(changesAnnouncement(fixtureMeta, fixtureFile("trends/all/tiny.json"), {})).toBe(
-      "Fewer than 30 stories in Tiny Genre were published 2000–2009: too few to compare.",
+      "What has changed in stories in Tiny Genre? Fewer than 30 stories in Tiny Genre were published 2000–2009: too few to compare.",
     );
   });
 

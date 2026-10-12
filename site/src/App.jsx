@@ -34,16 +34,25 @@ const replaceHash = (hash) => window.history.replaceState(window.history.state, 
  * The headline as a kicker, with the story and genre counts (filled in when the data arrives; the placeholder says
  * the same). The story count is rounded, so it never contradicts a chart's exact count (F55). The Genres page asks
  * its own question; the Trends page too, with the years it covers instead of the genres (meta.trend; until the data
- * arrives, figure spaces hold their place).
+ * arrives, figure spaces hold their place). When it wraps, the counts take a line of their own, and a "·" never starts
+ * or ends a line: each separator leads its piece, and one at a line's start is clipped (styles.css); the pieces
+ * ("about 9,000 stories", "2000–2026") never break inside.
  */
 function Kicker({ meta, title = TITLE, years = false }) {
   const stories = meta ? aboutCount(meta.counts.included) : "about 9,000";
   const span = meta?.trend ? `${meta.trend.periods[0][0]}–${meta.trend.now[1]}` : "\u2007\u2007\u2007\u2007–\u2007\u2007\u2007\u2007";
   return (
     <h1 className="kicker">
-      {title}{" "}
+      <span className="kicker-title">{title}</span>
       <span className="kicker-counts">
-        · {stories} stories · {years ? span : `${meta ? meta.genres.length - 1 : 30} genres`}
+        <span className="kicker-sep"> · </span>
+        <span className="kicker-pieces">
+          <span className="kicker-piece">{stories} stories</span>
+          <span className="kicker-piece">
+            <span className="kicker-sep"> · </span>
+            {years ? span : `${meta ? meta.genres.length - 1 : 30} genres`}
+          </span>
+        </span>
       </span>
     </h1>
   );
@@ -383,12 +392,7 @@ export default function App() {
 
       <footer className="site-footer">
         <div className="wrap">
-          <p>
-            An independent project, not affiliated with or endorsed by Literotica.{" "}
-            <a href="#/methodology" onPointerEnter={Methodology.preload} onFocus={Methodology.preload}>
-              How it works
-            </a>
-          </p>
+          <p>An independent project, not affiliated with or endorsed by Literotica.</p>
           {/* every page in the masthead's order (D7): on phones the masthead keeps only some of them */}
           <nav aria-label="All pages">
             <ul className="footer-pages">

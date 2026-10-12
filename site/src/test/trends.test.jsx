@@ -323,23 +323,24 @@ describe("the heading, the numbers line and the fixed-mix line", () => {
   });
 
   it("gives the windows' numbers for numbers, yes/no and mostly-zero characteristics, never for too few", () => {
+    // the question above names the genre, so the line doesn't (the trends review)
     const words = (variable, entry, genre = ALL) => {
       const file = { ...FILE, g: genre.id };
-      const parts = numbersLine({ variable, entry, genre, file, fmt: trendFormat(variable, entry, genre.id === "all") });
+      const parts = numbersLine({ variable, entry, file, fmt: trendFormat(variable, entry, genre.id === "all") });
       return parts && parts.map((p) => (typeof p === "string" ? p : `**${p.strong}**`)).join("");
     };
     const length = num([[901, 1640, 2500, 4220], null, null, null, [3343, 2400, 4100, 7200]], [2558, 1680, 2810, 4760], 0.25, 1);
-    expect(words(WORDS, length)).toBe("All genres: median **2,810** words in 2000–2009, **4,100** in 2020 or later.");
+    expect(words(WORDS, length)).toBe("Median **2,810** words in 2000–2009, **4,100** in 2020 or later.");
     const note = { k: "bin", q: [null, null, null, null, [3343, 0.326]], t: [2558, 0.181], r: 0.145, f: 0 };
-    expect(words(NOTE, note)).toBe("All genres: stories with an author’s note made up **18%** of stories in 2000–2009, **33%** in 2020 or later.");
+    expect(words(NOTE, note)).toBe("Stories with an author’s note made up **18%** of stories in 2000–2009, **33%** in 2020 or later.");
     const consent = { id: "rel_consent_per_1k", label: "Consent", noun: "consent language", unit: "per 1,000 words", bins: { type: "ranges" } };
     const zero = { k: "zero", fmt: "num", q: [null, null, null, null, [3346, 700, 0.21, 0.098, 0.196, 0.395]], t: [2561, 233, 0.11, 0.144, 0.229, 0.388], r: 0.092, f: 0 };
     expect(words(consent, zero)).toBe(
-      "All genres: stories with any, **11%** in 2000–2009 and **21%** in 2020 or later; among those, median 0.229 and 0.196 per 1,000 words.",
+      "Stories with any, **11%** in 2000–2009 and **21%** in 2020 or later; among those, median 0.229 and 0.196 per 1,000 words.",
     );
     // a genre works out its share from the two counts
     const zeroRomance = { ...zero, q: [null, null, null, null, [100, 30, 0.1, 0.2, 0.3]], t: [87, 9] };
-    expect(words(consent, zeroRomance, ROMANCE)).toBe("Romance: stories with any, **10%** in 2000–2009 and **30%** in 2020 or later.");
+    expect(words(consent, zeroRomance, ROMANCE)).toBe("Stories with any, **10%** in 2000–2009 and **30%** in 2020 or later.");
     expect(words(WORDS, { ...length, r: null })).toBeNull();
     expect(words({ noun: "narrative perspective", bins: { type: "levels" } }, { k: "grp", q: [], t: [9], r: 0.02, f: 0 })).toBeNull();
   });
@@ -371,7 +372,7 @@ describe("View 1 on the page", () => {
     await openTrends("#/trends?var=dlg_word_share");
     expect(screen.getByRole("heading", { level: 2 }).textContent).toBe("Dialogue share clearly rose from 2000–2009 to 2020 or later");
     const takeaway = document.querySelector(".trend-takeaway").textContent;
-    expect(takeaway).toMatch(/^All genres: median \d+% in 2000–2009, \d+% in 2020 or later\.$/);
+    expect(takeaway).toMatch(/^Median \d+% in 2000–2009, \d+% in 2020 or later\.$/);
     const legend = [...document.querySelectorAll(".trend-legend li")].map((li) => li.textContent);
     expect(legend).toEqual([" Median", " Interquartile range", " The periods compared (how this is decided)"]);
     expect(document.querySelector(".trend-legend a").getAttribute("href")).toBe("#/methodology/trends");
@@ -387,14 +388,16 @@ describe("View 1 on the page", () => {
     expect(document.querySelector(".trend-chart .trend-line").getAttribute("d")).toMatch(/^M[\d.]+,[\d.]+( L[\d.]+,[\d.]+){4}$/);
   });
 
-  it("says the heading and the takeaway in the polite live region, again when the genre changes", async () => {
+  it("says the question, the heading and the takeaway in the polite live region, again when the genre changes", async () => {
     await openTrends("#/trends?var=dlg_word_share");
     const region = document.querySelector(".trends-page p.visually-hidden[aria-live='polite']");
     await waitFor(() =>
-      expect(region.textContent).toMatch(/^Dialogue share clearly rose from 2000–2009 to 2020 or later\. All genres: median \d+% in 2000–2009, \d+% in 2020 or later\.$/),
+      expect(region.textContent).toMatch(
+        /^Across all genres, how has dialogue share changed over time\? Dialogue share clearly rose from 2000–2009 to 2020 or later\. Median \d+% in 2000–2009, \d+% in 2020 or later\.$/,
+      ),
     );
     window.location.hash = "#/trends?var=dlg_word_share&genre=fetish";
-    await waitFor(() => expect(region.textContent).toMatch(/ Fetish: median \d+% in 2000–2009, \d+% in 2020 or later\.$/));
+    await waitFor(() => expect(region.textContent).toMatch(/^In Fetish, how has dialogue share changed over time\? .* Median \d+% in 2000–2009, \d+% in 2020 or later\.$/));
   });
 
   it("is one tab stop: → ← ↑ ↓, Home and End move between periods and show their details; Escape hides them", async () => {
@@ -462,7 +465,7 @@ describe("View 1 on the page", () => {
     await openTrends("#/trends?var=dlg_has_dialogue");
     expect(screen.getByRole("heading", { level: 2 }).textContent).toBe("The share of stories with dialogue clearly rose from 2000–2009 to 2020 or later");
     expect(document.querySelector(".trend-takeaway").textContent).toMatch(
-      /^All genres: stories with dialogue made up \d+% of stories in 2000–2009, \d+% in 2020 or later\.$/,
+      /^Stories with dialogue made up \d+% of stories in 2000–2009, \d+% in 2020 or later\.$/,
     );
     expect([...document.querySelectorAll(".trend-legend li")][0].textContent).toBe(" Share of stories");
     expect(document.querySelectorAll(".trend-chart .share-bar")).toHaveLength(5);
@@ -634,7 +637,7 @@ describe("mostly zero: the split chart", () => {
       "The periods compared (how this is decided)",
     ]);
     expect(document.querySelector(".trend-takeaway").textContent).toMatch(
-      /^All genres: stories with any, \d+% in 2000–2009 and \d+% in 2020 or later; among those, median [\d.]+ and [\d.]+ per 1,000 words\.$/,
+      /^Stories with any, \d+% in 2000–2009 and \d+% in 2020 or later; among those, median [\d.]+ and [\d.]+ per 1,000 words\.$/,
     );
   });
 

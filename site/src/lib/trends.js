@@ -18,25 +18,35 @@ import {
 import { periodLabel, trendDomain, trendTicks } from "./trendLayout.js";
 import { lowerFirst, upperFirst } from "./wording.js";
 
+/** A genre in the page's sentences: "all genres" (the slot shows it in lower case; its option says "All genres"), else its name. */
+export const genreWords = (genre) => (genre.id === "all" ? "all genres" : genre.name);
+
 /**
- * View 1's question, in parts around its two slots: "In [All genres], how has [story length in words] changed over
- * time?"; for yes/no characteristics the share of its stories: "…, how has the share of [stories with an author's note]
- * changed over time?".
+ * View 1's question, in parts around its two slots: "Across [all genres], how has [story length in words] changed over
+ * time?" ("In [Romance], …" for a genre), "have" for a plural noun ("…, how have [very long paragraphs] changed …"),
+ * and for yes/no characteristics the share of its stories, which is singular: "…, how has the share of [stories with
+ * an author's note] changed over time?".
  */
-export function trendQuestion(variable) {
+export function trendQuestion(variable, genre) {
+  const before = genre.id === "all" ? "Across " : "In ";
   if (variable.yes_subject) {
-    return { before: "In ", middle: ", how has the share of ", slot: lowerFirst(variable.yes_subject), after: " changed over time" };
+    return { before, middle: ", how has the share of ", slot: lowerFirst(variable.yes_subject), after: " changed over time" };
   }
-  return { before: "In ", middle: ", how has ", slot: variable.noun, after: " changed over time" };
+  return { before, middle: `, how ${variable.plural ? "have" : "has"} `, slot: variable.noun, after: " changed over time" };
 }
 
 export function trendQuestionText(variable, genre) {
-  const q = trendQuestion(variable);
-  return `${q.before}${genre.name}${q.middle}${q.slot}${q.after}?`;
+  const q = trendQuestion(variable, genre);
+  return `${q.before}${genreWords(genre)}${q.middle}${q.slot}${q.after}?`;
 }
 
-/** View 2's question: "What has changed in stories in All genres?" */
-export const changesQuestion = (genre) => `What has changed in stories in ${genre.name}?`;
+/** View 2's question before its slot: "What has changed in stories across [all genres]?", "… in [Romance]?" */
+export const changesQuestionStart = (genre) => `What has changed in stories ${genre.id === "all" ? "across" : "in"} `;
+
+export const changesQuestion = (genre) => `${changesQuestionStart(genre)}${genreWords(genre)}?`;
+
+/** Where a sample is from, at a sentence's end: "across all genres", "in Romance". */
+const fromGenre = (genre) => (genre.id === "all" ? "across all genres" : `in ${genre.name}`);
 
 // ------------------------------------------------------------------------------------------------ reading the file
 /** The two windows' words, from the file or meta.trend: { then: "2000–2009", now: "2020 or later" }. */
@@ -184,13 +194,14 @@ export function trendHeading({ variable, entry, genre, subset, file }) {
 
 /**
  * The takeaway's numbers line (numbers, yes/no and mostly zero; nothing for named groups and bands, whose shares are in
- * the chart; nothing when the windows weren't compared), as text and { strong } parts:
- * "All genres: median **2,810** words in 2000–2009, **4,100** in 2020 or later."
- * "All genres: stories with an author’s note made up **18%** of stories in 2000–2009, **33%** in 2020 or later."
- * "All genres: stories with any, **11%** in 2000–2009 and **21%** in 2020 or later; among those, median 0.229 and 0.196
- * per 1,000 words."
+ * the chart; nothing when the windows weren't compared), as text and { strong } parts; the question above it names the
+ * genre:
+ * "Median **2,810** words in 2000–2009, **4,100** in 2020 or later."
+ * "Stories with an author’s note made up **18%** of stories in 2000–2009, **33%** in 2020 or later."
+ * "Stories with any, **11%** in 2000–2009 and **21%** in 2020 or later; among those, median 0.229 and 0.196 per 1,000
+ * words."
  */
-export function numbersLine({ variable, entry, genre, file, fmt, smallN = 30 }) {
+export function numbersLine({ variable, entry, file, fmt, smallN = 30 }) {
   if (entry.r == null || !["num", "bin", "zero"].includes(entry.k)) return null;
   const all = file.g === "all";
   const then = trendCell(entry.k, entry.t, all, smallN);
@@ -199,17 +210,17 @@ export function numbersLine({ variable, entry, genre, file, fmt, smallN = 30 }) 
   const w = windowWords(file);
   const shares = [{ strong: fmt.share(then.share) }, { strong: fmt.share(now.share) }];
   if (entry.k === "bin") {
-    return [`${genre.name}: ${lowerFirst(variable.yes_subject)} made up `, shares[0], ` of stories in ${w.then}, `, shares[1], ` in ${w.now}.`];
+    return [`${upperFirst(variable.yes_subject)} made up `, shares[0], ` of stories in ${w.then}, `, shares[1], ` in ${w.now}.`];
   }
   if (entry.k === "zero") {
-    const parts = [`${genre.name}: stories with any, `, shares[0], ` in ${w.then} and `, shares[1], ` in ${w.now}`];
+    const parts = ["Stories with any, ", shares[0], ` in ${w.then} and `, shares[1], ` in ${w.now}`];
     if (then.median != null && now.median != null) parts.push(`; among those, median ${fmt.value(then.median)} and ${fmt.withUnit(now.median)}`);
     parts.push(".");
     return parts;
   }
   const first = fmt.value(then.median);
   const unit = withUnit(first, fmt.unit).slice(first.length); // " words" (" page" after exactly 1), or nothing
-  return [`${genre.name}: median `, { strong: first }, `${unit} in ${w.then}, `, { strong: fmt.value(now.median) }, ` in ${w.now}.`];
+  return ["Median ", { strong: first }, `${unit} in ${w.then}, `, { strong: fmt.value(now.median) }, ` in ${w.now}.`];
 }
 
 /**
@@ -348,19 +359,21 @@ export const periodName = (label, words) => `${label}: ${words.join(", ")}`;
 /** "Download PNG"'s file name: the characteristic's, the genre's and the option's ids, in lower case. */
 export const trendsFileName = (state) => `trends-${state.v}-${state.genre}-${state.sub}.png`.toLowerCase();
 
-/** What the polite live region says when View 1's characteristic, genre or option changes: the heading, then the
- * takeaway's lines. */
+/** What the polite live region says when View 1's characteristic, genre or option changes: the question (which names
+ * the genre, as the takeaway no longer does), the heading, then the takeaway's lines. */
 export function trendAnnouncement(meta, file, state) {
   const variable = meta.variables.find((v) => v.id === state.v);
   const entry = file.c[state.v];
   const genre = meta.genres.find((g) => g.id === file.g);
   const subset = meta.subsets.find((s) => s.id === file.s);
   if (!entry || !variable || !genre) return "";
-  if (nothingToDraw(entry)) return `${tooFewHeading({ entry, genre, subset, file })}.`;
+  const question = trendQuestionText(variable, genre);
+  if (nothingToDraw(entry)) return `${question} ${tooFewHeading({ entry, genre, subset, file })}.`;
   const fmt = trendFormat(variable, entry, file.g === "all", meta.small_n);
-  const numbers = numbersLine({ variable, entry, genre, file, fmt, smallN: meta.small_n });
+  const numbers = numbersLine({ variable, entry, file, fmt, smallN: meta.small_n });
   const mix = mixFixedLine(entry, file.g);
   return [
+    question,
     `${trendHeading({ variable, entry, genre, subset, file })}.`,
     numbers ? numbers.map((seg) => (typeof seg === "string" ? seg : seg.strong)).join("") : "",
     mix || "",
@@ -445,12 +458,15 @@ export function changesHeading(count, file) {
   return `${what} clearly changed from ${w.then} to ${w.now}`;
 }
 
-/** "2,561 stories from 2000–2009 and 3,346 from 2020 or later in All genres." (an option: "… match “Under 2,000 words”.") */
+/**
+ * "2,561 stories from 2000–2009 and 3,346 from 2020 or later across all genres." ("… in Romance."; an option: "… match
+ * “Under 2,000 words”.")
+ */
 export function changesSampleLine(file, genre, subset) {
   const w = windowWords(file);
   const c = windowCounts(file);
   const match = subset && subset.id !== "all" ? ` match “${subset.label}”` : "";
-  return `${formatCount(c.then)} stories from ${w.then} and ${formatCount(c.now)} from ${w.now} in ${genre.name}${match}.`;
+  return `${formatCount(c.then)} stories from ${w.then} and ${formatCount(c.now)} from ${w.now} ${fromGenre(genre)}${match}.`;
 }
 
 /** The takeaway (S1): "▼ Fell: …", "▲ Rose: …", "≠ A different mix: …", each up to three labels, as the lists word them. */
@@ -552,13 +568,15 @@ export function changesWords(file) {
   };
 }
 
-/** What the polite live region says for View 2: the heading, then the takeaway's lines; or the too-few sentence. */
+/** What the polite live region says for View 2: the question, the heading, then the takeaway's lines; or the question
+ * and the too-few sentence. */
 export function changesAnnouncement(meta, file, state) {
   const genre = meta.genres.find((g) => g.id === file.g);
   const subset = meta.subsets.find((s) => s.id === file.s);
   if (!genre) return "";
-  if (!windowsCompared(file)) return `${changesTooFewHeading(file, genre, subset)}.`;
+  const question = changesQuestion(genre);
+  if (!windowsCompared(file)) return `${question} ${changesTooFewHeading(file, genre, subset)}.`;
   const p = trendProfile(meta, file);
   const lines = changesTakeaway(p).map((line) => `${line.word}: ${line.items.join(", ")}.`);
-  return [`${changesHeading(p.flagged.length, file)}.`, ...lines].join(" ");
+  return [question, `${changesHeading(p.flagged.length, file)}.`, ...lines].join(" ");
 }

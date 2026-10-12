@@ -101,7 +101,7 @@ describe("Genres addresses", () => {
 });
 
 describe("the masthead (D4, D9; with the Trends page, D7)", () => {
-  it("lists Explore, Genres, Trends, Patterns and How it works; the footer keeps How it works", async () => {
+  it("lists Explore, Genres, Trends, Patterns and How it works; the footer has How it works once", async () => {
     await openGenres();
     const nav = screen.getByRole("navigation", { name: "Pages" });
     const links = within(nav).getAllByRole("link");
@@ -109,7 +109,7 @@ describe("the masthead (D4, D9; with the Trends page, D7)", () => {
     expect(within(nav).getByRole("link", { name: "Genres" }).getAttribute("aria-current")).toBe("page");
     expect(within(nav).getByRole("link", { name: "How it works" }).classList.contains("nav-how")).toBe(true);
     const footer = screen.getByRole("contentinfo");
-    expect(within(footer.querySelector("p")).getByRole("link", { name: "How it works" })).toBeTruthy();
+    expect(within(footer).getAllByRole("link", { name: "How it works" })).toHaveLength(1); // in the line of every page
     expect(screen.queryByRole("button", { name: "Menu" })).toBeNull(); // no Menu button (D4)
   });
 

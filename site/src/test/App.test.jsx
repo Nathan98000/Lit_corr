@@ -99,8 +99,9 @@ describe("the explorer", () => {
   it("has a How it works page that keeps the limits of the sample", async () => {
     const user = await renderApp();
     await user.click(within(screen.getByRole("navigation", { name: "Pages" })).getByRole("link", { name: "How it works" }));
-    // nav and footer agree: the masthead, the independence statement and the footer's list of every page (D7)
-    expect(screen.getAllByRole("link", { name: "How it works" })).toHaveLength(3);
+    // nav and footer agree: the masthead and the footer's list of every page (D7); the independence statement no
+    // longer links to it, so the footer has it once (the trends review)
+    expect(screen.getAllByRole("link", { name: "How it works" })).toHaveLength(2);
     await screen.findByRole("heading", { level: 1, name: "How it works" });
     expect(document.title).toBe("How it works · What do popular Literotica stories have in common?");
     expect(screen.getByText(/do not stand for erotic fiction, readers or human sexuality in general/)).toBeTruthy();
@@ -127,17 +128,16 @@ describe("no causation reminders (decision 1 of round 2)", () => {
     await ready();
     expect(document.body.textContent).not.toMatch(REMINDERS);
     const footer = screen.getByRole("contentinfo");
-    expect(footer.querySelector("p").textContent).toMatch(
-      /^An independent project, not affiliated with or endorsed by Literotica\. How it works$/,
-    );
+    expect(footer.querySelector("p").textContent).toBe("An independent project, not affiliated with or endorsed by Literotica.");
     // round 3, change 5: the footer no longer lists what the site does not hold; How it works keeps that section
     expect(footer.textContent).not.toMatch(/story-by-story records/);
-    expect(within(footer.querySelector("p")).getByRole("link", { name: "How it works" }).getAttribute("href")).toBe(
-      "#/methodology",
-    );
-    // and a line with every page, in the masthead's order (D7)
+    // the statement keeps its words but not its link: the line with every page, in the masthead's order (D7), has How
+    // it works, once (the trends review)
+    expect(within(footer.querySelector("p")).queryByRole("link")).toBeNull();
     const pages = within(within(footer).getByRole("navigation", { name: "All pages" })).getAllByRole("link");
     expect(pages.map((a) => a.textContent)).toEqual(["Explore", "Genres", "Trends", "Patterns", "How it works"]);
+    expect(within(footer).getAllByRole("link", { name: "How it works" })).toHaveLength(1);
+    expect(within(footer).getByRole("link", { name: "How it works" }).getAttribute("href")).toBe("#/methodology");
   });
 
   it("leaves the note on chance to How it works (the owner's follow-up, 2)", async () => {

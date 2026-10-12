@@ -119,7 +119,7 @@ export default function TrendAnswer({ meta, state, file, busy, onSwitch, heading
 
   const fmt = trendFormat(variable, entry, file.g === "all", smallN);
   const heading = trendHeading({ variable, entry, genre, subset, file });
-  const numbers = numbersLine({ variable, entry, genre, file, fmt, smallN });
+  const numbers = numbersLine({ variable, entry, file, fmt, smallN });
   const mix = mixFixedLine(entry, file.g);
   const kind = entry.k;
   const cells = trendCells(entry, file.g === "all", smallN);

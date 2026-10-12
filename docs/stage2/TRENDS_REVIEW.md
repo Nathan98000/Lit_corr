@@ -74,7 +74,8 @@ The final checks found and fixed defects in this round's own work, the main ones
 
 ## 3. Before and after
 
-Phones at full size; 1440 px at half size. Palette-compressed to 64 colors. The "before" panels are `e634304`.
+Phones at full size; 1440 px at half size. Palette-compressed to 64 colors. The "before" panels are `e634304`; the
+"after" panels are the final build, `04fb6a6`, with your follow-up (section 9).
 
 | View | After | Before |
 |---|---|---|
@@ -189,6 +190,8 @@ past tense ("rose", "fell", "changed", "No clear change in …"). Every `yes_sub
 
 ## 6. Fresh eyes
 
+*Since October 12, two more rounds on the follow-up: section 9.*
+
 Six stand-ins, three on a phone and three on a desktop. Each was shown only screen-sized captures of the after build
 by file path, with the earlier rounds' situation line ("a friend sent you this link…"; "you have no background in
 statistics") and the prompt's five questions. Their answers, verbatim, are in `Claude outputs/design-review-2-tools/
@@ -287,19 +290,16 @@ trends-review/fresh-eyes.md`.
 - **A real phone, Safari and screen readers.** Everything was checked in headless Chromium with emulated touch and
   forced colors. Safari couldn't be driven here: `safaridriver` needs Safari's remote automation turned on, a setting
   for you, and Playwright's WebKit isn't installed. VoiceOver, TalkBack and NVDA are untested.
-- **Fresh eyes, all in approved copy, so your call:**
-  - "not clear within any length band" is never explained (6/6).
-  - Gray means "no clear change" in View 2 and "not compared" in View 1 (6/6, though the label resolves it).
-  - "held fixed" is unclear (6/6).
-  - "· borderline" on a row whose dot sits at 39 reads as "near the zone's edge" (6/6). A short explanation where the
-    word first appears would answer the last two.
-  - "is the higher one" (5/6), average or median (4/6), and "Show all 21" under a heading of 26 (2/6).
+- ~~**Fresh eyes, all in approved copy, so your call:** "not clear within any length band" never explained (6/6); gray
+  meaning "no clear change" in View 2 and "not compared" in View 1 (6/6); "held fixed" (6/6); "· borderline" read as
+  "near the zone's edge" (6/6); "is the higher one" (5/6), average or median (4/6), "Show all 21" under 26 (2/6).~~
+  Addressed on October 12 at your word, and checked by two more rounds: section 9.
 - **Percents on the build-ups.** The rule gives a percent to every number with a plain unit. "Build-up of …" (last fifth
   minus first fifth, per 1,000 words) qualifies, and near-zero medians make it huge: 15 of the 4,015 rows with a
   percent reach 1,000% or more, up to "0.0034 → 5.1 (+149,028%)" (How To). Leaving signed differences without a percent would change what is
   shown, so I left it for you.
-- **The borderline line's "it"** with a plural noun ("Touch words: a borderline change…" then "By the site's rule it
-  clearly fell…"). This is the approved copy; "they" would follow has/have.
+- ~~**The borderline line's "it"** with a plural noun ("… it clearly fell …").~~ The line names the noun now ("By the
+  site’s rule touch words clearly fell, …"): section 9.
 - **Verdana only, all at 320 px or in the gap:**
   - 3 of 7,170 View 1 charts: two pairs of period values touch and one ends 2 px past the chart. Verdana's "%" is
     1.27 em ("10.0%" is 49 px against 39 estimated). The same 3 were there before.
@@ -311,3 +311,116 @@ trends-review/fresh-eyes.md`.
   outline. The table's asterisk says the same.
 - **The view switch from a scrolled page** opens the other view at the top. The Genres page's switch does the same,
   and so did this page before. Keeping the place would be a change to both pages.
+
+## 9. Your follow-up: what tripped the stand-ins (October 12)
+
+You asked for the stumbles in section 6 to be addressed by my judgment. Built in `04fb6a6`, checked by two more rounds of
+six stand-ins (the same brief, the same five questions, new screen-sized captures each time), then measured again. This
+write-up and the redone after screenshots are the commit after it. Not pushed.
+
+### 9.1 What changed
+
+| Stumble (round 1) | What changed | Where |
+|---|---|---|
+| "not clear within any length band" never explained (6/6) | The band line names the bands: "6 of these changes are not clear within any length band (stories under 2,000 words, 2,000–5,000 words or 5,000 words or more)." It comes last in the takeaway, and its place is held (hidden) until the Length options' files arrive, so nothing moves when it comes | View 2's takeaway |
+| "held fixed" (6/6); "not once" read as "never" | The fixed-mix check in the readers' own words, "if the mix of genres had been the same in both periods": "By the site’s rule touch words clearly fell, but not if the mix of genres had been the same in both periods (how this is decided)." The noun, not "it", so a plural one reads right | View 1's borderline line |
+| "· borderline" read as "near the zone's edge" (6/6) | What it means, once, in the takeaway: "2 of these changes are borderline: clear by the site’s rule, but not if the mix of genres had been the same in both periods." With 5,000 words or more, whose 4 are in the topics only: "4 characteristics, in the topics below, are borderline: not clear by the site’s rule, but clear if …" | View 2's takeaway |
+| Gray means "no clear change" in View 2 (6/6); why the middle isn't compared (6/6) | The key: "The periods compared, the oldest and the newest (how this is decided)" and a gray entry, "The periods between them, shown but not compared" (numbers, yes/no and mostly zero; named groups and bands keep their colors) | View 1's key |
+| "is the higher one" took two reads (5/6) | "How often a story from 2020 or later comes out higher than a story from 2000–2009, out of 100"; the note adds "(50 is a tie)" | View 2's axis title and note |
+| Average or median? (4/6) | The values' head in two lines: "Median story or share" over "2000–09 → 2020+" (the image too) | View 2's head row |
+| "description length": of what? (3/6) | What the characteristic measures, under the heading (the rail's first line on a desktop), from meta's description as Explore shows it; none where it only repeats the label and the unit (9 of 180, such as "Touch words per 1,000 words."). The note says where to find it: "Tap a row for what it measures and its chart over time." | View 1; View 2's note |
+| "Show all 21" read against the heading's 26 (2/6, phones) | "Show all 21 that rose", "Show all 5 that fell" | View 2's lists |
+| (all of the above point to "how this is decided") | How it works says why only the two windows are compared (the oldest and the newest, each pooling several years, so that no thin year can swing the verdict), what borderline means in the same words, and what the length bands are | How it works, "Changes over time" |
+
+### 9.2 Fresh eyes, three rounds
+
+Round 1 is section 6. Round 2 tested the first pass ("if every genre had the same share of stories in both periods",
+"scores higher than", "Median or share", the tautological definitions shown). Round 3 tested the final words, except
+"comes out higher than", which replaced "scores higher than" after it. Answers verbatim in `Claude outputs/
+design-review-2-tools/trends-review/fresh-eyes.md`.
+
+| Stumble | Round 1 | Round 2 | Round 3 |
+|---|---|---|---|
+| Each question's point came across | 6/6 each | 6/6 each | 6/6 each |
+| "length band" not understood | 6/6 | 0/6 | 1/6 |
+| "Show all 21" against 26 | 2/6 | 0/6 | 0/6 |
+| The genre-mix check unclear, or misread as "all genres the same size" | 6/6 unclear | 3/6 misread | **0/6** |
+| Average or median? | 4/6 | 6/6 ("Median" over "Average …") | 3/6; 4/6 read "the middle story's average" outright |
+| "is the higher one" / "scores higher" made them pause | 5/6 | 2/6 | 3/6 (one: "scores" sounds like ratings, hence "comes out higher") |
+| Gray means two things | 6/6, the label resolved it | 6/6, the key resolved it | 6/6, the key resolved it |
+| Why only the two ends: not on the screen | 6/6 | 6/6 | 6/6 (all point to "how this is decided", which now says) |
+| "borderline" could read as "only just past 40" | 6/6 | 6/6 noted, all took the page's meaning | 5/6 noted, all took the page's meaning |
+| "description length": of what? | 3/6 | 1/6 | 3/6 (all desktop; the definition is a tap away) |
+| What counts as a "touch word"? | 0/6 | 5/6 | 6/6 |
+| "interquartile range" (O1 keeps it) | 3/6 | 2/6 | 5/6 |
+
+- **What it fixed:** the length band, "Show all 21", the genre-mix check (no one misreads it now), and "borderline" (every
+  reader takes the page's meaning, though most still note that its two rows sit at 39).
+- **What it made visible:** once the continuation has a one-line definition, touch words' lack of one gets noticed (0/6,
+  then 5/6 and 6/6). Meta's description for 9 characteristics only repeats the label; a real one (the word list's gist,
+  say) would answer it, and that is a `meta.json` change, so it's yours (9.6).
+- **Unchanged:** the gray (every reader notes it; the key settles it); the reason for comparing only the two ends (now in
+  How it works, which no stand-in could open).
+
+### 9.3 Measurements, the final build against `a1cfa0b`
+
+| Measure | `a1cfa0b` | Final (`04fb6a6`) |
+|---|---|---|
+| Glyph boxes, View 2 (31 genres × 4 options × 320–1440 px, every topic open): site font / Verdana | 0 / 0 | **0 / 0** (with the two-line head; it keeps 28 px from the plot, 10 in Verdana) |
+| Glyph boxes, View 1 (7,170 charts): site font / Verdana | 0 / 3 | 0 / 3 (the same) |
+| Breaks (980 states a font) | 0 / 3 | 0 / 3 (the same) |
+| axe; label in name | 63 runs, none; 12 pages, none | the same |
+| Forced colors, light and dark | every mark draws | and the key's gray entry and the definition line |
+| Fold at 1280 × 720 / 1440 × 900 | 700 / 720 | 700 / 720 (the definition sits in the rail) |
+| A control moving the page | 8 of 144 (the switch) | the same |
+| Layout shift, a View 2 visit (slow 4G), 375 / 1440 px | 0.004 / 0.006 | **0.000 / 0.000** (the band line's place held); worst 0.021 as before |
+| First load | 149.7 KiB, 6 | 149.7 KiB, 6 |
+| A visit to `#/trends`; to View 1; to "One genre"; to How it works | 213.0; 176.0; 208.7 KiB | 213.7; 176.7; 208.8; 141.2 KiB |
+| Chunks (bytes, `gzip -9`): Trends JS, CSS; How it works; `IncludeSelect`; `chartImage`; the main script | 15,083, 3,914; 8,027; 13,078; 7,495; 86,746 | 15,561, 4,045; 8,344; 13,142; 7,539; 86,748 |
+| Page height, 375 / 1440 px: `#/trends` (View 2); View 1, word count | 2,635 / 2,083; 1,207 / 924 | 2,754 / 2,162; 1,339 / 1,036 (the takeaway's two lines; the definition and the key's entries) |
+| PNGs | | View 2's: the new axis title and the two-line head; View 1's key: both new entries ("(how this is decided)" left out); "One genre"'s: pixel-identical |
+
+Tests: 508 (503 before), stable over three runs.
+
+### 9.4 Judgment calls
+
+1. **The readers' words over mine.** "If the mix of genres had been the same in both periods" is how rounds 1 and 2
+   paraphrased the check; my first phrase, "if every genre had the same share of stories", was misread by 3 of 6.
+2. **"Median story or share", not "typical".** An earlier round banned "typical story" from the site (a scan enforces
+   it), and "Median or share" over "Average paragraph length" read as a contradiction to 6 of 6. "Median story" says
+   both levels: the median story's average.
+3. **"Comes out higher", not "scores higher"**, which on a site about ratings read as a rating. This one change wasn't
+   tested by a round.
+4. **The band line last, its place held.** The prompt had it last; it arrives after the first paint, so a hidden copy
+   (with a one-digit count) keeps its height until then. If no change misses every band (none in the data), the copy
+   goes and the page moves once.
+5. **A definition only where it says more than the label.** The 9 that repeat the label and unit are left out, since
+   they read as a definition and give none.
+6. **The definition at the rail's top on a desktop**, not under the heading, so the chart keeps its place on the first
+   screen.
+7. **The key's gray entry only for the forms drawn gray** (numbers, yes/no, mostly zero), as the prompt keeps named
+   groups' and bands' colors.
+8. **"Show all … that rose" on Trends only**, through an opt-in, so "One genre" is unchanged.
+9. **How it works says why the two ends**, from the proposal's reason (5.2), with the bands and the borderline check
+   in the page's own words.
+10. **The gray color stays**, as your design gives it ("as View 2's gray dots"); the key and the label explain it.
+
+### 9.5 Not done, on purpose
+
+- **"interquartile range"** stays (O1), though 5 of 6 in round 3 didn't know it.
+- **"typical story"**, banned by an earlier round's decision.
+- **Data:** no new definitions in `meta.json` (beyond O5).
+- **"One genre"**: unchanged, though it has the same "is the higher one" axis title; the same change would apply there if
+  you want the two comparisons to read alike.
+
+### 9.6 Still open
+
+- **Definitions for the 9** whose description only repeats the label: the five senses' words, physical sensation words,
+  semicolons, colons and commas. A sentence each in the pipeline's wording (`litcorr/stage2/wording.py`, then
+  `site-data`) would let View 1 show them; it changes `meta.json`, so it's your call.
+- **"description length"**: 3 of 6 desktop readers guess it's the blurb. Its definition ("Number of characters in the
+  author’s short description.") is one tap away; a clearer label would also be a `meta.json` change.
+- **"interquartile range"** (O1) and **the reason for comparing only the two ends**, which now waits behind "how this is
+  decided": both are noticed by most readers.
+- Section 8's other items stand: Safari and screen readers, the build-up percents, the Verdana-only leftovers, the
+  hatching, and the switch.

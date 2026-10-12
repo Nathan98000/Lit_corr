@@ -35,12 +35,19 @@ rank-biserial correlation of at least 0.2 against all genres (for named groups, 
 The **Trends** page shows how the stories themselves changed over time. It opens on **All changes**: "What has
 changed in stories across [all genres]?" ("… in [Romance]?") says how many of the characteristics compared clearly
 changed from 2000–2009 to 2020 or later ("26 of 180 characteristics clearly changed …") and how many stories each
-window has. A takeaway follows: for All genres with All stories, how word count changed, the ▼ Fell / ▲ Rose / ≠
-lines, and how many of the changes are not clear within any length band (from the Length options' files, read after
-the first paint). Then the lists, the largest change first, in "One genre"'s rows: each reads the two windows' values
-first ("51.6 → 38.8 (−25%)"), then a dot on a scale zoomed to the view (how often a story from 2020 or later is the
-higher one against a story from 2000–2009, out of 100), with "· borderline" or "· not clear within any length band"
-where they apply. "Download PNG" saves the lists, every characteristic by topic follows, and a row opens its chart over
+window has. A takeaway follows:
+
+- how word count changed, and the ▼ Fell / ▲ Rose / ≠ lines;
+- for All genres, what "borderline" means: clear by the site's rule, but not if the mix of genres had been the same in
+  both periods;
+- last, for All genres with All stories, how many of the changes are not clear within any length band, the bands
+  named. This comes from the Length options' files, read after the first paint, and the line's place is held until
+  then.
+
+Then the lists, the largest change first, in "One genre"'s rows. Each reads the two windows' values first ("51.6 →
+38.8 (−25%)", under "Median story or share"), then a dot on a scale zoomed to the view (how often a story from 2020 or
+later comes out higher than a story from 2000–2009, out of 100), with "· borderline" or "· not clear within any length
+band" where they apply. "Download PNG" saves the lists, every characteristic by topic follows, and a row opens its chart over
 time. A genre whose windows have too few stories says so, with its stories per period. The switch "All changes · One
 characteristic" leads to one characteristic over five periods of publication (2000–04 to 2020 and later): "Across
 [all genres], how has [story length in words] changed over time?" ("how have" for a plural noun; "In [Romance], …").
@@ -53,9 +60,10 @@ It is drawn in one of four forms on one time axis:
 
 Under the plot, aligned with the columns: the periods, their medians or shares, their stories, and brackets under the
 two windows compared, each with its window's number ("2000–2009 · median 2,810"); the periods between them are gray and
-"not compared". The heading says whether the characteristic clearly rose, fell, moved later or earlier, or changed
-between the windows, by the Genres page's rule. For All genres it says "a borderline change" when holding each genre's
-share of stories fixed gives the other answer. A line names a clear dip or rise in between. On a desktop the takeaway,
+"not compared", as the key says. The heading says whether the characteristic clearly rose, fell, moved later or
+earlier, or changed between the windows, by the Genres page's rule. For All genres it says "a borderline change" when
+the check with the mix of genres held the same in both periods gives the other answer. Under the heading the page says
+what the characteristic measures, from `meta.json`'s description. A line names a clear dip or rise in between. On a desktop the takeaway,
 the key and the actions ("See all changes →", "Compare genres →", "Download PNG") sit in a rail beside the chart. Its
 picker lists the characteristics that clearly changed first, and "Only include" leaves out the options that don't
 apply (the Length options with word count). Publication year, month and weekday, story age, the number of tags and the
@@ -118,9 +126,9 @@ Trends page one of at most 13 KB.
 The **first load** is the HTML, the main script, the CSS, the heading font, `meta.json` and the first chart file:
 **149.7 KiB of gzip response bodies in 6 requests** (October 12, 2026, after the Trends review; 149.5 before it,
 148.5 before the Trends page). The Genres and Trends pages' own code, styles and files load only when they are opened.
-A visit that starts on the Genres page is 208.7 KiB in 9 requests (204.4 in 8 before the Trends page: the code the two
-pages share is now a chunk of its own). One that starts on the Trends page is 213.0 KiB in 12: all changes, with the
-three Length options' files for its band line fetched after the first paint (176.0 in 9 for one characteristic).
+A visit that starts on the Genres page is 208.8 KiB in 9 requests (204.4 in 8 before the Trends page: the code the two
+pages share is now a chunk of its own). One that starts on the Trends page is 213.7 KiB in 12: all changes, with the
+three Length options' files for its band line fetched after the first paint (176.7 in 9 for one characteristic).
 Layout shift stays under 0.03. The budget is **155 KiB of
 gzip response bodies** for that set, measured on the built site served with gzip (the design review's `firstload.mjs`
 with `serve.mjs`; response headers are not counted).
@@ -239,8 +247,9 @@ src/
                           characteristic" and "Only include"; keeps the shown file, and the last answer it can draw,
                           until the next one has loaded; the live region; the tab's title; focus to the answer's
                           heading after a button that changes it
-    TrendAnswer.jsx       (lazy) one characteristic over time: the heading, the takeaway (the windows' numbers, the
-                          path line, the borderline line), the key, the chart for its form and the actions ("See all
+    TrendAnswer.jsx       (lazy) one characteristic over time: the heading, what the characteristic measures, the
+                          takeaway (the windows' numbers, the path line, the borderline line), the key (the periods
+                          compared and the gray ones between), the chart for its form and the actions ("See all
                           changes →", "Compare genres →", "Download PNG"), in a rail beside the chart from a 960 px
                           answer; the too-few state
     TrendChart.jsx        (lazy) range columns and dots on a line (numbers, yes/no) and the split chart (mostly zero),
@@ -249,9 +258,10 @@ src/
                           chart on phones; the glide to another genre or option
     TrendMix.jsx          (lazy) 100% columns for named groups and ordered bands
     TrendChanges.jsx      (lazy) all changes from 2000–2009 to 2020 or later, the page's default: the heading with its
-                          denominator, the sample line, the takeaway (the length line, ▼ ▲ ≠, the length-band line from
-                          the Length options' files) and the too-few state (stories per period), with "What changed"'s
-                          words, values and tags for ComparisonProfile
+                          denominator, the sample line, the takeaway (the length line, ▼ ▲ ≠, what "borderline" means,
+                          the length-band line from the Length options' files, its place held until they arrive) and
+                          the too-few state (stories per period), with "What changed"'s words, values and tags for
+                          ComparisonProfile
     ChartNotes.jsx        the totals box (story age) with its switch, and the three explanations (disclosures at every
                           width)
     DownloadPng.jsx       "Download PNG": the button, its lazy code and its failure message (Explore, both views of the

@@ -9,36 +9,18 @@ import {
   trendProfile,
   windowsCompared,
 } from "../lib/trends.js";
-import { subsetConflict, toHash } from "../lib/urlState.js";
+import { subsetConflict } from "../lib/urlState.js";
 import ComparisonProfile from "./ComparisonProfile.jsx";
-import { HOW_DECIDED } from "./TrendAnswer.jsx";
-
-const plainClick = (e) => !(e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey);
-
-/** A row's link to its chart over time (View 1), for its characteristic, genre and option; a new history entry. */
-function ChartLink({ to, onNavigate, className, children }) {
-  return (
-    <a
-      className={className}
-      href={toHash("trends", to)}
-      onClick={(e) => {
-        if (!plainClick(e)) return;
-        e.preventDefault();
-        onNavigate(to, { focus: true });
-      }}
-    >
-      {children}
-    </a>
-  );
-}
+import { ChartLink, HOW_DECIDED } from "./TrendAnswer.jsx";
 
 /**
- * What changed (View 2, §4.1): "One genre" as approved, relabeled and drawn by ComparisonProfile. The heading (how
- * many characteristics clearly changed from 2000–2009 to 2020 or later) and the sample line; the takeaway ("▼ Fell",
- * "▲ Rose", "≠ A different mix"); the lists, ordered by the size of the change; every characteristic by topic; Copy
- * link. Each row compares a story from 2020 or later with one from 2000–2009 (the dot, out of 100), prints the two
- * windows' numbers in that order, and opens its chart over time. When a window has too few stories to compare (Chain
- * Stories, Transgender), the heading says so, with "Show all stories" when an option is on, else "Show All genres".
+ * What changed (View 2, §4.1), the page's default: "One genre" as approved, relabeled and drawn by ComparisonProfile.
+ * The heading (how many characteristics clearly changed from 2000–2009 to 2020 or later) and the sample line; the
+ * takeaway ("▼ Fell", "▲ Rose", "≠ A different mix"); the lists, ordered by the size of the change; every
+ * characteristic by topic. Each row compares a story from 2020 or later with one from 2000–2009 (the dot, out of 100),
+ * prints the two windows' numbers in that order, and opens its chart over time. When a window has too few stories to
+ * compare (Chain Stories, Transgender), the heading says so, with "Show all stories" when an option is on, else "Show
+ * All genres".
  */
 export default function TrendChanges({ meta, state, file, busy, onSwitch, onNavigate, headingRef }) {
   const genre = meta.genres.find((g) => g.id === file.g);

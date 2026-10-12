@@ -85,13 +85,13 @@ async function press(user) {
 }
 
 describe("the button", () => {
-  it("is on Explore and on “One characteristic”; Copy link is on “One genre” and nowhere else", async () => {
+  it("is on Explore and on “One characteristic”; Copy link is nowhere (the trends review, O2)", async () => {
     for (const [hash, png, copy] of [
       ["#/explore?var=dlg_word_share", true, false],
       ["#/explore?var=pov_class", true, false],
       ["#/genres?var=dlg_word_share", true, false],
       ["#/genres?var=pov_class", true, false],
-      ["#/genres?view=genre&genre=romance&include=all", false, true],
+      ["#/genres?view=genre&genre=romance&include=all", false, false],
     ]) {
       clearCache();
       const { unmount } = render(<App />);

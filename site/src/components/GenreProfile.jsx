@@ -32,7 +32,7 @@ export const tooFewText = (genre, subset, minN) =>
  * difference: this ranks characteristics within one genre, never genres), the named groups with a different mix, and
  * every characteristic by topic, folded (a topic's rows are drawn when it is opened). Every row opens that
  * characteristic's chart in every genre. With fewer stories than the rule needs, nothing is compared: the heading says
- * so, then "Show all stories" and the topics, whose rows give the numbers. Under the topics, Copy link (F80).
+ * so, then "Show all stories" and the topics, whose rows give the numbers.
  */
 export default function GenreProfile({ meta, state, file, busy, onSwitch, onNavigate, headingRef }) {
   const genre = meta.genres.find((g) => g.id === state.genre);

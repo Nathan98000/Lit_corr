@@ -3,13 +3,12 @@ import { comparisonBar, noDifferenceZone, numberPlace } from "../lib/genres.js";
 import { mixColors } from "../lib/genreLayout.js";
 import { scrollBehavior } from "../lib/motion.js";
 import { PHONE, STACKED, textWidth } from "../lib/rangeLayout.js";
-import CopyLink from "./CopyLink.jsx";
 import useMediaQuery from "./useMediaQuery.js";
 import useWidth from "./useWidth.js";
 
 // A comparison of two sides, characteristic by characteristic (D10): the Genres page's "One genre" (a genre's stories
 // against all genres') and the Trends page's "What changed" (stories from 2020 or later against stories from
-// 2000–2009). The rows (concept R3), the lists, the topics, the notes, the way back and "Copy link" are here; each page
+// 2000–2009). The rows (concept R3), the lists, the topics, the notes and the way back are here; each page
 // gives its words (the two sides' names and short heads, the list titles, the axis title, the zone's words, the note,
 // the topics' line) and its row (the columns' numbers, the row's name and where it leads). The styles are in
 // comparison.css, which genres.css and trends.css import.
@@ -450,7 +449,7 @@ function useWayBack(ref, key) {
  * The comparison (D10): its header (the page's `header`), then, when the sides were compared, the page's `top` (the
  * takeaway) and the lists, each ordered by the size of the difference ("lower" and "higher": flagged numbers, yes/no,
  * mostly-zero and band characteristics; "mix": flagged named groups), then every characteristic by topic, folded (a
- * topic's rows are drawn when it is opened), and "Copy link" (F80). With `few` (fewer stories than the rule needs),
+ * topic's rows are drawn when it is opened). With `few` (fewer stories than the rule needs),
  * nothing was compared: `showAll`, then the topics, whose rows give the numbers. With `tooFew`, only `showAll`.
  *
  * - `profile`: { lower, higher, mix, topics: [{ topic, items, count, compared }] }; items as genreProfile() gives them.
@@ -565,9 +564,6 @@ export default function ComparisonProfile({
           );
         })}
       </section>
-      <div className="chart-actions">
-        <CopyLink />
-      </div>
     </article>
   );
 }

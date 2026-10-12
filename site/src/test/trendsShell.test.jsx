@@ -45,8 +45,10 @@ describe("Trends addresses", () => {
     expect(toHash("trends", chart)).toBe("#/trends?var=dlg_word_share&genre=adult-romance&include=medium");
     expect(parseHash(toHash("trends", chart))).toEqual({ page: "trends", state: chart });
     const changes = { view: "changes", genre: "all", sub: "all" };
-    // what changed doesn't write the characteristic it keeps for the way back
-    expect(toHash("trends", { ...changes, v: "story_words" })).toBe("#/trends?view=changes&genre=all&include=all");
+    // what changed, the page's default (O4), is written without `view`, and without the characteristic it keeps for
+    // the way back; the trends page build's addresses with view=changes still read as what changed
+    expect(toHash("trends", { ...changes, v: "story_words" })).toBe("#/trends?genre=all&include=all");
+    expect(parseHash(toHash("trends", { ...changes, genre: "adult-romance" }))).toEqual({ page: "trends", state: { genre: "adult-romance", sub: "all" } });
     expect(parseHash("#/trends?view=changes&genre=all&include=all")).toEqual({ page: "trends", state: changes });
     expect(parseHash("#/trends")).toEqual({ page: "trends", state: {} });
     expect(toHash("trends", {})).toBe("#/trends");
@@ -58,8 +60,11 @@ describe("Trends addresses", () => {
 
   it("sanitizes: characteristic, genre, option and view", () => {
     const meta = fixtureMeta;
-    // the test data has no story length: the page's first characteristic stands in
-    expect(sanitizeTrends({}, meta)).toEqual({ v: "dlg_word_share", genre: "all", sub: "all" });
+    // the test data has no story length: the page's first characteristic stands in. Without a characteristic the page
+    // opens on what changed (O4), with All genres and All stories; with one, on its chart over time
+    expect(sanitizeTrends({}, meta)).toEqual({ view: "changes", genre: "all", sub: "all", v: "dlg_word_share" });
+    expect(sanitizeTrends({ genre: "romance", sub: "medium" }, meta)).toEqual({ view: "changes", genre: "romance", sub: "medium", v: "dlg_word_share" });
+    expect(sanitizeTrends({ v: "pov_class" }, meta)).toEqual({ v: "pov_class", genre: "all", sub: "all" });
     expect(sanitizeTrends({ v: "nope", genre: "nope", sub: "nope", view: "nope" }, meta)).toEqual({
       v: "dlg_word_share",
       genre: "all",
@@ -81,6 +86,9 @@ describe("Trends addresses", () => {
   it.skipIf(!real)("leaves out the excluded characteristics and story length with a Length option (the real data)", () => {
     for (const id of real.trend.excluded) expect(sanitizeTrends({ v: id }, real).v).toBe("story_words");
     expect(sanitizeTrends({ v: "story_words", sub: "short" }, real).sub).toBe("all");
+    // what changed keeps a Length option even when the characteristic it remembers is story length
+    expect(sanitizeTrends({ view: "changes", v: "story_words", sub: "short" }, real)).toEqual({ view: "changes", genre: "all", sub: "short", v: "story_words" });
+    expect(sanitizeTrends({ sub: "long" }, real)).toEqual({ view: "changes", genre: "all", sub: "long", v: "story_words" });
     expect(sanitizeTrends({ v: "dlg_word_share", sub: "short" }, real).sub).toBe("short");
     expect(real.trend.subsets).toEqual(["all", "short", "medium", "long"]);
   });
@@ -139,7 +147,8 @@ describe("the page shell", () => {
     expect(screen.getByRole("heading", { level: 1 }).textContent).toBe(
       "How have the stories changed? · 278 stories · 2000–2026", // the years from meta.trend
     );
-    await waitFor(() => expect(document.title).toBe("Across all genres, how has dialogue share changed over time?"));
+    // the page opens on what changed (O4)
+    await waitFor(() => expect(document.title).toBe("What has changed in stories across all genres?"));
     await user.click(screen.getByText("Skip to content"));
     expect(document.activeElement.id).toBe("question");
   });
@@ -154,8 +163,8 @@ describe("the page shell", () => {
     };
     expect(question()).toBe("In Romance, how has the share of stories with dialogue changed over time?");
     const length = window.history.length;
-    await user.click(screen.getByRole("radio", { name: "What changed" }));
-    await waitFor(() => expect(window.location.hash).toBe("#/trends?view=changes&genre=romance&include=all"));
+    await user.click(screen.getByRole("radio", { name: "All changes" }));
+    await waitFor(() => expect(window.location.hash).toBe("#/trends?genre=romance&include=all"));
     expect(window.history.length).toBe(length + 1);
     expect(question()).toBe("What has changed in stories in Romance?");
     await waitFor(() => expect(document.title).toBe("What has changed in stories in Romance?"));

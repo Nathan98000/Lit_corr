@@ -356,12 +356,11 @@ describe("one scale for every row (concepts P2 and R3)", () => {
     }
   });
 
-  it("ends with Copy link, under the topics (F80)", async () => {
+  it("ends with its topics: Copy link is gone from the site (the trends review, O2)", async () => {
     await openGenre("#/genres?view=genre&genre=romance&include=all");
-    const copy = screen.getByRole("button", { name: "Copy link" });
-    const topics = document.querySelector(".profile-topics");
-    expect(topics.compareDocumentPosition(copy) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(copy.closest(".chart-actions").querySelectorAll("button, a")).toHaveLength(1);
+    expect(screen.queryByRole("button", { name: /Copy link/ })).toBeNull();
+    const answer = document.querySelector(".genres-page article.chart-panel");
+    expect(answer.lastElementChild.className).toBe("profile-topics");
   });
 });
 

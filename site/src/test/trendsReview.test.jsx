@@ -174,3 +174,93 @@ describe("the kicker and the footer, site-wide (phase 2)", () => {
     expect(styles).toMatch(/\.footer-pages \{[^}]*text-wrap: balance;/);
   });
 });
+
+describe("the default view, the switch and the actions (phase 3)", () => {
+  const trends = ".trends-page .chart-panel[aria-busy='false']";
+  const switchLabels = () => [...document.querySelectorAll(".view-switch label")].map((l) => l.textContent);
+
+  it("opens what changed without a characteristic, and one characteristic with one; the trends page build's addresses still work", async () => {
+    await open("#/trends", { ready: trends });
+    expect(document.querySelector(".trend-changes")).toBeTruthy();
+    expect(screen.getByRole("radio", { name: "All changes" }).checked).toBe(true);
+    expect(screen.getByLabelText("Genre").value).toBe("all");
+    expect(screen.getByLabelText("Only include").value).toBe("all");
+    expect(window.location.hash).toBe("#/trends"); // left as it is
+    window.location.hash = "#/trends?genre=romance&include=medium";
+    await waitFor(() => expect(screen.getByLabelText("Genre").value).toBe("romance"));
+    expect(document.querySelector(".trend-changes, .trends-page .chart-panel")).toBeTruthy();
+    expect(screen.getByRole("radio", { name: "All changes" }).checked).toBe(true);
+    expect(screen.getByLabelText("Only include").value).toBe("medium");
+    window.location.hash = "#/trends?var=pov_class&genre=romance&include=all";
+    await waitFor(() => expect(screen.getByRole("radio", { name: "One characteristic" }).checked).toBe(true));
+    window.location.hash = "#/trends?view=changes&genre=fetish&include=all"; // as the trends page build wrote it
+    await waitFor(() => expect(screen.getByRole("radio", { name: "All changes" }).checked).toBe(true));
+    await waitFor(() => expect(screen.getByLabelText("Genre").value).toBe("fetish"));
+  });
+
+  it("reads “All changes” then “One characteristic”, and opens the first characteristic when none is remembered", async () => {
+    const user = await open("#/trends?genre=romance", { ready: trends });
+    expect(switchLabels()).toEqual(["All changes", "One characteristic"]);
+    expect(screen.getByRole("radiogroup", { name: "Show" })).toBeTruthy();
+    await user.click(screen.getByRole("radio", { name: "One characteristic" }));
+    // story length on the real data; the test data's first characteristic stands in for it
+    await waitFor(() => expect(window.location.hash).toBe("#/trends?var=dlg_word_share&genre=romance&include=all"));
+  });
+
+  it("writes what changed without `view`, and returns the masthead's link to the last Trends address", async () => {
+    const user = await open("#/trends?var=pov_class", { ready: trends });
+    await user.click(screen.getByRole("radio", { name: "All changes" }));
+    await waitFor(() => expect(window.location.hash).toBe("#/trends?genre=all&include=all"));
+    await user.selectOptions(screen.getByLabelText("Genre"), "fetish");
+    await waitFor(() => expect(window.location.hash).toBe("#/trends?genre=fetish&include=all"));
+    const masthead = within(screen.getByRole("navigation", { name: "Pages" })).getByRole("link", { name: "Trends" });
+    expect(masthead.getAttribute("href")).toBe("#/trends?genre=fetish&include=all");
+    const footer = within(screen.getByRole("navigation", { name: "All pages" })).getByRole("link", { name: "Trends" });
+    expect(footer.getAttribute("href")).toBe("#/trends?genre=fetish&include=all");
+    // back to one characteristic: the one it came from
+    await user.click(screen.getByRole("radio", { name: "One characteristic" }));
+    await waitFor(() => expect(window.location.hash).toBe("#/trends?var=pov_class&genre=fetish&include=all"));
+  });
+
+  it("makes “See all changes →” View 1's primary action, a new history entry to what changed in the same genre and option", async () => {
+    const user = await open("#/trends?var=pov_class&genre=romance&include=medium", { ready: trends });
+    const actions = document.querySelector(".trend-answer .chart-actions");
+    expect([...actions.querySelectorAll("a, button")].map((el) => el.textContent)).toEqual([
+      "See all changes →",
+      "Compare genres →",
+      "Download PNG",
+    ]);
+    const see = screen.getByRole("link", { name: "See all changes in Romance" });
+    expect(see.className).toBe("btn primary");
+    expect(see.getAttribute("href")).toBe("#/trends?genre=romance&include=medium");
+    expect(screen.getByRole("link", { name: /^Compare genres/ }).className).toBe("btn"); // secondary
+    const length = window.history.length;
+    await user.click(see);
+    await waitFor(() => expect(window.location.hash).toBe("#/trends?genre=romance&include=medium"));
+    expect(window.history.length).toBe(length + 1);
+    await waitFor(() => expect(document.querySelector(".trend-changes")).toBeTruthy());
+    await waitFor(() => expect(document.activeElement.id).toBe("question"));
+    window.location.hash = "#/trends?var=pov_class";
+    await waitFor(() => expect(screen.getByRole("link", { name: "See all changes in all genres" })).toBeTruthy());
+  });
+
+  it("has no Copy link anywhere on the site (O2)", async () => {
+    for (const [hash, ready] of [
+      ["#/trends", trends],
+      ["#/trends?var=dlg_word_share", trends],
+      ["#/genres?view=genre&genre=romance&include=all", ".genres-page .chart-panel[aria-busy='false']"],
+      ["#/genres?var=dlg_word_share", ".genres-page .chart-panel[aria-busy='false']"],
+      ["#/explore?var=dlg_word_share", ".chart-panel[aria-busy='false']"],
+      ["#/patterns?genre=all&metric=pop_views", ".patterns-page"],
+    ]) {
+      clearCache();
+      window.history.replaceState(null, "", `/${hash}`);
+      const { unmount } = render(<App />);
+      await waitFor(() => expect(document.querySelector(ready)).toBeTruthy());
+      expect(screen.queryByRole("button", { name: /Copy link|Link copied/ }), hash).toBeNull();
+      expect(document.querySelector(".copy-link"), hash).toBeNull();
+      unmount();
+    }
+    expect(styles).not.toMatch(/copy-link|copy-manual/);
+  });
+});

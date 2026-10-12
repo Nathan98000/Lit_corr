@@ -461,7 +461,6 @@ h3 {
   text-underline-offset: 2px;
 }
 
-.copy-link,
 .png-download {
   min-height: var(--target);
   font-size: 14px;
@@ -874,7 +873,6 @@ h3 {
   max-width: 40ch;
 }
 
-.copy-link,
 .png-download {
   display: inline-flex;
   flex-wrap: wrap;
@@ -887,24 +885,6 @@ h3 {
   color: var(--ink-2);
 }
 
-.copy-manual {
-  display: inline-flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px 8px;
-  font-size: 14px;
-  color: var(--ink-2);
-}
-
-.copy-manual input {
-  min-height: var(--target);
-  width: min(100%, 420px);
-  padding: 0 10px;
-  border: 1px solid var(--control);
-  border-radius: var(--radius);
-  background: var(--paper);
-  font-size: 14px;
-}
 
 /* ------------------------------------------------------------ range chart (C2) */
 .range-chart {

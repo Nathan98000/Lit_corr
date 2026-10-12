@@ -6,7 +6,7 @@ import { GenresPage, Methodology, PatternBrowser, TrendsPage } from "./component
 import useScrollFloor from "./components/useScrollFloor.js";
 import { clearCache, loadMeta, prefetchGenres, prefetchTrends } from "./lib/data.js";
 import { scrollBehavior } from "./lib/motion.js";
-import { parseHash, sanitize, sanitizeGenres, sanitizeTrends, settledHash, toHash } from "./lib/urlState.js";
+import { parseHash, sanitize, sanitizeGenres, sanitizeTrends, settledHash, toHash, trendsChanges } from "./lib/urlState.js";
 import { aboutCount } from "./lib/wording.js";
 
 const PAGE_PLACEHOLDER = <div className="page-placeholder" aria-busy="true" />;
@@ -145,11 +145,11 @@ export default function App() {
     if (genresState.view !== "genre") lastChart.current = { v: genresState.v, sort: genresState.sort };
   }, [genresState]);
 
-  // the Trends page: what changed keeps the characteristic it came from, for the way back; it opens on All genres (D9),
-  // and a genre chosen there counts as chosen for the Genres page (D8)
+  // the Trends page: it opens on what changed (O4), which keeps the characteristic it came from, for the way back; it
+  // opens on All genres (D9), and a genre chosen there counts as chosen for the Genres page (D8)
   const trendsState = useMemo(() => {
     if (!meta || route.page !== "trends") return null;
-    const raw = route.state.view === "changes" ? { ...lastTrendChart.current, ...route.state } : route.state;
+    const raw = trendsChanges(route.state) ? { ...lastTrendChart.current, ...route.state, view: "changes" } : route.state;
     return sanitizeTrends(raw, meta);
   }, [meta, route.page, route.state]);
   useEffect(() => {
@@ -199,9 +199,10 @@ export default function App() {
       later(() => document.getElementById("question")?.focus({ preventScroll: true }));
     }
   }, []);
-  // the masthead's link: the last Trends address of this visit, else the page's own (All genres, D9); hovering or
-  // focusing it fetches the page's code and that address's file
-  const trendsLink = lastTrends.current ? toHash("trends", lastTrends.current) : "#/trends";
+  // the masthead's link: the last Trends address of this visit (on the page, the one shown), else the page's own (what
+  // changed in All genres, D9 and O4); hovering or focusing it fetches the page's code and that address's file
+  const shownTrends = trendsState || lastTrends.current;
+  const trendsLink = shownTrends ? toHash("trends", shownTrends) : "#/trends";
   const preloadTrends = () => {
     TrendsPage.preload();
     prefetchTrends(lastTrends.current?.sub || "all", lastTrends.current?.genre || "all");

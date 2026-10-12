@@ -188,7 +188,7 @@ describe("View 2 on the page", () => {
     expect(answer.querySelector(".profile-topics-line").textContent).toBe(
       "How many characteristics in each topic changed. Open a topic to see them all: blue dots changed, gray dots show no clear change.",
     );
-    expect(screen.getByRole("button", { name: "Copy link" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /Copy link/ })).toBeNull(); // gone from the site (O2)
     expect(document.title).toBe("What has changed in stories across all genres?");
   });
 
@@ -238,12 +238,12 @@ describe("View 2 on the page", () => {
     );
     expect(document.querySelector(".profile-list, .profile-topics")).toBeNull();
     await user.click(screen.getByRole("button", { name: "Show all stories" }));
-    await waitFor(() => expect(window.location.hash).toBe("#/trends?view=changes&genre=all&include=all"));
+    await waitFor(() => expect(window.location.hash).toBe("#/trends?genre=all&include=all"));
     await waitFor(() => expect(screen.getByRole("heading", { level: 2 }).textContent).toMatch(/clearly changed/));
     window.location.hash = "#/trends?view=changes&genre=tiny";
     const button = await screen.findByRole("button", { name: "Show All genres" });
     expect(screen.getByRole("heading", { level: 2 }).textContent).toBe("Fewer than 30 stories in Tiny Genre were published 2000–2009: too few to compare");
     await user.click(button);
-    await waitFor(() => expect(window.location.hash).toBe("#/trends?view=changes&genre=all&include=all"));
+    await waitFor(() => expect(window.location.hash).toBe("#/trends?genre=all&include=all"));
   });
 });

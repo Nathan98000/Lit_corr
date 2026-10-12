@@ -15,11 +15,12 @@ const PATTERN_PARAMS = { genre: "genre", metric: "metric" };
 const GENRE_PARAMS = { view: "view", v: "var", genre: "genre", sub: "include", sort: "sort" };
 const GENRE_CHART_ORDER = ["v", "sub", "sort"];
 const GENRE_PROFILE_ORDER = ["view", "genre", "sub"];
-// the Trends page: one characteristic over time (#/trends?var=…&genre=…&include=…), or what changed in a genre's
-// stories (#/trends?view=changes&genre=…&include=…)
+// the Trends page: what changed in a genre's stories, its default (#/trends, #/trends?genre=…&include=…), or one
+// characteristic over time (#/trends?var=…&genre=…&include=…); the trends page build's View 2 addresses
+// (#/trends?view=changes&genre=…&include=…) still open what changed, but no address is written with `view`
 const TREND_PARAMS = { view: "view", v: "var", genre: "genre", sub: "include" };
 const TREND_CHART_ORDER = ["v", "genre", "sub"];
-const TREND_CHANGES_ORDER = ["view", "genre", "sub"];
+const TREND_CHANGES_ORDER = ["genre", "sub"];
 
 /**
  * Pages: #/explore?… (the explorer), #/genres?… (the Genres page), #/trends?… (the Trends page),
@@ -160,17 +161,22 @@ export function sanitizeGenres(state, meta, remembered = null) {
 export const TREND_PAGE_EXCLUDED = ["pub_year", "age_years", "pub_month", "pub_weekday", "pub_is_weekend", "meta_tag_count", "author_stories_count"];
 export const onTrendsPage = (variable) => Boolean(variable) && !TREND_PAGE_EXCLUDED.includes(variable.id);
 
+/** Does a Trends address open what changed? Without a characteristic (the page's default, O4), or with `view=changes`. */
+export const trendsChanges = (state) => state.view === "changes" || state.v == null;
+
 /**
- * The Trends page's settings: { v, genre, sub } for one characteristic over time, { view: "changes", genre, sub, v } for
- * what changed (`v` is kept for the way back). An unknown characteristic, or one left out of the page, becomes story
- * length; an unknown genre, All genres (the page opens on All genres, D9); an option the page doesn't offer
- * (meta.trend.subsets), or a Length option with story length, All stories; `view` stays only as "changes".
+ * The Trends page's settings: { view: "changes", genre, sub, v } for what changed, the page's default (`v` is kept for
+ * the way back: the remembered characteristic, else story length), { v, genre, sub } for one characteristic over time
+ * (an address with `var`, unless it says `view=changes`). An unknown characteristic, or one left out of the page,
+ * becomes story length; an unknown genre, All genres (the page opens on All genres, D9); an option the page doesn't
+ * offer (meta.trend.subsets) All stories, and so does a Length option with story length in one characteristic's view.
  */
 export function sanitizeTrends(state, meta) {
   const allowed = (id) => meta.variables.find((v) => v.id === id && onTrendsPage(v));
   const variable = allowed(state.v) || allowed(DEFAULT_STATE.v) || meta.variables.find(onTrendsPage);
   const genre = has(meta.genres, state.genre) ? state.genre : "all";
   let sub = (meta.trend?.subsets ?? ["all"]).includes(state.sub) ? state.sub : "all";
-  if (subsetConflict(meta.subsets.find((x) => x.id === sub), variable)) sub = "all";
-  return state.view === "changes" ? { view: "changes", genre, sub, v: variable.id } : { v: variable.id, genre, sub };
+  const changes = trendsChanges(state);
+  if (!changes && subsetConflict(meta.subsets.find((x) => x.id === sub), variable)) sub = "all";
+  return changes ? { view: "changes", genre, sub, v: variable.id } : { v: variable.id, genre, sub };
 }

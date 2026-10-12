@@ -195,8 +195,8 @@ export default function TrendsPage({ meta, state, onChange, onNavigate, onHoldSc
             label="Show"
             className="view-switch"
             options={[
+              ["changes", "All changes"],
               ["chart", "One characteristic"],
-              ["changes", "What changed"],
             ]}
             value={changes ? "changes" : "chart"}
             onChange={switchView}
@@ -260,7 +260,7 @@ export default function TrendsPage({ meta, state, onChange, onNavigate, onHoldSc
       ) : changes ? (
         <TrendChanges meta={meta} state={view} file={file} busy={busy} onSwitch={switchFromAnswer} onNavigate={onNavigate} headingRef={heading} />
       ) : (
-        <TrendAnswer meta={meta} state={view} file={file} busy={busy} onSwitch={switchFromAnswer} headingRef={heading} />
+        <TrendAnswer meta={meta} state={view} file={file} busy={busy} onSwitch={switchFromAnswer} onNavigate={onNavigate} headingRef={heading} />
       )}
     </section>
   );

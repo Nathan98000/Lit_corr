@@ -1,6 +1,7 @@
 import { bandPalette } from "../lib/genreLayout.js";
 import { nounOf } from "../lib/genres.js";
 import {
+  genreWords,
   mixFixedLine,
   nothingToDraw,
   numbersLine,
@@ -18,6 +19,29 @@ import TrendChart, { TrendSplit } from "./TrendChart.jsx";
 import TrendMix from "./TrendMix.jsx";
 
 export const HOW_DECIDED = toHash("methodology", { section: "trends" });
+
+const plainClick = (e) => !(e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey);
+
+/**
+ * A link to the other view: a row's to its chart over time (View 1), for its characteristic, genre and option; View
+ * 1's "See all changes →" to what changed in its genre and option. A new history entry, focus on the question.
+ */
+export function ChartLink({ to, onNavigate, className, label, children }) {
+  return (
+    <a
+      className={className}
+      href={toHash("trends", to)}
+      aria-label={label}
+      onClick={(e) => {
+        if (!plainClick(e)) return;
+        e.preventDefault();
+        onNavigate(to, { focus: true });
+      }}
+    >
+      {children}
+    </a>
+  );
+}
 
 /**
  * The chart's key: only what the chart shows (§3), with the link to how a change is decided. Numbers: the median and
@@ -88,11 +112,12 @@ export function trendsImage({ variable, genre, heading, subset, state }, panel) 
 
 /**
  * One characteristic over time (View 1, section 3): the verdict heading, the takeaway (the windows' numbers and, for
- * All genres, the fixed-mix line when it gives another verdict), the key, the chart and the actions ("Download PNG",
- * "Compare genres →"). A genre with fewer than MIN_N stories in every period gets the too-few sentence and a way out:
- * all stories when an option is on, else All genres.
+ * All genres, the fixed-mix line when it gives another verdict), the key, the chart and the actions: "See all changes
+ * →" (what changed in the same genre and option, a new history entry), "Compare genres →" and "Download PNG". A genre
+ * with fewer than MIN_N stories in every period gets the too-few sentence and a way out: all stories when an option is
+ * on, else All genres.
  */
-export default function TrendAnswer({ meta, state, file, busy, onSwitch, headingRef }) {
+export default function TrendAnswer({ meta, state, file, busy, onSwitch, onNavigate, headingRef }) {
   const variable = meta.variables.find((v) => v.id === state.v);
   const entry = file.c[state.v];
   const genre = meta.genres.find((g) => g.id === file.g);
@@ -152,11 +177,19 @@ export default function TrendAnswer({ meta, state, file, busy, onSwitch, heading
       <TrendLegend kind={kind} anySmall={anySmall} minStories={file.rule.min_n} groups={groups} />
       <Chart key={variable.id} meta={meta} variable={variable} entry={entry} file={file} title={`${question} ${heading}`} />
       <div className="chart-actions">
-        <DownloadPng busy={busy} image={image} />
-        {/* the name starts with the visible words (label in name), then the noun as the question has it */}
-        <a className="btn primary" href={toHash("genres", { v: variable.id, sub: state.sub })} aria-label={`Compare genres: ${nounOf(variable)}`}>
+        {/* the names start with the visible words (label in name), then the genre, or the noun as the question has it */}
+        <ChartLink
+          className="btn primary"
+          to={{ view: "changes", genre: file.g, sub: file.s }}
+          onNavigate={onNavigate}
+          label={`See all changes in ${genreWords(genre)}`}
+        >
+          See all changes →
+        </ChartLink>
+        <a className="btn" href={toHash("genres", { v: variable.id, sub: state.sub })} aria-label={`Compare genres: ${nounOf(variable)}`}>
           Compare genres →
         </a>
+        <DownloadPng busy={busy} image={image} />
       </div>
     </article>
   );

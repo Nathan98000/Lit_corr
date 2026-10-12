@@ -3,7 +3,7 @@
 // footer) are checked in a browser by the review's scripts; here, the structure that makes them work.
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -17,8 +17,6 @@ import TrendChart from "../components/TrendChart.jsx";
 import { TrendLegend } from "../components/TrendAnswer.jsx";
 import { plotHeight, trendLayout, trendOverlaps } from "../lib/trendLayout.js";
 import {
-  bandsLine,
-  borderlineLines,
   changesHeading,
   changesQuestion,
   changesRowName,
@@ -26,9 +24,7 @@ import {
   changesScale,
   changesValues,
   changesWords,
-  lengthBands,
   lengthLine,
-  notClearInBands,
   overTimeCharacteristic,
   pathLine,
   pickerChanges,
@@ -301,38 +297,6 @@ describe("the default view, the switch and the actions (phase 3)", () => {
 });
 
 describe("what the stand-ins tripped on (the follow-up to the fresh eyes)", () => {
-  it.skipIf(!real)("says what borderline means in View 2's takeaway, both ways, with how many rows it marks", () => {
-    const lines = (sub) => borderlineLines(trendProfile(real, realTrends(sub, "all")), realTrends(sub, "all"));
-    expect(lines("all")).toEqual([
-      "2 of these changes are borderline: clear by the site’s rule, but not if the mix of genres had been the same in both periods.",
-    ]);
-    // with 5,000 words or more the four borderline characteristics are only in the topics: not clear by the rule
-    expect(lines("long")).toEqual([
-      "4 characteristics, in the topics below, are borderline: not clear by the site’s rule, but clear if the mix of genres had been the same in both periods.",
-    ]);
-    // a genre has no fixed-mix check
-    expect(borderlineLines(trendProfile(real, realTrends("all", "adult-romance")), realTrends("all", "adult-romance"))).toEqual([]);
-  });
-
-  it("keeps the band line's place, hidden, until the Length options' files arrive, so nothing moves when it comes", async () => {
-    let release;
-    const gate = new Promise((r) => {
-      release = r;
-    });
-    const serve = fixtureFetch();
-    vi.stubGlobal("fetch", async (url) => {
-      if (/trends\/(short|medium|long)\/all\.json/.test(String(url))) await gate;
-      return serve(url);
-    });
-    await open("#/trends", { ready: ".trend-changes[aria-busy='false']" });
-    const held = document.querySelector(".changes-bands.held");
-    expect(held.getAttribute("aria-hidden")).toBe("true");
-    expect(held.textContent).toMatch(/ of these changes (is|are) not clear within any length band \(stories under 2,000 words, /);
-    expect(document.querySelectorAll(".changes-bands")).toHaveLength(1);
-    release();
-    await waitFor(() => expect(document.querySelector(".changes-bands.held")).toBeNull());
-  });
-
   it("names a list's Show all by its direction, so it isn't read against the heading's count", () => {
     // the test data's lists are too short for a Show all (seven rows): the page's own is checked in a browser
     const w = changesWords({ then: [2000, 2009], now: [2020, 2026] });
@@ -621,21 +585,12 @@ describe("View 2 (phase 6)", () => {
     });
   });
 
-  it.skipIf(!real)("says how long stories got first, and which changes no length band holds last (All genres, All stories)", () => {
+  it.skipIf(!real)("says how long stories got first (All genres, All stories)", () => {
     const file = realTrends("all", "all");
     const p = trendProfile(real, file);
     expect(lengthLine(p, file)).toBe("Stories got longer: median 2,810 words in 2000–2009, 4,100 in 2020 or later.");
     // the Length options leave word count out
     expect(lengthLine(trendProfile(real, realTrends("medium", "all")), realTrends("medium", "all"))).toBeNull();
-    const bands = ["short", "medium", "long"].map((sub) => realTrends(sub, "all"));
-    const tagged = notClearInBands(p, bands);
-    expect([...tagged].sort()).toEqual(
-      ["char_recurring_names", "dlg_word_share", "pace_dialogue_late", "qe_question_sentence_share", "qe_question_sentences_per_1k", "story_pages"].sort(),
-    );
-    expect(tagged.has("story_words")).toBe(false); // no entry in the length files
-    expect(tagged.has("story_paragraphs")).toBe(false); // clear in all three bands
-    // the bands named, from the Length options' labels (the fresh eyes couldn't tell what a length band is, 6/6)
-    expect(bandsLine(tagged.size, lengthBands(real))).toBe("6 of these changes are not clear within any length band (stories under 2,000 words, 2,000–5,000 words or 5,000 words or more).");
   });
 
   it("words the length line both ways and leaves it out without a clear change in word count", () => {
@@ -646,34 +601,31 @@ describe("View 2 (phase 6)", () => {
     expect(lengthLine(p(1), file)).toMatch(/^Stories got longer: /);
     expect(lengthLine(p(0), file)).toBeNull();
     expect(lengthLine({ items: [] }, file)).toBeNull();
-    const bands = lengthBands(fixtureMeta);
-    expect(bands).toEqual(["Under 2,000 words", "2,000–5,000 words", "5,000 words or more"]);
-    expect(bandsLine(1, bands)).toBe("1 of these changes is not clear within any length band (stories under 2,000 words, 2,000–5,000 words or 5,000 words or more).");
-    expect(bandsLine(0, bands)).toBeNull();
   });
 
-  it("tags a row no length band holds, and a borderline one, at the end of its unit line and in its name", async () => {
-    // dialogue share: borderline for All genres (fm 0); has dialogue: not clear in any length band (f 0 in medium)
-    await openChanged("#/trends", (body, url) => {
-      if (url.includes("trends/all/all.json")) Object.assign(body.c.dlg_word_share, { fm: 0, rm: 0.15 });
-      if (url.includes("trends/medium/all.json")) Object.assign(body.c.dlg_has_dialogue, { f: 0 });
-      return body;
+  it("says no borderline and no band line, tags no row, and fetches no Length options' files for them (the owner, 2026-10-12)", async () => {
+    // dialogue share: the fixed-mix check disagrees (fm 0); has dialogue: not clear with 2,000–5,000 words (f 0)
+    const asked = [];
+    const serve = fixtureFetch();
+    vi.stubGlobal("fetch", async (url) => {
+      asked.push(String(url));
+      const res = await serve(url);
+      if (!/trends\/(all|medium)\/all\.json/.test(String(url))) return res;
+      const body = await res.json();
+      if (String(url).includes("trends/all/all.json")) Object.assign(body.c.dlg_word_share, { fm: 0, rm: 0.15 });
+      else Object.assign(body.c.dlg_has_dialogue, { f: 0 });
+      return { ok: true, status: 200, json: async () => body };
     });
-    await waitFor(() => expect(document.querySelector(".changes-bands:not(.held)")).toBeTruthy());
-    expect(document.querySelector(".changes-bands:not(.held)").textContent).toBe("1 of these changes is not clear within any length band (stories under 2,000 words, 2,000–5,000 words or 5,000 words or more).");
-    // and what the row's "borderline" means, once, under it (the fresh eyes read it as "near the zone's edge", 6/6)
-    expect([...document.querySelectorAll(".changes-borderline")].map((l) => l.textContent)).toEqual([
-      "1 of these changes is borderline: clear by the site’s rule, but not if the mix of genres had been the same in both periods.",
-    ]);
-    const rows = [...document.querySelectorAll(".profile-list .profile-row")];
-    const row = (label) => rows.find((r) => r.querySelector(".profile-label-text").textContent === label);
-    expect(row("Has dialogue").querySelector(".profile-tagged").textContent).toBe("not clear within any length band");
-    expect(row("Has dialogue").querySelector(".visually-hidden").textContent).toMatch(/; clearly rose; not clear within any length band\. Opens its chart over time\.$/);
-    expect(row("Dialogue share").querySelector(".profile-tagged").textContent).toBe("borderline");
-    expect(row("Dialogue share").querySelector(".visually-hidden").textContent).toMatch(/; clearly rose; borderline\. Opens/);
-    // a piece never breaks inside, and each tag's "·" leads it (clipped at a line's start)
-    const tagged = trendsCss.slice(trendsCss.indexOf(".profile-tagged {"));
-    expect(tagged).toMatch(/\.profile-tag-piece \{\s*white-space: nowrap;/);
+    await open("#/trends", { ready: trends });
+    const answer = document.querySelector(".trend-changes");
+    expect(answer.querySelector(".profile-takeaway").textContent).toBe("▲ Rose: dialogue share, has dialogue.");
+    expect(answer.querySelectorAll(".changes-bands, .changes-borderline, .profile-tagged")).toHaveLength(0);
+    expect(answer.textContent).not.toMatch(/borderline|just past|length band|mix of genres/);
+    const names = [...answer.querySelectorAll(".profile-list .profile-row .visually-hidden")].map((n) => n.textContent);
+    expect(names).toHaveLength(2);
+    for (const name of names) expect(name).toMatch(/^(Dialogue share|Has dialogue): .*; clearly rose\. Opens its chart over time\.$/);
+    await new Promise((r) => setTimeout(r, 50));
+    expect(asked.filter((u) => /trends\/(short|medium|long)\//.test(u))).toEqual([]);
   });
 
   it("puts the note above the first list, titles the lists “▼ Fell” and “▲ Rose”, and names them in full", async () => {
@@ -959,5 +911,34 @@ describe("finding what changed, and no dead ends (phase 7)", () => {
     render(<IncludeSelect subsets={subsets} value="all" variable={words} onChange={() => {}} />);
     const off = [...document.querySelector("select").options].filter((o) => o.disabled).map((o) => o.textContent);
     expect(off).toEqual(subsets.filter((x) => x.group === "Length").map((x) => `${x.label} (not with word count)`));
+  });
+});
+
+describe("the owner's changes (2026-10-12)", () => {
+  const SRC = path.join(here, "..");
+  const OFF = /\bborderline\b|\bjust past\b/i;
+  const sources = (dir) =>
+    readdirSync(dir).flatMap((name) => {
+      const p = path.join(dir, name);
+      if (statSync(p).isDirectory()) return name === "test" ? [] : sources(p);
+      return /\.(jsx?|css)$/.test(name) ? [p] : [];
+    });
+
+  it("never says “borderline” or “just past”, anywhere a visitor reads: the site's source (comments aside) and meta.json", () => {
+    for (const f of [...sources(SRC), path.join(SRC, "..", "index.html")]) {
+      const text = readFileSync(f, "utf8")
+        .replace(/\/\*[\s\S]*?\*\//g, "")
+        .replace(/(^|[^:"'`])\/\/.*$/gm, "$1")
+        .replace(/<!--[\s\S]*?-->/g, "");
+      expect(text, path.relative(SRC, f)).not.toMatch(OFF);
+    }
+    for (const meta of [fixtureMeta, real].filter(Boolean)) expect(JSON.stringify(meta)).not.toMatch(OFF);
+  });
+
+  it("gives How it works no fixed-mix check and no length bands for the Trends page", async () => {
+    await open("#/methodology/trends", { ready: ".methodology" });
+    const text = document.querySelector(".methodology").textContent;
+    expect(text).not.toMatch(/borderline|mix of genres had been|length band/);
+    expect(text).toContain("The periods between are drawn but not compared");
   });
 });

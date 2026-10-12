@@ -29,7 +29,6 @@ import {
 } from "../lib/trendLayout.js";
 import { formatPercent } from "../lib/genres.js";
 import {
-  borderlineLine,
   numbersLine,
   periodWords,
   trendAxisTitle,
@@ -346,53 +345,34 @@ describe("the heading, the numbers line and the fixed-mix line", () => {
     expect(words({ noun: "narrative perspective", bins: { type: "levels" } }, { k: "grp", q: [], t: [9], r: 0.02, f: 0 })).toBeNull();
   });
 
-  it("says borderline only for All genres, only when the fixed-mix check disagrees, in place of the fixed-mix line (O6)", () => {
-    const link = "how\u00a0this\u00a0is\u00a0decided";
+  it("says what the site's rule decides, never “borderline”, where the fixed-mix check disagrees (the owner, 2026-10-12)", () => {
     const touch = { k: "num", r: -0.213, f: -1, rm: -0.199, fm: 0 };
     const touchWords = { id: "sense_touch_per_1k", label: "Touch words", noun: "touch words", plural: true, unit: "per 1,000 words", bins: { type: "ranges" } };
-    // the noun, not "it" (a plural one reads right), and the fixed-mix check in plain words (fresh eyes: "held fixed")
-    expect(borderlineLine(touch, "all", touchWords)).toEqual([
-      "By the site’s rule touch words clearly fell, but not if the mix of genres had been the same in both periods (",
-      link,
-      ").",
-    ]);
-    expect(borderlineLine({ k: "num", r: 0.196, f: 0, rm: 0.208, fm: 1 }, "all", touchWords)).toEqual([
-      "By the site’s rule the change is not clear, but touch words clearly rose if the mix of genres had been the same in both periods (",
-      link,
-      ").",
-    ]);
-    const peak = { noun: "where sexual language peaks", bins: { type: "bands" } };
-    expect(borderlineLine({ k: "band", r: 0.196, f: 0, rm: 0.208, fm: -1 }, "all", peak)[0]).toMatch(/where sexual language peaks clearly moved earlier if the mix of genres/);
-    expect(borderlineLine({ k: "bin", r: 0.19, f: 0, rm: 0.21, fm: 1 }, "all", NOTE)[0]).toMatch(/the share of stories with an author’s note clearly rose if/);
-    expect(borderlineLine({ k: "num", r: 0.25, f: 1, rm: 0.246, fm: 1 }, "all", touchWords)).toBeNull();
-    expect(borderlineLine({ k: "num", r: null, f: 0, rm: null, fm: 0 }, "all", touchWords)).toBeNull();
-    expect(borderlineLine({ k: "num", r: -0.3, f: -1 }, "adult-romance", touchWords)).toBeNull();
     const heading = (variable, entry, genre = ALL) => trendHeading({ variable, entry, genre, subset: { id: "all" }, file: { ...FILE, g: genre.id } });
-    expect(heading(touchWords, touch)).toBe("Touch words: a borderline change from 2000–2009 to 2020 or later");
+    expect(heading(touchWords, touch)).toBe("Touch words clearly fell from 2000–2009 to 2020 or later");
     expect(heading(NOTE, { k: "bin", r: 0.19, f: 0, rm: 0.21, fm: 1 })).toBe(
-      "The share of stories with an author’s note: a borderline change from 2000–2009 to 2020 or later",
+      "No clear change in the share of stories with an author’s note from 2000–2009 to 2020 or later",
     );
-    // every other heading is unchanged
-    expect(heading(touchWords, { ...touch, fm: -1 })).toBe("Touch words clearly fell from 2000–2009 to 2020 or later");
     expect(heading(touchWords, { k: "num", r: -0.213, f: -1 }, ROMANCE)).toBe("Touch words clearly fell from 2000–2009 to 2020 or later");
   });
 
-  it.skipIf(!real)("says borderline exactly where the file's f and fm differ (the real data)", () => {
+  it.skipIf(!real)("follows the file's f alone where f and fm differ (the real data)", () => {
     const counts = {};
     for (const sub of real.trend.subsets) {
       const file = realTrends(sub, "all");
       const subset = real.subsets.find((x) => x.id === sub);
-      counts[sub] = Object.entries(file.c).filter(([id, e]) => {
+      const differ = Object.entries(file.c).filter(([, e]) => e.r != null && e.f !== e.fm);
+      for (const [id, e] of differ) {
         const variable = real.variables.find((v) => v.id === id);
-        const said = trendHeading({ variable, entry: e, genre: ALL, subset, file }).includes("borderline");
-        expect(said, id).toBe(Boolean(borderlineLine(e, "all", variable)));
-        return said;
-      }).length;
-      expect(counts[sub]).toBe(Object.values(file.c).filter((e) => e.r != null && e.f !== e.fm).length);
+        const said = trendHeading({ variable, entry: e, genre: ALL, subset, file });
+        expect(said, id).not.toMatch(/borderline/);
+        expect(/clearly/.test(said), id).toBe(Boolean(e.f));
+      }
+      counts[sub] = differ.length;
     }
-    expect(counts).toEqual({ all: 2, short: 1, medium: 5, long: 4 }); // the acceptance numbers
+    expect(counts).toEqual({ all: 2, short: 1, medium: 5, long: 4 }); // the files still carry the check
     const touch = realTrends("all", "all").c.sense_touch_per_1k;
-    expect([touch.r, touch.rm]).toEqual([-0.213, -0.199]);
+    expect([touch.r, touch.rm, touch.f, touch.fm]).toEqual([-0.213, -0.199, -1, 0]);
   });
 });
 
@@ -521,23 +501,16 @@ describe("View 1 on the page", () => {
     ]);
   });
 
-  it("says borderline for All genres when the fixed-mix check disagrees, with its line and link, and never for a genre", async () => {
+  it("says the site's rule alone for All genres where the fixed-mix check disagrees: no borderline heading or line", async () => {
     const notClear = (body) => {
       Object.assign(body.c.dlg_word_share, { fm: 0, rm: 0.15 });
       return body;
     };
     await openTrends("#/trends?var=dlg_word_share", { change: notClear });
-    expect(screen.getByRole("heading", { level: 2 }).textContent).toBe("Dialogue share: a borderline change from 2000–2009 to 2020 or later");
-    const line = document.querySelector(".trend-borderline");
-    expect(line.textContent).toBe(
-      "By the site’s rule dialogue share clearly rose, but not if the mix of genres had been the same in both periods (how\u00a0this\u00a0is\u00a0decided).",
-    );
-    expect(within(line).getByRole("link").getAttribute("href")).toBe("#/methodology/trends");
-    window.location.hash = "#/trends?var=dlg_word_share&genre=fetish";
-    await waitFor(() => expect(screen.getByLabelText("Genre").value).toBe("fetish"));
-    await waitFor(() => expect(document.querySelector(".trend-answer[aria-busy='false']")).toBeTruthy());
-    expect(document.querySelector(".trend-borderline")).toBeNull();
-    expect(screen.getByRole("heading", { level: 2 }).textContent).not.toMatch(/borderline/);
+    expect(screen.getByRole("heading", { level: 2 }).textContent).toBe("Dialogue share clearly rose from 2000–2009 to 2020 or later");
+    const answer = document.querySelector(".trend-answer");
+    expect(answer.textContent).not.toMatch(/borderline|mix of genres|held fixed/);
+    expect([...answer.querySelectorAll(".trend-takeaway p")].map((p) => p.className)).not.toContain("trend-borderline");
   });
 
   it("says when a window has too few stories, and still draws the chart", async () => {
@@ -800,8 +773,8 @@ describe("the PNG", () => {
   });
 
   it("gives the key's link a 44 px target, never broken, and lets a tap on the table reach its period's column", () => {
-    expect(css).toMatch(/\.trend-legend a,\s*\.trend-borderline a \{\s*position: relative;\s*white-space: nowrap;/);
-    expect(css).toMatch(/\.trend-legend a::after,\s*\.trend-borderline a::after \{[^}]*height: max\(100%, var\(--target\)\);/);
+    expect(css).toMatch(/\.trend-legend a \{\s*position: relative;\s*white-space: nowrap;/);
+    expect(css).toMatch(/\.trend-legend a::after \{[^}]*height: max\(100%, var\(--target\)\);/);
     expect(css).toMatch(/\.trend-chart \.trend-table \{\s*pointer-events: none;/);
   });
 

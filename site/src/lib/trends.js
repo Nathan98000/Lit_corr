@@ -1,6 +1,6 @@
 // The Trends page (STAGE2_TRENDS_PAGE_PROMPT.md, docs/stage2/TRENDS_PAGE_PROPOSAL.md): reading the trends/<included>/
 // <genre>.json files (data.js) and every sentence of the page. The years come from the file or meta.trend, never from
-// here; a characteristic "clearly" changed only through the file's flags (`f`, and `fm` for the fixed-mix line).
+// here; a characteristic "clearly" changed only through the file's flag (`f`).
 
 import { formatCount, formatFixed } from "./format.js";
 import { mixColors } from "./genreLayout.js";
@@ -179,24 +179,15 @@ function tooFewSentence(genre, subset, file, which) {
 }
 
 /**
- * Is All genres' verdict borderline (O6): does the check with each genre's share of stories held fixed (`fm`) disagree
- * with the site's rule (`f`)? Today 2 characteristics with All stories, and 1, 5 and 4 with the Length options.
- */
-export const borderline = (entry, genreId) =>
-  genreId === "all" && entry.r != null && entry.fm !== undefined && entry.f !== entry.fm;
-
-/**
  * View 1's heading: "Story length in words clearly rose from 2000–2009 to 2020 or later", "The share of stories with an
  * author’s note clearly fell …", "Where sexual language peaks clearly moved later …", "Narrative perspective clearly
- * changed …", "No clear change in … from 2000–2009 to 2020 or later", "Touch words: a borderline change from 2000–2009
- * to 2020 or later" (All genres, when the fixed-mix check disagrees), or the too-few sentence when a window has fewer
- * than the rule's stories (r is null).
+ * changed …", "No clear change in … from 2000–2009 to 2020 or later", or the too-few sentence when a window has fewer
+ * than the rule's stories (r is null). The site's rule alone decides (the file's `f`).
  */
 export function trendHeading({ variable, entry, genre, subset, file }) {
   if (entry.r == null) return tooFewHeading({ entry, genre, subset, file });
   const w = windowWords(file);
   const noun = trendNoun(variable);
-  if (borderline(entry, file.g)) return `${upperFirst(noun)}: a borderline change from ${w.then} to ${w.now}`;
   if (!entry.f) return `No clear change in ${noun} from ${w.then} to ${w.now}`;
   return `${upperFirst(noun)} clearly ${changeWords(entry.k, entry.f)} from ${w.then} to ${w.now}`;
 }
@@ -233,14 +224,9 @@ export function numbersLine({ variable, entry, file, fmt, smallN = 30 }) {
 }
 
 /**
- * The fixed-mix check (`fm`) in plain words, as every sentence of the page says it: the readers' own words for it (the
- * fresh eyes' second round read "if every genre had the same share of stories" as "if all genres were the same size").
- */
-export const SAME_MIX = "if the mix of genres had been the same in both periods";
-
-/**
- * What a characteristic measures, for View 1 (meta's description), or null when the description only repeats the
- * label and the unit ("Touch words per 1,000 words."): it would look like a definition and give none.
+ * What a characteristic measures, for View 1 (meta's description), or null when a description only repeats the label
+ * and the unit (as "Touch words per 1,000 words." did before meta.json defined them): it would look like a definition
+ * and give none.
  */
 export function whatItMeasures(variable) {
   const d = variable.description;
@@ -248,22 +234,6 @@ export function whatItMeasures(variable) {
   const plain = (t) => String(t || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
   const said = plain(d);
   return said === plain(variable.label) || said === plain(`${variable.label} ${variable.unit || ""}`) ? null : d;
-}
-
-/**
- * The borderline line (O6), in place of D12's fixed-mix line, for All genres when the check with each genre's share of
- * stories held fixed disagrees with the site's rule; three parts, the middle one the link to how a change is decided:
- * "By the site’s rule touch words clearly fell, but not if every genre had the same share of stories in both periods
- * (how this is decided)." or "By the site’s rule the change is not clear, but {noun} clearly rose if every genre had
- * the same share of stories in both periods (how this is decided)." The noun, not "it", so a plural one reads right.
- * Null otherwise.
- */
-export function borderlineLine(entry, genreId, variable) {
-  if (!borderline(entry, genreId)) return null;
-  const link = "how\u00a0this\u00a0is\u00a0decided";
-  const noun = trendNoun(variable);
-  if (entry.f) return [`By the site’s rule ${noun} clearly ${changeWords(entry.k, entry.f)}, but not ${SAME_MIX} (`, link, ")."];
-  return [`By the site’s rule the change is not clear, but ${noun} clearly ${changeWords(entry.k, entry.fm)} ${SAME_MIX} (`, link, ")."];
 }
 
 /** Does a period lie outside both windows compared (2010–14 and 2015–19 today), by the file's windows? */
@@ -488,13 +458,11 @@ export function trendAnnouncement(meta, file, state) {
   const fmt = trendFormat(variable, entry, file.g === "all", meta.small_n);
   const numbers = numbersLine({ variable, entry, file, fmt, smallN: meta.small_n });
   const path = pathLine({ entry, file, fmt, smallN: meta.small_n });
-  const border = borderlineLine(entry, file.g, variable);
   return [
     question,
     `${trendHeading({ variable, entry, genre, subset, file })}.`,
     numbers ? numbers.map((seg) => (typeof seg === "string" ? seg : seg.strong)).join("") : "",
     path || "",
-    border ? border.join("").replace(/\u00a0/g, " ") : "",
   ]
     .filter(Boolean)
     .join(" ");
@@ -592,67 +560,6 @@ export function lengthLine(p, file) {
   const w = windowWords(file);
   const moved = item.f > 0 ? "longer" : "shorter";
   return `Stories got ${moved}: median ${item.nf.withUnit(item.all.median)} in ${w.then}, ${item.nf.value(item.stats.median)} in ${w.now}.`;
-}
-
-/** The words of a change that no length band holds (All genres with All stories): a row's tag and its takeaway line. */
-export const NOT_IN_BANDS = "not clear within any length band";
-
-/**
- * The clear changes that are clear within no length band: each with an entry in the Length options' files (`bands`:
- * trends/short, medium and long's all.json) and f = 0 in every one of them (word count, which those files leave out,
- * never). A Set of ids. It says only what the rule found in each band.
- */
-export function notClearInBands(p, bands) {
-  const out = new Set();
-  for (const x of p.flagged) {
-    const entries = bands.map((b) => b.c[x.id]).filter(Boolean);
-    if (entries.length && entries.every((e) => !e.f)) out.add(x.id);
-  }
-  return out;
-}
-
-/**
- * The band line, the bands named from the Length options' labels (`bands`: ["Under 2,000 words", "2,000–5,000 words",
- * "5,000 words or more"]): "6 of these changes are not clear within any length band (stories under 2,000 words,
- * 2,000–5,000 words or 5,000 words or more)." ("1 of these changes is …"). It says only what the rule found.
- */
-export function bandsLine(j, bands) {
-  if (!(j > 0)) return null;
-  const named = bands.map((b, k) => (k === 0 ? lowerFirst(b) : b));
-  const list = named.length > 1 ? `${named.slice(0, -1).join(", ")} or ${named[named.length - 1]}` : named.join("");
-  return `${formatCount(j)} of these changes ${j === 1 ? "is" : "are"} ${NOT_IN_BANDS} (stories ${list}).`;
-}
-
-/** The Length options' labels, in their order: the length bands the band line names. */
-export const lengthBands = (meta) =>
-  meta.trend.subsets.filter((s) => s !== "all").map((id) => meta.subsets.find((s) => s.id === id)?.label).filter(Boolean);
-
-/**
- * View 2's borderline lines (All genres, O6), so that "· borderline" on a row says what it means (fresh eyes: read as
- * "near the zone's edge", 6/6): the clear changes the fixed-mix check doesn't hold, "2 of these changes are borderline:
- * clear by the site’s rule, but not if every genre had the same share of stories in both periods.", and the
- * characteristics only that check finds clear, "4 characteristics, in the topics below, are borderline: not clear by
- * the site’s rule, but clear if every genre had …". None for a genre, or where there is none.
- */
-export function borderlineLines(p, file) {
-  const rows = p.items.filter((x) => borderline(x.entry, file.g));
-  const listed = rows.filter((x) => x.f).length;
-  const other = rows.length - listed;
-  const verb = (n) => (n === 1 ? "is" : "are");
-  return [
-    listed ? `${formatCount(listed)} of these changes ${verb(listed)} borderline: clear by the site’s rule, but not ${SAME_MIX}.` : null,
-    other
-      ? `${formatCount(other)} characteristic${other === 1 ? "" : "s"}, in the topics below, ${verb(other)} borderline: not clear by the site’s rule, but clear ${SAME_MIX}.`
-      : null,
-  ].filter(Boolean);
-}
-
-/**
- * What a row of "What changed" adds at the end of its unit line: "not clear within any length band" (a clear change
- * that no length band holds, `inBands`), "borderline" (All genres, where the fixed-mix check disagrees, O6).
- */
-export function changesTags(item, file, inBands = null) {
-  return [...(inBands?.has(item.id) ? [NOT_IN_BANDS] : []), ...(borderline(item.entry, file.g) ? ["borderline"] : [])];
 }
 
 /** The medians' relative change after the values: " (+82%)", " (−25%)", grouped as the site's counts ("+23,640%"); "" for none. */
@@ -761,13 +668,13 @@ export function changesColumns(item) {
  * "2000–2009 11% with any, 2020 or later 21%", with "; among those, median …" where the medians show; bands: "median
  * …"; named groups: "% of stories", then every group's share in both.
  */
-export function changesRowName(item, file, minN, tags = []) {
+export function changesRowName(item, file, minN) {
   const { kind, variable } = item;
   const w = windowWords(file);
   const cols = changesColumns(item);
   const [then, now] = [item.all, item.stats];
   const cmp = item.r == null ? "too few stories to compare" : !item.f ? "no clear change" : `clearly ${changeWords(kind, item.f)}`;
-  const end = `; ${[cmp, ...tags].join("; ")}. Opens its chart over time.`;
+  const end = `; ${cmp}. Opens its chart over time.`;
   const bar = comparisonBar(item.r, { flagged: Boolean(item.f), zone: item.zone });
   const times = item.r == null || kind === "grp" ? "" : ` ${bar.times} in 100;`;
   const few = `fewer than ${minN} stories`;
@@ -807,7 +714,8 @@ export function changesRowName(item, file, minN, tags = []) {
 
 /**
  * View 2's words for ComparisonProfile: the column heads ("2000–09", "2020+"), the lists' titles, the axis title, the
- * zone's words, the note, the mix line, the topics' line and the count's word, from the windows (`file`).
+ * zone's words, the note (one sentence, without a link: the owner's words), the mix line, the topics' line and the
+ * count's word, from the windows (`file`).
  */
 export function changesWords(file) {
   const w = windowWords(file);
@@ -832,11 +740,7 @@ export function changesWords(file) {
     // "comes out higher", not "scores higher", which on a site about ratings read as a rating (the fresh eyes' third round)
     axisTitle: `How often a story from ${w.now} comes out higher than a story from ${w.then}, out\u00a0of\u00a0100`,
     zone: "no clear change",
-    note: ({ inTopic = false, tap = false } = {}) => [
-      `Each dot compares a story from ${w.now} with a story from ${w.then} (50 is a tie); every story counts, not only the medians (`,
-      "how\u00a0this\u00a0is\u00a0decided",
-      `). Gray dots${inTopic ? "" : ", in the topics below,"} show no clear change. ${tap ? "Tap" : "Click"} a row for what it measures and its chart over time.`,
-    ],
+    note: () => `Each dot compares a story from ${w.now} with a story from ${w.then} (50 is a tie)`,
     // the bars in time's order, 2000–2009 above (item 4)
     mixLine: ({ inTopic = false } = {}) => `${inTopic ? "" : "A different mix: "}${w.then} above, ${w.now} below`,
     topicsLine: "How many characteristics in each topic changed. Open a topic to see them all: blue dots changed, gray dots show no clear change.",

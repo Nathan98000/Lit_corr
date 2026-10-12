@@ -583,7 +583,7 @@ export function listsImagePlan({ title, subtitle, lists }) {
       caption: l.caption,
       rows: l.rows.map((r) => ({
         label: r.label,
-        unit: [r.unit, r.of, r.tags].filter(Boolean),
+        unit: [r.unit, r.of].filter(Boolean),
         values: r.values ? [r.values.text, r.values.second].filter(Boolean) : null,
         numbers: r.numbers ? r.numbers.map((c) => (c ? c.filter(Boolean).join(" ") : "–")) : null,
         dot: r.dot ? r.dot.times : null,
@@ -725,7 +725,7 @@ function listsSvg(plan, { width, panel, sans, styles, ctx }) {
     // the rows
     for (const r of l.rows) {
       const label = wrapped(r.label, 14.5, LIST.label);
-      const units = [r.unit, r.of, r.tags].filter(Boolean).flatMap((u, j) => wrapped(u, 12.5, LIST.label - (j === 0 && r.swatch ? 15 : 0)));
+      const units = [r.unit, r.of].filter(Boolean).flatMap((u, j) => wrapped(u, 12.5, LIST.label - (j === 0 && r.swatch ? 15 : 0)));
       // a named group's key under its bars: every group's swatch and name, an item never broken
       const keyLines = [];
       if (r.bars) {

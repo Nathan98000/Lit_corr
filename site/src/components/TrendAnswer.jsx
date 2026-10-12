@@ -1,7 +1,6 @@
 import { bandPalette } from "../lib/genreLayout.js";
 import { nounOf } from "../lib/genres.js";
 import {
-  borderlineLine,
   genreWords,
   nothingToDraw,
   numbersLine,
@@ -121,11 +120,10 @@ export function trendsImage({ variable, genre, heading, subset, state }, panel) 
 }
 
 /**
- * One characteristic over time (View 1, section 3): the verdict heading ("borderline" for All genres when the check
- * with each genre's share held fixed disagrees), what the characteristic measures (meta's description), the takeaway
- * (the windows' numbers; what happened in between, when a period outside the windows lies beyond both; the borderline
- * line), the key, the chart and the actions: "See all
- * changes →" (what changed in the same genre and option, a new history entry), "Compare genres →" and "Download PNG".
+ * One characteristic over time (View 1, section 3): the verdict heading, what the characteristic measures (meta's
+ * description), the takeaway (the windows' numbers; what happened in between, when a period outside the windows lies
+ * beyond both), the key, the chart and the actions: "See all changes →" (what changed in the same genre and option, a
+ * new history entry), "Compare genres →" and "Download PNG".
  * A genre with fewer than MIN_N stories in every period gets the too-few sentence and a way out: all stories when an
  * option is on, else All genres.
  */
@@ -158,7 +156,6 @@ export default function TrendAnswer({ meta, state, file, busy, onSwitch, onNavig
   const heading = trendHeading({ variable, entry, genre, subset, file });
   const numbers = numbersLine({ variable, entry, file, fmt, smallN });
   const path = pathLine({ entry, file, fmt, smallN });
-  const border = borderlineLine(entry, file.g, variable);
   const kind = entry.k;
   const cells = trendCells(entry, file.g === "all", smallN);
   // hatched: a period under SMALL_N stories (or, among a mostly-zero characteristic's stories with any, under SMALL_N)
@@ -176,10 +173,9 @@ export default function TrendAnswer({ meta, state, file, busy, onSwitch, onNavig
           {heading}
         </h2>
       </header>
-      {/* what the characteristic measures (meta's description, as Explore gives it): "All changes" sends a reader here
-          from a row ("Tap a row for what it measures …") */}
+      {/* what the characteristic measures (meta's description, as Explore gives it): a row of "All changes" leads here */}
       {whatItMeasures(variable) && <p className="trend-what">{whatItMeasures(variable)}</p>}
-      {(numbers || path || border) && (
+      {(numbers || path) && (
         <div className="takeaway trend-takeaway">
           {numbers && (
             <p>
@@ -187,13 +183,6 @@ export default function TrendAnswer({ meta, state, file, busy, onSwitch, onNavig
             </p>
           )}
           {path && <p className="trend-path">{path}</p>}
-          {border && (
-            <p className="trend-borderline">
-              {border[0]}
-              <a href={HOW_DECIDED}>{border[1]}</a>
-              {border[2]}
-            </p>
-          )}
         </div>
       )}
       <TrendLegend kind={kind} anySmall={anySmall} minStories={file.rule.min_n} groups={groups} />

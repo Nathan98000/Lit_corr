@@ -116,10 +116,9 @@ function ComparingGenres({ meta }) {
 const yearsLabel = ([a, b]) => `${a}–\u2060${Math.floor(a / 100) === Math.floor(b / 100) ? String(b).slice(-2) : b}`;
 
 /**
- * "Changes over time": the Trends page's periods, windows and rule (meta.trend), the borderline check and the length
- * bands, in plain words. The years, the thresholds, the
- * level and the stories each window needs come from the data, and the end of the collection from meta.source; the tag
- * counts describe the handoff (rechecked against it: a median of 10 tags in 2000–04, 4 in 2005–09).
+ * "Changes over time": the Trends page's periods, windows and rule (meta.trend), in plain words. The years, the
+ * thresholds, the level and the stories each window needs come from the data, and the end of the collection from
+ * meta.source; the tag counts describe the handoff (rechecked against it: a median of 10 tags in 2000–04, 4 in 2005–09).
  */
 function ChangesOverTime({ meta }) {
   const t = meta.trend;
@@ -134,13 +133,6 @@ function ChangesOverTime({ meta }) {
   });
   const periods = `${t.periods.slice(0, -1).map(yearsLabel).join(", ")}, and ${last[0]} to the end of the collection (${end})`;
   const then = `${t.then[0]}–\u2060${t.then[1]}`;
-  // the length bands: the Trends page's Length options ("Under 2,000 words", …), the first in lower case
-  const bands = t.subsets
-    .filter((id) => id !== "all")
-    .map((id) => meta.subsets.find((s) => s.id === id)?.label)
-    .filter(Boolean)
-    .map((label, k) => (k === 0 ? label.charAt(0).toLowerCase() + label.slice(1) : label));
-  const bandList = bands.length > 1 ? `${bands.slice(0, -1).join(", ")} and ${bands[bands.length - 1]}` : bands.join("");
   return (
     <>
       <h2 id="trends" tabIndex={-1}>
@@ -165,17 +157,6 @@ function ChangesOverTime({ meta }) {
         {Math.round(rule.min_r * 100)} percentage points; for characteristics with named groups, at least{" "}
         {Math.round(rule.min_tvd * 100)}% of the newer stories would have to change group to match the mix of {then}.
       </p>
-      <p>
-        The share of each genre among new stories changed too. For All genres the page also checks each change as if
-        the mix of genres had been the same in both periods (each genre with the same share of stories in each), and
-        calls the change borderline when that check gives another answer.
-      </p>
-      {bands.length > 0 && (
-        <p>
-          For All genres with all stories, it also checks each clear change within each length band (stories{" "}
-          {bandList}), each with fewer stories than the whole, and says how many are not clear within any of them.
-        </p>
-      )}
       <p>
         The stories are the ones still on Literotica when they were collected, in today’s categories: stories removed
         from the site are not in the sample. Two characteristics are not on this page: the number of tags, which jumps

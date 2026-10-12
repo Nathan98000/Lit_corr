@@ -13,7 +13,7 @@ import useWidth from "./useWidth.js";
 // here; each page gives its words (the two sides' names and short heads, the list titles, the axis title, the zone's
 // words, the note, the topics' line) and its row (the columns' numbers, the row's name and where it leads). "What
 // changed" opts in to its own row and lists (`changes`: values first, a zoomed scale, the note above the lists, marked
-// titles, the bars in time's order, tags on the unit line); without it, "One genre" draws as it always has. The styles
+// titles, the bars in time's order); without it, "One genre" draws as it always has. The styles
 // are in comparison.css, which genres.css and trends.css import (the opt-ins' in trends.css).
 
 const SHOWN = 7; // rows of a list before "Show all"
@@ -154,37 +154,6 @@ function GroupKey({ labels, colors }) {
 }
 
 /**
- * A row's unit lines (F85, decision 7), with the page's tags at the end of the last one ("per 1,000 words ·
- * borderline"; `row.tags`): { unit, of, tags }, a line with tags given as its pieces (the line's words, then each tag;
- * `tags` alone when the row has no unit line). Without tags, the lines' words as before.
- */
-function unitLines(cols, tags) {
-  if (!tags.length) return { unit: cols.unit, of: cols.of, tags: null };
-  if (cols.of) return { unit: cols.unit, of: [cols.of, ...tags], tags: null };
-  if (cols.unit && cols.group == null) return { unit: [cols.unit, ...tags], of: null, tags: null };
-  return { unit: cols.unit, of: null, tags };
-}
-
-/** A unit line's words as one string (the image's, which wraps them itself): "per 1,000 words · borderline". */
-const lineWords = (line) => (Array.isArray(line) ? line.join("\u00a0·\u00a0") : line);
-
-/**
- * A unit line with tags: each piece kept whole (a unit never breaks inside; a long tag wraps between its words), each
- * tag led by its "·", which is clipped when the tag starts a line, so no line starts or ends with it (trends.css, as the
- * kicker's separators).
- */
-const TaggedLine = ({ pieces }) => (
-  <span className="profile-tagged">
-    {pieces.map((t, k) => (
-      <span key={t} className={`profile-tag-piece${t.length > UNIT_KEPT ? " long" : ""}`}>
-        {k > 0 && <span className="profile-tag-sep"> · </span>}
-        {t}
-      </span>
-    ))}
-  </span>
-);
-
-/**
  * One characteristic (concept R3, F85, F87, F92): a link (the page's `row.link`) to its numbers elsewhere. Its label,
  * with its unit line, the plot, the two columns' numbers (`row.columns`: { genre, all, unit, group, of }, the first
  * side's column and the second's) and "›"; with the values first ("What changed", `layout.valuesFirst`), the label,
@@ -200,7 +169,6 @@ const TaggedLine = ({ pieces }) => (
 function ProfileRow({ item, row, zone, layout, marks }) {
   const { plotW, valuesFirst } = layout;
   const cols = row.columns(item);
-  const lines = unitLines(cols, row.tags ? row.tags(item) : []);
   const values = valuesFirst && row.values(item);
   const colors = cols.group != null && item.r != null && mixColors("grp", item.all.shares);
   const plot = (
@@ -222,28 +190,17 @@ function ProfileRow({ item, row, zone, layout, marks }) {
             {item.variable.label}
           </span>
           <span className="visually-hidden">{row.name(item)}</span>
-          {lines.unit && (
+          {cols.unit && (
             <>
               {" "}
-              {Array.isArray(lines.unit) ? (
-                <span className="profile-unit long" aria-hidden="true">
-                  <TaggedLine pieces={lines.unit} />
-                </span>
-              ) : (
-                <span className={`profile-unit${lines.unit.length > UNIT_KEPT ? " long" : ""}`} aria-hidden="true">
-                  {colors ? <GroupName name={lines.unit} cls={colors[cols.group].cls} /> : lines.unit}
-                </span>
-              )}
+              <span className={`profile-unit${cols.unit.length > UNIT_KEPT ? " long" : ""}`} aria-hidden="true">
+                {colors ? <GroupName name={cols.unit} cls={colors[cols.group].cls} /> : cols.unit}
+              </span>
             </>
           )}
-          {lines.of && (
+          {cols.of && (
             <span className="profile-unit profile-of" aria-hidden="true">
-              {Array.isArray(lines.of) ? <TaggedLine pieces={lines.of} /> : lines.of}
-            </span>
-          )}
-          {lines.tags && (
-            <span className="profile-unit profile-of" aria-hidden="true">
-              <TaggedLine pieces={lines.tags} />
+              {cols.of}
             </span>
           )}
         </span>
@@ -480,11 +437,13 @@ const AxisTitle = ({ words }) => <p className="profile-caption profile-axis-titl
  * The note under the first list (F84, F86, F87): what a dot compares, with the link to how a difference is decided
  * (a 44 px target, never broken inside its parentheses), what the gray dots in the topics say, and where a row leads
  * ("Tap" on a device that can't hover, else "Click"). In an open topic, when no list is shown, the gray dots are right
- * there (`inTopic`).
+ * there (`inTopic`). A page's note can be one sentence without a link (a string: "What changed"'s).
  */
 function Note({ words, inTopic = false }) {
   const tap = useMediaQuery("(hover: none)");
-  const [before, link, after] = words.note({ inTopic, tap });
+  const note = words.note({ inTopic, tap });
+  if (typeof note === "string") return <p className="profile-note">{note}</p>;
+  const [before, link, after] = note;
   return (
     <p className="profile-note">
       {before}
@@ -523,7 +482,7 @@ function listsShown(p, open) {
 /**
  * What "Download PNG" draws of the lists (O2), as plain data (the image is made from the data, not from the page's
  * rows): each list's visible title and count, its caption (the axis title over the first list with dots, the mix line
- * over "A different mix"), and its rows as shown: the label, the unit lines (with the page's tags), the values (values
+ * over "A different mix"), and its rows as shown: the label, the unit lines, the values (values
  * first) or the two columns' numbers, the dot (its place on the scale, its number, stand-out or not) or a named group's
  * two bars in their order with the key of every group, or "Too few stories to compare"; and the scale, the zone and its
  * words, the heads.
@@ -533,15 +492,13 @@ export function listsPlan({ lists, lead, words, row, zone, layout }) {
   const rows = (items) =>
     items.map((item) => {
       const cols = row.columns(item);
-      const lines = unitLines(cols, row.tags ? row.tags(item) : []);
       const grp = item.kind === "grp" && item.r != null;
       const colors = grp ? mixColors("grp", item.all.shares) : null;
       const bar = item.r != null && !grp ? comparisonBar(item.r, { flagged: Boolean(item.f), zone }) : null;
       return {
         label: item.variable.label,
-        unit: lineWords(lines.unit) || null,
-        of: lineWords(lines.of) || null,
-        tags: lineWords(lines.tags) || null,
+        unit: cols.unit || null,
+        of: cols.of || null,
         swatch: colors && cols.group != null ? colors[cols.group].cls : null,
         values: layout.valuesFirst ? row.values(item) : null,
         numbers: layout.valuesFirst ? null : [cols.genre, cols.all],
@@ -654,11 +611,12 @@ function useWayBack(ref, key) {
  * - `profile`: { lower, higher, mix, topics: [{ topic, items, count, compared }] }; items as genreProfile() gives them.
  * - `rule`: the rule's thresholds (its zone of no clear difference). `answerKey`: another answer is drawn anew (its open
  *   topics and lists in full are kept above), so its rows don't count as rows that moved.
- * - `words`: { heads(stacked, width), lists: { lower, higher, mix }, axisTitle, zone, note({ inTopic, tap }), decided
- *   (the note's link), mixLine({ inTopic }), topicsLine, topicCount(t), countWord }, and optionally showAll(n, list)
- *   ("Show all 21 that rose"; "Show all 21" without it).
+ * - `words`: { heads(stacked, width), lists: { lower, higher, mix }, axisTitle, zone, note({ inTopic, tap }) (before,
+ *   the link's words and after, or one sentence without a link), decided (the note's link), mixLine({ inTopic }),
+ *   topicsLine, topicCount(t), countWord }, and optionally showAll(n, list) ("Show all 21 that rose"; "Show all 21"
+ *   without it).
  * - `row`: { columns(item), name(item), link({ item, className, children }) (the row's link element), and with the
- *   values first values(item) ({ text, second }), tags(item) (words for the end of the unit line) }.
+ *   values first values(item) ({ text, second }) }.
  * - `className`: the article's own class; `placeKey`: where the way back keeps its place in history.state;
  *   `widthKey`: useWidth's.
  * - `png`: { label, image(panel, lists) }: "Download PNG" of the lists as shown, right after them (both pages);

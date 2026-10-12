@@ -63,11 +63,6 @@
   color: var(--ink-3);
 }
 
-/* View 2's band line, held in its place (hidden) until the Length options' files arrive */
-.changes-bands.held {
-  visibility: hidden;
-}
-
 /* a genre too few to compare: its stories per period (never a count under 10) */
 .trend-few-table {
   margin: 14px 0 4px;
@@ -281,16 +276,13 @@
   border-top: 0;
 }
 
-/* the key's and the borderline line's links: never broken inside their parentheses, and a 44 px target, as the note's
-   link in "What changed" */
-.trend-legend a,
-.trend-borderline a {
+/* the key's link: never broken inside its parentheses, and a 44 px target, as the note's link in "One genre" */
+.trend-legend a {
   position: relative;
   white-space: nowrap;
 }
 
-.trend-legend a::after,
-.trend-borderline a::after {
+.trend-legend a::after {
   content: "";
   position: absolute;
   left: 0;
@@ -465,35 +457,6 @@
   font-size: 12px;
   font-weight: 400;
   fill: var(--ink-2);
-}
-
-/* a unit line with tags ("per 1,000 words · borderline"): the unit and each tag kept whole (a long tag wraps between its
-   words), each "·" leading its tag in a box it is pulled back by and the gap makes up for, clipped when its tag starts
-   a line, so no line starts or ends with it (the kicker's way, styles.css) */
-.profile-tagged {
-  --tag-sep: 1em;
-  display: flex;
-  flex-wrap: wrap;
-  column-gap: var(--tag-sep);
-  overflow: hidden;
-}
-
-.profile-tag-piece {
-  white-space: nowrap;
-}
-
-.profile-tag-piece.long {
-  white-space: normal;
-}
-
-.profile-tag-piece + .profile-tag-piece {
-  margin-left: calc(-1 * var(--tag-sep));
-}
-
-.profile-tag-sep {
-  display: inline-block;
-  width: var(--tag-sep);
-  text-align: center;
 }
 
 /* over a named-group row in a topic, the mix line starts where its bars do: after the label, the values and the gaps */

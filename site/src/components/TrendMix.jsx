@@ -4,7 +4,7 @@ import { formatPercent } from "../lib/genres.js";
 import { PHONE } from "../lib/rangeLayout.js";
 import { mixSegments, trendLayout } from "../lib/trendLayout.js";
 import { groupShares, periodName, periodWords, trendChartInput, trendMixGroups } from "../lib/trends.js";
-import { Table, Ticks, usePeriodDetails } from "./TrendChart.jsx";
+import { Table, Ticks, usePeriodDetails, useViewportHeight } from "./TrendChart.jsx";
 import useGlide from "./useGlide.js";
 import useWidth from "./useWidth.js";
 
@@ -26,8 +26,9 @@ export default function TrendMix({ meta, variable, entry, file, title }) {
   const ids = useId();
   const titleId = `${ids}-title`;
   const overId = `${ids}-over`.replace(/:/g, "");
+  const viewportH = useViewportHeight();
   const input = trendChartInput(meta, variable, entry, file);
-  const layout = trendLayout({ width, ...input });
+  const layout = trendLayout({ width, ...input, viewportH });
   const phone = layout.width < PHONE;
   const labels = variable.bins.labels;
   const groups = trendMixGroups(kind, input.cells, labels, entry.t && entry.t.slice(1));

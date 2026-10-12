@@ -144,9 +144,12 @@ describe("the page shell", () => {
   it("has its own title, kicker and page marker, and the skip link goes to the question", async () => {
     const user = await openTrends();
     expect(document.documentElement.dataset.page).toBe("trends");
-    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe(
+    // the kicker, a paragraph here: the question is the page's h1 (the trends review, phase 5)
+    expect(document.querySelector(".kicker").textContent).toBe(
       "How have the stories changed? · 278 stories · 2000–2026", // the years from meta.trend
     );
+    expect(document.querySelector(".kicker").tagName).toBe("P");
+    expect(screen.getByRole("heading", { level: 1, name: "What has changed in stories across all genres?" })).toBeTruthy();
     // the page opens on what changed (O4)
     await waitFor(() => expect(document.title).toBe("What has changed in stories across all genres?"));
     await user.click(screen.getByText("Skip to content"));

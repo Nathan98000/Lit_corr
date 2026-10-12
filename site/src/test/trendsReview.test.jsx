@@ -11,7 +11,7 @@ import App from "../App.jsx";
 import { clearCache } from "../lib/data.js";
 import TrendChart from "../components/TrendChart.jsx";
 import { TrendLegend } from "../components/TrendAnswer.jsx";
-import { trendLayout, trendOverlaps } from "../lib/trendLayout.js";
+import { plotHeight, trendLayout, trendOverlaps } from "../lib/trendLayout.js";
 import {
   changesQuestion,
   changesSampleLine,
@@ -28,6 +28,7 @@ import { fixtureFetch, fixtureMeta, realMeta } from "./fixtures.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const styles = readFileSync(path.join(here, "..", "styles.css"), "utf8");
+const trendsCss = readFileSync(path.join(here, "..", "trends.css"), "utf8");
 const real = realMeta();
 const ALL = { id: "all", name: "All genres" };
 const ROMANCE = { id: "adult-romance", name: "Romance" };
@@ -164,7 +165,7 @@ describe("across all genres, in a genre (phase 2)", () => {
 describe("the kicker and the footer, site-wide (phase 2)", () => {
   it("leads each piece of the kicker with its separator, so one at a line's start can be clipped", async () => {
     await open("#/trends?var=dlg_word_share", { ready: ".trends-page .chart-panel[aria-busy='false']" });
-    const kicker = screen.getByRole("heading", { level: 1 });
+    const kicker = document.querySelector(".kicker");
     expect(kicker.textContent).toBe("How have the stories changed? · 278 stories · 2000–2026");
     expect([...kicker.children].map((el) => el.className)).toEqual(["kicker-title", "kicker-counts"]);
     const counts = kicker.querySelector(".kicker-counts");
@@ -387,5 +388,49 @@ describe("View 1's chart tells the same story as its verdict (phase 4)", () => {
       ["Median and interquartile range", ["key-range"]],
       ["Fewer than 30 stories (*)", ["key-small-dot", "key-small"]],
     ]);
+  });
+});
+
+describe("View 1's layout (phase 5)", () => {
+  const trends = ".trends-page .chart-panel[aria-busy='false']";
+
+  it("makes the question the page's h1, named by its words, and the kicker a paragraph; other pages keep theirs", async () => {
+    await open("#/trends?var=dlg_has_dialogue&genre=romance", { ready: trends });
+    const h1 = screen.getByRole("heading", { level: 1 });
+    expect(h1.classList.contains("sentence")).toBe(true);
+    // its name is the question as words, not its controls' labels ("Story characteristic: …")
+    expect(h1).toBe(screen.getByRole("heading", { level: 1, name: "In Romance, how has the share of stories with dialogue changed over time?" }));
+    expect(document.querySelector(".kicker").tagName).toBe("P");
+    expect(document.querySelectorAll("h1")).toHaveLength(1);
+    window.location.hash = "#/trends";
+    await waitFor(() => expect(screen.getByRole("heading", { level: 1, name: "What has changed in stories across all genres?" })).toBeTruthy());
+    window.location.hash = "#/explore?var=dlg_word_share";
+    await waitFor(() => expect(document.querySelector(".kicker").tagName).toBe("H1"));
+    window.location.hash = "#/genres?var=dlg_word_share";
+    await waitFor(() => expect(document.querySelector(".kicker")?.tagName).toBe("H1"));
+  });
+
+  it("keeps the reading order (takeaway, key, chart, actions) and lays a rail beside the chart from a 960 px answer", async () => {
+    await open("#/trends?var=dlg_word_share", { ready: trends });
+    const answer = document.querySelector(".trend-answer");
+    expect(answer.classList.contains("with-chart")).toBe(true);
+    expect([...answer.children].map((el) => el.classList[0] === "chart-head" ? "head" : el.classList.contains("trend-takeaway") ? "takeaway" : el.classList.contains("trend-legend") ? "key" : el.classList.contains("trend-chart") ? "chart" : el.className)).toEqual(["head", "takeaway", "key", "chart", "chart-actions"]);
+    // an answer at least 960 px wide: the page at least 1,008 px (main's 24 px sides)
+    const rail = trendsCss.slice(trendsCss.indexOf("@media (min-width: 1008px)"));
+    expect(rail).toMatch(/\.trend-answer\.with-chart \{[^}]*grid-template-columns: minmax\(0, 760px\) 240px;[^}]*grid-template-areas: "head head" "chart takeaway" "chart key" "chart actions" "chart \.";[^}]*column-gap: 32px;/);
+    expect(rail).toMatch(/\.trend-answer > \.chart-head \.chart-title \{\s*max-width: none;/);
+    // the too-few state has no chart and no rail
+    window.location.hash = "#/trends?var=dlg_word_share&genre=tiny";
+    await waitFor(() => expect(screen.getByRole("button", { name: "Show All genres" })).toBeTruthy());
+    expect(document.querySelector(".trend-answer").classList.contains("with-chart")).toBe(false);
+  });
+
+  it("leaves 16 px between the question's underlines and the controls, and shortens the plot in a short window, never under 200 px", () => {
+    expect(trendsCss).toMatch(/\.trends-controls \{\s*margin-top: 18px;/); // 16 px under the 2 px dotted underline
+    expect(plotHeight(false, 900)).toBe(250);
+    expect(plotHeight(false, 720)).toBe(230); // 1280 × 720: the table and the brackets on the first screen
+    expect(plotHeight(false, 600)).toBe(200);
+    expect(plotHeight(false, null)).toBe(250);
+    expect(plotHeight(true, 900)).toBe(200);
   });
 });

@@ -7,6 +7,12 @@ import { wrapText } from "./genreLayout.js";
 import { PHONE, niceTicks, textWidth } from "./rangeLayout.js";
 
 export const TREND_MAX_W = 760; // five columns don't need the page's width (§3.1)
+// The plot's height: 200 px on phones, 250 on wider screens, less in a short window (never under 200), so that at 1280
+// × 720 the axis's labels, the table and both brackets are on the first screen (the fold, phase 5): above the plot, the
+// masthead, kicker, two lines of question, controls, heading and axis title take about 470 px with the table and the
+// brackets under it; FOLD_ROOM leaves 20 px to spare.
+const FOLD_ROOM = 490;
+export const plotHeight = (phone, viewportH = null) => (phone ? 200 : Math.max(200, Math.min(250, (viewportH ?? Infinity) - FOLD_ROOM)));
 export const TWO_LINES_UNDER = 58; // a column narrower than this puts its period on two lines ("2000" over "–04")
 const TICK_SIZE = 12;
 const HEAD_SIZE = 12;
@@ -112,7 +118,7 @@ function noneLines(text, maxW) {
  * prints them; `valueHead` "Median", "Share" or null (no row of values: 100% columns print their shares in the
  * columns); `windows`: { then, now } words ("2000–2009", "2020 or later"); `windowValues`: { then, now } numbers for
  * the brackets' labels ("median 2,810"; trendChartInput), or null; `axis` from trendTicks; `percent` for the ticks;
- * `top`: where the plot starts (lower under the split chart's titles). Returns the plot's box, the y scale, the ticks, a
+ * `top`: where the plot starts (lower under the split chart's titles); `viewportH`: the window's height (plotHeight). Returns the plot's box, the y scale, the ticks, a
  * column per period (x, its marks' positions, the table's texts and positions, "Fewer than 10" where nothing is drawn,
  * `middle` for a period outside both windows), the two brackets with their labels' lines, and "not compared" under the
  * middle periods.
@@ -132,6 +138,7 @@ export function trendLayout({
   percent,
   noneText,
   top = 10,
+  viewportH = null,
 }) {
   const W = Math.max(240, Math.min(TREND_MAX_W, Math.floor(width)));
   const phone = W < PHONE;
@@ -142,7 +149,7 @@ export function trendLayout({
   const n = periods.length;
   const colW = (W - gutter) / n;
   const two = colW < TWO_LINES_UNDER;
-  const plotH = phone ? 200 : 250;
+  const plotH = plotHeight(phone, viewportH);
   const bottom = top + plotH;
   const y = (v) => bottom - ((v - axis.lo) / (axis.hi - axis.lo || 1)) * plotH;
   const periodY = [bottom + 20, bottom + 34];
@@ -279,13 +286,13 @@ const HALF_TOP = 52; // a half's plot starts under its title (y 15) and its axis
  * The split chart's geometry: `halves` from trendSplitInputs ({ title, axisTitle, input }). Returns { width, height,
  * side, halves: [{ dx, dy, layout, title, axisTitle }] }, each half's layout in its own coordinates (dx, dy place it).
  */
-export function splitLayout({ width, halves }) {
+export function splitLayout({ width, halves, viewportH = null }) {
   const W = Math.max(240, Math.min(SPLIT_MAX_W, Math.floor(width)));
   const side = W >= SPLIT_SIDE_FROM;
   const halfW = side ? (W - SPLIT_GAP) / 2 : W;
   let dy = 0;
   const laid = halves.map((h, k) => {
-    const layout = trendLayout({ width: halfW, ...h.input, top: HALF_TOP });
+    const layout = trendLayout({ width: halfW, ...h.input, top: HALF_TOP, viewportH });
     const out = {
       dx: side ? k * (halfW + SPLIT_GAP) : 0,
       dy,

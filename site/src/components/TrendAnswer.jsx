@@ -158,7 +158,7 @@ export default function TrendAnswer({ meta, state, file, busy, onSwitch, onNavig
   const question = trendQuestionText(variable, genre);
 
   return (
-    <article className={`chart-panel trend-answer${busy ? " is-busy" : ""}`} aria-busy={busy}>
+    <article className={`chart-panel trend-answer with-chart${busy ? " is-busy" : ""}`} aria-busy={busy}>
       <header className="chart-head">
         <h2 className="chart-title" ref={headingRef} tabIndex={-1}>
           {heading}

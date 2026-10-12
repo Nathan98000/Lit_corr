@@ -36,13 +36,14 @@ const replaceHash = (hash) => window.history.replaceState(window.history.state, 
  * its own question; the Trends page too, with the years it covers instead of the genres (meta.trend; until the data
  * arrives, figure spaces hold their place). When it wraps, the counts take a line of their own, and a "·" never starts
  * or ends a line: each separator leads its piece, and one at a line's start is clipped (styles.css); the pieces
- * ("about 9,000 stories", "2000–2026") never break inside.
+ * ("about 9,000 stories", "2000–2026") never break inside. It is the page's h1, but on the Trends page, whose question
+ * is (`as="p"`).
  */
-function Kicker({ meta, title = TITLE, years = false }) {
+function Kicker({ meta, title = TITLE, years = false, as: Tag = "h1" }) {
   const stories = meta ? aboutCount(meta.counts.included) : "about 9,000";
   const span = meta?.trend ? `${meta.trend.periods[0][0]}–${meta.trend.now[1]}` : "\u2007\u2007\u2007\u2007–\u2007\u2007\u2007\u2007";
   return (
-    <h1 className="kicker">
+    <Tag className="kicker">
       <span className="kicker-title">{title}</span>
       <span className="kicker-counts">
         <span className="kicker-sep"> · </span>
@@ -54,7 +55,7 @@ function Kicker({ meta, title = TITLE, years = false }) {
           </span>
         </span>
       </span>
-    </h1>
+    </Tag>
   );
 }
 
@@ -338,7 +339,7 @@ export default function App() {
         ) : route.page === "trends" ? (
           <>
             <div className="intro">
-              <Kicker meta={meta} title={TRENDS_TITLE} years />
+              <Kicker meta={meta} title={TRENDS_TITLE} years as="p" />
             </div>
             {meta ? (
               <PartBoundary fallback={<GenresPlaceholder className="trends-page" />}>

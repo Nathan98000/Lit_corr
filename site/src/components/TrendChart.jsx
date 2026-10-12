@@ -1,4 +1,4 @@
-import { useId, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { PHONE } from "../lib/rangeLayout.js";
 import { splitLayout, trendLayout } from "../lib/trendLayout.js";
 import { periodName, periodWords, trendAxisTitle, trendCells, trendChartInput, trendFormat, trendSplitInputs } from "../lib/trends.js";
@@ -7,6 +7,17 @@ import useRowDetails from "./useRowDetails.js";
 import useWidth from "./useWidth.js";
 
 const sameTick = (a, b) => Math.abs(a.v - b.v) < 1e-9;
+
+/** The window's height, kept up to date: a short window draws a shorter plot (plotHeight in trendLayout.js). */
+export function useViewportHeight() {
+  const [height, setHeight] = useState(() => (typeof window !== "undefined" && window.innerHeight) || null);
+  useEffect(() => {
+    const on = () => setHeight(window.innerHeight);
+    window.addEventListener("resize", on);
+    return () => window.removeEventListener("resize", on);
+  }, []);
+  return height;
+}
 
 /**
  * An axis gliding to another genre or option (useGlide): the domain (the layout's, which may reach past its outer
@@ -234,8 +245,9 @@ export default function TrendChart({ meta, variable, entry, file, title }) {
   const ids = useId();
   const titleId = `${ids}-title`;
   const hatchId = `${ids}-hatch`.replace(/:/g, "");
+  const viewportH = useViewportHeight();
   const input = trendChartInput(meta, variable, entry, file);
-  const layout = trendLayout({ width, ...input });
+  const layout = trendLayout({ width, ...input, viewportH });
   const phone = layout.width < PHONE;
   const g = useAxisGlide(layout, input.cells.map(markValues(kind)), `${variable.id}|${kind}|${layout.width}|${file.periods.length}`);
   const words = layout.columns.map((c) => periodWords({ variable, entry, cell: input.cells[c.i], fmt: input.fmt, minN: meta.min_n }));
@@ -303,8 +315,9 @@ export function TrendSplit({ meta, variable, entry, file, title }) {
   const ids = useId();
   const titleId = `${ids}-title`;
   const hatchId = `${ids}-hatch`.replace(/:/g, "");
+  const viewportH = useViewportHeight();
   const halves = trendSplitInputs(meta, variable, entry, file);
-  const split = splitLayout({ width, halves });
+  const split = splitLayout({ width, halves, viewportH });
   const [A, B] = split.halves;
   const phone = split.width < PHONE;
   const key = `${variable.id}|zero|${split.width}|${file.periods.length}`;

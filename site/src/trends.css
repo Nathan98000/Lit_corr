@@ -3,8 +3,9 @@
 
 /* The Trends page (loaded with its code, like genres.css): its controls, its charts over time and its answer. The
    charts draw with the explorer's marks (.range-chart in styles.css: capsules, dots, hatching, hover and focus). */
+/* at least 16 px between the question's last line, with its dotted underlines (2 px under the line), and the controls */
 .trends-controls {
-  margin-top: 4px;
+  margin-top: 18px;
 }
 
 /* the browser never anchors the scroll position on the question's words: another genre or characteristic re-wraps
@@ -28,6 +29,54 @@
 /* ------------------------------------------------------------------ View 1's chart: at most 760 px wide (§3.1) */
 .trend-chart {
   max-width: 760px;
+}
+
+/* the desktop rail (an answer at least 960 px wide): the heading across, then the chart (at most 760 px) and a 240 px
+   rail 32 px from it, top-aligned with it, holding the takeaway, the key and the actions; the same 1,032 px as "All
+   changes", so the switch never changes the page's width. The source keeps the reading order (takeaway, key, chart,
+   actions), which is also the stacked order under 960 px. */
+@media (min-width: 1008px) {
+  .trend-answer.with-chart {
+    display: grid;
+    grid-template-columns: minmax(0, 760px) 240px;
+    grid-template-rows: auto auto auto auto 1fr;
+    grid-template-areas: "head head" "chart takeaway" "chart key" "chart actions" "chart .";
+    column-gap: 32px;
+    align-items: start;
+  }
+
+  .trend-answer > .chart-head {
+    grid-area: head;
+  }
+
+  .trend-answer > .chart-head .chart-title {
+    max-width: none;
+  }
+
+  /* the rail's first line level with the chart's axis title (the chart's 4 px and the title's 14 px above it) */
+  .trend-answer > .trend-takeaway {
+    grid-area: takeaway;
+    margin-top: 18px;
+  }
+
+  .trend-answer > .trend-legend {
+    grid-area: key;
+  }
+
+  .trend-answer > .trend-chart {
+    grid-area: chart;
+  }
+
+  .trend-answer > .chart-actions {
+    grid-area: actions;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .trend-answer > .chart-actions .png-download,
+  .trend-answer > .chart-actions .png-download .btn {
+    width: 100%;
+  }
 }
 
 .trend-chart .trend-axis-title {

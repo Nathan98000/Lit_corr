@@ -157,19 +157,22 @@ export default function TrendsPage({ meta, state, onChange, onNavigate, onHoldSc
     </InlineSelect>
   );
 
+  // the question is the page's h1 (the kicker isn't, here); its name is the question as words, so a screen reader that
+  // lists headings says it plainly rather than with its controls' labels ("Story characteristic: …")
+  const named = { className: "sentence", "aria-labelledby": `${ids}-question` };
   let sentence;
   if (changes) {
     sentence = (
-      <p className="sentence">
+      <h1 {...named}>
         {changesQuestionStart(genre)}
         {genreSlot}
         {"⁠?"}
-      </p>
+      </h1>
     );
   } else {
     const q = trendQuestion(variable, genre);
     sentence = (
-      <p className="sentence">
+      <h1 {...named}>
         {q.before}
         {genreSlot}
         {q.middle}
@@ -179,7 +182,7 @@ export default function TrendsPage({ meta, state, onChange, onNavigate, onHoldSc
         </SlotButton>
         {q.after}
         {"⁠?"}
-      </p>
+      </h1>
     );
   }
 
@@ -188,6 +191,9 @@ export default function TrendsPage({ meta, state, onChange, onNavigate, onHoldSc
       <div className="controls">
         <fieldset className="question" id="question" tabIndex={-1}>
           <legend className="visually-hidden">Choose what to show</legend>
+          <span id={`${ids}-question`} hidden>
+            {question}
+          </span>
           {sentence}
         </fieldset>
         <div className="genres-controls trends-controls">

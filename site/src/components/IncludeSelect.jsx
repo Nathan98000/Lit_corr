@@ -5,9 +5,24 @@ import InlineSelect from "./InlineSelect.jsx";
 /**
  * "Only include", with the options that cannot go with the characteristic turned off (as on the explorer): the Genres
  * page offers every option (meta.subsets), the Trends page All stories and the Length options (meta.trend.subsets).
+ * With `omitConflicts` (the Trends page) those options are left out instead; when only one is left, it is plain text,
+ * with a short note: "Only include: All stories · Length options don’t apply to word count".
  */
-export default function IncludeSelect({ subsets, value, variable, onChange }) {
+export default function IncludeSelect({ subsets: offered, value, variable, onChange, omitConflicts = false }) {
   const ids = useId();
+  const left = omitConflicts && variable ? offered.filter((s) => subsetConflict(s, variable)) : [];
+  const subsets = left.length ? offered.filter((s) => !left.includes(s)) : offered;
+  if (left.length && subsets.length === 1) {
+    const groups = [...new Set(left.map((s) => s.group))].join(" and ");
+    return (
+      <span className="include include-row include-fixed">
+        <span className="include-label">Only include:</span> <span className="include-value">{subsets[0].label}</span>{" "}
+        <span className="include-why">
+          {groups} options don’t apply to {variable.label.toLowerCase()}
+        </span>
+      </span>
+    );
+  }
   const groups = new Map();
   for (const s of subsets) {
     if (!groups.has(s.group)) groups.set(s.group, []);

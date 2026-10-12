@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { loadTrends } from "../lib/data.js";
 import { breakable } from "../lib/genres.js";
 import {
@@ -6,6 +6,7 @@ import {
   changesQuestion,
   changesQuestionStart,
   genreWords,
+  pickerChanges,
   trendAnnouncement,
   trendQuestion,
   trendQuestionText,
@@ -141,6 +142,9 @@ export default function TrendsPage({ meta, state, onChange, onNavigate, onHoldSc
     }
   };
 
+  // a genre whose two windows can't be compared with this option says so in the list (it stays selectable: its chart
+  // over time still draws its periods)
+  const tooFew = new Set(meta.trend.too_few?.[state.sub] ?? []);
   const genreSlot = (
     <InlineSelect
       id={`${ids}-genre`}
@@ -152,10 +156,13 @@ export default function TrendsPage({ meta, state, onChange, onNavigate, onHoldSc
       {meta.genres.map((g) => (
         <option key={g.id} value={g.id}>
           {g.name}
+          {tooFew.has(g.id) ? " (too few to compare)" : ""}
         </option>
       ))}
     </InlineSelect>
   );
+  // the picker's group of what clearly changed in the file on screen (View 1)
+  const changed = useMemo(() => (file && !changes ? pickerChanges(meta, file) : null), [meta, file, changes]);
 
   // the question is the page's h1 (the kicker isn't, here); its name is the question as words, so a screen reader that
   // lists headings says it plainly rather than with its controls' labels ("Story characteristic: …")
@@ -212,6 +219,7 @@ export default function TrendsPage({ meta, state, onChange, onNavigate, onHoldSc
             value={state.sub}
             variable={changes ? undefined : variable}
             onChange={(s) => keepPlace({ ...state, sub: s })}
+            omitConflicts
           />
         </div>
       </div>
@@ -234,6 +242,7 @@ export default function TrendsPage({ meta, state, onChange, onNavigate, onHoldSc
               value={state.v}
               exclude={TREND_PAGE_EXCLUDED}
               keepBlurbs={KEEP_BLURBS}
+              changed={changed}
               focusRef={pickerFocus}
               scrollRef={pickerBody}
               onClose={() => setMenu(false)}

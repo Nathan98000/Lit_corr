@@ -652,6 +652,39 @@ export function changesSampleLine(file, genre, subset) {
   return `${formatCount(c.then)} stories from ${w.then} and ${formatCount(c.now)} from ${w.now} ${fromGenre(genre)}${match}.`;
 }
 
+/**
+ * The picker's group of the clear changes (View 1, phase 7): { title, items: [{ id, mark, word }] }, largest first as
+ * View 2 orders them, each with its mark and its word ("fell", "rose", "changed"): "Clearly changed in all genres",
+ * "Clearly changed in Romance · 2,000–5,000 words"; null when nothing changed or nothing was compared.
+ */
+export function pickerChanges(meta, file) {
+  if (!windowsCompared(file)) return null;
+  const p = trendProfile(meta, file);
+  if (!p.flagged.length) return null;
+  const genre = meta.genres.find((g) => g.id === file.g);
+  const subset = meta.subsets.find((s) => s.id === file.s);
+  const option = subset && subset.id !== "all" ? ` · ${subset.label}` : "";
+  return {
+    title: `Clearly changed ${genre.id === "all" ? "in all genres" : `in ${genre.name}`}${option}`,
+    items: p.flagged.map((x) => ({
+      id: x.id,
+      mark: x.kind === "grp" ? "≠" : x.f > 0 ? "▲" : "▼",
+      word: x.kind === "grp" ? "changed" : x.f > 0 ? "rose" : "fell",
+    })),
+  };
+}
+
+/**
+ * The characteristic "One characteristic over time →" opens from a genre too few to compare (View 2's too-few state):
+ * the one remembered, or word count, but paragraph count when the option rules word count out.
+ */
+export function overTimeCharacteristic(meta, state) {
+  const subset = meta.subsets.find((s) => s.id === state.sub);
+  const v = state.v || "story_words";
+  const ruledOut = subset?.group === "Length" && v === "story_words";
+  return ruledOut ? "story_paragraphs" : v;
+}
+
 /** The takeaway (S1): "▼ Fell: …", "▲ Rose: …", "≠ A different mix: …", each up to three labels, as the lists word them. */
 export function changesTakeaway(p) {
   const named = (list) => list.slice(0, 3).map((x) => lowerFirst(x.variable.label));

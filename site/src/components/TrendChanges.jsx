@@ -16,9 +16,12 @@ import {
   changesWords,
   lengthLine,
   notClearInBands,
+  overTimeCharacteristic,
   trendProfile,
   windowsCompared,
 } from "../lib/trends.js";
+import { periodLabel } from "../lib/trendLayout.js";
+import { formatCount } from "../lib/format.js";
 import { subsetConflict } from "../lib/urlState.js";
 import ComparisonProfile from "./ComparisonProfile.jsx";
 import { ChartLink, HOW_DECIDED } from "./TrendAnswer.jsx";
@@ -46,6 +49,34 @@ function useLengthBands(meta, file) {
 }
 
 /**
+ * The stories per period of a genre too few to compare (View 2's too-few state): a compact table, "fewer than 10" under
+ * MIN_N (no smaller count is shown anywhere on the site).
+ */
+function PeriodStories({ file, minN }) {
+  return (
+    <table className="trend-few-table">
+      <caption>Stories per period</caption>
+      <thead>
+        <tr>
+          {file.periods.map((p) => (
+            <th key={p[0]} scope="col">
+              {periodLabel(p)}
+            </th>
+          ))}
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          {file.n.map((n, i) => (
+            <td key={file.periods[i][0]}>{n < minN ? `fewer than ${minN}` : formatCount(n)}</td>
+          ))}
+        </tr>
+      </tbody>
+    </table>
+  );
+}
+
+/**
  * What changed (View 2, §4.1), the page's default: "One genre" as approved, relabeled and drawn by ComparisonProfile.
  * The heading (how many of the characteristics compared clearly changed from 2000–2009 to 2020 or later) and the
  * sample line; the takeaway (word count's change, "▼ Fell", "▲ Rose", "≠ A different mix", and for All genres with All
@@ -54,7 +85,8 @@ function useLengthBands(meta, file) {
  * of the lists; every characteristic by topic. Each row compares a story from 2020 or later with one from 2000–2009
  * (the dot, out of 100) and opens its chart over time; its unit line ends with "· not clear within any length band" or
  * "· borderline" where they apply. When a window has too few stories to compare (Chain Stories, Transgender), the
- * heading says so, with "Show all stories" when an option is on, else "Show All genres".
+ * heading says so, then the stories per period, "Show all stories" when an option is on, else "Show All genres", and
+ * "One characteristic over time →" (View 1 for the genre and option: its periods still draw).
  */
 export default function TrendChanges({ meta, state, file, busy, onSwitch, onNavigate, headingRef }) {
   const genre = meta.genres.find((g) => g.id === file.g);
@@ -71,12 +103,19 @@ export default function TrendChanges({ meta, state, file, busy, onSwitch, onNavi
         </h2>
       </header>
     );
+    const v = overTimeCharacteristic(meta, state);
     const button = (
-      <p className="inline-actions">
-        <button type="button" className="btn" onClick={() => onSwitch(all ? { ...state, genre: "all" } : { ...state, sub: "all" })}>
-          {all ? "Show All genres" : "Show all stories"}
-        </button>
-      </p>
+      <>
+        <PeriodStories file={file} minN={meta.min_n} />
+        <p className="inline-actions">
+          <button type="button" className="btn" onClick={() => onSwitch(all ? { ...state, genre: "all" } : { ...state, sub: "all" })}>
+            {all ? "Show All genres" : "Show all stories"}
+          </button>
+          <ChartLink className="btn" to={{ v, genre: file.g, sub: file.s }} onNavigate={onNavigate}>
+            One characteristic over time →
+          </ChartLink>
+        </p>
+      </>
     );
     return <ComparisonProfile {...common} header={header} showAll={button} tooFew />;
   }

@@ -3,6 +3,8 @@ import { keepInView } from "../lib/listScroll.js";
 import { highlight, measureNamed, oneLine, searchCharacteristics } from "../lib/search.js";
 import { lowerFirst } from "../lib/wording.js";
 
+const CHANGED_SHOWN = 10; // the clear changes shown before "Show all {k}"
+
 /** A label with the matched part marked. */
 function Marked({ label, query }) {
   const parts = highlight(label, query);
@@ -62,6 +64,9 @@ function withoutExcluded(meta, exclude, keepBlurbs = []) {
  * `exclude` lists characteristics a page does not offer (the Genres page leaves out publication month and weekday), and
  * `keepBlurbs` the topics that keep their own blurb when some of theirs are left out;
  * `onPreview(id)` is told which characteristic is active or hovered, so the page can fetch its file ahead of time.
+ * `changed` (the Trends page only): { title, items: [{ id, mark, word }] }, a group above Popular of the characteristics
+ * that clearly changed, largest first, each chip with its ▼ ▲ ≠ (hidden; its name adds ", fell", ", rose" or
+ * ", changed"); the first ten, then "Show all {k}".
  */
 export default function CharacteristicPicker({
   meta: fullMeta,
@@ -76,10 +81,12 @@ export default function CharacteristicPicker({
   scrollRef,
   exclude = null,
   keepBlurbs = null,
+  changed = null,
 }) {
   const [query, setQuery] = useState("");
   const [topicId, setTopicId] = useState(null);
   const [active, setActive] = useState(0);
+  const [allChanged, setAllChanged] = useState(false);
   const input = focusRef;
   const base = useId().replace(/:/g, "");
   const meta = useMemo(() => withoutExcluded(fullMeta, exclude, keepBlurbs || []), [fullMeta, exclude, keepBlurbs]);
@@ -106,6 +113,10 @@ export default function CharacteristicPicker({
     [leftOut, query],
   );
   const topic = topicId ? meta.topics.find((t) => t.id === topicId) : null;
+  // the clear changes on the home list (the Trends page), the first ten until "Show all"; Popular starts after them
+  const changes = (changed?.items ?? []).filter((c) => byId.has(c.id));
+  const shownChanges = allChanged ? changes : changes.slice(0, CHANGED_SHOWN);
+  const homeStart = shownChanges.length + (shownChanges.length < changes.length ? 1 : 0);
   let options;
   let mode;
   if (query.trim()) {
@@ -119,6 +130,8 @@ export default function CharacteristicPicker({
   } else {
     mode = "home";
     options = [
+      ...shownChanges.map((c) => ({ kind: "var", id: c.id, group: "changed", mark: c.mark, word: c.word })),
+      ...(shownChanges.length < changes.length ? [{ kind: "more", id: "more-changed", group: "changed", count: changes.length }] : []),
       ...meta.popular.map((id) => ({ kind: "var", id, group: "popular" })),
       ...meta.topics.map((t) => ({ kind: "topic", id: t.id, group: "topics" })),
     ];
@@ -143,7 +156,11 @@ export default function CharacteristicPicker({
   const activate = (opt) => {
     if (!opt) return;
     if (opt.kind === "var") onPick(opt.id);
-    else if (opt.kind === "topic") {
+    else if (opt.kind === "more") {
+      // the rest of the clear changes; the active option stays at this place, now the eleventh
+      setAllChanged(true);
+      input.current?.focus({ preventScroll: true });
+    } else if (opt.kind === "topic") {
       setQuery("");
       setTopicId(opt.id);
       setActive(1);
@@ -151,7 +168,7 @@ export default function CharacteristicPicker({
     } else {
       const from = topicId;
       setTopicId(null);
-      setActive(Math.max(0, meta.popular.length + meta.topics.findIndex((t) => t.id === from)));
+      setActive(Math.max(0, homeStart + meta.popular.length + meta.topics.findIndex((t) => t.id === from)));
       input.current?.focus({ preventScroll: true });
     }
   };
@@ -186,7 +203,13 @@ export default function CharacteristicPicker({
     if (chip) {
       return (
         <li key={opt.id} {...optionProps(opt, i)} className={`chip${i === current ? " active" : ""}${isCurrent ? " current" : ""}`}>
+          {opt.mark && (
+            <span className="chip-mark" aria-hidden="true">
+              {opt.mark}
+            </span>
+          )}
           {v.label}
+          {opt.word && <span className="visually-hidden">, {opt.word}</span>}
           {isCurrent && <span className="visually-hidden"> (current)</span>}
         </li>
       );
@@ -235,20 +258,38 @@ export default function CharacteristicPicker({
 
   let content;
   if (mode === "home") {
+    const changedOptions = options.slice(0, homeStart);
     const pop = options.filter((o) => o.group === "popular");
+    const topicsStart = homeStart + pop.length;
     content = (
       <>
+        {changedOptions.length > 0 && (
+          <ul role="group" aria-labelledby={`${base}-changed`} className="pick-group chips-wrap pick-changed">
+            <li role="presentation" id={`${base}-changed`} className="pick-section">
+              {changed.title}
+            </li>
+            {changedOptions.map((o, i) =>
+              o.kind === "more" ? (
+                <li key={o.id} {...optionProps(o, i)} className={`chip chip-more${i === current ? " active" : ""}`}>
+                  Show all {o.count}
+                </li>
+              ) : (
+                varOption(o, i, { chip: true })
+              ),
+            )}
+          </ul>
+        )}
         <ul role="group" aria-labelledby={`${base}-pop`} className="pick-group chips-wrap">
           <li role="presentation" id={`${base}-pop`} className="pick-section">
             Popular
           </li>
-          {pop.map((o, i) => varOption(o, i, { chip: true }))}
+          {pop.map((o, i) => varOption(o, homeStart + i, { chip: true }))}
         </ul>
         <ul role="group" aria-labelledby={`${base}-topics`} className="pick-group">
           <li role="presentation" id={`${base}-topics`} className="pick-section">
             Browse by topic
           </li>
-          {options.slice(pop.length).map((o, j) => topicOption(o, pop.length + j))}
+          {options.slice(topicsStart).map((o, j) => topicOption(o, topicsStart + j))}
         </ul>
       </>
     );

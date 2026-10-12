@@ -1,7 +1,7 @@
 // The Trends page's review (STAGE2_TRENDS_REVIEW_IMPLEMENTATION_PROMPT.md): the site-wide fixes and the wording
 // (phase 2). The layouts that jsdom can't measure (the kicker's lines, the footer's page list, the space above the
 // footer) are checked in a browser by the review's scripts; here, the structure that makes them work.
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { readFileSync } from "node:fs";
 import path from "node:path";
@@ -10,6 +10,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "../App.jsx";
 import { downloadChartImage, listsImagePlan } from "../lib/chartImage.js";
 import { clearCache } from "../lib/data.js";
+import CharacteristicPicker from "../components/CharacteristicPicker.jsx";
+import IncludeSelect from "../components/IncludeSelect.jsx";
 import TrendChart from "../components/TrendChart.jsx";
 import { TrendLegend } from "../components/TrendAnswer.jsx";
 import { plotHeight, trendLayout, trendOverlaps } from "../lib/trendLayout.js";
@@ -22,7 +24,9 @@ import {
   changesValues,
   lengthLine,
   notClearInBands,
+  overTimeCharacteristic,
   pathLine,
+  pickerChanges,
   trendProfile,
   trendChartInput,
   trendFormat,
@@ -677,5 +681,112 @@ describe("View 2 (phase 6)", () => {
     });
     expect(document.querySelector(".genre-profile .profile-list")).toBeNull();
     expect(screen.queryByRole("button", { name: /^Download PNG/ })).toBeNull();
+  });
+});
+
+describe("finding what changed, and no dead ends (phase 7)", () => {
+  const trends = ".trends-page .chart-panel[aria-busy='false']";
+
+  it.skipIf(!real)("lists what clearly changed, largest first, each with its mark and word; none when nothing was compared", () => {
+    const all = pickerChanges(real, realTrends("all", "all"));
+    expect(all.title).toBe("Clearly changed in all genres");
+    expect(all.items).toHaveLength(26);
+    expect(all.items.slice(0, 3)).toEqual([
+      { id: "story_paragraphs", mark: "▲", word: "rose" },
+      { id: "story_mean_paragraph_words", mark: "▼", word: "fell" },
+      { id: "desc_chars", mark: "▲", word: "rose" },
+    ]);
+    expect(pickerChanges(real, realTrends("medium", "all")).title).toBe("Clearly changed in all genres · 2,000–5,000 words");
+    expect(pickerChanges(real, realTrends("medium", "all")).items).toHaveLength(16);
+    expect(pickerChanges(real, realTrends("all", "adult-romance")).title).toBe("Clearly changed in Romance");
+    expect(pickerChanges(real, realTrends("all", "chain-stories"))).toBeNull(); // too few to compare
+  });
+
+  it("shows the group above Popular, the first ten and “Show all {k}”, the marks hidden and the names saying the change", async () => {
+    const items = Array.from({ length: 12 }, (_, k) => ({ id: k % 2 ? "dlg_word_share" : "emo_anger_per_1k", mark: k % 2 ? "▲" : "▼", word: k % 2 ? "rose" : "fell" }));
+    // the test data has four characteristics: repeat them to have more than ten
+    const changed = { title: "Clearly changed in all genres", items: items.map((x, k) => ({ ...x, key: k })) };
+    const meta = { ...fixtureMeta, popular: ["dlg_word_share"] };
+    const focus = { current: null };
+    const scroll = { current: null };
+    render(<CharacteristicPicker meta={meta} value="pov_class" onPick={() => {}} focusRef={focus} scrollRef={scroll} changed={changed} />);
+    const sections = [...document.querySelectorAll(".pick-section")].map((x) => x.textContent);
+    expect(sections.slice(0, 2)).toEqual(["Clearly changed in all genres", "Popular"]);
+    const group = document.querySelector(".pick-changed");
+    const chips = [...group.querySelectorAll("[role='option']")];
+    expect(chips).toHaveLength(11); // ten, then "Show all 12"
+    expect(chips[10].textContent).toBe("Show all 12");
+    expect(chips[0].querySelector(".chip-mark").getAttribute("aria-hidden")).toBe("true");
+    expect(chips[0].textContent).toBe("▼Anger, fell");
+    expect(chips[1].textContent).toBe("▲Dialogue share, rose");
+    fireEvent.click(chips[10]);
+    expect(group.querySelectorAll("[role='option']")).toHaveLength(12);
+    expect(group.textContent).not.toMatch(/Show all/);
+  });
+
+  it("leaves the group out of Explore's and the Genres page's pickers", async () => {
+    const user = await open("#/explore?var=dlg_word_share");
+    await user.click(screen.getByRole("button", { name: /^Story characteristic:/ }));
+    await waitFor(() => expect(document.querySelector(".pick-list")).toBeTruthy());
+    expect(document.querySelector(".pick-changed")).toBeNull();
+  });
+
+  it("offers the group in View 1's picker, from the file on screen", async () => {
+    const user = await open("#/trends?var=pov_class", { ready: trends });
+    await user.click(screen.getByRole("button", { name: /^Story characteristic:/ }));
+    await waitFor(() => expect(document.querySelector(".pick-changed")).toBeTruthy());
+    const group = document.querySelector(".pick-changed");
+    expect(group.querySelector(".pick-section").textContent).toBe("Clearly changed in all genres");
+    expect([...group.querySelectorAll("[role='option']")].map((o) => o.textContent)).toEqual(["▲Dialogue share, rose", "▲Has dialogue, rose"]);
+  });
+
+  it("says “(too few to compare)” after each genre whose windows can't be compared with the option, which stays selectable", async () => {
+    await open("#/trends", { ready: trends });
+    const names = () => [...screen.getByLabelText("Genre").options].map((o) => o.textContent);
+    expect(names()).toEqual(["All genres", "Fetish", "Romance", "Tiny Genre (too few to compare)"]);
+    expect(fixtureMeta.trend.too_few.short).toEqual(["all", "fetish", "romance", "tiny"]);
+    window.location.hash = "#/trends?include=short";
+    await waitFor(() => expect(names()).toEqual(["All genres (too few to compare)", "Fetish (too few to compare)", "Romance (too few to compare)", "Tiny Genre (too few to compare)"]));
+    expect([...screen.getByLabelText("Genre").options].every((o) => !o.disabled)).toBe(true);
+  });
+
+  it("gives a genre too few to compare its stories per period, never a count under 10, and two ways on", async () => {
+    await open("#/trends?genre=tiny", { ready: trends });
+    const table = document.querySelector(".trend-few-table");
+    expect(table.querySelector("caption").textContent).toBe("Stories per period");
+    expect([...table.querySelectorAll("th")].map((t) => t.textContent)).toEqual(["2000–04", "2005–09", "2010–14", "2015–19", "2020–26"]);
+    const counts = fixtureFile("trends/all/tiny.json").n;
+    expect([...table.querySelectorAll("td")].map((t) => t.textContent)).toEqual(counts.map((n) => (n < 10 ? "fewer than 10" : String(n))));
+    expect(screen.getByRole("button", { name: "Show All genres" })).toBeTruthy();
+    const over = screen.getByRole("link", { name: "One characteristic over time →" });
+    expect(over.className).toBe("btn");
+    // the remembered characteristic, else the first (story length on the real data)
+    expect(over.getAttribute("href")).toBe("#/trends?var=dlg_word_share&genre=tiny&include=all");
+  });
+
+  it("opens paragraph count over time when the option rules word count out", () => {
+    const meta = { subsets: fixtureMeta.subsets };
+    expect(overTimeCharacteristic(meta, { v: "story_words", sub: "all" })).toBe("story_words");
+    expect(overTimeCharacteristic(meta, { v: "story_words", sub: "short" })).toBe("story_paragraphs");
+    expect(overTimeCharacteristic(meta, { v: "pov_class", sub: "short" })).toBe("pov_class");
+    expect(overTimeCharacteristic(meta, { sub: "medium" })).toBe("story_paragraphs");
+  });
+
+  it("leaves out the options that don't apply, and with only All stories left says so as plain text (the Trends page only)", () => {
+    const subsets = fixtureMeta.subsets.filter((x) => fixtureMeta.trend.subsets.includes(x.id));
+    const words = { id: "story_words", label: "Word count", bins: { type: "ranges" } };
+    const { unmount } = render(<IncludeSelect subsets={subsets} value="all" variable={words} onChange={() => {}} omitConflicts />);
+    const fixed = document.querySelector(".include-fixed");
+    expect(fixed.textContent).toBe("Only include: All stories Length options don’t apply to word count");
+    expect(document.querySelector("select")).toBeNull();
+    unmount();
+    const dialogue = fixtureMeta.variables.find((v) => v.id === "dlg_word_share");
+    const two = render(<IncludeSelect subsets={subsets} value="all" variable={dialogue} onChange={() => {}} omitConflicts />);
+    expect([...document.querySelector("select").options].map((o) => o.textContent)).toEqual(subsets.map((x) => x.label));
+    two.unmount();
+    // the Genres page keeps its turned-off options
+    render(<IncludeSelect subsets={subsets} value="all" variable={words} onChange={() => {}} />);
+    const off = [...document.querySelector("select").options].filter((o) => o.disabled).map((o) => o.textContent);
+    expect(off).toEqual(subsets.filter((x) => x.group === "Length").map((x) => `${x.label} (not with word count)`));
   });
 });

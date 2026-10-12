@@ -113,13 +113,16 @@ export default function TrendsPage({ meta, state, onChange, onNavigate, onHoldSc
     focusHeading.current = false;
     toHeading();
   }, [file, busy]);
-  // while another genre's or option's file loads, the answer on screen keeps describing its own file (its genre, its
-  // option, and a characteristic it has)
-  const shownV = useRef(state.v);
-  if (file?.c[state.v]) shownV.current = state.v;
-  const view = file ? { ...state, genre: file.g, sub: file.s, v: file.c[state.v] ? state.v : shownV.current } : state;
+  // while another genre's or option's file loads, the answer on screen keeps describing its own file: its genre, its
+  // option, and an answer it can draw. A characteristic the file lacks (word count, after a Length option) keeps the
+  // answer last drawn from it, a characteristic or "What changed" (the page opens on it, with no characteristic).
+  const fits = Boolean(file) && (changes || Boolean(file.c[state.v]));
+  const drawn = useRef({ changes, v: state.v });
+  if (fits) drawn.current = { changes, v: state.v };
+  const answer = !file || fits ? { changes, v: state.v } : drawn.current;
+  const view = file ? { ...state, genre: file.g, sub: file.s, v: answer.v } : state;
   const announcement = useAnnouncement(
-    !file || busy || error ? "" : changes ? changesAnnouncement(meta, file, view) : trendAnnouncement(meta, file, view),
+    !file || busy || error ? "" : answer.changes ? changesAnnouncement(meta, file, view) : trendAnnouncement(meta, file, view),
     `${state.view || "chart"}|${state.v}|${state.genre}|${state.sub}`,
   );
 
@@ -272,7 +275,7 @@ export default function TrendsPage({ meta, state, onChange, onNavigate, onHoldSc
         </article>
       ) : !file ? (
         <ChartPlaceholder />
-      ) : changes ? (
+      ) : answer.changes ? (
         <TrendChanges meta={meta} state={view} file={file} busy={busy} onSwitch={switchFromAnswer} onNavigate={onNavigate} headingRef={heading} />
       ) : (
         <TrendAnswer meta={meta} state={view} file={file} busy={busy} onSwitch={switchFromAnswer} onNavigate={onNavigate} headingRef={heading} />

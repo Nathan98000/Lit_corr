@@ -296,6 +296,37 @@ describe("the default view, the switch and the actions (phase 3)", () => {
   });
 });
 
+describe("what the measuring found (phase 8)", () => {
+  it("keeps View 2 on screen, busy, while View 1's file loads for a characteristic the option's file lacks", async () => {
+    // the page opens on View 2 with no characteristic; with a Length option, then straight to word count with all
+    // stories (one address), View 1 had nothing to draw from the option's file and threw ("reading 'q'")
+    let release;
+    const gate = new Promise((r) => {
+      release = r;
+    });
+    const serve = fixtureFetch();
+    vi.stubGlobal("fetch", async (url) => {
+      const u = String(url);
+      if (u.includes("trends/all/all.json")) await gate;
+      const res = await serve(url);
+      if (!u.includes("trends/long/all.json")) return res;
+      const body = await res.json();
+      delete body.c.dlg_word_share; // as the Length options' files leave word count out
+      return { ok: true, status: 200, json: async () => body };
+    });
+    const errors = vi.spyOn(console, "error").mockImplementation(() => {});
+    await open("#/trends?genre=all&include=long", { ready: ".trend-changes[aria-busy='false']" });
+    window.location.hash = "#/trends?var=dlg_word_share&genre=all&include=all";
+    await waitFor(() => expect(document.querySelector(".trend-changes").getAttribute("aria-busy")).toBe("true"));
+    expect(document.querySelector(".trend-answer")).toBeNull();
+    expect(screen.queryByText(/We couldn’t load the data/)).toBeNull();
+    release();
+    await waitFor(() => expect(document.querySelector(".trend-answer[aria-busy='false'] .trend-chart")).toBeTruthy());
+    expect(document.querySelector(".trend-changes")).toBeNull();
+    expect(errors).not.toHaveBeenCalled();
+  });
+});
+
 describe("View 1's chart tells the same story as its verdict (phase 4)", () => {
   const FILE = {
     g: "all",

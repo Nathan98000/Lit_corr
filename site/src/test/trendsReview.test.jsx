@@ -18,12 +18,15 @@ import { TrendLegend } from "../components/TrendAnswer.jsx";
 import { plotHeight, trendLayout, trendOverlaps } from "../lib/trendLayout.js";
 import {
   bandsLine,
+  borderlineLines,
   changesHeading,
   changesQuestion,
   changesRowName,
   changesSampleLine,
   changesScale,
   changesValues,
+  changesWords,
+  lengthBands,
   lengthLine,
   notClearInBands,
   overTimeCharacteristic,
@@ -34,6 +37,7 @@ import {
   trendFormat,
   trendQuestion,
   trendQuestionText,
+  whatItMeasures,
   windowNumbers,
 } from "../lib/trends.js";
 import { onTrendsPage } from "../lib/urlState.js";
@@ -296,6 +300,83 @@ describe("the default view, the switch and the actions (phase 3)", () => {
   });
 });
 
+describe("what the stand-ins tripped on (the follow-up to the fresh eyes)", () => {
+  it.skipIf(!real)("says what borderline means in View 2's takeaway, both ways, with how many rows it marks", () => {
+    const lines = (sub) => borderlineLines(trendProfile(real, realTrends(sub, "all")), realTrends(sub, "all"));
+    expect(lines("all")).toEqual([
+      "2 of these changes are borderline: clear by the site’s rule, but not if the mix of genres had been the same in both periods.",
+    ]);
+    // with 5,000 words or more the four borderline characteristics are only in the topics: not clear by the rule
+    expect(lines("long")).toEqual([
+      "4 characteristics, in the topics below, are borderline: not clear by the site’s rule, but clear if the mix of genres had been the same in both periods.",
+    ]);
+    // a genre has no fixed-mix check
+    expect(borderlineLines(trendProfile(real, realTrends("all", "adult-romance")), realTrends("all", "adult-romance"))).toEqual([]);
+  });
+
+  it("keeps the band line's place, hidden, until the Length options' files arrive, so nothing moves when it comes", async () => {
+    let release;
+    const gate = new Promise((r) => {
+      release = r;
+    });
+    const serve = fixtureFetch();
+    vi.stubGlobal("fetch", async (url) => {
+      if (/trends\/(short|medium|long)\/all\.json/.test(String(url))) await gate;
+      return serve(url);
+    });
+    await open("#/trends", { ready: ".trend-changes[aria-busy='false']" });
+    const held = document.querySelector(".changes-bands.held");
+    expect(held.getAttribute("aria-hidden")).toBe("true");
+    expect(held.textContent).toMatch(/ of these changes (is|are) not clear within any length band \(stories under 2,000 words, /);
+    expect(document.querySelectorAll(".changes-bands")).toHaveLength(1);
+    release();
+    await waitFor(() => expect(document.querySelector(".changes-bands.held")).toBeNull());
+  });
+
+  it("names a list's Show all by its direction, so it isn't read against the heading's count", () => {
+    // the test data's lists are too short for a Show all (seven rows): the page's own is checked in a browser
+    const w = changesWords({ then: [2000, 2009], now: [2020, 2026] });
+    expect([w.showAll(5, "lower"), w.showAll(21, "higher"), w.showAll(1, "higher")]).toEqual([
+      "Show all 5 that fell",
+      "Show all 21 that rose",
+      "Show all 1 that rose",
+    ]);
+    // ComparisonProfile takes the label from the page's words, else "Show all 18" ("One genre")
+    const code = readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "components", "ComparisonProfile.jsx"), "utf8");
+    expect(code).toMatch(/more: words\.showAll \? \(n\) => words\.showAll\(n, id\) : null/);
+    expect(code).toMatch(/open \? "Show fewer" : more \? more\(items\.length\) : `Show all \$\{items\.length\}`/);
+  });
+
+  it.skipIf(!real)("leaves out a definition that only repeats the label and the unit, so none looks like one and gives none", () => {
+    const empty = real.variables.filter((v) => v.description && whatItMeasures(v) === null).map((v) => v.id);
+    // the five senses' words, the body's sensations, and three punctuation marks ("Touch words per 1,000 words.")
+    expect(empty.sort()).toEqual(
+      [
+        "punct_colon_per_1k",
+        "punct_comma_per_1k",
+        "punct_semicolon_per_1k",
+        "sense_body_per_1k",
+        "sense_sight_per_1k",
+        "sense_smell_per_1k",
+        "sense_sound_per_1k",
+        "sense_taste_per_1k",
+        "sense_touch_per_1k",
+      ].sort(),
+    );
+    const para = real.variables.find((v) => v.id === "story_mean_paragraph_words");
+    expect(whatItMeasures(para)).toBe("Average number of words per paragraph.");
+    expect(whatItMeasures({ label: "X", unit: "words" })).toBeNull();
+  });
+
+  it("gives View 1 the characteristic's own words: what it measures, from meta", async () => {
+    await open("#/trends?var=pov_class", { ready: ".trends-page .chart-panel[aria-busy='false']" });
+    const what = document.querySelector(".trend-answer .trend-what");
+    expect(what.textContent).toBe(fixtureMeta.variables.find((v) => v.id === "pov_class").description);
+    // right under the heading, before the takeaway and the key
+    expect(document.querySelector(".trend-answer > .chart-head").nextElementSibling).toBe(what);
+  });
+});
+
 describe("what the measuring found (phase 8)", () => {
   it("keeps View 2 on screen, busy, while View 1's file loads for a characteristic the option's file lacks", async () => {
     // the page opens on View 2 with no characteristic; with a Length option, then straight to word count with all
@@ -446,12 +527,16 @@ describe("View 1's chart tells the same story as its verdict (phase 4)", () => {
     expect(entries("num")).toEqual([
       ["Median and interquartile range", ["key-range"]],
       ["Fewer than 30 stories (*)", ["key-small"]],
-      ["The periods compared (how this is decided)", ["key-bracket"]],
+      // which periods are compared, and gray as "not compared" (the fresh eyes read it as View 2's "no clear change")
+      ["The periods compared, the oldest and the newest (how this is decided)", ["key-bracket"]],
+      ["The periods between them, shown but not compared", ["key-mid"]],
     ]);
     expect(entries("bin").slice(0, 2)).toEqual([
       ["Share of stories", ["key-share"]],
       ["Fewer than 30 stories (*)", ["key-small-dot"]],
     ]);
+    expect(entries("bin")[3][0]).toBe("The periods between them, shown but not compared");
+    expect(document.querySelector(".key-mid")).toBeNull(); // unmounted
     expect(entries("zero").slice(0, 3)).toEqual([
       ["Share of stories", ["key-share"]],
       ["Median and interquartile range", ["key-range"]],
@@ -483,10 +568,12 @@ describe("View 1's layout (phase 5)", () => {
     await open("#/trends?var=dlg_word_share", { ready: trends });
     const answer = document.querySelector(".trend-answer");
     expect(answer.classList.contains("with-chart")).toBe(true);
-    expect([...answer.children].map((el) => el.classList[0] === "chart-head" ? "head" : el.classList.contains("trend-takeaway") ? "takeaway" : el.classList.contains("trend-legend") ? "key" : el.classList.contains("trend-chart") ? "chart" : el.className)).toEqual(["head", "takeaway", "key", "chart", "chart-actions"]);
+    expect([...answer.children].map((el) => el.classList[0] === "chart-head" ? "head" : el.classList.contains("trend-takeaway") ? "takeaway" : el.classList.contains("trend-legend") ? "key" : el.classList.contains("trend-chart") ? "chart" : el.className)).toEqual(["head", "trend-what", "takeaway", "key", "chart", "chart-actions"]);
+    // what the characteristic measures, meta's description, under the heading (the rail's first line on a desktop)
+    expect(answer.querySelector(".trend-what").textContent).toBe(fixtureMeta.variables.find((v) => v.id === "dlg_word_share").description);
     // an answer at least 960 px wide: the page at least 1,008 px (main's 24 px sides)
     const rail = trendsCss.slice(trendsCss.indexOf("@media (min-width: 1008px)"));
-    expect(rail).toMatch(/\.trend-answer\.with-chart \{[^}]*grid-template-columns: minmax\(0, 760px\) 240px;[^}]*grid-template-areas: "head head" "chart takeaway" "chart key" "chart actions" "chart \.";[^}]*column-gap: 32px;/);
+    expect(rail).toMatch(/\.trend-answer\.with-chart \{[^}]*grid-template-columns: minmax\(0, 760px\) 240px;[^}]*grid-template-areas: "head head" "chart what" "chart takeaway" "chart key" "chart actions" "chart \.";[^}]*column-gap: 32px;/);
     expect(rail).toMatch(/\.trend-answer > \.chart-head \.chart-title \{\s*max-width: none;/);
     // the too-few state has no chart and no rail
     window.location.hash = "#/trends?var=dlg_word_share&genre=tiny";
@@ -547,7 +634,8 @@ describe("View 2 (phase 6)", () => {
     );
     expect(tagged.has("story_words")).toBe(false); // no entry in the length files
     expect(tagged.has("story_paragraphs")).toBe(false); // clear in all three bands
-    expect(bandsLine(tagged.size)).toBe("6 of these changes are not clear within any length band.");
+    // the bands named, from the Length options' labels (the fresh eyes couldn't tell what a length band is, 6/6)
+    expect(bandsLine(tagged.size, lengthBands(real))).toBe("6 of these changes are not clear within any length band (stories under 2,000 words, 2,000–5,000 words or 5,000 words or more).");
   });
 
   it("words the length line both ways and leaves it out without a clear change in word count", () => {
@@ -558,8 +646,10 @@ describe("View 2 (phase 6)", () => {
     expect(lengthLine(p(1), file)).toMatch(/^Stories got longer: /);
     expect(lengthLine(p(0), file)).toBeNull();
     expect(lengthLine({ items: [] }, file)).toBeNull();
-    expect(bandsLine(1)).toBe("1 of these changes is not clear within any length band.");
-    expect(bandsLine(0)).toBeNull();
+    const bands = lengthBands(fixtureMeta);
+    expect(bands).toEqual(["Under 2,000 words", "2,000–5,000 words", "5,000 words or more"]);
+    expect(bandsLine(1, bands)).toBe("1 of these changes is not clear within any length band (stories under 2,000 words, 2,000–5,000 words or 5,000 words or more).");
+    expect(bandsLine(0, bands)).toBeNull();
   });
 
   it("tags a row no length band holds, and a borderline one, at the end of its unit line and in its name", async () => {
@@ -569,8 +659,12 @@ describe("View 2 (phase 6)", () => {
       if (url.includes("trends/medium/all.json")) Object.assign(body.c.dlg_has_dialogue, { f: 0 });
       return body;
     });
-    await waitFor(() => expect(document.querySelector(".changes-bands")).toBeTruthy());
-    expect(document.querySelector(".changes-bands").textContent).toBe("1 of these changes is not clear within any length band.");
+    await waitFor(() => expect(document.querySelector(".changes-bands:not(.held)")).toBeTruthy());
+    expect(document.querySelector(".changes-bands:not(.held)").textContent).toBe("1 of these changes is not clear within any length band (stories under 2,000 words, 2,000–5,000 words or 5,000 words or more).");
+    // and what the row's "borderline" means, once, under it (the fresh eyes read it as "near the zone's edge", 6/6)
+    expect([...document.querySelectorAll(".changes-borderline")].map((l) => l.textContent)).toEqual([
+      "1 of these changes is borderline: clear by the site’s rule, but not if the mix of genres had been the same in both periods.",
+    ]);
     const rows = [...document.querySelectorAll(".profile-list .profile-row")];
     const row = (label) => rows.find((r) => r.querySelector(".profile-label-text").textContent === label);
     expect(row("Has dialogue").querySelector(".profile-tagged").textContent).toBe("not clear within any length band");
@@ -680,12 +774,13 @@ describe("View 2 (phase 6)", () => {
       "86 stories from 2000–2009 and 87 from 2020 or later across all genres.",
     ]);
     expect(plan.lists.map((l) => [l.title, l.count, l.caption])).toEqual([
-      ["▲ Rose", "2 characteristics", "How often a story from 2020 or later is the higher one against a story from 2000–2009, out\u00a0of\u00a0100"],
+      ["▲ Rose", "2 characteristics", "How often a story from 2020 or later comes out higher than a story from 2000–2009, out\u00a0of\u00a0100"],
     ]);
     expect(plan.lists[0].rows.map((r) => r.label)).toEqual(["Dialogue share", "Has dialogue"]);
     expect(plan.lists[0].rows[0].values[0]).toMatch(/^\d+% → \d+%$/);
     expect(spec.lists.scale).toMatchObject({ lo: expect.any(Number), hi: expect.any(Number) });
     expect(spec.lists.tickDrop).toBe(4); // the tick labels under the bracket's ends go 4 px lower, as on the page
+    expect(spec.lists.valuesHead).toEqual(["Median story or share", "2000–09 → 2020+"]); // two lines in the image too
   });
 
   it("draws the rows the lists show, a named group's in the mix list", async () => {

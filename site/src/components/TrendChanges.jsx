@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { loadTrends } from "../lib/data.js";
 import {
   bandsLine,
+  borderlineLines,
   changesColumns,
   changesFileName,
   changesHeading,
@@ -14,6 +15,7 @@ import {
   changesTooFewHeading,
   changesValues,
   changesWords,
+  lengthBands,
   lengthLine,
   notClearInBands,
   overTimeCharacteristic,
@@ -28,7 +30,8 @@ import { ChartLink, HOW_DECIDED } from "./TrendAnswer.jsx";
 
 /**
  * The Length options' files for All genres (trends/<option>/all.json), fetched after the file on screen (All genres with
- * All stories only), so the first paint never waits for them; null until they have all arrived, or for another file.
+ * All stories only), so the first paint never waits for them; null until they have all arrived, or for another file;
+ * [] when they can't be fetched.
  */
 function useLengthBands(meta, file) {
   const wanted = file.g === "all" && file.s === "all";
@@ -39,7 +42,7 @@ function useLengthBands(meta, file) {
     const options = meta.trend.subsets.filter((s) => s !== "all");
     Promise.all(options.map((s) => loadTrends(s, "all"))).then(
       (files) => live && setBands(files),
-      () => {}, // without them, no row is tagged and the takeaway has no band line
+      () => live && setBands([]), // without them, no row is tagged and the takeaway has no band line
     );
     return () => {
       live = false;
@@ -79,8 +82,9 @@ function PeriodStories({ file, minN }) {
 /**
  * What changed (View 2, §4.1), the page's default: "One genre" as approved, relabeled and drawn by ComparisonProfile.
  * The heading (how many of the characteristics compared clearly changed from 2000–2009 to 2020 or later) and the
- * sample line; the takeaway (word count's change, "▼ Fell", "▲ Rose", "≠ A different mix", and for All genres with All
- * stories how many of the changes no length band holds); the note; the lists, ordered by the size of the change, each
+ * sample line; the takeaway (word count's change, "▼ Fell", "▲ Rose", "≠ A different mix", for All genres what
+ * "borderline" means, with how many rows it marks, and last, for All genres with All stories, how many of the changes
+ * no length band holds, the bands named); the note; the lists, ordered by the size of the change, each
  * row's values first ("51.6 → 38.8 (−25%)") and its dot on a scale zoomed to the view (changesScale); "Download PNG"
  * of the lists; every characteristic by topic. Each row compares a story from 2020 or later with one from 2000–2009
  * (the dot, out of 100) and opens its chart over time; its unit line ends with "· not clear within any length band" or
@@ -124,7 +128,12 @@ export default function TrendChanges({ meta, state, file, busy, onSwitch, onNavi
   const takeaway = changesTakeaway(p);
   const length = lengthLine(p, file);
   const inBands = bands && notClearInBands(p, bands);
-  const bandLine = inBands && bandsLine(inBands.size);
+  const bandLine = inBands && bandsLine(inBands.size, lengthBands(meta));
+  // until the Length options' files arrive, the band line's place is kept (the line hidden, as long as it will be with a
+  // one-digit count), so the note and the lists don't move when it comes (the page's default view)
+  const bandWait = file.g === "all" && file.s === "all" && !bands && p.flagged.length > 0;
+  const bandHeld = bandWait && bandsLine(Math.min(9, p.flagged.length), lengthBands(meta));
+  const borderLines = borderlineLines(p, file);
   const heading = changesHeading(p.flagged.length, p.compared, file);
   const sample = changesSampleLine(file, genre, subset);
   const header = (
@@ -135,7 +144,7 @@ export default function TrendChanges({ meta, state, file, busy, onSwitch, onNavi
       <p className="profile-sample">{sample}</p>
     </header>
   );
-  const top = (length || takeaway.length > 0 || bandLine) && (
+  const top = (length || takeaway.length > 0 || bandLine || bandHeld || borderLines.length > 0) && (
     <div className="takeaway profile-takeaway">
       {length && <p className="changes-length">{length}</p>}
       {takeaway.map((line) => (
@@ -144,7 +153,21 @@ export default function TrendChanges({ meta, state, file, busy, onSwitch, onNavi
           <b>{line.word}:</b> {line.items.join(", ")}.
         </p>
       ))}
-      {bandLine && <p className="changes-bands">{bandLine}</p>}
+      {borderLines.map((line) => (
+        <p key={line} className="changes-borderline">
+          {line}
+        </p>
+      ))}
+      {/* last, as it arrives after the first paint (the Length options' files): nothing of the takeaway moves */}
+      {bandLine ? (
+        <p className="changes-bands">{bandLine}</p>
+      ) : (
+        bandHeld && (
+          <p className="changes-bands held" aria-hidden="true">
+            {bandHeld}
+          </p>
+        )
+      )}
     </div>
   );
   const tags = (item) => changesTags(item, file, inBands);

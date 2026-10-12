@@ -18,8 +18,10 @@ import {
   changesTooFewHeading,
   changesWords,
   bandsLine,
+  borderlineLines,
   borderline,
   borderlineLine,
+  lengthBands,
   lengthLine,
   nothingToDraw,
   numbersLine,
@@ -59,7 +61,7 @@ function* sentences(meta, file) {
     const at = `${file.s}/${file.g} ${id}`;
     // "clearly" is said only by the heading (the flag f) and the borderline line (f or fm), and the announcement
     // repeats them; "borderline" only where f and fm disagree (All genres)
-    const border = borderlineLine(entry, file.g);
+    const border = borderlineLine(entry, file.g, variable);
     const isBorder = borderline(entry, file.g);
     const shown = !nothingToDraw(entry) && entry.r != null;
     const clearly = shown && (Boolean(entry.f) || isBorder);
@@ -106,11 +108,14 @@ function* changesSentences(meta, file) {
   yield { at, text: changesSampleLine(file, genre, subset), clearly: false };
   const length = lengthLine(p, file);
   if (length) yield { at, text: length, clearly: false, border: false };
-  for (const j of [1, 6]) yield { at, text: bandsLine(j), clearly: false, border: false };
+  for (const j of [1, 6]) yield { at, text: bandsLine(j, lengthBands(meta)), clearly: false, border: false };
+  // what "borderline" means, said once in the takeaway (All genres): never "clearly", always "borderline"
+  for (const line of borderlineLines(p, file)) yield { at, text: line, clearly: false, border: true };
   for (const line of changesTakeaway(p)) yield { at, text: `${line.word}: ${line.items.join(", ")}.`, clearly: false };
   const w = changesWords(file);
   const titles = Object.values(w.lists).flatMap((t) => [t.full, `${t.mark} ${t.word}`]);
-  for (const text of [...w.heads(), w.valuesHead, ...titles, w.axisTitle, w.zone, w.mixLine({}), w.mixLine({ inTopic: true }), w.topicsLine]) {
+  const more = ["lower", "higher"].flatMap((list) => [1, 21].map((n) => w.showAll(n, list)));
+  for (const text of [...w.heads(), ...w.valuesHead, ...titles, ...more, w.axisTitle, w.zone, w.mixLine({}), w.mixLine({ inTopic: true }), w.topicsLine]) {
     yield { at, text, clearly: false };
   }
   for (const inTopic of [false, true]) for (const tap of [false, true]) yield { at, text: w.note({ inTopic, tap }).join(""), clearly: false };

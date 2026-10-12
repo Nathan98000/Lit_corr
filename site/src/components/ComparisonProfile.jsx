@@ -345,7 +345,11 @@ function ProfileBlock({ id, items, marks = false, headRow = false, mixLines = fa
     <div className={`profile-block${marks ? " marks" : ""}`}>
       {(!stacked || headRow) && (
         <div className="profile-head" aria-hidden="true">
-          {valuesFirst && <span className="profile-values-head">{layout.valuesHead}</span>}
+          {valuesFirst && (
+            <span className="profile-values-head">
+              <HeadLines head={layout.valuesHead} />
+            </span>
+          )}
           {!stacked && <span className="profile-plot-cell">{dots && bracket(true)}</span>}
           {!valuesFirst && (
             <>
@@ -386,7 +390,7 @@ function ProfileBlock({ id, items, marks = false, headRow = false, mixLines = fa
  * button off the screen, the list's heading is brought into view (smoothly, or at once under reduced motion), and focus
  * stays on the button.
  */
-function ProfileList({ title, items, all = false, open = false, onOpen, caption = null, note = null, layout, rowProps }) {
+function ProfileList({ title, items, all = false, open = false, onOpen, caption = null, note = null, more = null, layout, rowProps }) {
   const id = useId();
   const heading = useRef(null);
   const button = useRef(null);
@@ -422,7 +426,9 @@ function ProfileList({ title, items, all = false, open = false, onOpen, caption 
             <span className="visually-hidden">{count}</span>
             {layout.valuesFirst ? (
               <span className="profile-heads values-heads" aria-hidden="true">
-                <span>{layout.valuesHead}</span>
+                <span>
+                  <HeadLines head={layout.valuesHead} />
+                </span>
               </span>
             ) : (
               <span className="profile-heads" aria-hidden="true">
@@ -449,13 +455,23 @@ function ProfileList({ title, items, all = false, open = false, onOpen, caption 
             onOpen(!open);
           }}
         >
-          {open ? "Show fewer" : `Show all ${items.length}`}
+          {open ? "Show fewer" : more ? more(items.length) : `Show all ${items.length}`}
         </button>
       )}
       {note}
     </section>
   );
 }
+
+/** A head of one line, or of several (["Median or share", "2000–09 → 2020+"]), each line a block. */
+const HeadLines = ({ head }) =>
+  Array.isArray(head)
+    ? head.map((line) => (
+        <span key={line} className="head-line">
+          {line}
+        </span>
+      ))
+    : head;
 
 /** The axis title over the first list's rows (F86, S1). */
 const AxisTitle = ({ words }) => <p className="profile-caption profile-axis-title">{words.axisTitle}</p>;
@@ -639,7 +655,8 @@ function useWayBack(ref, key) {
  * - `rule`: the rule's thresholds (its zone of no clear difference). `answerKey`: another answer is drawn anew (its open
  *   topics and lists in full are kept above), so its rows don't count as rows that moved.
  * - `words`: { heads(stacked, width), lists: { lower, higher, mix }, axisTitle, zone, note({ inTopic, tap }), decided
- *   (the note's link), mixLine({ inTopic }), topicsLine, topicCount(t), countWord }.
+ *   (the note's link), mixLine({ inTopic }), topicsLine, topicCount(t), countWord }, and optionally showAll(n, list)
+ *   ("Show all 21 that rose"; "Show all 21" without it).
  * - `row`: { columns(item), name(item), link({ item, className, children }) (the row's link element), and with the
  *   values first values(item) ({ text, second }), tags(item) (words for the end of the unit line) }.
  * - `className`: the article's own class; `placeKey`: where the way back keeps its place in history.state;
@@ -708,7 +725,13 @@ export default function ComparisonProfile({
     thenAbove,
   };
   const rowProps = { zone, words, row };
-  const listProps = (id) => ({ open: place.lists.has(id), onOpen: (on) => place.setList(id, on), layout, rowProps });
+  const listProps = (id) => ({
+    open: place.lists.has(id),
+    onOpen: (on) => place.setList(id, on),
+    more: words.showAll ? (n) => words.showAll(n, id) : null,
+    layout,
+    rowProps,
+  });
   const lists = few ? [] : listsShown(p, place.lists);
   const plan = () => listsPlan({ lists, lead, words, row, zone, layout });
 

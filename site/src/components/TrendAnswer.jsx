@@ -11,6 +11,7 @@ import {
   trendHeading,
   trendMixGroups,
   trendQuestionText,
+  whatItMeasures,
   trendsFileName,
   tooFewHeading,
 } from "../lib/trends.js";
@@ -50,7 +51,9 @@ export function ChartLink({ to, onNavigate, className, label, children }) {
  * two dots differ in the key as they do in the chart); mostly zero: both; named groups and bands: every group's swatch
  * (`groups`: [{ label, cls }], "Other (…)" among them), above the chart since a column is too narrow for names; when a
  * period has fewer than SMALL_N stories, "Fewer than 30 stories (*)", the table's asterisk, with the marks it draws
- * (a hollow dot, a hatched capsule or column); the brackets of the periods compared.
+ * (a hollow dot, a hatched capsule or column); the brackets of the periods compared, "the oldest and the newest", and
+ * for the forms that draw them gray, the periods between: "shown but not compared" (fresh eyes: gray reads "no clear
+ * change" in "All changes", and why those periods don't count wasn't on the screen).
  */
 export function TrendLegend({ kind, anySmall, minStories, groups = null }) {
   const share = (
@@ -88,9 +91,17 @@ export function TrendLegend({ kind, anySmall, minStories, groups = null }) {
       <li className="legend-text">
         <span className="key key-bracket" aria-hidden="true" />{" "}
         <span>
-          The periods compared (<a href={HOW_DECIDED}>how this is decided</a>)
+          The periods compared, the oldest and the newest (<a href={HOW_DECIDED}>how this is decided</a>)
         </span>
       </li>
+      {/* gray here means "not compared" (in "All changes" a gray dot means "no clear change"); named groups and bands keep
+          their colors there, so only the label under the chart says it */}
+      {(kind === "num" || kind === "bin" || kind === "zero") && (
+        <li>
+          <span className={`key key-mid ${kind === "bin" ? "key-share" : "key-range"}`} aria-hidden="true" /> The periods between them,
+          shown but not compared
+        </li>
+      )}
     </ul>
   );
 }
@@ -111,8 +122,9 @@ export function trendsImage({ variable, genre, heading, subset, state }, panel) 
 
 /**
  * One characteristic over time (View 1, section 3): the verdict heading ("borderline" for All genres when the check
- * with each genre's share held fixed disagrees), the takeaway (the windows' numbers; what happened in between, when a
- * period outside the windows lies beyond both; the borderline line), the key, the chart and the actions: "See all
+ * with each genre's share held fixed disagrees), what the characteristic measures (meta's description), the takeaway
+ * (the windows' numbers; what happened in between, when a period outside the windows lies beyond both; the borderline
+ * line), the key, the chart and the actions: "See all
  * changes →" (what changed in the same genre and option, a new history entry), "Compare genres →" and "Download PNG".
  * A genre with fewer than MIN_N stories in every period gets the too-few sentence and a way out: all stories when an
  * option is on, else All genres.
@@ -146,7 +158,7 @@ export default function TrendAnswer({ meta, state, file, busy, onSwitch, onNavig
   const heading = trendHeading({ variable, entry, genre, subset, file });
   const numbers = numbersLine({ variable, entry, file, fmt, smallN });
   const path = pathLine({ entry, file, fmt, smallN });
-  const border = borderlineLine(entry, file.g);
+  const border = borderlineLine(entry, file.g, variable);
   const kind = entry.k;
   const cells = trendCells(entry, file.g === "all", smallN);
   // hatched: a period under SMALL_N stories (or, among a mostly-zero characteristic's stories with any, under SMALL_N)
@@ -164,6 +176,9 @@ export default function TrendAnswer({ meta, state, file, busy, onSwitch, onNavig
           {heading}
         </h2>
       </header>
+      {/* what the characteristic measures (meta's description, as Explore gives it): "All changes" sends a reader here
+          from a row ("Tap a row for what it measures …") */}
+      {whatItMeasures(variable) && <p className="trend-what">{whatItMeasures(variable)}</p>}
       {(numbers || path || border) && (
         <div className="takeaway trend-takeaway">
           {numbers && (

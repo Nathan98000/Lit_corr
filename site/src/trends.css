@@ -17,6 +17,15 @@
   overflow-anchor: none;
 }
 
+/* what the characteristic measures, under the heading (meta's description; on a desktop the rail's first line) */
+.trend-what {
+  margin: 4px 0 0;
+  max-width: 62ch;
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--ink-3);
+}
+
 .trend-takeaway p {
   margin: 0;
 }
@@ -52,6 +61,11 @@
 .include-fixed .include-why {
   font-size: 13px;
   color: var(--ink-3);
+}
+
+/* View 2's band line, held in its place (hidden) until the Length options' files arrive */
+.changes-bands.held {
+  visibility: hidden;
 }
 
 /* a genre too few to compare: its stories per period (never a count under 10) */
@@ -103,8 +117,8 @@
   .trend-answer.with-chart {
     display: grid;
     grid-template-columns: minmax(0, 760px) 240px;
-    grid-template-rows: auto auto auto auto 1fr;
-    grid-template-areas: "head head" "chart takeaway" "chart key" "chart actions" "chart .";
+    grid-template-rows: auto auto auto auto auto 1fr;
+    grid-template-areas: "head head" "chart what" "chart takeaway" "chart key" "chart actions" "chart .";
     column-gap: 32px;
     align-items: start;
   }
@@ -117,10 +131,20 @@
     max-width: none;
   }
 
-  /* the rail's first line level with the chart's axis title (the chart's 4 px and the title's 14 px above it) */
+  /* the rail's first line level with the chart's axis title (the chart's 4 px and the title's 14 px above it): what
+     the characteristic measures, then the takeaway */
+  .trend-answer > .trend-what {
+    grid-area: what;
+    margin-top: 18px;
+  }
+
   .trend-answer > .trend-takeaway {
     grid-area: takeaway;
     margin-top: 18px;
+  }
+
+  .trend-answer > .trend-what + .trend-takeaway {
+    margin-top: 12px;
   }
 
   .trend-answer > .trend-legend {
@@ -297,6 +321,18 @@
   border: 1px solid var(--accent);
   border-radius: 6px;
   background: radial-gradient(circle at 50% 50%, var(--accent-ink) 0 4px, transparent 4.5px), var(--accent-bar);
+}
+
+/* the periods between the two compared, as the chart draws them: gray, the capsule a light neutral */
+.trend-legend .key-mid.key-range {
+  border-color: var(--quiet-mark);
+  background: radial-gradient(circle at 50% 50%, var(--quiet-mark) 0 4px, transparent 4.5px), #ece9e2;
+}
+
+.trend-legend .key-mid.key-share {
+  background:
+    radial-gradient(circle at 50% 50%, var(--quiet-mark) 0 5px, transparent 5.5px),
+    linear-gradient(var(--quiet-mark), var(--quiet-mark)) 0 50% / 100% 1.5px no-repeat;
 }
 
 /* fewer than 30 stories: a hollow dot (a share, or a median), an upright hatched capsule (numbers) */
@@ -499,6 +535,7 @@
 
 .trend-changes.stacked .profile-values-head {
   justify-self: end;
+  text-align: right;
 }
 
 .trend-changes .profile-heads.values-heads {
@@ -507,6 +544,12 @@
 
 .trend-changes .profile-heads.values-heads > span {
   justify-self: end;
+  text-align: right;
+}
+
+/* the values' head in its lines: "Median or share" over "2000–09 → 2020+" */
+.trend-changes .head-line {
+  display: block;
 }
 
 /* ---------------------------------------------------------------------- forced colors */
@@ -560,6 +603,17 @@
   .trend-legend .key-small-dot {
     background: Canvas;
     border-color: Highlight;
+  }
+
+  .trend-legend .key-mid.key-range {
+    background: radial-gradient(circle at 50% 50%, GrayText 0 4px, transparent 4.5px), Canvas;
+    border-color: GrayText;
+  }
+
+  .trend-legend .key-mid.key-share {
+    background:
+      radial-gradient(circle at 50% 50%, GrayText 0 5px, transparent 5.5px),
+      linear-gradient(GrayText, GrayText) 0 50% / 100% 1.5px no-repeat;
   }
 
   .trend-legend .key-small {

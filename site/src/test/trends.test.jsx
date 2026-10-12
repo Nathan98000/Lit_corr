@@ -349,22 +349,25 @@ describe("the heading, the numbers line and the fixed-mix line", () => {
   it("says borderline only for All genres, only when the fixed-mix check disagrees, in place of the fixed-mix line (O6)", () => {
     const link = "how\u00a0this\u00a0is\u00a0decided";
     const touch = { k: "num", r: -0.213, f: -1, rm: -0.199, fm: 0 };
-    expect(borderlineLine(touch, "all")).toEqual([
-      "By the site’s rule it clearly fell, but not once each genre’s share of stories is held fixed (",
-      link,
-      ").",
-    ]);
-    expect(borderlineLine({ k: "num", r: 0.196, f: 0, rm: 0.208, fm: 1 }, "all")).toEqual([
-      "By the site’s rule the change is not clear, but it clearly rose once each genre’s share of stories is held fixed (",
-      link,
-      ").",
-    ]);
-    expect(borderlineLine({ k: "band", r: 0.196, f: 0, rm: 0.208, fm: -1 }, "all")[0]).toMatch(/it clearly moved earlier once each/);
-    expect(borderlineLine({ k: "num", r: 0.25, f: 1, rm: 0.246, fm: 1 }, "all")).toBeNull();
-    expect(borderlineLine({ k: "num", r: null, f: 0, rm: null, fm: 0 }, "all")).toBeNull();
-    expect(borderlineLine({ k: "num", r: -0.3, f: -1 }, "adult-romance")).toBeNull();
-    const heading = (variable, entry, genre = ALL) => trendHeading({ variable, entry, genre, subset: { id: "all" }, file: { ...FILE, g: genre.id } });
     const touchWords = { id: "sense_touch_per_1k", label: "Touch words", noun: "touch words", plural: true, unit: "per 1,000 words", bins: { type: "ranges" } };
+    // the noun, not "it" (a plural one reads right), and the fixed-mix check in plain words (fresh eyes: "held fixed")
+    expect(borderlineLine(touch, "all", touchWords)).toEqual([
+      "By the site’s rule touch words clearly fell, but not if the mix of genres had been the same in both periods (",
+      link,
+      ").",
+    ]);
+    expect(borderlineLine({ k: "num", r: 0.196, f: 0, rm: 0.208, fm: 1 }, "all", touchWords)).toEqual([
+      "By the site’s rule the change is not clear, but touch words clearly rose if the mix of genres had been the same in both periods (",
+      link,
+      ").",
+    ]);
+    const peak = { noun: "where sexual language peaks", bins: { type: "bands" } };
+    expect(borderlineLine({ k: "band", r: 0.196, f: 0, rm: 0.208, fm: -1 }, "all", peak)[0]).toMatch(/where sexual language peaks clearly moved earlier if the mix of genres/);
+    expect(borderlineLine({ k: "bin", r: 0.19, f: 0, rm: 0.21, fm: 1 }, "all", NOTE)[0]).toMatch(/the share of stories with an author’s note clearly rose if/);
+    expect(borderlineLine({ k: "num", r: 0.25, f: 1, rm: 0.246, fm: 1 }, "all", touchWords)).toBeNull();
+    expect(borderlineLine({ k: "num", r: null, f: 0, rm: null, fm: 0 }, "all", touchWords)).toBeNull();
+    expect(borderlineLine({ k: "num", r: -0.3, f: -1 }, "adult-romance", touchWords)).toBeNull();
+    const heading = (variable, entry, genre = ALL) => trendHeading({ variable, entry, genre, subset: { id: "all" }, file: { ...FILE, g: genre.id } });
     expect(heading(touchWords, touch)).toBe("Touch words: a borderline change from 2000–2009 to 2020 or later");
     expect(heading(NOTE, { k: "bin", r: 0.19, f: 0, rm: 0.21, fm: 1 })).toBe(
       "The share of stories with an author’s note: a borderline change from 2000–2009 to 2020 or later",
@@ -380,8 +383,9 @@ describe("the heading, the numbers line and the fixed-mix line", () => {
       const file = realTrends(sub, "all");
       const subset = real.subsets.find((x) => x.id === sub);
       counts[sub] = Object.entries(file.c).filter(([id, e]) => {
-        const said = trendHeading({ variable: real.variables.find((v) => v.id === id), entry: e, genre: ALL, subset, file }).includes("borderline");
-        expect(said, id).toBe(Boolean(borderlineLine(e, "all")));
+        const variable = real.variables.find((v) => v.id === id);
+        const said = trendHeading({ variable, entry: e, genre: ALL, subset, file }).includes("borderline");
+        expect(said, id).toBe(Boolean(borderlineLine(e, "all", variable)));
         return said;
       }).length;
       expect(counts[sub]).toBe(Object.values(file.c).filter((e) => e.r != null && e.f !== e.fm).length);
@@ -399,7 +403,12 @@ describe("View 1 on the page", () => {
     const takeaway = document.querySelector(".trend-takeaway").textContent;
     expect(takeaway).toMatch(/^Median \d+% in 2000–2009, \d+% in 2020 or later\.$/);
     const legend = [...document.querySelectorAll(".trend-legend li")].map((li) => li.textContent);
-    expect(legend).toEqual([" Median and interquartile range", " The periods compared (how this is decided)"]);
+    expect(legend).toEqual([
+      " Median and interquartile range",
+      " The periods compared, the oldest and the newest (how this is decided)",
+      " The periods between them, shown but not compared", // gray, as the chart draws them
+    ]);
+    expect(document.querySelector(".trend-legend .key-mid.key-range")).toBeTruthy();
     expect(document.querySelector(".trend-legend .key-range")).toBeTruthy(); // a dot inside a capsule
     expect(document.querySelector(".trend-legend a").getAttribute("href")).toBe("#/methodology/trends");
     const cols = [...document.querySelectorAll(".trend-chart g.col[role='img']")];
@@ -521,7 +530,7 @@ describe("View 1 on the page", () => {
     expect(screen.getByRole("heading", { level: 2 }).textContent).toBe("Dialogue share: a borderline change from 2000–2009 to 2020 or later");
     const line = document.querySelector(".trend-borderline");
     expect(line.textContent).toBe(
-      "By the site’s rule it clearly rose, but not once each genre’s share of stories is held fixed (how\u00a0this\u00a0is\u00a0decided).",
+      "By the site’s rule dialogue share clearly rose, but not if the mix of genres had been the same in both periods (how\u00a0this\u00a0is\u00a0decided).",
     );
     expect(within(line).getByRole("link").getAttribute("href")).toBe("#/methodology/trends");
     window.location.hash = "#/trends?var=dlg_word_share&genre=fetish";
@@ -602,7 +611,7 @@ describe("named groups and bands: 100% columns", () => {
       "First person (I)",
       "Third person",
       "Other (first person plural (we), second person (you), mixed)",
-      "The periods compared (how this is decided)",
+      "The periods compared, the oldest and the newest (how this is decided)", // named groups keep their colors: no gray key
     ]);
     const cols = [...document.querySelectorAll(".trend-mix g.col[role='img']")];
     expect(cols).toHaveLength(5);
@@ -706,7 +715,8 @@ describe("mostly zero: the split chart", () => {
       "Share of stories",
       "Median and interquartile range",
       "Fewer than 30 stories (*)",
-      "The periods compared (how this is decided)",
+      "The periods compared, the oldest and the newest (how this is decided)",
+      "The periods between them, shown but not compared",
     ]);
     expect(document.querySelectorAll(".trend-legend li:nth-child(3) .key")).toHaveLength(2); // a hollow dot, a hatched capsule
     // each half's brackets carry its numbers: the share with any, the median among those
@@ -781,7 +791,7 @@ describe("the PNG", () => {
     expect(spec.subtitle).toEqual(["Heading", "Fetish · 2,000–5,000 words"]);
     expect(spec.fileName).toBe("trends-dlg_word_share-fetish-medium.png");
     expect(spec.chart.classList.contains("trend-chart")).toBe(true);
-    expect(keyItems(spec.legend).map((k) => k.text)).toContain("The periods compared");
+    expect(keyItems(spec.legend).map((k) => k.text)).toContain("The periods compared, the oldest and the newest");
     expect(trendsFileName({ v: "Story_Words", genre: "All", sub: "All" })).toBe("trends-story_words-all-all.png");
   });
 

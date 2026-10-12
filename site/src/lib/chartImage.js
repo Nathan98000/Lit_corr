@@ -699,7 +699,10 @@ function listsSvg(plan, { width, panel, sans, styles, ctx }) {
     const dots = l.rows.some((r) => r.dot);
     // (the tick labels `plan.tickDrop` px lower where a tick is at the zone's edge, under the bracket's ends, as the page)
     const drop = dots ? plan.tickDrop || 0 : 0;
-    const headH = Math.max(30 + drop, heads ? 16 * Math.max(...heads.map((h) => h.length)) + 4 : 30);
+    // the values' head may take lines of its own ("Median or share" over "2000–09 → 2020+"), as the heads do
+    const valuesHead = vf ? [].concat(plan.valuesHead) : null;
+    const headLines = vf ? valuesHead.length : heads ? Math.max(...heads.map((h) => h.length)) : 1;
+    const headH = Math.max(30 + drop, headLines > 1 ? 16 * headLines + 4 : 30);
     const base = y + headH - 2;
     if (dots) {
       text(`${zone[0]}–${zone[1]}: ${plan.zoneWords}`, X(50), base - 17 - drop, { size: 11.5, fill: ink2, anchor: "middle" });
@@ -712,7 +715,7 @@ function listsSvg(plan, { width, panel, sans, styles, ctx }) {
         text(String(t), X(t), base, { size: 12, fill: ink3, anchor: at <= 0.01 ? "start" : at >= 99.99 ? "end" : "middle", nums: true });
       }
     }
-    if (vf) text(plan.valuesHead, LIST.label + LIST.gap, base, { size: 12, weight: 600, fill: ink2 });
+    if (vf) valuesHead.forEach((t, j) => text(t, LIST.label + LIST.gap, base - 16 * (valuesHead.length - 1 - j), { size: 12, weight: 600, fill: ink2 }));
     else {
       heads.forEach((h, c) => {
         h.forEach((t, j) => text(t, c ? n2 : n1, base - 16 * (h.length - 1 - j), { size: 12, weight: 600, fill: ink2, anchor: "end" }));

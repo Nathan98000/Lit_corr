@@ -91,8 +91,12 @@ describe("How it works' “Changes over time”", () => {
     expect(heading.nextElementSibling.textContent).toContain("2010–\u206014");
     expect(text).toEqual([
       "The Trends page groups stories by the year they were published: 2000–04, 2005–09, 2010–14, 2015–19, and 2020 to the end of the collection (October 2026). For each period it shows the median and the interquartile range, or the share of stories, with All genres counting each genre by its size on Literotica, as everywhere on this site.",
+      // why only the two windows count (the trends review's fresh eyes asked, 6/6)
+      "It compares two windows, the stories published 2000–2009 and those published 2020 or later: the oldest and the newest, each pooling several years, so that no thin year can swing the verdict. The periods between are drawn but not compared, so a characteristic that dipped and came back reads “No clear change”; the chart shows the whole shape.",
       "A characteristic clearly changed when, picking one story published in 2020 or later and one published 2000–2009 at random, the newer story would be the higher one at least 60 times in 100, or the lower one at least 60 times in 100 (ties count as half), clear at the 99.9% level, with at least 30 stories on each side. That is the Genres page’s rule. For yes/no characteristics it means a change of at least 20 percentage points; for characteristics with named groups, at least 20% of the newer stories would have to change group to match the mix of 2000–2009.",
-      "The share of each genre among new stories changed too. For All genres the page also checks each change with every genre’s share held fixed, and says so when that check gives another answer.",
+      // the same plain words as the borderline line, and the length bands the band line names
+      "The share of each genre among new stories changed too. For All genres the page also checks each change as if the mix of genres had been the same in both periods (each genre with the same share of stories in each), and calls the change borderline when that check gives another answer.",
+      "For All genres with all stories, it also checks each clear change within each length band (stories under 2,000 words, 2,000–5,000 words and 5,000 words or more), each with fewer stories than the whole, and says how many are not clear within any of them.",
       "The stories are the ones still on Literotica when they were collected, in today’s categories: stories removed from the site are not in the sample. Two characteristics are not on this page: the number of tags, which jumps between stories published before 2005 (a median of 10) and after (4), and the author’s number of stories, which was counted when the stories were collected, not when they were published.",
     ]);
   });
@@ -111,9 +115,11 @@ describe("How it works' “Changes over time”", () => {
     }));
     await open("#/methodology/trends");
     const heading = await screen.findByRole("heading", { level: 2, name: "Changes over time" });
-    const first = heading.nextElementSibling.textContent.replace(/\u2060/g, "");
-    const second = heading.nextElementSibling.nextElementSibling.textContent.replace(/\u2060/g, "");
+    const text = [];
+    for (let el = heading.nextElementSibling; el && el.tagName === "P"; el = el.nextElementSibling) text.push(el.textContent.replace(/\u2060/g, ""));
+    const [first, windows, second] = text;
     expect(first).toMatch(/: 2001–05, 2006–10, and 2021 to the end of the collection \(March 2027\)\./);
+    expect(windows).toMatch(/^It compares two windows, the stories published 2001–2010 and those published 2021 or later:/);
     expect(second).toMatch(/published in 2021 or later and one published 2001–2010 at random/);
     expect(second).toMatch(/at least 63 times in 100, or the lower one at least 63 times in 100/);
     expect(second).toMatch(/clear at the 99% level, with at least 40 stories on each side/);

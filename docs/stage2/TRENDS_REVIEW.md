@@ -10,7 +10,8 @@ changed; every `v/`, `genres/` and `trends/` file and `patterns.json` is byte-id
 ## Summary
 
 On October 12 you took the borderline check and the length-band line off the page, cut View 2's note to one sentence
-and allowed `meta.json` fixes: section 10. The rest of this summary is the review as built.
+and allowed `meta.json` fixes (section 10), then had the check dropped from the data and the flaky test reviewed
+(section 11). The rest of this summary is the review as built.
 
 The page now opens on **All changes** (View 2), the switch reads "All changes · One characteristic", and Copy link is
 gone from the site. Each comparison view (this one and the Genres page's "One genre") has one **Download PNG** for its
@@ -495,7 +496,7 @@ changed: +561 bytes, +305 gzipped.
 | "One genre"'s fingerprints; Explore's layout guard | | Only the four labels (40 lines in 8 files); only "Explicit blurb"'s groups (with the old `meta.json`, the old digest) |
 
 Tests: 509 (508 before) and 218 Python tests pass. One full run had a How it works sidebar test fail on timing (its
-code is untouched); it passed alone and in four full runs since.
+code is untouched); it passed alone and in four full runs since. Reviewed and fixed: section 11.2.
 
 ### 10.4 Judgment calls
 
@@ -516,9 +517,8 @@ code is untouched); it passed alone and in four full runs since.
    "›", and View 1's key keeps the link.
 6. **The shared rows' tag code is removed**, not left unused, so the rows are again as before the review and "One genre"
    draws the same.
-7. **The files keep the fixed-mix fields** (`rm`, `fm` in the four All genres files), unused now. Dropping them from
-   `site-data` would save about 0.6 KB gzipped a file (12,973 to 12,363 bytes for the default view's), but it's a change
-   to the pipeline, so I left it.
+7. ~~**The files keep the fixed-mix fields** (`rm`, `fm` in the four All genres files), unused now.~~ Dropped at your
+   word: section 11.
 
 ### 10.5 Still open
 
@@ -528,3 +528,47 @@ code is untouched); it passed alone and in four full runs since.
   1's key links to it).
 - Section 8's other items stand: Safari and screen readers, the build-up percents, the Verdana-only leftovers (13 View
   1 charts at 320 px with six genres), the hatching, and the switch.
+
+## 11. The check dropped from the data, and the flaky test (October 12)
+
+You asked to drop the borderline check and to review the flaky test: two commits after `d9c7397`, one for each, then
+this section. Not pushed.
+
+### 11.1 The check dropped
+
+- **The pipeline:** `site-data` no longer computes the fixed-mix comparison. `mix_fixed_weights` and All genres' second
+  `trend_compare` are gone from `litcorr/stage2/trends.py`, and `trend_compare` no longer takes the weights it needed.
+- **The data:** one offline run from `litcorr_stage2_handoff_20261008.zip` (the only handoff). Of the 1,818 files, the
+  four All genres files changed, each identical but for `rm` and `fm`, and `meta.json` only by its timestamp (How it
+  works shows its date, unchanged).
+- **Sizes:** the default view's file is 12,973 → 12,364 bytes gzipped (with the Length options 12,539 → 11,946, 12,668
+  → 12,090 and 12,658 → 12,012): 2,426 bytes in all. A visit to `#/trends` is 175.2 KiB in 9 requests (175.8); the
+  first load stays 150.0 KiB.
+- **The test fixtures** were rebuilt the same way (`python -m litcorr.stage2.synthetic`): their four all.json files lose
+  `rm` and `fm` and nothing else; their `meta.json` keeps its timestamp.
+- **Tests:** the Python suite checks that neither the built files nor the real ones carry `rm` or `fm`, and recomputes
+  only `r` and `f`. The site's tests no longer fake `fm`, and one checks that no real file has a field beyond `k`,
+  `fmt`, `q`, `t`, `r` and `f`.
+- **The site's code** didn't change: the build's chunks are byte-identical; `data.js` no longer documents the fields.
+
+### 11.2 The flaky test
+
+- **Which:** How it works, "the contents at 1,000 px and wider are one sidebar that marks the section being read". It
+  failed once in a full run, in 25 ms.
+- **Why:** the page marks the section being read through an IntersectionObserver that `useCurrentSection` makes in an
+  effect. The test waited only for the page's heading, then fired the observers. When the page's render overruns
+  React's 5 ms time slice, as on a starved CPU (a full run is 36 workers on 10 cores), React runs that effect one turn
+  of the event loop after the page is on screen. Testing Library's `findByRole` resolves on a `setTimeout(0)`, which can
+  come first. The test then fired no observer, so no section was marked. The page itself is fine: a real observer
+  reports as soon as it starts.
+- **Reproduced:** 1 failure in 72 runs of the file, 36 at a time: "expected [] to deeply equal ['How the charts
+  summarize stories']", with no observer when the heading appeared.
+- **The fix:** `openPage` also waits for the observer, so every test in the file starts scrolling only once the page
+  can track it. Under the same load, 108 runs passed, and the observer was late 9 times in their 540 tests: the race
+  still happens, and the test waits it out.
+- **The same pattern elsewhere:** the question bar's test fires the observer on the question sentence once the chart is
+  ready. That observer comes with the controls, a render earlier, and was there in all 144 phone tests of 72 runs under
+  the same load (its third test is the desktop one, with no bar by design). The tests that dispatch scroll or resize
+  either render synchronously or wait for the result.
+
+Tests: 509 site tests and 218 Python tests pass.

@@ -9,6 +9,9 @@ changed; every `v/`, `genres/` and `trends/` file and `patterns.json` is byte-id
 
 ## Summary
 
+On October 12 you took the borderline check and the length-band line off the page, cut View 2's note to one sentence
+and allowed `meta.json` fixes: section 10. The rest of this summary is the review as built.
+
 The page now opens on **All changes** (View 2), the switch reads "All changes · One characteristic", and Copy link is
 gone from the site. Each comparison view (this one and the Genres page's "One genre") has one **Download PNG** for its
 lists.
@@ -17,15 +20,15 @@ lists.
 
 - The chart tells the same story as its verdict. Each bracket carries its window's number ("2000–2009 · median
   2,810"). The periods between the windows are gray and marked "not compared". A path line names a dip or rise in
-  between ("In between, it dipped to 5% in 2010–14."). "Borderline" replaces the fixed-mix line where the two checks
-  disagree.
+  between ("In between, it dipped to 5% in 2010–14."). ~~"Borderline" replaces the fixed-mix line where the two checks
+  disagree.~~ Taken off at your word: section 10.
 - On a desktop, the takeaway, key and actions sit in a rail beside the chart, and the brackets now fit on the first
   screen at 1280 × 720.
 
 **View 2** (all changes):
 
 - Its heading gives a denominator ("26 of 180 characteristics clearly changed…"). The takeaway starts with the length
-  line and ends with the length-band line.
+  line ~~and ends with the length-band line~~ (taken off: section 10).
 - Each row reads values first ("51.6 → 38.8 (−25%)"), with its dot on a scale zoomed to the view.
 
 **Site-wide:** "has/have" follows the noun, "across all genres" replaces "In All genres", the kicker never starts or
@@ -415,12 +418,113 @@ Tests: 508 (503 before), stable over three runs.
 
 ### 9.6 Still open
 
-- **Definitions for the 9** whose description only repeats the label: the five senses' words, physical sensation words,
-  semicolons, colons and commas. A sentence each in the pipeline's wording (`litcorr/stage2/wording.py`, then
-  `site-data`) would let View 1 show them; it changes `meta.json`, so it's your call.
-- **"description length"**: 3 of 6 desktop readers guess it's the blurb. Its definition ("Number of characters in the
-  author’s short description.") is one tap away; a clearer label would also be a `meta.json` change.
+- ~~**Definitions for the 9** whose description only repeats the label: the five senses' words, physical sensation
+  words, semicolons, colons and commas.~~ Done at your word: section 10.
+- ~~**"description length"**: 3 of 6 desktop readers guess it's the blurb.~~ Now "Blurb length": section 10.
 - **"interquartile range"** (O1) and **the reason for comparing only the two ends**, which now waits behind "how this is
   decided": both are noticed by most readers.
 - Section 8's other items stand: Safari and screen readers, the build-up percents, the Verdana-only leftovers, the
   hatching, and the switch.
+
+## 10. Your changes (October 12)
+
+You asked for five changes: take two lines out of View 2's takeaway, cut its note to one sentence, never say
+"borderline" or "just past", and you allowed `meta.json` changes to fix things. Built in `e0fc425` (the page) and
+`ed503a5` (`meta.json`); this write-up and the seven redone after screenshots (a01, a03, a04, a06, a11, a12, a14) are
+the commit after them. Not pushed.
+
+### 10.1 What changed
+
+| Your item | What changed | Where |
+|---|---|---|
+| 1. "X of these changes are borderline: …" | Gone, with its topics-only form ("4 characteristics, in the topics below, are borderline: …", with 5,000 words or more) | View 2's takeaway |
+| 2. "X of these changes are not clear within any length band (…)" | Gone. So are the rows' "· not clear within any length band" tags, the same claim row by row, and the three Length options' files the page fetched for them | View 2's takeaway and rows |
+| 3. The note | Your sentence, "Each dot compares a story from 2020 or later with a story from 2000–2009 (50 is a tie)", in an open topic too: no link and, as you wrote it, no final period | View 2 |
+| 4. No "borderline", no "just past" | View 1's heading follows the site's rule alone. The 12 characteristics where the two checks disagree (2 with all stories; 1, 5 and 4 with the Length options) read "clearly fell", "clearly rose" or "No clear change" by that rule: "Touch words clearly fell from 2000–2009 to 2020 or later" (was "Touch words: a borderline change …"). View 1's borderline line, the live region's copy of it, the rows' "· borderline" tags (on the page, in the rows' names and in the PNG) and How it works' fixed-mix and length-band paragraphs are gone. "Just past" was never on the site; a test now keeps both out of the site's source and `meta.json` | Both views, How it works |
+| 5. `meta.json` | Definitions for the nine that only repeated their label, and "blurb" for the story's description (10.2) | `litcorr/stage2/wording.py`, then `site-data` |
+
+### 10.2 The `meta.json` changes
+
+The definitions follow the word lists' own descriptions and examples (`lexicons/sensory_*.txt`, the same in the
+handoff) or what `litcorr/text/features.py` counts, in the style of the site's other word-list definitions:
+
+| Characteristic | Was | Now |
+|---|---|---|
+| Touch words | Touch words per 1,000 words. | Words about touching and texture (caress, rub, squeeze, soft, smooth, skin) per 1,000 words. |
+| Sight words | Sight words per 1,000 words. | Words about seeing, light and color (look, gaze, eyes, bright, shadow, red, golden) per 1,000 words. |
+| Sound words | Sound words per 1,000 words. | Words about hearing, voices and noises (whisper, loud, silence, scream, music) per 1,000 words. |
+| Smell words | Smell words per 1,000 words. | Words about smells and scents (scent, perfume, musk, sniff, aroma) per 1,000 words. |
+| Taste words | Taste words per 1,000 words. | Words about taste, flavor, eating and drinking (taste, flavor, salty, savor, swallow) per 1,000 words. |
+| Physical sensation words | Physical sensation words per 1,000 words. | Words for bodily feelings (warmth, cold, tingling, throbbing, aching, trembling, breathing, sweat, wetness) per 1,000 words. |
+| Semicolons | Semicolons per 1,000 words. | Semicolons (‘;’) in the story’s text, per 1,000 words. |
+| Colons | Colons per 1,000 words. | Colons (‘:’) in the story’s text, per 1,000 words, leaving out the colon of a web address. |
+| Commas | Commas per 1,000 words. | Commas (‘,’) in the story’s text, per 1,000 words. |
+
+View 1 now shows a definition for every characteristic; the guard that leaves out a bare repeat of the label stays.
+
+The story's description is its **blurb** on the site:
+
+| Was | Now |
+|---|---|
+| Description length | Blurb length: "Number of characters in the blurb: the short description the author writes for the story, shown with its title in story lists." |
+| Description word count | Blurb word count |
+| Explicit description (and its groups) | Explicit blurb (Explicit blurb, Non-explicit blurb) |
+| Person of the description | Person of the blurb |
+| Title & description (the picker's sub-heading) | Title & blurb |
+
+With them go the nouns, the chart titles' subjects ("Stories with longer blurbs"), the two caveats ("Not measured when
+there is no blurb.", "About two blurbs in three use no personal pronoun") and How it works' privacy line ("No story text,
+titles, blurbs, …"). "description" and "summary" are search synonyms, so the search finds the four by "description",
+"blurb" or "summary", and its results for 11 other queries are unchanged. Of the 1,818 aggregate files only `meta.json`
+changed: +561 bytes, +305 gzipped.
+
+### 10.3 Measurements, the final build (`ed503a5`) against `fe5bcc8`
+
+| Measure | `fe5bcc8` | Final |
+|---|---|---|
+| Glyph boxes, View 2 (31 genres × 4 options × 320–1440 px, lists in full, every topic open): site font / Verdana | 0 / 0 | **0 / 0** (620 pages, 49,650 rows a font) |
+| Glyph boxes, View 1: site font / Verdana | 0 / 3 with two genres (9.3); in Verdana at 320 px with six genres, 13 | 0 / 13 with six genres (21,510 charts), the same 13, all at 320 px |
+| Breaks (980 states a font) | 0 / 3 | 0 / 3, the same (1,400 visible "·": 83 fewer, the tags' separators) |
+| axe; label in name | 63 runs, none; 12, none | the same |
+| Layout shift, a View 2 visit (slow 4G), 375 / 1440 px | 0.000 / 0.000 | 0.000 / 0.000, with nothing arriving late now; worst 0.021, as before (View 1, another genre) |
+| First load | 149.7 KiB, 6 | 150.0 KiB, 6 (`meta.json`) |
+| A visit to `#/trends`; to View 1; to "One genre"; to How it works | 213.7 in 12; 176.7; 208.8; 141.2 KiB | **175.8 in 9**; 175.8; 208.9; 141.3 KiB |
+| Chunks (bytes, `gzip -9`): Trends JS, CSS; How it works; `IncludeSelect`; `chartImage`; the main script | 15,561, 4,045; 8,344; 13,142; 7,539; 86,748 | 14,696, 3,927; 8,091; 12,939; 7,532; 86,748 |
+| Page height, 375 / 1440 px: `#/trends`; View 1, word count | 2,754 / 2,162; 1,339 / 1,036 | 2,515 / 2,015; the same |
+| PNGs | | View 2's, All genres: no tags, "Blurb length"; View 2's for Romance and "One genre"'s for Romance: pixel-identical; "One genre"'s for How To: only "Person of the blurb" |
+| "One genre"'s fingerprints; Explore's layout guard | | Only the four labels (40 lines in 8 files); only "Explicit blurb"'s groups (with the old `meta.json`, the old digest) |
+
+Tests: 509 (508 before) and 218 Python tests pass. One full run had a How it works sidebar test fail on timing (its
+code is untouched); it passed alone and in four full runs since.
+
+### 10.4 Judgment calls
+
+1. **The rows' tags went with the lines.** "· not clear within any length band" was the band line's claim row by row.
+   Without the line naming the bands, "length band" would be unexplained again (round 1: 6 of 6), and the tags needed
+   the Length options' files.
+2. **"Blurb", the readers' word.** "Description length" sat beside "Descriptive words" and three "descriptive & sensory
+   language" rows; 3 of 6 stand-ins asked "of what?", and they all guessed "the blurb". Literotica calls it the
+   description, so the definition says so and the search finds it by that word. To keep "description", undo the four
+   entries in `SITE_LABEL` and the one in `SUBGROUP_LABEL`, with the nouns, subjects and caveats beside them in
+   `wording.py`.
+3. **The word lists' examples, without their notes.** Most of the site's word-list definitions leave their lists'
+   notes out, so these do too (here: moans and gasps count as arousal words; "sweet" isn't a taste word).
+4. **The punctuation definitions say what is counted**: the story's text, as `features.py` counts it (author's notes
+   and scene breaks aside), and for colons not a web address's.
+5. **The topics' line still explains the gray dots** ("blue dots changed, gray dots show no clear change"), now that the
+   note doesn't. View 2 no longer links to "how this is decided" or says that a row opens its chart; each row keeps its
+   "›", and View 1's key keeps the link.
+6. **The shared rows' tag code is removed**, not left unused, so the rows are again as before the review and "One genre"
+   draws the same.
+7. **The files keep the fixed-mix fields** (`rm`, `fm` in the four All genres files), unused now. Dropping them from
+   `site-data` would save about 0.6 KB gzipped a file (12,973 to 12,363 bytes for the default view's), but it's a change
+   to the pipeline, so I left it.
+
+### 10.5 Still open
+
+- **No fresh eyes on these changes.** "Blurb" and the nine definitions haven't been tested on stand-ins; a round would
+  check them, and whether the shorter note still makes the dots clear.
+- From 9.6: "interquartile range" (O1), and the reason for comparing only the two ends, now only in How it works (View
+  1's key links to it).
+- Section 8's other items stand: Safari and screen readers, the build-up percents, the Verdana-only leftovers (13 View
+  1 charts at 320 px with six genres), the hatching, and the switch.

@@ -808,7 +808,9 @@ change never prints 40 or 60. In bold, the two changes that are not clear with t
 ## 13. As built
 
 *Since then:* the page's design review is built; what changed (it opens on all changes, View 1's brackets and rail,
-View 2's values first, Download PNG for the lists, no Copy link) is in [TRENDS_REVIEW.md](TRENDS_REVIEW.md).
+View 2's values first, Download PNG for the lists, no Copy link) is in [TRENDS_REVIEW.md](TRENDS_REVIEW.md). On
+October 12 the owner took the fixed-mix check ("borderline") and the length-band line off the page, so neither is
+shown any more: section 10 there.
 
 Built on branch `trends-page`, made from `one-genre` at `1756a39` (the proposal is its first commit, `62d8cee`),
 following `STAGE2_TRENDS_PAGE_PROMPT.md`: thirteen commits, the last one this write-up with the prompt, not pushed. At

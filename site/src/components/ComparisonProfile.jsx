@@ -279,18 +279,25 @@ function Bracket({ zone, words, ticks = false, scale = FULL }) {
   const [lo, hi] = zone;
   const x = placeOn(scale);
   const y = ticks ? 14 : 13; // the bracket's line, its ends 5 px down
+  const under = ticks ? tickDrop(scale, zone) : 0;
   return (
-    <svg width="100%" height={ticks ? 30 : 18} className="profile-axis">
+    <svg width="100%" height={ticks ? 30 + under : 18} className="profile-axis">
       <text className="zone-label" x={`${x(50)}%`} y={y - 3} textAnchor="middle">
         {lo}–{hi}: {words}
       </text>
       <line className="zone-bracket" x1={`${x(lo)}%`} x2={`${x(hi)}%`} y1={y} y2={y} />
       <line className="zone-bracket" x1={`${x(lo)}%`} x2={`${x(lo)}%`} y1={y} y2={y + 5} />
       <line className="zone-bracket" x1={`${x(hi)}%`} x2={`${x(hi)}%`} y1={y} y2={y + 5} />
-      {ticks && <TickLabels y={28} scale={scale} />}
+      {ticks && <TickLabels y={28 + under} scale={scale} />}
     </svg>
   );
 }
+
+/**
+ * How much lower the head row's tick labels go, clear of the bracket's ends: 4 px where a tick is at the zone's edge (a
+ * zoomed scale's 40 and 60, under the ends), else none ("One genre"'s 0, 25, 50, 75 and 100). The image does the same.
+ */
+export const tickDrop = (scale, zone) => (scale.ticks.some((t) => zone.includes(t)) ? 4 : 0);
 
 /** The scale's labels: "0" to "100" (or a zoomed scale's, every 10), the end ones kept inside the plot. */
 const TickLabels = ({ y, scale = FULL }) => {
@@ -537,6 +544,7 @@ export function listsPlan({ lists, lead, words, row, zone, layout }) {
     scale,
     zone,
     zoneWords: words.zone,
+    tickDrop: tickDrop(scale, zone),
     // where a dot's number goes on a plot `plotW` px wide (numberPlace, as on the page)
     place: (r, opts) => numberPlace(r, zone, { ...opts, scale: scale === FULL ? null : scale }),
     lists: lists.map((l) => ({

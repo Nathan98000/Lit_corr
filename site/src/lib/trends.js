@@ -608,6 +608,9 @@ export function changesTags(item, file, inBands = null) {
   return [...(inBands?.has(item.id) ? [NOT_IN_BANDS] : []), ...(borderline(item.entry, file.g) ? ["borderline"] : [])];
 }
 
+/** The medians' relative change after the values: " (+82%)", " (−25%)", grouped as the site's counts ("+23,640%"); "" for none. */
+const percentWords = (change) => (change == null ? "" : ` (${change > 0 ? "+" : change < 0 ? "−" : ""}${formatCount(Math.abs(change))}%)`);
+
 /**
  * A row's values, right after its label (item 4): the 2000–2009 window's, then the 2020-or-later window's, as the
  * columns print them (profileColumns: medians trimmed of trailing zeros, shares, the shares with any, median bands,
@@ -622,7 +625,7 @@ export function changesValues(item) {
   const now = cols.all ? cols.all[0] : "–";
   const plain = item.kind === "num" && Boolean(item.nf.unit);
   const change = plain && item.all?.median > 0 && item.stats?.median > 0 ? Math.round(((item.stats.median - item.all.median) / item.all.median) * 100) || 0 : null;
-  const pct = change == null ? "" : ` (${change > 0 ? "+" : change < 0 ? "−" : ""}${Math.abs(change)}%)`;
+  const pct = percentWords(change);
   const second = cols.genre?.[1] && cols.all?.[1] ? `${cols.genre[1]} → ${cols.all[1]}` : null;
   return { text: `${then} → ${now}${pct}`, change, second, unit: cols.unit };
 }
@@ -751,7 +754,7 @@ export function changesRowName(item, file, minN, tags = []) {
   const last = !cols.all ? nowN : /^[−+\d]/.test(unit) ? `${nowN}, ${unit}` : withUnit(nowN, unit);
   // the medians' relative change, as the row prints it ("51.6 → 38.8 (−25%)")
   const { change } = changesValues(item);
-  const pct = change == null ? "" : ` (${change > 0 ? "+" : change < 0 ? "−" : ""}${Math.abs(change)}%)`;
+  const pct = percentWords(change);
   return `${variable.label}:${times} ${w.then} ${thenN}, ${w.now} ${last}${pct}${end}`;
 }
 

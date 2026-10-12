@@ -87,7 +87,7 @@ export function Table({ layout }) {
         <g key={b.label} className="bracket">
           <path d={`M${b.x0},${b.y - 5} V${b.y} H${b.x1} V${b.y - 5}`} />
           {b.lines.map((l) => (
-            <text key={l.y} x={l.x} y={l.y} textAnchor="middle">
+            <text key={l.y} x={l.x} y={l.y} textAnchor={l.anchor}>
               {l.text}
             </text>
           ))}

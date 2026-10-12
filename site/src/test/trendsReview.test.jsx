@@ -11,6 +11,7 @@ import App from "../App.jsx";
 import { downloadChartImage, listsImagePlan } from "../lib/chartImage.js";
 import { clearCache } from "../lib/data.js";
 import CharacteristicPicker from "../components/CharacteristicPicker.jsx";
+import { tickDrop } from "../components/ComparisonProfile.jsx";
 import IncludeSelect from "../components/IncludeSelect.jsx";
 import TrendChart from "../components/TrendChart.jsx";
 import { TrendLegend } from "../components/TrendAnswer.jsx";
@@ -19,6 +20,7 @@ import {
   bandsLine,
   changesHeading,
   changesQuestion,
+  changesRowName,
   changesSampleLine,
   changesScale,
   changesValues,
@@ -340,6 +342,26 @@ describe("View 1's chart tells the same story as its verdict (phase 4)", () => {
     for (const width of [288, 343, 375, 736, 760]) expect(trendOverlaps(trendLayout({ width, ...input })), `${width}`).toEqual([]);
   });
 
+  it("sets a bracket's lines against the chart's edge where centered they would reach it, all of them alike", () => {
+    // found by the glyph boxes (phase 8): centered and clamped by textWidth's estimate, "median 54%" ended 1 px past the
+    // chart at 375 px in the site's font, and up to 7 px past in Verdana
+    const input = trendChartInput(fixtureMeta, WORDS, length, FILE);
+    const anchors = (layout) => layout.brackets.map((b) => b.lines.map((l) => l.anchor));
+    expect(anchors(trendLayout({ width: 343, ...input }))).toEqual([["middle", "middle"], ["end", "end"]]);
+    expect(trendLayout({ width: 343, ...input }).brackets[1].lines.map((l) => l.x)).toEqual([342, 342]);
+    expect(anchors(trendLayout({ width: 736, ...input }))).toEqual([["middle"], ["end"]]);
+    for (const width of [288, 320, 343, 375, 600, 736, 760]) {
+      const layout = trendLayout({ width, ...input });
+      for (const b of layout.brackets) {
+        expect(new Set(b.lines.map((l) => l.anchor)).size).toBe(1);
+        for (const l of b.lines) {
+          if (l.anchor === "middle") expect(l.x0 >= 1 && l.x1 <= width - 1, `${width} ${l.text}`).toBe(true);
+          else expect(l.x).toBe(l.anchor === "end" ? width - 1 : 1);
+        }
+      }
+    }
+  });
+
   it("marks the periods outside both windows and puts “not compared” between the brackets, under them", () => {
     const layout = trendLayout({ width: 343, ...trendChartInput(fixtureMeta, WORDS, length, FILE) });
     expect(layout.columns.map((c) => c.middle)).toEqual([false, false, true, true, false]);
@@ -557,6 +579,11 @@ describe("View 2 (phase 6)", () => {
     // a median of 0 has no relative change
     const zero = p.items.find((x) => x.id === "story_words");
     expect(changesValues({ ...zero, all: { ...zero.all, median: 0 } }).change).toBeNull();
+    // a percent of 1,000 or more is grouped, as the site's counts are, on the row and in its name (phase 8: a build-up
+    // row near 0 reached +149,028%)
+    const big = { ...zero, all: { ...zero.all, median: 12 }, stats: { ...zero.stats, median: 2849 } };
+    expect(changesValues(big).text).toMatch(/ \(\+23,642%\)$/);
+    expect(changesRowName(big, realTrends("all", "all"), real.min_n)).toMatch(/ \(\+23,642%\);/);
   });
 
   it("zooms the dots' scale to 50 ± d for the whole view, d from the farthest dot, between 20 and 50, ticks every 10", () => {
@@ -570,6 +597,23 @@ describe("View 2 (phase 6)", () => {
 
   it.skipIf(!real)("gives All genres with All stories the 25–75 scale: its dots run from 34 to 68", () => {
     expect(changesScale(trendProfile(real, realTrends("all", "all")))).toEqual({ lo: 25, hi: 75, d: 25, ticks: [30, 40, 50, 60, 70] });
+  });
+
+  it("puts the head row's tick labels 4 px lower where a tick is at the zone's edge, clear of the bracket's ends", async () => {
+    // found by the glyph boxes (phase 8): a zoomed scale's 40 and 60 sat under the bracket's ends, in every genre (every
+    // rule's zone is 40–60); every tick keeps its label ("ticks go every 10"); "One genre"'s 0–100 ticks don't move.
+    // A wide screen, where the head row carries the bracket and the tick labels.
+    vi.spyOn(Element.prototype, "getBoundingClientRect").mockReturnValue({ width: 1032, height: 0, top: 0, left: 0, right: 1032, bottom: 0 });
+    await open("#/trends", { ready: trends });
+    const head = document.querySelector(".trend-changes .profile-head .profile-axis");
+    expect(head.querySelector(".zone-label").textContent).toBe("40–60: no clear change");
+    const ticks = changesScale(trendProfile(fixtureMeta, fixtureFile("trends/all/all.json"))).ticks;
+    expect(ticks).toEqual(expect.arrayContaining([40, 60]));
+    expect([...head.querySelectorAll(".tick-label")].map((t) => t.textContent)).toEqual(ticks.map(String));
+    expect([...head.querySelectorAll(".tick-label")].map((t) => t.getAttribute("y"))).toEqual(ticks.map(() => "32"));
+    expect(head.getAttribute("height")).toBe("34");
+    expect(tickDrop({ ticks }, [40, 60])).toBe(4);
+    expect(tickDrop({ ticks: [0, 25, 50, 75, 100] }, [40, 60])).toBe(0);
   });
 
   it("draws a named group's bars in time's order, 2000–2009 above, and says so", async () => {
@@ -610,6 +654,7 @@ describe("View 2 (phase 6)", () => {
     expect(plan.lists[0].rows.map((r) => r.label)).toEqual(["Dialogue share", "Has dialogue"]);
     expect(plan.lists[0].rows[0].values[0]).toMatch(/^\d+% → \d+%$/);
     expect(spec.lists.scale).toMatchObject({ lo: expect.any(Number), hi: expect.any(Number) });
+    expect(spec.lists.tickDrop).toBe(4); // the tick labels under the bracket's ends go 4 px lower, as on the page
   });
 
   it("draws the rows the lists show, a named group's in the mix list", async () => {

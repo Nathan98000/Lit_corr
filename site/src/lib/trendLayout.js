@@ -25,6 +25,7 @@ const SEGMENT_SIZE = 12;
 const BRACKET_SIZE = 12;
 const NOT_COMPARED_SIZE = 12;
 const LABEL_GAP = 12; // between the two brackets' labels on one line
+const LABEL_SLACK = 1.1; // the brackets' labels in a wider font ('"DejaVu Sans", Verdana': 9% over textWidth at 600)
 
 /** "2000–04" (the end's last two digits when both years share their century), "2020–26". */
 export function periodLabel([lo, hi]) {
@@ -213,17 +214,23 @@ export function trendLayout({
     bracket(periods.map((p, i) => (inWindow(p, then) ? i : -1)).filter((i) => i >= 0), windows.then, windowValues?.then),
     bracket(periods.map((p, i) => (p[0] >= now[0] ? i : -1)).filter((i) => i >= 0), windows.now, windowValues?.now),
   ].filter(Boolean);
-  const place = (b, text, y) => {
-    const half = textWidth(text, BRACKET_SIZE, 600) / 2;
-    const x = Math.min(Math.max((b.x0 + b.x1) / 2, half + 1), W - half - 1);
-    return { text, x, y, x0: x - half, x1: x + half };
+  // A bracket's lines are centered under it, or set against the chart's edge (anchored there) where centered they
+  // would reach it, so that a font wider than textWidth's estimate never pushes them out; widths carry LABEL_SLACK.
+  const place = (b, texts, y) => {
+    const ws = texts.map((t) => textWidth(t, BRACKET_SIZE, 600) * LABEL_SLACK);
+    const half = Math.max(...ws) / 2;
+    const mid = (b.x0 + b.x1) / 2;
+    const anchor = mid - half < 1 ? "start" : mid + half > W - 1 ? "end" : "middle";
+    const x = anchor === "start" ? 1 : anchor === "end" ? W - 1 : mid;
+    return texts.map((text, k) => {
+      const x0 = anchor === "start" ? x : anchor === "end" ? x - ws[k] : x - ws[k] / 2;
+      return { text, x, y: y + 15 * k, anchor, x0, x1: x0 + ws[k] };
+    });
   };
-  const oneLine = brackets.map((b) => place(b, b.value ? `${b.label} · ${b.value}` : b.label, bracketLabelY));
+  const oneLine = brackets.map((b) => place(b, [b.value ? `${b.label} · ${b.value}` : b.label], bracketLabelY)[0]);
   const twoLines = brackets.some((b) => b.value) && oneLine.some((l, k) => k > 0 && l.x0 < oneLine[k - 1].x1 + LABEL_GAP);
   brackets.forEach((b, k) => {
-    b.lines = twoLines
-      ? [place(b, b.label, bracketLabelY), ...(b.value ? [place(b, b.value, bracketLabelY + 15)] : [])]
-      : [oneLine[k]];
+    b.lines = twoLines ? place(b, b.value ? [b.label, b.value] : [b.label], bracketLabelY) : [oneLine[k]];
   });
   const height = bracketLabelY + (twoLines ? 15 : 0) + 6;
   // the periods outside both windows (2010–14, 2015–19): "not compared", in the brackets' row, between them
@@ -342,7 +349,7 @@ export function trendOverlaps(layout) {
   for (const h of layout.heads) add("head", h.text, h.x, h.y, HEAD_SIZE, "start");
   for (const t of layout.ticks) add("tick", t.text, t.x, t.y + 4, TICK_SIZE, "end");
   for (const b of layout.brackets) {
-    for (const l of b.lines) add("bracket", l.text, l.x, l.y, BRACKET_SIZE, "middle", 600);
+    for (const l of b.lines) add("bracket", l.text, l.x, l.y, BRACKET_SIZE, l.anchor, 600);
     boxes.push({ kind: "bracket line", text: b.label, x0: b.x0, x1: b.x1, y0: b.y - 5, y1: b.y + 0.5 });
   }
   if (layout.notCompared) add("not compared", layout.notCompared.text, layout.notCompared.x, layout.notCompared.y, NOT_COMPARED_SIZE);

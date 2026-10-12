@@ -697,11 +697,13 @@ function listsSvg(plan, { width, panel, sans, styles, ctx }) {
     }
     // the head row: the zone's bracket over the ticks, and the columns' heads
     const dots = l.rows.some((r) => r.dot);
-    const headH = Math.max(30, heads ? 16 * Math.max(...heads.map((h) => h.length)) + 4 : 30);
+    // (the tick labels `plan.tickDrop` px lower where a tick is at the zone's edge, under the bracket's ends, as the page)
+    const drop = dots ? plan.tickDrop || 0 : 0;
+    const headH = Math.max(30 + drop, heads ? 16 * Math.max(...heads.map((h) => h.length)) + 4 : 30);
     const base = y + headH - 2;
     if (dots) {
-      text(`${zone[0]}–${zone[1]}: ${plan.zoneWords}`, X(50), base - 17, { size: 11.5, fill: ink2, anchor: "middle" });
-      const by = base - 14;
+      text(`${zone[0]}–${zone[1]}: ${plan.zoneWords}`, X(50), base - 17 - drop, { size: 11.5, fill: ink2, anchor: "middle" });
+      const by = base - 14 - drop;
       line(X(zone[0]), by, X(zone[1]), by, ZONE_EDGE);
       line(X(zone[0]), by, X(zone[0]), by + 5, ZONE_EDGE);
       line(X(zone[1]), by, X(zone[1]), by + 5, ZONE_EDGE);

@@ -459,9 +459,11 @@
   padding-left: calc(276px + var(--values-w, 150px));
 }
 
-/* stacked (a chart under 900 px): the label with its unit, the values and "›" on one line, the plot under them */
+/* stacked (a chart under 900 px): the label with its unit, the values and "›" on one line, the plot under them; the
+   values right-aligned and as wide as the row's own, so the label has the rest (the page's widest, 162 px on Mature at
+   320 px, left "Subordinate clauses per sentence" 90 px and four lines) */
 .trend-changes.stacked .profile-row {
-  grid-template-columns: minmax(0, 1fr) var(--values-w, 150px) 12px;
+  grid-template-columns: minmax(0, 1fr) auto 12px;
   grid-template-areas: "label values chev" "plot plot plot";
 }
 
@@ -469,6 +471,20 @@
   grid-area: values;
   justify-self: end;
   text-align: right;
+}
+
+/* line 1 is one line of type: the label's first line, the values and "›" on one baseline, the unit's lines under the
+   label (clear of the values in any font: centered, a unit kept whole could run under them in Verdana at 320 px) */
+.trend-changes.stacked .profile-row > .profile-label,
+.trend-changes.stacked .profile-row > .profile-values,
+.trend-changes.stacked .profile-row > .profile-chev {
+  align-self: baseline;
+}
+
+/* a word wider than the label's whole cell breaks rather than run into the values (Verdana at 320 px: "Subordinate"
+   beside "0.237 → 0.193 (−19%)"); no label word is that wide in the site's font */
+.trend-changes.stacked .profile-row > .profile-label {
+  overflow-wrap: break-word;
 }
 
 .trend-changes.stacked .profile-head {

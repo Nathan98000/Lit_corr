@@ -36,6 +36,7 @@ import {
   whatItMeasures,
   windowNumbers,
 } from "../lib/trends.js";
+import { searchCharacteristics } from "../lib/search.js";
 import { onTrendsPage } from "../lib/urlState.js";
 import { changedOverTime } from "../lib/wording.js";
 import { fixtureFetch, fixtureFile, fixtureMeta, realMeta } from "./fixtures.js";
@@ -311,25 +312,43 @@ describe("what the stand-ins tripped on (the follow-up to the fresh eyes)", () =
     expect(code).toMatch(/open \? "Show fewer" : more \? more\(items\.length\) : `Show all \$\{items\.length\}`/);
   });
 
-  it.skipIf(!real)("leaves out a definition that only repeats the label and the unit, so none looks like one and gives none", () => {
-    const empty = real.variables.filter((v) => v.description && whatItMeasures(v) === null).map((v) => v.id);
-    // the five senses' words, the body's sensations, and three punctuation marks ("Touch words per 1,000 words.")
-    expect(empty.sort()).toEqual(
-      [
-        "punct_colon_per_1k",
-        "punct_comma_per_1k",
-        "punct_semicolon_per_1k",
-        "sense_body_per_1k",
-        "sense_sight_per_1k",
-        "sense_smell_per_1k",
-        "sense_sound_per_1k",
-        "sense_taste_per_1k",
-        "sense_touch_per_1k",
-      ].sort(),
-    );
-    const para = real.variables.find((v) => v.id === "story_mean_paragraph_words");
-    expect(whatItMeasures(para)).toBe("Average number of words per paragraph.");
+  it.skipIf(!real)("has a definition for every characteristic: meta.json defines the nine that only repeated their label (the owner's changes)", () => {
+    // touch, sight, sound, smell, taste and physical sensation words, semicolons, colons and commas said only "Touch
+    // words per 1,000 words."; now the word lists' own descriptions and what is counted
+    expect(real.variables.filter((v) => !v.description || whatItMeasures(v) === null).map((v) => v.id)).toEqual([]);
+    const said = (id) => whatItMeasures(real.variables.find((v) => v.id === id));
+    expect(said("sense_touch_per_1k")).toBe("Words about touching and texture (caress, rub, squeeze, soft, smooth, skin) per 1,000 words.");
+    expect(said("punct_colon_per_1k")).toBe("Colons (‘:’) in the story’s text, per 1,000 words, leaving out the colon of a web address.");
+    expect(said("story_mean_paragraph_words")).toBe("Average number of words per paragraph.");
+    // a description that only repeats the label and the unit is still left out, should one come back
+    expect(whatItMeasures({ label: "Touch words", unit: "per 1,000 words", description: "Touch words per 1,000 words." })).toBeNull();
     expect(whatItMeasures({ label: "X", unit: "words" })).toBeNull();
+  });
+
+  it.skipIf(!real)("calls the story's description its blurb, everywhere meta.json names it (the owner's changes)", () => {
+    const v = (id) => real.variables.find((x) => x.id === id);
+    expect(["desc_chars", "desc_words", "desc_sexual", "desc_pov"].map((id) => v(id).label)).toEqual([
+      "Blurb length",
+      "Blurb word count",
+      "Explicit blurb",
+      "Person of the blurb",
+    ]);
+    expect(v("desc_chars").description).toBe(
+      "Number of characters in the blurb: the short description the author writes for the story, shown with its title in story lists.",
+    );
+    expect(new Set(real.variables.filter((x) => /^(title|desc)_/.test(x.id)).map((x) => x.subgroup))).toEqual(new Set(["Title & blurb"]));
+    expect([v("desc_chars").more, v("desc_sexual").yes_subject, v("desc_sexual").caveat, v("desc_pov").caveat]).toEqual([
+      "Stories with longer blurbs",
+      "Stories with explicit blurbs",
+      "Not measured when there is no blurb.",
+      "About two blurbs in three use no personal pronoun (‘none’).",
+    ]);
+    // still found by the dictionary's word, and by "blurb"
+    for (const q of ["description", "blurb"]) {
+      expect(searchCharacteristics(real, q).map((r) => r.variable?.id ?? r.id).slice(0, 4).sort(), q).toEqual(
+        ["desc_chars", "desc_pov", "desc_sexual", "desc_words"],
+      );
+    }
   });
 
   it("gives View 1 the characteristic's own words: what it measures, from meta", async () => {

@@ -46,6 +46,8 @@ describe("Explore's chart layout is unchanged by the Genres page's options", () 
   it.skipIf(!real)("on the real data", () => {
     const read = (id) => JSON.parse(readFileSync(path.join(REAL, "v", id, "all.json"), "utf8"));
     const out = fingerprint(real, read, ["all", "adult-romance"], [288, 343, 720, 1000]);
-    expect(out).toEqual({ digest: "fa78f0dc311af78d", count: 14960 });
+    // the owner's meta.json change (2026-10-12) renamed "Explicit description"'s groups ("Explicit blurb", "Non-explicit
+    // blurb"): with the meta.json before it the digest is still fa78f0dc311af78d, and only that characteristic's differ
+    expect(out).toEqual({ digest: "912c2d47bb675e32", count: 14960 });
   });
 });

@@ -551,7 +551,7 @@ export default function Methodology({ meta, section }) {
 
         <h2 id="privacy" tabIndex={-1}>What this site does not contain</h2>
         <p>
-          No story text, titles, descriptions, story addresses, author names or story-by-story records. The site holds
+          No story text, titles, blurbs, story addresses, author names or story-by-story records. The site holds
           only summaries of groups of at least {meta.min_n} stories (counts, medians, quartiles and means), computed in
           advance from the collected data.
         </p>

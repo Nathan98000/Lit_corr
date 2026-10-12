@@ -146,7 +146,7 @@ describe("the rows", () => {
     expect(name("rel_consent_per_1k")).toMatch(
       /^Consent and check-in language: \d+ in 100; 2000–2009 11% with any, 2020 or later 21%; no clear change\. Opens its chart over time\.$/,
     );
-    expect(name("desc_pov")).toMatch(/^Person of the description, % of stories: 2000–2009 First person [\d.]+%, .*; 2020 or later .*; no clear change\. /);
+    expect(name("desc_pov")).toMatch(/^Person of the blurb, % of stories: 2000–2009 First person [\d.]+%, .*; 2020 or later .*; no clear change\. /);
     expect(name("pace_sex_peak_position")).toMatch(/^Where sexual language peaks: \d+ in 100; 2000–2009 median [^,]+, 2020 or later median .+; no clear change\./);
     // a clear change never prints the zone's edge (section 4.2): the build-up of sexual language, r −0.206
     const buildUp = p.items.find((x) => x.id === "pace_sex_shift");

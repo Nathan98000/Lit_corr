@@ -106,7 +106,8 @@ TOPIC_OF = {pair: (i, j, tid) for i, (tid, _, _, pairs) in enumerate(TOPICS) for
 # Characteristics that open their topic's list (the general ones before the detailed counts).
 TOPIC_LEAD = ["pov_class", "pov_is_first_person", "narr_tense_class", "narr_is_present_tense",
               "narr_present_tense_share", "reader_address_per_1k", "pov_first_person_share"]
-SUBGROUP_LABEL = {"Sexual content": "Amount & variety"}  # sub-heading names on the site, where they differ
+# sub-heading names on the site, where they differ; the story's description is its "blurb" on the site (see SITE_LABEL)
+SUBGROUP_LABEL = {"Sexual content": "Amount & variety", "Title & description": "Title & blurb"}
 # A short list to start from (shown first in the picker). Not chosen by any result.
 POPULAR = ["story_words", "pov_is_first_person", "narr_is_present_tense", "dlg_word_share", "sex_terms_per_1k",
            "sex_words_before_first", "emo_balance", "series_is_part", "story_has_author_note",
@@ -130,6 +131,7 @@ SYNONYMS = {
     "narr_": "tense present past",
     "reader_address_per_1k": "second person addressing the reader",
     "dlg_": "dialog speech talking conversation",
+    "desc_": "description summary",
     "sex_": "explicit",
     "style_profanity_per_1k": "swearing cursing swear words curse words bad language",
     "mech_errors_per_1k": "typos spelling mistakes errors grammar",
@@ -177,8 +179,8 @@ BINARY = {
                                  "or part", "other stories"),
     "title_sexual": ("Explicit title", "Non-explicit title", "Stories with explicit titles",
                      "stories with non-explicit titles"),
-    "desc_sexual": ("Explicit description", "Non-explicit description", "Stories with explicit descriptions",
-                    "stories with non-explicit descriptions"),
+    "desc_sexual": ("Explicit blurb", "Non-explicit blurb", "Stories with explicit blurbs",
+                    "stories with non-explicit blurbs"),
     "series_is_part": ("Part of a series", "Stand-alone", "Stories in a series", "stand-alone stories"),
     "series_is_later_part": ("Later part of a series", "First part or stand-alone", "Later parts of a series",
                              "first parts or stand-alone stories"),
@@ -202,8 +204,8 @@ NOUN = {
     "story_sentences": "the number of sentences", "story_paragraphs": "the number of paragraphs",
     "story_one_sentence_paragraph_share": "one-sentence paragraphs",
     "story_long_paragraph_share": "very long paragraphs",
-    "title_chars": "title length", "title_words": "title word count", "desc_chars": "description length",
-    "desc_words": "description word count", "desc_pov": "the person used in the description",
+    "title_chars": "title length", "title_words": "title word count", "desc_chars": "blurb length",
+    "desc_words": "blurb word count", "desc_pov": "the person used in the blurb",
     "series_part_number": "part number in a series", "pov_class": "narrative perspective",
     "narr_tense_class": "narration tense", "gender_composition": "pronoun composition",
     "pov_first_plural_per_1k": "the use of ‘we / us / our’", "pov_second_per_1k": "the use of ‘you / your’",
@@ -272,7 +274,7 @@ MORE = {
     "story_median_paragraph_words": "Stories with longer typical paragraphs",
     "story_long_paragraph_share": "Stories with more ‘walls of text’",
     "title_chars": "Stories with longer titles", "title_words": "Stories with wordier titles",
-    "desc_chars": "Stories with longer descriptions", "desc_words": "Stories with wordier descriptions",
+    "desc_chars": "Stories with longer blurbs", "desc_words": "Stories with wordier blurbs",
     "series_part_number": "Later parts of a series",
     "pov_first_person_share": "Stories with a larger first-person share of pronouns",
     "narr_present_tense_share": "Stories told more in the present tense",
@@ -422,13 +424,19 @@ FEATURED = [  # example questions under the chart: (question, settings). Each op
 
 
 # Labels shown on the site where the data dictionary's label is unclear, clashes with a genre name ("Romance")
-# or reads badly. Everything else uses the dictionary's label (in US spelling, with typographic quotes).
+# or reads badly. Everything else uses the dictionary's label (in US spelling, with typographic quotes). The story's
+# description is its "blurb" on the site: "Description length" was read as the length of descriptive writing (the
+# Trends review's fresh eyes, 3 in 6, beside "Descriptive words"), and the readers' own word for it was "blurb".
 SITE_LABEL = {
     "pace_action_peak_position": "Where action verbs peak",
     "rel_romance_per_1k": "Romance language",
     "lex_ttr": "Word variety (type–token ratio)",
     "sex_other_per_1k": "General sexual words",
     "char_top_name_share": "Focus on one main name",
+    "desc_chars": "Blurb length",
+    "desc_words": "Blurb word count",
+    "desc_sexual": "Explicit blurb",
+    "desc_pov": "Person of the blurb",
 }
 
 # The site is written in US English; the data dictionary partly uses UK spelling.
@@ -511,6 +519,9 @@ _SITE_TEXT = [
     (r"\bBlank\b", "Not measured"),
     (r"\s*\(lexicon\)", ""),
     (r"action verbs increases", "action verbs increase"),
+    # the story's description is its "blurb" on the site (SITE_LABEL)
+    (r"there is no description", "there is no blurb"),
+    (r"two descriptions in three", "two blurbs in three"),
 ]
 SITE_DESCRIPTION = {  # plain-language versions where the dictionary text uses data codes or formulas
     "age_years": "How long the story had been online when its numbers were recorded, in years.",
@@ -539,6 +550,28 @@ SITE_DESCRIPTION = {  # plain-language versions where the dictionary text uses d
     "lex_ttr": "Different words divided by all words: how varied the vocabulary is (the type–token ratio).",
     "lex_mattr": "The share of different words in each 500-word stretch, averaged over the story, so that long and "
                  "short stories can be compared (a moving-average type–token ratio).",
+    # the story's description, called its blurb on the site (SITE_LABEL)
+    "desc_chars": "Number of characters in the blurb: the short description the author writes for the story, shown "
+                  "with its title in story lists.",
+    "desc_words": "Number of words in the blurb.",
+    "desc_sexual": "Whether the blurb contains a term from the sexual word lists.",
+    "desc_pov": "Grammatical person of the blurb: first (I, my, we), second (you), third (he, she, they), by which "
+                "personal pronouns it uses most, or none.",
+    # the dictionary only repeats these labels ("Touch words per 1,000 words."); the word lists' own descriptions
+    # (lexicons/sensory_*.txt) and the way the marks are counted (litcorr/text/features.py) say what they measure
+    "sense_touch_per_1k": "Words about touching and texture (caress, rub, squeeze, soft, smooth, skin) per 1,000 words.",
+    "sense_sight_per_1k": "Words about seeing, light and color (look, gaze, eyes, bright, shadow, red, golden) per "
+                          "1,000 words.",
+    "sense_sound_per_1k": "Words about hearing, voices and noises (whisper, loud, silence, scream, music) per 1,000 "
+                          "words.",
+    "sense_smell_per_1k": "Words about smells and scents (scent, perfume, musk, sniff, aroma) per 1,000 words.",
+    "sense_taste_per_1k": "Words about taste, flavor, eating and drinking (taste, flavor, salty, savor, swallow) per "
+                          "1,000 words.",
+    "sense_body_per_1k": "Words for bodily feelings (warmth, cold, tingling, throbbing, aching, trembling, breathing, "
+                         "sweat, wetness) per 1,000 words.",
+    "punct_semicolon_per_1k": "Semicolons (‘;’) in the story’s text, per 1,000 words.",
+    "punct_colon_per_1k": "Colons (‘:’) in the story’s text, per 1,000 words, leaving out the colon of a web address.",
+    "punct_comma_per_1k": "Commas (‘,’) in the story’s text, per 1,000 words.",
 }
 for _part, (_noun, _) in _PACE_NOUNS.items():
     SITE_DESCRIPTION[f"pace_{_part}_peak_position"] = (

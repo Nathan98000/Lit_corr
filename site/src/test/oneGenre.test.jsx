@@ -619,7 +619,7 @@ describe("the key, in the lists (F86)", () => {
     const barred = [...document.querySelectorAll(".profile-topic .profile-row")].filter((row) => row.querySelector(".segment"));
     expect(lines.map((p) => p.nextElementSibling)).toEqual(barred);
     expect(barred.map((row) => row.querySelector(".profile-label-text").textContent)).toEqual([
-      "Person of the description",
+      "Person of the blurb", // the story's description is its blurb on the site (meta.json, the owner's changes)
       "Narrative perspective",
       "Narration tense",
       "Pronoun composition",
@@ -661,7 +661,7 @@ describe("the key, in the lists (F86)", () => {
     vi.stubGlobal("fetch", realFetch);
     const user = await openGenre("#/genres?view=genre&genre=chain-stories&include=y2020"); // 12 stories: nothing compared
     await openAllTopics(user);
-    const named = ["Person of the description", "Narrative perspective", "Narration tense", "Pronoun composition"];
+    const named = ["Person of the blurb", "Narrative perspective", "Narration tense", "Pronoun composition"];
     const rows = [...document.querySelectorAll(".profile-row")].filter((r) => named.includes(r.querySelector(".profile-label-text").textContent));
     expect(rows).toHaveLength(4);
     for (const row of rows) {

@@ -57,6 +57,9 @@ async function openPage(hash = "#/methodology") {
   const user = userEvent.setup();
   render(<App />);
   await screen.findByRole("heading", { level: 1, name: "How it works" });
+  // the section observer is made in an effect, which React may run a turn after the page is on screen (when the
+  // render overruns its time slice, as under a full test run's load): scrolling before it exists would mark nothing
+  await waitFor(() => expect(observers).not.toHaveLength(0));
   return user;
 }
 const where = () => document.querySelector(".section-bar-where").textContent;

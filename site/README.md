@@ -99,18 +99,17 @@ with it. Genres with fewer than 10 stories are left out, as everywhere. `loadGen
 `prefetchGenres(include)` in `src/lib/data.js` read it, through the same cache as the other files; a visit that starts
 on the Genres page fetches it, and the page's code, while the app starts, before `meta.json` arrives (`App.jsx`).
 
-`trends/<included>/<genre>.json` (one per genre and Length option: 4 × 31 files, 1.6–13 KB gzipped) holds, for every
+`trends/<included>/<genre>.json` (one per genre and Length option: 4 × 31 files, 1.6–12.4 KB gzipped) holds, for every
 characteristic on the Trends page, each period's number of stories and quartiles or shares (none under 10 stories),
 the 2000–2009 window's, and the comparison of 2020 or later with 2000–2009: the rank-biserial correlation (for named
-groups the total variation distance) with whether it clearly changed, and for All genres the same with every genre's
-share of stories held fixed (no longer shown). `meta.json`'s `trend` gives the periods, the two windows, the rule, the options, the
-characteristics left out and `too_few` (per option, the genres whose two windows can't be compared); a characteristic
-whose noun is plural has `"plural": true`. `loadTrends(include, genre)` and `prefetchTrends` in `src/lib/data.js` read
+groups the total variation distance) with whether it clearly changed. `meta.json`'s `trend` gives the periods, the
+two windows, the rule, the options, the characteristics left out and `too_few` (per option, the genres whose two
+windows can't be compared); a characteristic whose noun is plural has `"plural": true`. `loadTrends(include, genre)` and `prefetchTrends` in `src/lib/data.js` read
 them.
 
 The aggregates are about 72 MB uncompressed (1,818 small files; git and web hosts compress them to roughly a
 third). A chart loads one file of about 15–20 KB; the Genres page one file of about 55 KB gzipped per option; the
-Trends page one of at most 13 KB.
+Trends page one of at most 12.4 KB.
 
 ## First-load budget and lazy parts
 
@@ -119,7 +118,7 @@ The **first load** is the HTML, the main script, the CSS, the heading font, `met
 review; 149.7 before them, 149.5 before the review, 148.5 before the Trends page). The Genres and Trends pages' own
 code, styles and files load only when they are opened. A visit that starts on the Genres page is 208.9 KiB in 9
 requests (204.4 in 8 before the Trends page: the code the two pages share is now a chunk of its own). One that starts
-on the Trends page is 175.8 KiB in 9, on either view.
+on the Trends page is 175.2 KiB in 9, on either view.
 Layout shift stays under 0.03. The budget is **155 KiB of
 gzip response bodies** for that set, measured on the built site served with gzip (the design review's `firstload.mjs`
 with `serve.mjs`; response headers are not counted).

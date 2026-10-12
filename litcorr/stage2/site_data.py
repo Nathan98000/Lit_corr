@@ -21,7 +21,7 @@ Output (default site/public/aggregates/):
                              the Trends page (trends.py), for All stories and the Length options: for every
                              characteristic but the left-out ones, per five-year period of publication year the number
                              of stories and their quartiles or shares, and the stories from 2020 or later compared with
-                             those from 2000-2009 (TREND_*; for All genres also with the genre mix held fixed)
+                             those from 2000-2009 (TREND_*)
 
 Only summaries leave this step: groups with fewer than MIN_N stories are left out, and no minimum, maximum
 or per-story value is written. "All genres" weights each story by its category's sampling weight, so big

@@ -404,8 +404,8 @@ describe("View 1's chart tells the same story as its verdict (phase 4)", () => {
   const WORDS = { id: "story_words", label: "Word count", noun: "story length in words", unit: "words", bins: { type: "ranges" } };
   const CONT = { id: "end_to_be_continued", label: "Announces a continuation", noun: "announces a continuation", unit: "yes/no", yes_subject: "Stories that announce a continuation", bins: { type: "levels" } };
   // the real data's story length and continuation, All genres, All stories
-  const length = { k: "num", fmt: "num", q: [[901, 1640, 2500, 4220], [1657, 1740, 3010, 5110], [1522, 1940, 3260, 6000], [1564, 2340, 4060, 7200], [3343, 2310, 4100, 7210]], t: [2558, 1680, 2810, 4760], r: 0.25, f: 1, rm: 0.246, fm: 1 };
-  const cont = { k: "bin", q: [[901, 0.112], [1657, 0.075], [1522, 0.052], [1564, 0.081], [3343, 0.091]], t: [2558, 0.089], r: 0.002, f: 0, rm: 0.004, fm: 0 };
+  const length = { k: "num", fmt: "num", q: [[901, 1640, 2500, 4220], [1657, 1740, 3010, 5110], [1522, 1940, 3260, 6000], [1564, 2340, 4060, 7200], [3343, 2310, 4100, 7210]], t: [2558, 1680, 2810, 4760], r: 0.25, f: 1 };
+  const cont = { k: "bin", q: [[901, 0.112], [1657, 0.075], [1522, 0.052], [1564, 0.081], [3343, 0.091]], t: [2558, 0.089], r: 0.002, f: 0 };
   const fmt = (variable, entry) => trendFormat(variable, entry, true, 30);
 
   it("puts each window's pooled number on its bracket: median, share, share with any, median among those", () => {
@@ -623,17 +623,11 @@ describe("View 2 (phase 6)", () => {
   });
 
   it("says no borderline and no band line, tags no row, and fetches no Length options' files for them (the owner, 2026-10-12)", async () => {
-    // dialogue share: the fixed-mix check disagrees (fm 0); has dialogue: not clear with 2,000–5,000 words (f 0)
     const asked = [];
     const serve = fixtureFetch();
     vi.stubGlobal("fetch", async (url) => {
       asked.push(String(url));
-      const res = await serve(url);
-      if (!/trends\/(all|medium)\/all\.json/.test(String(url))) return res;
-      const body = await res.json();
-      if (String(url).includes("trends/all/all.json")) Object.assign(body.c.dlg_word_share, { fm: 0, rm: 0.15 });
-      else Object.assign(body.c.dlg_has_dialogue, { f: 0 });
-      return { ok: true, status: 200, json: async () => body };
+      return serve(url);
     });
     await open("#/trends", { ready: trends });
     const answer = document.querySelector(".trend-changes");

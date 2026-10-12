@@ -570,7 +570,7 @@ def test_trend_meta_periods_and_windows(built_genres):
 
 def test_trend_arrays_cells_and_shares(built_genres):
     """Every array as long as the periods; cells only for 10 stories or more, in the Genres page's forms and nothing
-    else (no minimum, maximum or per-story value); shares that add up to 1; the mix check in All genres' files only."""
+    else (no minimum, maximum or per-story value); shares that add up to 1; no fixed-mix check (dropped 2026-10-12)."""
     _, meta, out, _ = built_genres
     for sid in W.TREND_SUBSETS:
         for gid in [g["id"] for g in meta["genres"]]:
@@ -595,7 +595,7 @@ def test_trend_arrays_cells_and_shares(built_genres):
                     else:
                         assert all(0 <= v <= 1 for v in cell[1:]) and abs(sum(cell[1:]) - 1) <= 0.002, (sid, gid, name, i)
                 assert e["f"] in ((0, 1) if e["k"] == "grp" else (-1, 0, 1)) and (e["f"] == 0 or e["r"] is not None)
-                assert ("rm" in e) == ("fm" in e) == (gid == "all"), (sid, gid, name)
+                assert "rm" not in e and "fm" not in e, (sid, gid, name)
 
 
 def test_trend_windows_and_counts_match_a_direct_computation(built_genres):
@@ -616,10 +616,9 @@ def test_trend_windows_and_counts_match_a_direct_computation(built_genres):
         assert d["n"] == [int((g & (year >= lo) & (year <= hi)).sum()) for lo, hi in d["periods"]]
 
 
-def _trend_direct(df, name, kind, gid, sub, fixed=False):
+def _trend_direct(df, name, kind, gid, sub):
     """2020 or later against 2000-2009 for one option and genre, from scratch: (r, se) by counting pairs, or for named
-    groups (tvd, chi-square, degrees of freedom); None when a window has fewer than 30 stories. `fixed`: All genres with
-    each genre's share of both windows held at its share of the option's stories with the characteristic."""
+    groups (tvd, chi-square, degrees of freedom); None when a window has fewer than 30 stories."""
     w, year, genre = df["sampling_weight"].to_numpy(), df["pub_year"].to_numpy(), df["queue_category_slug"].to_numpy()
     if kind == "grp":
         levels = [v for v, _ in W.LEVELS[name]]
@@ -635,12 +634,8 @@ def _trend_direct(df, name, kind, gid, sub, fixed=False):
         return None
     if gid != "all":
         wa, wb = np.ones(a.sum()), np.ones(b.sum())
-    elif not fixed:
-        wa, wb = w[a], w[b]
     else:
-        share = {gg: w[ok & (genre == gg)].sum() / w[ok].sum() for gg in set(genre[ok])}
-        wa = np.array([share[gg] / (a & (genre == gg)).sum() for gg in genre[a]])
-        wb = np.array([share[gg] / (b & (genre == gg)).sum() for gg in genre[b]])
+        wa, wb = w[a], w[b]
     ea, eb = wa.sum() ** 2 / (wa ** 2).sum(), wb.sum() ** 2 / (wb ** 2).sum()
     if kind == "grp":
         pa = np.array([wa[x[a] == v].sum() for v in levels]) / wa.sum()
@@ -657,7 +652,7 @@ def _trend_direct(df, name, kind, gid, sub, fixed=False):
     return 2 * wins / (wb.sum() * wa.sum()) - 1, np.sqrt((ea + eb + 1) / (3 * ea * eb))
 
 
-def test_trend_flags_and_the_mix_check_match_a_direct_recomputation(built_genres):
+def test_trend_flags_match_a_direct_recomputation(built_genres):
     _, meta, out, df = built_genres
     flagged = 0
     for sid in W.TREND_SUBSETS:
@@ -668,21 +663,19 @@ def test_trend_flags_and_the_mix_check_match_a_direct_recomputation(built_genres
             for name in ("dlg_word_share", "sex_terms_per_1k", "emo_anger_per_1k", "pov_is_first_person",
                          "narr_tense_class"):
                 e = d["c"][name]
-                for fixed in ((False, True) if gid == "all" else (False,)):
-                    rk, fk = ("rm", "fm") if fixed else ("r", "f")
-                    got = _trend_direct(df, name, e["k"], gid, sub, fixed)
-                    if got is None:  # r is null exactly when a window has fewer than 30 stories
-                        assert e[rk] is None and e[fk] == 0, (sid, gid, name, fixed)
-                        continue
-                    if e["k"] == "grp":
-                        tvd, chi, dof = got
-                        assert e[rk] == pytest.approx(round(tvd, 3), abs=1e-9)
-                        assert e[fk] == int(tvd >= 0.2 and dof >= 1 and chi > sd.GENRE_CHI2[dof]), (sid, gid, name)
-                    else:
-                        r, se = got
-                        assert e[rk] == pytest.approx(round(r, 3), abs=1e-9), (sid, gid, name, fixed)
-                        assert e[fk] == (int(np.sign(r)) if abs(r) >= 0.2 and abs(r) / se >= 3.29 else 0)
-                    flagged += e[fk] != 0
+                got = _trend_direct(df, name, e["k"], gid, sub)
+                if got is None:  # r is null exactly when a window has fewer than 30 stories
+                    assert e["r"] is None and e["f"] == 0, (sid, gid, name)
+                    continue
+                if e["k"] == "grp":
+                    tvd, chi, dof = got
+                    assert e["r"] == pytest.approx(round(tvd, 3), abs=1e-9)
+                    assert e["f"] == int(tvd >= 0.2 and dof >= 1 and chi > sd.GENRE_CHI2[dof]), (sid, gid, name)
+                else:
+                    r, se = got
+                    assert e["r"] == pytest.approx(round(r, 3), abs=1e-9), (sid, gid, name)
+                    assert e["f"] == (int(np.sign(r)) if abs(r) >= 0.2 and abs(r) / se >= 3.29 else 0)
+                flagged += e["f"] != 0
     assert flagged >= 4  # dialogue rises with the publication year on purpose (synthetic.py)
 
 
@@ -713,7 +706,7 @@ def test_trends_builder_reads_only_the_characteristic_genre_weight_year_and_leng
     x = df["sex_terms_per_1k"].to_numpy()
     entries = TR.trend_entries("sex_terms_per_1k", "num", "num", x, np.zeros(len(df), np.int16), 1, set(), S)
     assert set(entries) == {"all", "short"} and set(entries["all"]) == set(genre_ids)
-    assert list(entries["all"]["all"]) == ["k", "fmt", "q", "t", "r", "f", "rm", "fm"]
+    assert list(entries["all"]["all"]) == ["k", "fmt", "q", "t", "r", "f"]
     assert list(entries["all"]["romance"]) == ["k", "fmt", "q", "t", "r", "f"]
     payload = TR.trend_file("all", "all", S["trend_periods"], [0] * len(S["trend_periods"]), {"x": entries["all"]["all"]})
     text = json.dumps(payload)
@@ -732,6 +725,7 @@ def test_real_trends_files_are_small_and_whole():
         d = json.loads(f.read_bytes())
         assert d["periods"] == meta["trend"]["periods"] and len(d["n"]) == len(d["periods"])
         for e in d["c"].values():
+            assert set(e) <= {"k", "fmt", "q", "t", "r", "f"}, f.name  # no fixed-mix check (dropped 2026-10-12)
             for cell in e["q"] + [e["t"]]:
                 assert cell is None or cell[0] >= sd.MIN_N
                 if cell is not None and e["k"] in ("grp", "band"):

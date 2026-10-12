@@ -55,7 +55,7 @@ function* sentences(meta, file) {
   for (const [id, entry] of Object.entries(file.c)) {
     const variable = meta.variables.find((v) => v.id === id);
     const at = `${file.s}/${file.g} ${id}`;
-    // "clearly" is said only by the heading (the flag f, never the fixed-mix check's fm), and the announcement repeats it
+    // "clearly" is said only by the heading (the flag f), and the announcement repeats it
     const clearly = !nothingToDraw(entry) && entry.r != null && Boolean(entry.f);
     yield { at, text: trendQuestionText(variable, genre), clearly: false };
     yield { at, text: trendAnnouncement(meta, file, { v: id, genre: file.g, sub: file.s }), clearly };

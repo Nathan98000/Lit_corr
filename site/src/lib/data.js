@@ -108,8 +108,7 @@ export function pattern(genreData, k) {
  * p75]; bin: [n, share]; zero: [n, stories above 0, (all genres only: their share), p25, median, p75 among them]; grp
  * and band: [n, share per group]; null under meta.min_n stories), `r` (now against then: rank-biserial r, or for grp the
  * total variation distance; null when a window has fewer than the rule's stories) and `f` (+1 clearly rose, -1 clearly
- * fell, 1 a different mix, 0 neither); all.json also `rm`, `fm`: the same with each genre's share held fixed (not
- * shown: the owner took the check off the page).
+ * fell, 1 a different mix, 0 neither).
  */
 export const loadTrends = (subset, genre) => getJson(`trends/${subset}/${genre}.json`);
 export function prefetchTrends(subset = "all", genre = "all") {

@@ -4,8 +4,8 @@ For every characteristic but the left-out ones (wording.TREND_PAGE_EXCLUDED), pe
 year: the number of stories with it and their quartiles (or shares), as the Genres page gives them; the same for the
 "then" window (2000-2009); and the comparison of the "now" window (2020 to the newest story, the last period) with
 "then", by the Genres page's rule (TREND_*). All genres weights each story by its category's sampling weight; within a
-genre every story weighs the same. For All genres the comparison is also made with each genre's share of both windows
-held fixed (rm, fm), since the genres' shares of new stories changed.
+genre every story weighs the same. (A second comparison for All genres with each genre's share of both windows held
+fixed, `rm` and `fm`, was dropped at the owner's word on 2026-10-12, with the page's "borderline" that showed it.)
 
 Only summaries leave this step: periods and windows of at least MIN_N stories, r for windows of at least SMALL_N, and
 counts of stories. The tasks read the characteristic, the genre, the weight, the publication year and the options'
@@ -66,21 +66,18 @@ def trend_cell(kind: str, fmt: str, x: np.ndarray, codes: np.ndarray, nbins: int
 
 
 def trend_compare(kind: str, x: np.ndarray, codes: np.ndarray, nbins: int, then: np.ndarray, now: np.ndarray,
-                  w: np.ndarray, weighted: bool, w_then: np.ndarray | None = None,
-                  w_now: np.ndarray | None = None) -> tuple[float | None, int]:
+                  w: np.ndarray, weighted: bool) -> tuple[float | None, int]:
     """The "now" window against "then": (r, flag), or for named groups (total variation distance, flag); (None, 0) when
     a window has fewer than SMALL_N stories with the characteristic. r = 2 * AUC - 1 on the raw values (bands on their
     codes), positive when newer stories score higher; flag = sign(r) when |r| >= TREND_MIN_R and |r| / SE >= TREND_Z.
     Named groups: flag 1 when the distance is at least TREND_MIN_TVD and a two-sample chi-square on the effective sizes
-    (groups whose pooled share is under 1% pooled into one) clears GENRE_CHI2. w_then / w_now: other weights for the two
-    windows' stories, in their order (the genre mix held fixed)."""
+    (groups whose pooled share is under 1% pooled into one) clears GENRE_CHI2."""
     a, b = then & (codes >= 0), now & (codes >= 0)
     na, nb = int(a.sum()), int(b.sum())
     if na < sd.SMALL_N or nb < sd.SMALL_N:
         return None, 0
-    if w_then is None:
-        w_then = w[a] if weighted else np.ones(na)
-        w_now = w[b] if weighted else np.ones(nb)
+    w_then = w[a] if weighted else np.ones(na)
+    w_now = w[b] if weighted else np.ones(nb)
     if kind == "grp":
         pa = np.bincount(codes[a], weights=w_then, minlength=nbins) / w_then.sum()
         pb = np.bincount(codes[b], weights=w_now, minlength=nbins) / w_now.sum()
@@ -99,19 +96,6 @@ def trend_compare(kind: str, x: np.ndarray, codes: np.ndarray, nbins: int, then:
     se = rank_biserial_se(effective_n(w_now), effective_n(w_then))
     clear = abs(r) >= TREND_MIN_R and abs(r) / se >= TREND_Z
     return round(r, 3) + 0.0, (int(math.copysign(1, r)) if clear else 0)  # never "-0.0"
-
-
-def mix_fixed_weights(ok: np.ndarray, window: np.ndarray, g: np.ndarray, w: np.ndarray, n_genres: int) -> np.ndarray:
-    """Weights for one window's stories that give every genre (indices 1 .. n_genres) the same share of the window as it
-    has among all the option's stories with the characteristic (weighted by sampling weight): within a genre, its
-    stories in the window share that share equally."""
-    out = np.zeros(len(ok))
-    total = w[ok].sum()
-    for gi in range(1, n_genres + 1):
-        k = window & ok & (g == gi)
-        if k.any():
-            out[k] = w[ok & (g == gi)].sum() / total / k.sum()
-    return out
 
 
 def trend_entries(name: str, kind: str, fmt: str, x: np.ndarray, codes: np.ndarray, nbins: int, skip: set[str],
@@ -138,13 +122,6 @@ def trend_entries(name: str, kind: str, fmt: str, x: np.ndarray, codes: np.ndarr
             e["q"] = [trend_cell(kind, fmt, x, codes, nbins, gm & pm, w, weighted) for pm in pmask]
             e["t"] = trend_cell(kind, fmt, x, codes, nbins, gm & then, w, weighted)
             e["r"], e["f"] = trend_compare(kind, x, codes, nbins, gm & then, gm & now, w, weighted)
-            if gid == "all":
-                ok = gm & (codes >= 0)
-                a, b = ok & then, ok & now
-                e["rm"], e["fm"] = trend_compare(
-                    kind, x, codes, nbins, a, b, w, True,
-                    mix_fixed_weights(ok, then, g, w, len(genre_ids) - 1)[a],
-                    mix_fixed_weights(ok, now, g, w, len(genre_ids) - 1)[b])
             per[gid] = e
         out[sid] = per
     return out

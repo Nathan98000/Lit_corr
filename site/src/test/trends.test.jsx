@@ -1,5 +1,5 @@
 // The Trends page's View 1 (STAGE2_TRENDS_PAGE_PROMPT.md, section 3): the chart's geometry (trendLayout), its numbers,
-// every heading, the takeaway's lines and the fixed-mix line, the chart on the page (marks, table, brackets, details and
+// every heading, the takeaway's lines, the chart on the page (marks, table, brackets, details and
 // keyboard, small samples), the too-few states, the actions and the PNG's parts.
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -283,7 +283,7 @@ describe("the chart's numbers (one format per chart)", () => {
   });
 });
 
-describe("the heading, the numbers line and the fixed-mix line", () => {
+describe("the heading and the numbers line", () => {
   const heading = (variable, entry, genre = ALL, subset = null) => trendHeading({ variable, entry, genre, subset, file: { ...FILE, g: genre.id } });
 
   it("says rose, fell, moved later or earlier, changed, or no clear change, from the windows of the file", () => {
@@ -345,34 +345,26 @@ describe("the heading, the numbers line and the fixed-mix line", () => {
     expect(words({ noun: "narrative perspective", bins: { type: "levels" } }, { k: "grp", q: [], t: [9], r: 0.02, f: 0 })).toBeNull();
   });
 
-  it("says what the site's rule decides, never “borderline”, where the fixed-mix check disagrees (the owner, 2026-10-12)", () => {
-    const touch = { k: "num", r: -0.213, f: -1, rm: -0.199, fm: 0 };
+  it("says what the site's rule decides, never “borderline” (the owner, 2026-10-12)", () => {
+    const touch = { k: "num", r: -0.213, f: -1 };
     const touchWords = { id: "sense_touch_per_1k", label: "Touch words", noun: "touch words", plural: true, unit: "per 1,000 words", bins: { type: "ranges" } };
     const heading = (variable, entry, genre = ALL) => trendHeading({ variable, entry, genre, subset: { id: "all" }, file: { ...FILE, g: genre.id } });
     expect(heading(touchWords, touch)).toBe("Touch words clearly fell from 2000–2009 to 2020 or later");
-    expect(heading(NOTE, { k: "bin", r: 0.19, f: 0, rm: 0.21, fm: 1 })).toBe(
+    expect(heading(NOTE, { k: "bin", r: 0.19, f: 0 })).toBe(
       "No clear change in the share of stories with an author’s note from 2000–2009 to 2020 or later",
     );
     expect(heading(touchWords, { k: "num", r: -0.213, f: -1 }, ROMANCE)).toBe("Touch words clearly fell from 2000–2009 to 2020 or later");
   });
 
-  it.skipIf(!real)("follows the file's f alone where f and fm differ (the real data)", () => {
-    const counts = {};
+  it.skipIf(!real)("finds no fixed-mix check in the files: only the rule's r and f (the owner, 2026-10-12)", () => {
     for (const sub of real.trend.subsets) {
-      const file = realTrends(sub, "all");
-      const subset = real.subsets.find((x) => x.id === sub);
-      const differ = Object.entries(file.c).filter(([, e]) => e.r != null && e.f !== e.fm);
-      for (const [id, e] of differ) {
-        const variable = real.variables.find((v) => v.id === id);
-        const said = trendHeading({ variable, entry: e, genre: ALL, subset, file });
-        expect(said, id).not.toMatch(/borderline/);
-        expect(/clearly/.test(said), id).toBe(Boolean(e.f));
+      for (const g of real.genres) {
+        const file = realTrends(sub, g.id);
+        for (const [id, e] of Object.entries(file.c)) expect(Object.keys(e).filter((k) => !["k", "fmt", "q", "t", "r", "f"].includes(k)), `${sub}/${g.id} ${id}`).toEqual([]);
       }
-      counts[sub] = differ.length;
     }
-    expect(counts).toEqual({ all: 2, short: 1, medium: 5, long: 4 }); // the files still carry the check
     const touch = realTrends("all", "all").c.sense_touch_per_1k;
-    expect([touch.r, touch.rm, touch.f, touch.fm]).toEqual([-0.213, -0.199, -1, 0]);
+    expect([touch.r, touch.f]).toEqual([-0.213, -1]);
   });
 });
 
@@ -501,12 +493,8 @@ describe("View 1 on the page", () => {
     ]);
   });
 
-  it("says the site's rule alone for All genres where the fixed-mix check disagrees: no borderline heading or line", async () => {
-    const notClear = (body) => {
-      Object.assign(body.c.dlg_word_share, { fm: 0, rm: 0.15 });
-      return body;
-    };
-    await openTrends("#/trends?var=dlg_word_share", { change: notClear });
+  it("says the site's rule alone for All genres: no borderline heading or line", async () => {
+    await openTrends("#/trends?var=dlg_word_share");
     expect(screen.getByRole("heading", { level: 2 }).textContent).toBe("Dialogue share clearly rose from 2000–2009 to 2020 or later");
     const answer = document.querySelector(".trend-answer");
     expect(answer.textContent).not.toMatch(/borderline|mix of genres|held fixed/);

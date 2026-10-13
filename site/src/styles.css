@@ -767,8 +767,10 @@ h3 {
   color: var(--ink-3);
 }
 
+/* How it works' title at the page question's size (X2) */
 .prose h1 {
-  font-size: clamp(32px, 5vw, 44px);
+  font-size: var(--serif-page);
+  line-height: var(--leading-page);
   margin: 0 0 var(--space-12);
 }
 
@@ -1350,6 +1352,8 @@ h3 {
   outline: none;
 }
 
+/* The page's question (round 4's X2: one page frame): the page question's size, balanced lines at every width (the
+   blue phrase stays whole on phones, the last word never alone on desktops), up to 44 characters wide from 760 px */
 .sentence {
   margin: 0;
   max-width: 34ch;
@@ -1359,7 +1363,13 @@ h3 {
   line-height: var(--leading-page);
   letter-spacing: -0.012em;
   color: var(--ink);
-  text-wrap: pretty;
+  text-wrap: balance;
+}
+
+@media (min-width: 760px) {
+  .sentence {
+    max-width: 44ch;
+  }
 }
 
 .slot {
@@ -1878,8 +1888,10 @@ html[data-page="explore"] body {
     padding-top: var(--space-16);
   }
 
-  /* lines far enough apart that each word owns its own tap area (F38) */
-  .sentence {
+  /* lines far enough apart that each word owns its own tap area (F38); How it works' title at the same size keeps the
+     same lines */
+  .sentence,
+  .prose h1 {
     line-height: var(--leading-page-phone);
   }
 
@@ -2028,25 +2040,19 @@ html[data-page="genres"] body {
 }
 
 /* ------------------------------------------------------------- patterns (I4) */
+/* Patterns opens like the other pages (X2): the kicker (App.jsx), the question as its h1 at the page question's size,
+   then the count line in the takeaway's blue-ruled box, at the takeaway's size */
 .patterns-page {
   max-width: 72ch;
-  padding: var(--space-32) 0 var(--space-48);
-}
-
-.patterns-page h1 {
-  margin: 0 0 var(--space-8);
-  font-size: clamp(28px, 4vw, 38px);
+  padding: 0 0 var(--space-48);
 }
 
 .patterns-question {
-  font-size: clamp(21px, 3vw, 28px);
   margin-bottom: var(--space-16);
 }
 
-.pattern-count {
+.takeaway.pattern-count {
   margin: 0 0 var(--space-16);
-  font-size: var(--text-16); /* 17 → 16: the takeaway's size (it becomes the takeaway in phase 5) */
-  line-height: var(--leading-16);
 }
 
 .pattern-buttons {

@@ -146,7 +146,7 @@ describe("the masthead (D4, D9; with the Trends page, D7)", () => {
     window.location.hash = "#/genres?var=pov_class&include=y2020";
     await waitFor(() => expect(screen.getByLabelText("Only include").value).toBe("y2020"));
     window.location.hash = "#/patterns";
-    await screen.findByRole("heading", { level: 1, name: "Patterns" });
+    await screen.findByRole("heading", { level: 1, name: /^Clear patterns in / }); // the question, its h1 (round 4's X2)
     const back = within(screen.getByRole("navigation", { name: "Pages" })).getByRole("link", { name: "Genres" });
     expect(back.getAttribute("href")).toBe("#/genres?var=pov_class&include=y2020");
   });

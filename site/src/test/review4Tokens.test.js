@@ -12,8 +12,6 @@ const css = Object.fromEntries(FILES.map((f) => [f, readFileSync(path.join(SRC, 
 
 const SANS = [12, 13, 14, 15, 16, 18];
 const SIZE_TOKENS = [...SANS.map((n) => `--text-${n}`), "--serif-20", "--serif-26", "--serif-heading", "--serif-page"];
-// the page headings that phase 5 gives the page question's size (Patterns' title and question, How it works' title)
-const PENDING = new Set([".prose h1", ".patterns-page h1", ".patterns-question"]);
 
 /** Every declaration of a property: [{ file, selector, value }] (the selector the rule's own, inside media queries too). */
 function declarations(prop) {
@@ -51,7 +49,6 @@ describe("the type scale (X1)", () => {
       const token = value.match(/^var\((--[\w-]+)\)( !important)?$/);
       if (token && SIZE_TOKENS.includes(token[1])) continue;
       if (value === "inherit") continue;
-      if (PENDING.has(selector)) continue;
       off.push(`${file} ${selector}: ${value}`);
     }
     for (const { file, selector, value } of declarations("font")) {

@@ -274,7 +274,7 @@ describe("the pattern browser (concept G2)", () => {
     window.history.replaceState(null, "", "/#/patterns?genre=all&metric=pop_fav_per_1k_views");
     const user = userEvent.setup();
     render(<App />);
-    await screen.findByRole("heading", { level: 1, name: "Patterns" });
+    await screen.findByRole("heading", { level: 1, name: /^Clear patterns in / }); // the question, its h1 (round 4's X2)
     expect(document.title).toBe("Patterns · What do popular Literotica stories have in common?");
     // fixture: 3 characteristics read as a trend (dialogue share, has dialogue, anger), 1 without order
     const count = await screen.findByText(/characteristics have a clear pattern/);

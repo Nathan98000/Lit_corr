@@ -124,7 +124,7 @@ describe("the masthead and the footer (D7, D8)", () => {
     window.location.hash = "#/trends?var=pov_class&genre=fetish&include=medium";
     await waitFor(() => expect(screen.getByLabelText("Only include").value).toBe("medium"));
     window.location.hash = "#/patterns";
-    await screen.findByRole("heading", { level: 1, name: "Patterns" });
+    await screen.findByRole("heading", { level: 1, name: /^Clear patterns in / }); // the question, its h1 (round 4's X2)
     const back = within(masthead()).getByRole("link", { name: "Trends" });
     expect(back.getAttribute("href")).toBe("#/trends?var=pov_class&genre=fetish&include=medium");
     await user.hover(back);

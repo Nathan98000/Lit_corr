@@ -389,13 +389,19 @@ export default function App() {
             )}
           </>
         ) : route.page === "patterns" ? (
-          meta ? (
-            <PartBoundary fallback={PAGE_PLACEHOLDER}>
-              <PatternBrowser meta={meta} state={sanitize(route.state, meta)} onChange={updatePatterns} />
-            </PartBoundary>
-          ) : (
-            PAGE_PLACEHOLDER
-          )
+          <>
+            {/* the page opens as the others do (round 4's X2): the kicker names the page and the source */}
+            <div className="intro">
+              <Kicker meta={meta} page="Patterns" />
+            </div>
+            {meta ? (
+              <PartBoundary fallback={PAGE_PLACEHOLDER}>
+                <PatternBrowser meta={meta} state={sanitize(route.state, meta)} onChange={updatePatterns} />
+              </PartBoundary>
+            ) : (
+              PAGE_PLACEHOLDER
+            )}
+          </>
         ) : (
           <>
             <div className="intro">

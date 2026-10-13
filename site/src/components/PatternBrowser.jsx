@@ -90,10 +90,14 @@ export default function PatternBrowser({ meta, state, onChange }) {
       return next;
     });
 
+  // the page's question is its h1 (round 4's X2), named by its words as the other pages' are; the kicker names the page
+  const asked = `Clear patterns in ${genreWords(genre)} with ${theMeasure(metric)}`;
   return (
     <article className="patterns-page">
-      <h1>Patterns</h1>
-      <p className="sentence patterns-question">
+      <span id={`${ids}-question`} hidden>
+        {asked}
+      </span>
+      <h1 className="sentence patterns-question" aria-labelledby={`${ids}-question`}>
         Clear patterns in{" "}
         <InlineSelect id={`${ids}-g`} label="Genre" value={genre.id} text={genreWords(genre)} onChange={(g) => onChange({ ...state, genre: g })}>
           {meta.genres.map((g) => (
@@ -122,7 +126,7 @@ export default function PatternBrowser({ meta, state, onChange }) {
             </optgroup>
           ))}
         </InlineSelect>
-      </p>
+      </h1>
 
       {error ? (
         <LoadError onRetry={() => setAttempt((a) => a + 1)} detail={error} />
@@ -130,7 +134,7 @@ export default function PatternBrowser({ meta, state, onChange }) {
         <div className="ph-chart" aria-busy="true" />
       ) : (
         <>
-          <p className="pattern-count">
+          <p className="takeaway pattern-count">
             <strong>{s.clear}</strong> of {s.trend} characteristics have a clear pattern with {theMeasure(metric)} {where}. The
             other {s.trend - s.clear} show no clear pattern.
           </p>

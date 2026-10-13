@@ -298,6 +298,46 @@ describe("W1: units on a line of their own", () => {
     expect(css).not.toMatch(/\.profile-unit\.long/);
   });
 
+  it("keeps a unit's last two words together in an inline block, never wider than its cell (comparison.css)", () => {
+    expect(css).toMatch(/\.unit-end \{\s*display: inline-block;\s*max-width: 100%;\s*\}/);
+  });
+
+  for (const [page, hash, ready] of [
+    ["“One genre”", "#/genres?view=genre&genre=romance&include=all", ".genres-page .chart-panel[aria-busy='false']"],
+    ["“What changed”", "#/trends", ".trends-page .chart-panel[aria-busy='false']"],
+  ]) {
+    it(`ends every unit of three words or more with its last two together, and leaves shorter ones whole, on ${page}`, async () => {
+      const user = await open(hash, { width: 360, ready });
+      await openAllTopics(user);
+      let together = 0;
+      for (const unit of document.querySelectorAll(".profile-row .profile-unit")) {
+        const words = unit.textContent.split(" ");
+        const end = unit.querySelector(".unit-end");
+        if (words.length > 2) {
+          expect(end.textContent).toBe(words.slice(-2).join(" "));
+          expect(unit.lastChild).toBe(end);
+          together += 1;
+        } else {
+          expect(end).toBeNull();
+        }
+      }
+      expect(together).toBeGreaterThan(0);
+    });
+  }
+
+  it("keeps a named group's swatch with its first word and its last two words together", async () => {
+    const user = await open("#/genres?view=genre&genre=romance&include=all", { width: 360, ready: ".genres-page .chart-panel[aria-busy='false']" });
+    await openAllTopics(user);
+    const named = [...document.querySelectorAll(".profile-unit")].filter((u) => u.querySelector(".profile-swatch"));
+    expect(named.length).toBeGreaterThan(0);
+    for (const unit of named) {
+      const words = unit.textContent.split(" ");
+      expect(unit.querySelector(".profile-swatch-lead").textContent).toBe(words[0]);
+      if (words.length > 2) expect(unit.querySelector(".unit-end").textContent).toBe(words.slice(-2).join(" "));
+      else expect(unit.querySelector(".unit-end")).toBeNull();
+    }
+  });
+
   for (const [page, hash, ready] of [
     ["“One genre”", "#/genres?view=genre&genre=romance&include=all", ".genres-page .chart-panel[aria-busy='false']"],
     ["“What changed”", "#/trends", ".trends-page .chart-panel[aria-busy='false']"],

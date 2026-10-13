@@ -290,6 +290,13 @@
   color: var(--ink-3);
 }
 
+/* a unit's last two words, together: where the line has no room for them they take the next one whole ("per" ⏎
+   "1,000 words", never "per 1,000" ⏎ "words"), and only a cell too narrow for the two breaks between them */
+.unit-end {
+  display: inline-block;
+  max-width: 100%;
+}
+
 /* a named group's unit line: a swatch of the printed group's color in the bars, outlined as the legend's swatches are
    (3.3:1 on the page, whatever the color), kept with the name's first word */
 .profile-swatch-lead {

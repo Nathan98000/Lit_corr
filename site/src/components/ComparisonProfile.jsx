@@ -120,8 +120,27 @@ function Numbers({ col, all = false }) {
 }
 
 /**
+ * Words whose last two stay together (`unit-end`, an inline block: a line may break before it, and inside it only
+ * where the two don't fit the cell), so that a unit line that wraps never leaves one word alone on its last line.
+ */
+function LastTwoTogether({ words }) {
+  return (
+    <>
+      {words.length > 2 && `${words.slice(0, -2).join(" ")} `}
+      <span className="unit-end">{words.slice(-2).join(" ")}</span>
+    </>
+  );
+}
+
+/** A unit line's words ("per 1,000 words"), its last two together when it has three or more. */
+function UnitWords({ text }) {
+  const words = text.split(" ");
+  return words.length > 2 ? <LastTwoTogether words={words} /> : text;
+}
+
+/**
  * A named group's unit line: the name of the group whose numbers the row prints, after a swatch of its color in the
- * bars (`cls`), the swatch kept with the name's first word.
+ * bars (`cls`), the swatch kept with the name's first word, and its last two words together.
  */
 function GroupName({ name, cls }) {
   const [first, ...rest] = name.split(" ");
@@ -131,7 +150,8 @@ function GroupName({ name, cls }) {
         <span className={`profile-swatch ${cls}`} />
         {first}
       </span>
-      {rest.length > 0 && ` ${rest.join(" ")}`}
+      {rest.length > 0 && " "}
+      {rest.length > 1 ? <LastTwoTogether words={rest} /> : rest[0]}
     </>
   );
 }
@@ -223,12 +243,12 @@ function ProfileRow({ item, row, zone, layout, marks }) {
           {/* the unit on a line of its own under the name, on every chart (round 4's W1) */}
           {cols.unit && (
             <span className="profile-unit" aria-hidden="true">
-              {colors ? <GroupName name={cols.unit} cls={colors[cols.group].cls} /> : cols.unit}
+              {colors ? <GroupName name={cols.unit} cls={colors[cols.group].cls} /> : <UnitWords text={cols.unit} />}
             </span>
           )}
           {cols.of && (
             <span className="profile-unit profile-of" aria-hidden="true">
-              {cols.of}
+              <UnitWords text={cols.of} />
             </span>
           )}
         </span>

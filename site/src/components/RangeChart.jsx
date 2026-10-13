@@ -2,7 +2,7 @@ import { useId, useRef } from "react";
 import { formatCount, formatFixed, formatRange, columnDecimals } from "../lib/format.js";
 import { PHONE, capsule, rangeLayout, scaleX } from "../lib/rangeLayout.js";
 import { MARK } from "../lib/tokens.js";
-import { chartSummary, groupedBy } from "../lib/wording.js";
+import { chartSummary, groupedBy, measureAxisTitle } from "../lib/wording.js";
 import useGlide from "./useGlide.js";
 import useRowDetails from "./useRowDetails.js";
 import useWidth from "./useWidth.js";
@@ -137,7 +137,7 @@ export default function RangeChart({
   const inDomain = (v) => v >= scale[0] - 1e-9 && v <= scale[1] + 1e-9;
   const axisTitle = (
     <p className="axis-title" aria-hidden="true" style={layout.mode === "stacked" ? undefined : { paddingLeft: layout.left }}>
-      {metric.label}
+      {measureAxisTitle(metric)}
     </p>
   );
   const svgClass = [active != null && "has-active", glide.gliding && "gliding"].filter(Boolean).join(" ");

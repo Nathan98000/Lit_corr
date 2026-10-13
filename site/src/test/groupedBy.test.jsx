@@ -32,7 +32,7 @@ describe("the line that says what the rows are", () => {
     const rating = real.metrics.find((m) => m.id === "pop_rating");
     expect(words.noun).toBe("word count");
     expect(questionText({ variable: words, metric: rating, genre: real.genres[0] })).toBe(
-      "In All genres, how does the average rating vary with word count?",
+      "In all genres, how does the average rating vary with word count?",
     );
     expect(chartTitle({ variable: words, metric: rating, genre: real.genres[0], direction: 0 })).toBe(
       "How the average rating varies with word count across all genres",

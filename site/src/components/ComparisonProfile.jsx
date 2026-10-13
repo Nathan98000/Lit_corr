@@ -10,7 +10,7 @@ import useWidth from "./useWidth.js";
 
 // A comparison of two sides, characteristic by characteristic (D10): the Genres page's "One genre" (a genre's stories
 // against all genres') and the Trends page's "What changed" (stories from 2020 or later against stories from
-// 2000–2009). The rows (concept R3), the lists, the topics, the notes, the way back and "Download PNG" of the lists are
+// 2000–2009). The rows (concept R3), the lists, the topics, the notes, the way back and "Download image" of the lists are
 // here; each page gives its words (the two sides' names and short heads, the list titles, the axis title, the zone's
 // words, the note, the topics' line) and its row (the columns' numbers, the row's name and where it leads). "What
 // changed" opts in to its own row and lists (`changes`: values first, a zoomed scale, the note above the lists, marked
@@ -481,7 +481,7 @@ function listsShown(p, open) {
 }
 
 /**
- * What "Download PNG" draws of the lists (O2), as plain data (the image is made from the data, not from the page's
+ * What "Download image" draws of the lists (O2), as plain data (the image is made from the data, not from the page's
  * rows): each list's visible title and count, its caption (the axis title over the first list with dots, the mix line
  * over "A different mix"), and its rows as shown: the label, the unit lines, the values (values
  * first) or the two columns' numbers, the dot (its place on the scale, its number, stand-out or not) or a named group's
@@ -620,7 +620,7 @@ function useWayBack(ref, key) {
  *   values first values(item) ({ text, second }) }.
  * - `className`: the article's own class; `placeKey`: where the way back keeps its place in history.state;
  *   `widthKey`: useWidth's.
- * - `png`: { label, image(panel, lists) }: "Download PNG" of the lists as shown, right after them (both pages);
+ * - `png`: { label, image(panel, lists) }: "Download image" of the lists as shown, right after them (both pages);
  *   `image` gets the panel and the lists' plan (listsPlan) and gives what the image draws.
  * - "What changed"'s opt-ins (each off for "One genre"): `valuesFirst` (the values right after the label, its head
  *   `words.valuesHead`, every dot's number alike), `scale` (a zoomed { lo, hi, ticks }), `noteFirst` (the note above

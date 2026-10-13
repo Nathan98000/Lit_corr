@@ -105,11 +105,12 @@ describe("the chart layout", () => {
 
   it("puts short labels in a narrow column on phones and long ones above the bars", () => {
     const months = rows([1, 2, 3]).map((x, i) => ({ ...x, label: ["Jan", "Feb", "Mar"][i] }));
-    expect(rangeLayout({ rows: months, overall: null, format: "rate", width: 343 })).toMatchObject({
-      mode: "inline",
-      rowH: 44,
-      labelW: 64,
-    });
+    const inline = rangeLayout({ rows: months, overall: null, format: "rate", width: 343 });
+    expect(inline).toMatchObject({ mode: "inline", rowH: 44 });
+    // the column holds each label and, under it, its stories in words (round 4's L1: "100 stories", not "n = 100")
+    expect(inline.rows.map((r) => r.nText)).toEqual(["100 stories", "100 stories", "100 stories"]);
+    expect(inline.labelW).toBe(Math.ceil(Math.max(64, textWidth("100 stories", 13))) + 4);
+    expect(inline.rows.every((r) => r.boxes.every((b) => b.kind !== "n" || b.x1 <= inline.labelW))).toBe(true);
     const long = rows([1, 2]).map((x, i) => ({ ...x, label: ["First part or stand-alone", "Later part"][i] }));
     expect(rangeLayout({ rows: long, overall: null, format: "rate", width: 343 })).toMatchObject({
       mode: "stacked",

@@ -35,6 +35,12 @@ function where(genre) {
   return genre.id === "all" ? " across all genres" : ` in ${genre.name}`;
 }
 
+/**
+ * A genre inside a sentence: "all genres" in lower case (round 4's O9: "In all genres, how does …", as the Trends page
+ * says "across all genres"), else its name; the genre lists keep their option "All genres".
+ */
+export const genreWords = (genre) => (genre.id === "all" ? "all genres" : genre.name);
+
 function inGenre(genre, sentence) {
   return genre.id === "all" ? upperFirst(sentence) : `In ${genre.name}, ${lowerFirst(sentence)}`;
 }
@@ -254,8 +260,17 @@ export function questionParts({ variable, metric }) {
 /** The whole question as text (for tests and for screen readers' summary). */
 export function questionText({ variable, metric, genre }) {
   const p = questionParts({ variable, metric });
-  return `In ${genre.name}, how ${p.aux} ${p.article}${p.measure} ${p.verb} ${p.characteristic}?`;
+  return `In ${genreWords(genre)}, how ${p.aux} ${p.article}${p.measure} ${p.verb} ${p.characteristic}?`;
 }
+
+/**
+ * The words of a measure's scale, by its format, after its name on a chart's axis (round 4's L1): "Average rating (1 to
+ * 5 stars)". Copy, not data: the measure's label, menu and sentences don't change.
+ */
+export const SCALE_WORDS = { rating: "1 to 5 stars" };
+
+/** A measure's axis title: its label, with its scale's words where it has them ("Average rating (1 to 5 stars)"). */
+export const measureAxisTitle = (metric) => (SCALE_WORDS[metric.format] ? `${metric.label} (${SCALE_WORDS[metric.format]})` : metric.label);
 
 // ------------------------------------------------------------------------------------------------ the Genres page
 // (the sentences Explore and How it works use too; everything else is in genres.js, which loads with the page)

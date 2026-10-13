@@ -106,7 +106,7 @@ export function TrendLegend({ kind, anySmall, minStories, groups = null }) {
 }
 
 /**
- * What "Download PNG" draws (section 6): the question as the title; the heading, then the genre and the option, as the
+ * What "Download image" draws (section 6): the question as the title; the heading, then the genre and the option, as the
  * subtitle; the key (without "how this is decided"); the chart with its table and brackets.
  */
 export function trendsImage({ variable, genre, heading, subset, state }, panel) {
@@ -123,7 +123,7 @@ export function trendsImage({ variable, genre, heading, subset, state }, panel) 
  * One characteristic over time (View 1, section 3): the verdict heading, what the characteristic measures (meta's
  * description), the takeaway (the windows' numbers; what happened in between, when a period outside the windows lies
  * beyond both), the key, the chart and the actions: "See all changes →" (what changed in the same genre and option, a
- * new history entry), "Compare genres →" and "Download PNG".
+ * new history entry), "Compare genres →" and "Download image".
  * A genre with fewer than MIN_N stories in every period gets the too-few sentence and a way out: all stories when an
  * option is on, else All genres.
  */

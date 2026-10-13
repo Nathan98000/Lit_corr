@@ -11,7 +11,8 @@ export const PHONE = 560; // below this width the labels move above the bars (or
 export const STACKED = 900;
 export const MARK_W = 18; // the Genres page's mark column (▲ ▼ ≠), after a gap from the labels
 export const MARK_GAP = 8;
-export const SHORT_LABEL = 7; // labels this short (months, weekdays, short ranges) fit in a 64 px column
+export const SHORT_LABEL = 7; // labels this short (months, weekdays, short ranges) fit in a column of their own
+export const REF_GAP = 6; // a value the dashed line would run through starts this far right of it (round 4's L1)
 
 /** Estimated width of a line of text in px (system sans; generous, so estimated boxes never undershoot). */
 export function textWidth(text, size = 14, weight = 400) {
@@ -152,13 +153,21 @@ export function rangeLayout({
   const nSize = TEXT.note;
   const tickSize = TEXT.tick;
   const longestLabelW = Math.max(0, ...rows.map((r) => textWidth(r.label, labelSize)));
+  // a group's stories, in words everywhere ("2,631 stories", round 4's L1; "*" under smallN), and "fewer than 10" for a
+  // group not shown
+  const nText = (s) => {
+    if (!isShown(s)) return `fewer than ${minN}`;
+    return `${formatCount(s.n)} stories${s.n < smallN ? "*" : ""}`;
+  };
+  // the inline layout's column (phones, short labels) holds each label and, under it, its stories
+  const inlineW = Math.ceil(Math.max(64, longestLabelW, ...rows.map((r) => textWidth(nText(r.stats), nSize))) + 4);
   const labelW =
     mode === "side" && phone
       ? phoneLabelW
       : mode === "side"
         ? Math.round(Math.min(220, Math.max(110, width * 0.25, longestLabelW + 4)))
         : mode === "inline"
-          ? 64
+          ? inlineW
           : 0;
   // labels wrapped into the phone's label column; stories under them, below storiesBelow
   const lines = rows.map((r) => (phone && phoneLabelW ? wrapLabel(r.label, phoneLabelW - 2, labelSize) : [r.label]));
@@ -222,15 +231,11 @@ export function rangeLayout({
   }
 
   const valueD = columnDecimals([...shown.map((r) => r.stats.median), isShown(overall) ? overall.median : null], format);
-  const nText = (s) => {
-    if (!isShown(s)) return mode === "inline" ? `n < ${minN}` : `fewer than ${minN}`;
-    const star = s.n < smallN ? "*" : "";
-    return mode === "side" ? `${formatCount(s.n)} stories${star}` : `n = ${formatCount(s.n)}${star}`;
-  };
   const top = 30;
   const x = scaleX({ lo, hi, left, plotW });
 
   const hasRef = isShown(overall);
+  const refX = hasRef ? x(overall.median) : null;
   const rowsTop = top;
   const height = rowsTop + heights.reduce((a, b) => a + b, 0) + (hasRef ? 30 : 10);
 
@@ -279,8 +284,12 @@ export function rangeLayout({
     if (ok) {
       out.bar = capsule(x(s.p25), x(s.p75));
       out.dotX = x(s.median);
-      const vx = Math.max(out.bar.x + out.bar.width, out.dotX + MARK.dot) + 8;
-      out.value = { x: vx, y: cy + 4.5, text: valueText(s.median) };
+      const text = valueText(s.median);
+      let vx = Math.max(out.bar.x + out.bar.width, out.dotX + MARK.dot) + 8;
+      // the dashed line of all stories never runs through a value (nor through its halo): the value starts REF_GAP px
+      // right of the line; the plot's right margin is the widest value's, so it stays inside the chart
+      if (hasRef && refX >= vx - 3 && refX <= vx + textWidth(text, TEXT.note, 600) + 3) vx = refX + REF_GAP;
+      out.value = { x: vx, y: cy + 4.5, text };
       out.boxes.push({ kind: "value", ...box(vx, cy + 4.5, out.value.text, TEXT.note, 600) });
     } else {
       out.none = { x: left + 2, y: cy + 4, text: "Too few stories to show" };
@@ -396,6 +405,13 @@ export function overlaps(layout, pad = 1) {
     }
   }
   return hits;
+}
+
+/** The rows whose printed value the dashed line of all stories runs through, with a 3 px margin (for tests). */
+export function valuesOnRef(layout) {
+  if (!layout.ref) return [];
+  const rx = layout.ref.x;
+  return layout.rows.filter((r) => r.value && r.boxes.some((b) => b.kind === "value" && rx >= b.x0 - 3 && rx <= b.x1 + 3));
 }
 
 /** Boxes that leave the chart's own width (for tests). */

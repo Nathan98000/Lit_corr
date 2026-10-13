@@ -945,7 +945,7 @@ h3 {
   gap: var(--space-8) var(--space-12);
 }
 
-/* "Download PNG"'s message when the image can't be made, beside the button */
+/* "Download image"'s message when the image can't be made, beside the button */
 .png-failed {
   color: var(--ink-2);
 }

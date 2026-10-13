@@ -31,7 +31,7 @@ export const tooFewText = (genre, subset, minN) =>
  * One genre against all genres (View 2), drawn by ComparisonProfile: how many characteristics clearly set the genre
  * apart, the three biggest differences, the characteristics lower and higher in the genre (ordered by the size of the
  * difference: this ranks characteristics within one genre, never genres), the named groups with a different mix,
- * "Download PNG" of those lists, and every characteristic by topic, folded (a topic's rows are drawn when it is
+ * "Download image" of those lists, and every characteristic by topic, folded (a topic's rows are drawn when it is
  * opened). Every row opens that characteristic's chart in every genre. With fewer stories than the rule needs, nothing
  * is compared: the heading says so, then "Show all stories" and the topics, whose rows give the numbers.
  */
@@ -121,7 +121,7 @@ export default function GenreProfile({ meta, state, file, busy, onSwitch, onNavi
   };
   // the lists' image (O2): the question, the heading and the sample line, then the lists as shown
   const png = {
-    label: "Download PNG of what stands out",
+    label: "Download image of what stands out",
     image: (panel, lists) => ({
       title: [standsOutQuestion(genre)],
       subtitle: [heading, sample],

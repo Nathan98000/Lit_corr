@@ -81,7 +81,7 @@ describe("the average rating first", () => {
   it("opens an address without a measure on ratings, with the article, and lists Rating first", async () => {
     const user = await renderApp("#/explore?var=dlg_word_share");
     const sentence = document.querySelector(".sentence");
-    expect(shown(sentence)).toBe("In All genres, how does the average rating vary with dialogue share?");
+    expect(shown(sentence)).toBe("In all genres, how does the average rating vary with dialogue share?");
     expect(within(sentence).getByRole("button", { name: /^Popularity measure:/ }).textContent).toBe("Popularity measure: average rating");
     // the title is set by an effect after the chart is drawn
     await waitFor(() => expect(document.title).toBe("How the average rating varies with dialogue share across all genres"));
@@ -102,7 +102,7 @@ describe("the average rating first", () => {
   it("keeps the measure of an address that names one, with no article for plural measures", async () => {
     await renderApp("#/explore?var=dlg_word_share&metric=pop_views");
     expect(shown(document.querySelector(".sentence"))).toBe(
-      "In All genres, how do views vary with dialogue share?",
+      "In all genres, how do views vary with dialogue share?",
     );
   });
 
@@ -111,7 +111,7 @@ describe("the average rating first", () => {
     render(<App />);
     const count = await screen.findByText(/characteristics have a clear pattern/);
     expect(shown(document.querySelector(".patterns-question"))).toBe(
-      "Clear patterns in All genres with the average rating",
+      "Clear patterns in all genres with the average rating",
     );
     expect(count.textContent).toMatch(/^\d+ of 3 characteristics have a clear pattern with the average rating across all genres\./);
     const select = screen.getByLabelText("Popularity measure");
@@ -141,7 +141,7 @@ describe("singular measures take “the”", () => {
       "Stories with more dialogue tend to have higher average ratings",
     );
     expect(questionText({ variable: v("dlg_word_share"), metric: RATING, genre: all })).toBe(
-      "In All genres, how does the average rating vary with dialogue share?",
+      "In all genres, how does the average rating vary with dialogue share?",
     );
     expect(keepExploring(meta, sanitize({ v: "dlg_word_share" }, meta)).every((x) => x.state.metric)).toBe(true);
   });

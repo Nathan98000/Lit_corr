@@ -16,10 +16,10 @@ import {
   withUnit,
 } from "./genres.js";
 import { periodLabel, trendDomain, trendTicks } from "./trendLayout.js";
-import { lowerFirst, upperFirst } from "./wording.js";
+import { genreWords, lowerFirst, upperFirst } from "./wording.js";
 
 /** A genre in the page's sentences: "all genres" (the slot shows it in lower case; its option says "All genres"), else its name. */
-export const genreWords = (genre) => (genre.id === "all" ? "all genres" : genre.name);
+export { genreWords };
 
 /**
  * View 1's question, in parts around its two slots: "Across [all genres], how has [word count] changed over
@@ -439,10 +439,10 @@ export function periodWords({ variable, entry, cell, fmt, minN }) {
 export const periodName = (label, words) => `${label}: ${words.join(", ")}`;
 
 // --------------------------------------------------------------------------------------------------------- the PNG
-/** "Download PNG"'s file name: the characteristic's, the genre's and the option's ids, in lower case. */
+/** "Download image"'s file name: the characteristic's, the genre's and the option's ids, in lower case. */
 export const trendsFileName = (state) => `trends-${state.v}-${state.genre}-${state.sub}.png`.toLowerCase();
 
-/** View 2's "Download PNG" (its lists): "trends-changes-all-all.png", the genre's and the option's ids (the file's). */
+/** View 2's "Download image" (its lists): "trends-changes-all-all.png", the genre's and the option's ids (the file's). */
 export const changesFileName = (file) => `trends-changes-${file.g}-${file.s}.png`.toLowerCase();
 
 /** What the polite live region says when View 1's characteristic, genre or option changes: the question (which names

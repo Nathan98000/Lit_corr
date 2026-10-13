@@ -1,4 +1,4 @@
-// "Download PNG" (STAGE2_SIMPLIFY_AND_PNG_PROMPT.md): where the button is, what it passes to the image's code, and what
+// "Download image" (STAGE2_SIMPLIFY_AND_PNG_PROMPT.md; "Download PNG" until round 4's O15): where the button is, what it passes to the image's code, and what
 // the image would say (lib/chartImage.js's imagePlan; the canvas itself is checked in a browser). The module's
 // downloadChartImage is mocked: jsdom has no canvas.
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
@@ -75,9 +75,9 @@ async function open(hash) {
   return user;
 }
 
-const pngButton = () => screen.queryByRole("button", { name: "Download PNG of this chart" });
+const pngButton = () => screen.queryByRole("button", { name: "Download image of this chart" });
 
-/** Press Download PNG and return what the page passed to the image's code. */
+/** Press Download image and return what the page passed to the image's code. */
 async function press(user) {
   await user.click(pngButton());
   await waitFor(() => expect(downloadChartImage).toHaveBeenCalledTimes(1));
@@ -103,14 +103,14 @@ describe("the button", () => {
     }
   });
 
-  it("shows the label “Download PNG”, its name starting with it, in the actions row (with Open in Explore after it)", async () => {
+  it("shows the label “Download image”, its name starting with it, in the actions row (with Open in Explore after it)", async () => {
     await open("#/genres?var=dlg_word_share");
     const button = pngButton();
-    expect(button.textContent).toBe("Download PNG");
-    expect(button.getAttribute("aria-label")).toBe("Download PNG of this chart");
+    expect(button.textContent).toBe("Download image");
+    expect(button.getAttribute("aria-label")).toBe("Download image of this chart");
     expect(button.className).toBe("btn"); // Copy link's look and size
     const actions = button.closest(".chart-actions");
-    expect([...actions.querySelectorAll("button, a")].map((el) => el.textContent)).toEqual(["Download PNG", "Open in Explore →"]);
+    expect([...actions.querySelectorAll("button, a")].map((el) => el.textContent)).toEqual(["Download image", "Open in Explore →"]);
   });
 
   it("is the only action on Explore, and is not there when no chart is drawn", async () => {

@@ -1,7 +1,7 @@
 import { useEffect, useId, useState } from "react";
 import { decodePattern, loadPatterns } from "../lib/data.js";
 import { toHash } from "../lib/urlState.js";
-import { chartTitle, theMeasure } from "../lib/wording.js";
+import { chartTitle, genreWords, theMeasure } from "../lib/wording.js";
 import InlineSelect from "./InlineSelect.jsx";
 import LoadError from "./LoadError.jsx";
 
@@ -95,7 +95,7 @@ export default function PatternBrowser({ meta, state, onChange }) {
       <h1>Patterns</h1>
       <p className="sentence patterns-question">
         Clear patterns in{" "}
-        <InlineSelect id={`${ids}-g`} label="Genre" value={genre.id} text={genre.name} onChange={(g) => onChange({ ...state, genre: g })}>
+        <InlineSelect id={`${ids}-g`} label="Genre" value={genre.id} text={genreWords(genre)} onChange={(g) => onChange({ ...state, genre: g })}>
           {meta.genres.map((g) => (
             <option key={g.id} value={g.id}>
               {g.name}

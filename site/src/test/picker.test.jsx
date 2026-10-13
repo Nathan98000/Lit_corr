@@ -80,13 +80,13 @@ describe("the question sentence", () => {
     const v = (id) => fixtureMeta.variables.find((x) => x.id === id);
     const all = fixtureMeta.genres[0];
     expect(questionText({ variable: v("dlg_word_share"), metric: m("pop_fav_per_1k_views"), genre: all })).toBe(
-      "In All genres, how do favorites per 1,000 views vary with dialogue share?",
+      "In all genres, how do favorites per 1,000 views vary with dialogue share?",
     );
     expect(questionText({ variable: v("pov_class"), metric: m("pop_views"), genre: all })).toBe(
-      "In All genres, how do views vary by narrative perspective?",
+      "In all genres, how do views vary by narrative perspective?",
     );
     expect(questionText({ variable: v("dlg_has_dialogue"), metric: m("pop_views"), genre: all })).toBe(
-      "In All genres, how do views differ between stories with dialogue and stories without dialogue?",
+      "In all genres, how do views differ between stories with dialogue and stories without dialogue?",
     );
   });
 });

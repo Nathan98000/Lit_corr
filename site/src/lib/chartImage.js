@@ -1,4 +1,4 @@
-// "Download PNG" (the owner's decision 7): the chart on screen as a PNG file, made in the browser, with no request.
+// "Download image" (the owner's decision 7): the chart on screen as a PNG file, made in the browser, with no request.
 // On white, top to bottom: the title, the subtitle and the key, then the chart with the lines drawn above and under
 // it, and the credit at the bottom right. The chart is its live <svg>, cloned at rest (no hover, focus, tap or glide)
 // with every element's computed paint and text styles written on it, and drawn as an image at its own width and in its
@@ -558,7 +558,7 @@ export async function downloadChartImage(spec) {
 }
 
 // ------------------------------------------------------------------------------------- the comparisons' lists (O2)
-// "Download PNG" of the Genres page's "One genre" and the Trends page's "What changed": their lists as the page shows
+// "Download image" of the Genres page's "One genre" and the Trends page's "What changed": their lists as the page shows
 // them, made from the lists' plan (ComparisonProfile's listsPlan), not from the page's rows, always 760 CSS px wide on
 // every screen, at 2×: the question as the title, the heading and the sample line as the subtitle, then each list's
 // title and count, its caption (the axis title, or the mix line), the zone's bracket and the scale's ticks, and its

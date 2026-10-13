@@ -141,11 +141,12 @@ describe("F56: the rating axis", () => {
   const stats = (median) => ({ n: 100, median, p25: median - 0.15, p75: median + 0.1, mean: median });
   const rows = [4.19, 4.4, 4.65].map((m, index) => ({ index, label: `Group ${index + 1}`, stats: stats(m) }));
 
-  it("starts a zoomed axis on a labeled tick, and its title is the measure's name alone (the owner's follow-up, 4)", () => {
+  it("starts a zoomed axis on a labeled tick, and its title is the measure's name with its scale (round 4's L1)", () => {
     const { container } = render(
       <RangeChart rows={rows} overall={stats(4.4)} metric={rating} variable={variable} smallN={30} minN={10} title="T" n={300} />,
     );
-    expect(container.querySelector(".axis-title").textContent).toBe("Average rating");
+    // never "(the axis starts at X)" (the owner's follow-up, 4); the stars are the scale's words, kept in wording.js
+    expect(container.querySelector(".axis-title").textContent).toBe("Average rating (1 to 5 stars)");
     const first = container.querySelector(".tick-mark");
     const start = Number(first.getAttribute("data-v"));
     expect(start).toBeGreaterThan(3);

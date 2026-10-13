@@ -54,7 +54,7 @@ function PeriodStories({ file, minN }) {
  * The heading (how many of the characteristics compared clearly changed from 2000–2009 to 2020 or later) and the
  * sample line; the takeaway (word count's change, "▼ Fell", "▲ Rose", "≠ A different mix"); the note; the lists,
  * ordered by the size of the change, each row's values first ("51.6 → 38.8 (−25%)") and its dot on a scale zoomed to
- * the view (changesScale); "Download PNG" of the lists; every characteristic by topic. Each row compares a story from
+ * the view (changesScale); "Download image" of the lists; every characteristic by topic. Each row compares a story from
  * 2020 or later with one from 2000–2009 (the dot, out of 100) and opens its chart over time. When a window has too few
  * stories to compare (Chain Stories, Transgender), the heading says so, then the stories per period, "Show all
  * stories" when an option is on, else "Show All genres", and "One characteristic over time →" (View 1 for the genre
@@ -130,7 +130,7 @@ export default function TrendChanges({ meta, state, file, busy, onSwitch, onNavi
     },
   };
   const png = {
-    label: "Download PNG of these changes",
+    label: "Download image of these changes",
     image: (panel, lists) => ({
       title: [changesQuestion(genre)],
       subtitle: [heading, sample],

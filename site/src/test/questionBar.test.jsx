@@ -69,7 +69,7 @@ describe("the question bar", () => {
     scrollSentence(true);
     const button = bar();
     expect(button.getAttribute("aria-label")).toBe(
-      "Back to the question: In All genres, how do favorites per 1,000 views vary with dialogue share?",
+      "Back to the question: In all genres, how do favorites per 1,000 views vary with dialogue share?",
     );
     expect(button.querySelector(".question-bar-text").textContent).toBe(
       "Dialogue share · Favorites per 1,000 views · All genres · Published 2020 or later",

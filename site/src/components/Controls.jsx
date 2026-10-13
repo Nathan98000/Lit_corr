@@ -2,7 +2,7 @@ import { forwardRef, useCallback, useEffect, useId, useRef, useState } from "rea
 import { prefetchVariable } from "../lib/data.js";
 import { scrollBehavior } from "../lib/motion.js";
 import { conflictNote, subsetConflict } from "../lib/urlState.js";
-import { questionParts, questionText } from "../lib/wording.js";
+import { genreWords, questionParts, questionText } from "../lib/wording.js";
 import InlineSelect, { SlotWords } from "./InlineSelect.jsx";
 import { PartBoundary, lazyPart } from "./lazyPart.jsx";
 import Overlay from "./Overlay.jsx";
@@ -113,9 +113,10 @@ export const SlotButton = forwardRef(function SlotButton({ expanded, onPress, ch
 });
 
 /**
- * The controls are the question itself (concept B): "In [All genres], how do [favorites per 1,000 views] vary with
- * [word count]?", then "Only include: [All stories]". Genre and "only include" are native selects styled as words;
- * the measure and the characteristic open a menu and a picker.
+ * The controls are the question itself (concept B): "In [all genres], how do [favorites per 1,000 views] vary with
+ * [word count]?" (the genre in lower case inside the sentence, its option "All genres"), then "Only include: [All
+ * stories]". Genre and "only include" are native selects styled as words; the measure and the characteristic open a
+ * menu and a picker.
  */
 export default function Controls({ meta, state, onChange }) {
   const set = (patch) => onChange({ ...state, ...patch });
@@ -167,7 +168,7 @@ export default function Controls({ meta, state, onChange }) {
             id={`${ids}-genre`}
             label="Genre"
             value={state.genre}
-            text={genre.name}
+            text={genreWords(genre)}
             onChange={(g) => set({ genre: g })}
           >
             {meta.genres.map((g) => (

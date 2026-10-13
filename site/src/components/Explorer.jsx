@@ -103,11 +103,11 @@ export function describeView(meta, view, data) {
   };
 }
 
-/** "Download PNG"'s file name: the view's ids, in lower case. */
+/** "Download image"'s file name: the view's ids, in lower case. */
 export const exploreFileName = (view) => `explore-${view.v}-${view.metric}-${view.genre}-${view.sub}.png`.toLowerCase();
 
 /**
- * What "Download PNG" draws for this view (the owner's decision 9): the chart's full title, then the answer heading
+ * What "Download image" draws for this view (the owner's decision 9): the chart's full title, then the answer heading
  * when it says something else (the pair screen readers hear), the line under the heading as text, and the panel's
  * chart with its key, read from the page.
  */

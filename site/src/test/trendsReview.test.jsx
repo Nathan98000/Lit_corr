@@ -260,7 +260,7 @@ describe("the default view, the switch and the actions (phase 3)", () => {
     expect([...actions.querySelectorAll("a, button")].map((el) => el.textContent)).toEqual([
       "See all changes →",
       "Compare genres →",
-      "Download PNG",
+      "Download image",
     ]);
     const see = screen.getByRole("link", { name: "See all changes in Romance" });
     expect(see.className).toBe("btn primary");
@@ -718,15 +718,15 @@ describe("View 2 (phase 6)", () => {
     expect(row.closest("li").querySelector(".profile-mix-line").textContent).toBe("2000–2009 above, 2020 or later below");
   });
 
-  it("puts one Download PNG of these changes right after the lists, and gives the image the question, heading, sample line and rows shown", async () => {
+  it("puts one Download image of these changes right after the lists, and gives the image the question, heading, sample line and rows shown", async () => {
     downloadChartImage.mockClear();
     const user = await open("#/trends", { ready: trends });
-    const button = screen.getByRole("button", { name: "Download PNG of these changes" });
-    expect(button.textContent).toBe("Download PNG");
+    const button = screen.getByRole("button", { name: "Download image of these changes" });
+    expect(button.textContent).toBe("Download image");
     const lists = [...document.querySelectorAll(".trend-changes .profile-list")];
     expect(lists[lists.length - 1].compareDocumentPosition(button) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(button.compareDocumentPosition(document.querySelector(".profile-topics")) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(screen.getAllByRole("button", { name: /^Download PNG/ })).toHaveLength(1);
+    expect(screen.getAllByRole("button", { name: /^Download image/ })).toHaveLength(1);
     await user.click(button);
     await waitFor(() => expect(downloadChartImage).toHaveBeenCalledTimes(1));
     const spec = downloadChartImage.mock.calls[0][0];
@@ -755,7 +755,7 @@ describe("View 2 (phase 6)", () => {
       if (url.includes("trends/all/all.json")) for (const e of Object.values(body.c)) Object.assign(e, { r: e.r ?? 0.3, f: 1 });
       return body;
     });
-    const button = () => screen.getByRole("button", { name: "Download PNG of these changes" });
+    const button = () => screen.getByRole("button", { name: "Download image of these changes" });
     await user.click(button());
     await waitFor(() => expect(downloadChartImage).toHaveBeenCalledTimes(1));
     const plan = listsImagePlan(downloadChartImage.mock.calls[0][0]);
@@ -765,16 +765,16 @@ describe("View 2 (phase 6)", () => {
     expect(plan.lists[1].caption).toBe("A different mix: 2000–2009 above, 2020 or later below");
   });
 
-  it("has no Download PNG when nothing changed or the windows have too few stories", async () => {
+  it("has no Download image when nothing changed or the windows have too few stories", async () => {
     await openChanged("#/trends", (body) => {
       for (const e of Object.values(body.c)) e.f = 0;
       return body;
     });
     expect(document.querySelector(".profile-list")).toBeNull();
-    expect(screen.queryByRole("button", { name: /^Download PNG/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: /^Download image/ })).toBeNull();
     window.location.hash = "#/trends?genre=tiny";
     await waitFor(() => expect(screen.getByRole("button", { name: "Show All genres" })).toBeTruthy());
-    expect(screen.queryByRole("button", { name: /^Download PNG/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: /^Download image/ })).toBeNull();
   });
 
   it("gives “One genre” the same button after its lists, named for what stands out, and its own rows in the image", async () => {
@@ -788,7 +788,7 @@ describe("View 2 (phase 6)", () => {
       set("pov_class", [null, 0.03, 0.27, null], [0, 0, 1, 0]);
       return body;
     });
-    const button = screen.getByRole("button", { name: "Download PNG of what stands out" });
+    const button = screen.getByRole("button", { name: "Download image of what stands out" });
     const lists = [...document.querySelectorAll(".genre-profile .profile-list")];
     expect(lists.length).toBeGreaterThan(0);
     expect(lists[lists.length - 1].compareDocumentPosition(button) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
@@ -810,13 +810,13 @@ describe("View 2 (phase 6)", () => {
     expect(plan.lists[2].rows[0]).toMatchObject({ label: "Narrative perspective", bars: true });
   });
 
-  it("has no Download PNG on “One genre” when nothing stands out", async () => {
+  it("has no Download image on “One genre” when nothing stands out", async () => {
     await openChanged("#/genres?view=genre&genre=romance&include=all", (body, url) => {
       if (url.includes("genres/")) for (const e of Object.values(body.c)) e.f = e.f.map(() => 0);
       return body;
     });
     expect(document.querySelector(".genre-profile .profile-list")).toBeNull();
-    expect(screen.queryByRole("button", { name: /^Download PNG/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: /^Download image/ })).toBeNull();
   });
 });
 

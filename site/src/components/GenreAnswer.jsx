@@ -142,14 +142,14 @@ function OrderLine({ kind, sort, onSort }) {
   );
 }
 
-/** "Download PNG"'s file name: the characteristic's and the option's ids, in lower case. */
+/** "Download image"'s file name: the characteristic's and the option's ids, in lower case. */
 export const genresFileName = (state) => `genres-${state.v}-${state.sub}.png`.toLowerCase();
 
-/** "One genre"'s "Download PNG" (its lists): "genres-genre-adult-romance-all.png", the genre's and the option's ids. */
+/** "One genre"'s "Download image" (its lists): "genres-genre-adult-romance-all.png", the genre's and the option's ids. */
 export const oneGenreFileName = (state) => `genres-genre-${state.genre}-${state.sub}.png`.toLowerCase();
 
 /**
- * What "Download PNG" draws for one characteristic (the owner's decision 9): the question as the title; the verdict
+ * What "Download image" draws for one characteristic (the owner's decision 9): the question as the title; the verdict
  * heading, then the option and the order line's words, as the subtitle; and the panel's chart with its key.
  */
 export function genresImage({ variable, heading, subset, kind, sort, state }, panel) {

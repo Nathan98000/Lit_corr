@@ -755,8 +755,8 @@ None of these encourages fishing for patterns: each shows the same characteristi
 ## 10. Files
 
 - This review: `docs/stage2/DESIGN_REVIEW_4.md`; screenshots in `docs/stage2/design-review-4/` (b01–b16 today,
-  m01–m05 mock-ups, a01–a18 after the round (section 11), f01–f06 after the owner's follow-up (section 12);
-  palette-compressed).
+  m01–m05 mock-ups, a01–a18 after the round (section 11), f01–f06 after the owner's follow-up (section 12), f07 and
+  f08 after the second (section 13); palette-compressed).
 - Fresh eyes: `Claude outputs/design-review-4/fresh-eyes/` (`questions/`, `base/` and `scores.md`, `mock/` and
   `scores.md`, `x/` and `scores.md`).
 - Mock-ups: `Claude outputs/design-review-4-mockups/` (`mocks.js`, the screenshot jobs, `shot.mjs`, `fresh.mjs`).
@@ -764,7 +764,8 @@ None of these encourages fishing for patterns: each shows the same characteristi
   `Claude outputs/design-review-4/measurements/`.
 - The round's implementation (section 11): `Claude outputs/design-review-4/implementation/` (`tools/` with its
   `README.txt`, `measurements/before/` and `measurements/after/`, the decimals audit) and the fresh eyes after it in
-  `Claude outputs/design-review-4/fresh-eyes/after/`; the owner's follow-up (section 12) in its `follow-up/`.
+  `Claude outputs/design-review-4/fresh-eyes/after/`; the owner's follow-ups (sections 12 and 13) in its `follow-up/`
+  and `follow-up-2/`.
 
 ---
 
@@ -1231,3 +1232,77 @@ with the inventory, the first load and the visits measured again on `be5b4f9`'s 
 - Scripts and measurements: `Claude outputs/design-review-4/implementation/follow-up/` (`tools/` with its
   `README.txt`, and `measurements/after/`, with the runs on `be5b4f9`'s build in `be5b4f9/`); the "before" is the
   round's `measurements/after/`, with `qcheck` on `5ec2111`'s build in `measurements/before/`.
+
+## 13. The owner's second follow-up, October 13
+
+*Implemented on October 13, 2026, on branch `design-review-4`: `7407d7b` (the site, its tests and the README) and
+this write-up; not pushed.* The three checks pass at `7407d7b`: `npm test` (616 tests in 46 files), `npm run
+build`, and `.venv/bin/python -m pytest` (220 tests).
+
+After section 12 the owner asked for three more changes: no "All clear patterns →" on Popularity's "Only include" row
+(Keep exploring's link to the Patterns page is enough); a link on the Patterns page back to the Popularity page; and
+How it works' "Every characteristic" with its topics folded by default. They replace section 12's Patterns link
+(12.1's fifth row, 12.4's seventh call, 12.5's second item) and its open glossary (12.1's last row, 12.4's tenth call).
+**Before** is section 12's after (`be5b4f9`); **after** is `7407d7b`'s build, measured with the same scripts.
+
+### 13.1 What changed
+
+| Request | What changed | Before → after |
+|---|---|---|
+| No Patterns link on "Only include" | The link and its style removed (`Controls.jsx` as it was at `5ec2111`); Keep exploring's first item ("Every clear pattern with the average rating across all genres →") is Popularity's one way to the Patterns page | the link on a line of its own below 354 px (446 px with a longer option) → no link; Popularity's first chart row at 320 × 568 ends at 731 → 679; "Only include" → "Published 2020 or later" at 375 px: 0.094 → 0.008 within 500 ms of the choice (as at `5ec2111`) |
+| A way back from Patterns | "← Back to Popularity" above the kicker, a 44 px target whose words start where the other pages' kickers do; the arrow hidden from screen readers; to the Popularity view last shown, as the masthead's Popularity link (Popularity's first view on a visit that starts on Patterns) | the Patterns page's own links to Popularity: none → one; tab stops to its first answer 12/9 → 13/10 (1440/375) |
+| Every characteristic folded | Each topic a `<details>` again, as before section 12: its name, count and blurb in the summary; inside, each characteristic, what it measures and "See the chart". "+" folded and "–" open at the summary's right, as the Patterns page's and One genre's topics have; before section 12 it had no marker | definitions on screen without a click: 187 → 0, each topic one tap away; How it works at 375 px: more than 40 tab stops to the first section's text, the topics' toggles now |
+
+### 13.2 Measurements
+
+| Measure | Before (`be5b4f9`) | After |
+|---|---|---|
+| First load (gzip bodies) | 150.7 KiB in 6 requests | 150.8 KiB in 6 (CSS 6.9: the way back and the "+"; JS a little smaller) |
+| A visit starting on Trends / One genre / How it works | 177.2 / 210.6 / 142.5 KiB | 177.3 / 210.7 / 142.5 KiB |
+| Layout shift, a visit to each page (14) and after every switch, beyond 500 ms (30) | 0.000 and 0.000 | 0.000 and 0.000; no "Loading" frames |
+| The same within 500 ms of the switch | worst 0.325 (One genre: another genre); Popularity's "Only include" at 375 px 0.094 | worst 0.325 (the same); Popularity's "Only include" at 375 px 0.008 (as at `5ec2111`) |
+| axe (the review's set at 375, 1440, 200% and 400%, with the menu open) | 116 runs, 0 violations; 15 more, 0 | 116 runs, 0 violations; 15 more, 0 |
+| Tap areas at 320 and 375 px (`taps.mjs`) | 1,222 controls | 1,230: the way back (2) and the eight topics' summaries at each width (16) new, Popularity's Patterns link (10) gone; the way back 142 × 44 px, the whole box answering a tap; the summaries the column's width and 44–62 px tall; the controls under 44 px as before, one for one |
+| Tab stops to the first answer, 1440 / 375 | Popularity 14/11, Patterns 12/9, How it works 7/>40 | Popularity 13/10, Patterns 13/10, How it works 7/>40; the other pages as before |
+| Popularity's first chart row, 375 × 667 / 320 × 568 | 655 / 731 | 655 / 679 (as at `5ec2111`) |
+| Kickers: a "·" starting or ending a line, a piece broken (six pages, 300–800 px) | 0 (at `5ec2111`) | 0; Patterns' kicker on as many lines at each width as at `5ec2111` |
+| Sideways scroll and overlapping text (`sweep`) | none | none |
+| Inventory: page font sizes / chart sizes / text styles / size and line-height pairs | 10 / 3 / 30 / 11 | 10 / 3 / 30 / 11 (the folded summaries' 16 px semibold is the comparisons' style) |
+| Census: "All clear patterns" / "Back to Popularity" | 14 states (seven of Popularity's at 375 and 1440) / 0 | 0 / 2 (Patterns at 375 and 1440); Keep exploring's "Every clear pattern …" in the same 14 |
+| Addresses (the review prompt's rule 6) | 36, every one opens its view | the same 36 |
+| Back and Forward (`backcheck2`) | as in 12.2 | the same, run for run |
+
+### 13.3 Side by side
+
+| View | Image |
+|---|---|
+| Popularity's "Only include" row before and after at 320 px and, with "Published 2020 or later", at 375; the Patterns page before and after at 375 px, and after at 1440 | [f07](design-review-4/f07-way-back.png) |
+| How it works' "Every characteristic" at 375 px: before (every topic open), after (folded, with "+") and a topic opened; before and after at 1440 | [f08](design-review-4/f08-glossary-folded.png) |
+
+![The way back from the Patterns page](design-review-4/f07-way-back.png)
+
+### 13.4 Judgment calls
+
+1. **Where the way back leads.** To the Popularity view last shown, as the masthead's link: it reads as a return, and
+   the Patterns page's own rows already open Popularity with its genre and measure and that characteristic.
+2. **Its place.** Above the kicker, where a way back usually sits, on its own line; the kicker and the question then
+   open the page as on the other pages.
+3. **Its words.** "← Back to Popularity"; the arrow is hidden from screen readers, so its name is its words.
+4. **The "+" on the glossary's topics.** Folded topics with no marker read as a plain list (section 12's request may
+   have come from that), so they take the Patterns page's "+" and "–", drawn by CSS and hidden from screen readers
+   (the summary says whether it is open).
+5. **Restored, not redone.** `Controls.jsx` is byte for byte what it was at `5ec2111`, and the glossary's markup and
+   styles are too, but for the marker; One genre's fingerprints didn't change.
+
+### 13.5 Still open
+
+- **The fresh eyes** weren't run again for either follow-up.
+- **No real phone, Safari, Firefox or screen reader**: everything in headless Chromium and jsdom, as before.
+- **The `f01`–`f06` images** (12.3) show section 12's Patterns link and open glossary; `f07` and `f08` show what
+  replaced them.
+- The rest of 12.5 stands: the "?" past its column at 320 px.
+
+### 13.6 Files
+
+- Images: `docs/stage2/design-review-4/f07-way-back.png`, `f08-glossary-folded.png`.
+- Scripts and measurements: `Claude outputs/design-review-4/implementation/follow-up-2/` (`tools/`, `measurements/`).

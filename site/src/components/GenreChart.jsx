@@ -34,7 +34,7 @@ export default function GenreChart({ meta, variable, entry, rows, sub, title, on
     width,
     smallN,
     minN,
-    domain: chartDomain(crow, kind),
+    domain: chartDomain(crow, kind, entry.fmt),
     tickFormat: tickFormatFor(kind, entry.fmt),
     printed: printedFor(kind, numberFormat(variable, entry)),
     valueColumn: true,

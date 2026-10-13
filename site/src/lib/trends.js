@@ -297,7 +297,7 @@ export function trendChartInput(meta, variable, entry, file) {
     kind,
     fmt,
     cells,
-    axis: mix ? trendTicks("bin", [0, 1]) : trendTicks(kind, trendDomain(kind, cells)),
+    axis: mix ? trendTicks("bin", [0, 1]) : trendTicks(kind, trendDomain(kind, cells, entry.fmt)),
     percent: mix || kind === "bin" || entry.fmt === "percent",
     texts: cells.map((c) => ({
       value: mix ? "" : c ? (kind === "bin" ? fmt.share(c.share) : fmt.value(c.median)) : "–",
@@ -356,7 +356,7 @@ export function trendSplitInputs(meta, variable, entry, file) {
         kind: "num",
         fmt,
         cells: among,
-        axis: trendTicks("num", trendDomain("num", among)),
+        axis: trendTicks("num", trendDomain("num", among, fmt.fmt)),
         percent: fmt.fmt === "percent",
         texts: among.map((c) => ({ value: c ? fmt.value(c.median) : "–", stories: storiesText(c) })),
         valueHead: "Median",

@@ -102,6 +102,12 @@ It is drawn in one of four forms on one time axis:
 - 100% columns for named groups and ordered bands, with groups under 3% in every period merged as "Other";
 - a split chart for characteristics where most stories score 0.
 
+A number axis runs over the quartiles' range. Where the values don't vary (every quartile the same in every period:
+How To's pages on site, 1 page throughout), it shows the value against 0 instead: from 0 to twice the value, with
+ticks at 0, the value and twice the value (0, 1 and 2 for a value of 0), so the line sits halfway up on a labeled value
+and no axis reads "0.96" to "1.04" pages. The Genres page draws its charts whose genres all have the same value that way
+too ("Under 2,000 words": every genre's pages on site); percentages keep a share's axis (`flatDomain` in `genres.js`).
+
 Under the plot, aligned with the columns: the periods, their medians or shares, their stories, and brackets under the
 two windows compared, each with its window's number ("2000–2009 · median 2,770"); the periods between them are gray and
 "not compared", as the key says; the key draws each mark as the chart does (the median's capsule with its dot, the
@@ -357,8 +363,9 @@ src/
                           phone column); STACKED, the chart width under which "One genre"'s rows stack
     genres.js             (lazy) reading genres/<included>.json, every sentence of the Genres page (One genre's
                           columns, unit lines, row names, the note and axis title, the takeaway's position words and
-                          the dots' numbers' places too), numberFormat (one number format per chart) and pairText
-                          (a One genre row's two values with the same decimals)
+                          the dots' numbers' places too), numberFormat (one number format per chart), pairText
+                          (a One genre row's two values with the same decimals), chartDomain and flatDomain (the axis
+                          of values that don't vary, on both pages)
     genreLayout.js        (lazy) the geometry of the 100% bars (with the groups' names and their inks) and of the
                           mostly-zero chart, and their overlap checks
     trends.js             (lazy) reading trends/<included>/<genre>.json and every sentence of the Trends page: the

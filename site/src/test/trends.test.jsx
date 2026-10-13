@@ -239,6 +239,10 @@ describe("the chart's geometry (trendLayout)", () => {
           const input =
             entry.k === "num" ? trendChartInput(real, byId.get(id), entry, file) : entry.k === "zero" ? trendSplitInputs(real, byId.get(id), entry, file)[1].input : null;
           if (!input) continue;
+          // values that don't vary (How To's pages on site) have no height to fill: from 0 to twice the value
+          // (flatCharts.test.jsx)
+          const vals = input.cells.filter(Boolean).flatMap((c) => [c.p25, c.median, c.p75]);
+          if (vals.every((v) => v === vals[0])) continue;
           const [lo, hi] = trendDomain("num", input.cells);
           expect(input.axis.ticks.length, `${sub}/${g} ${id}`).toBeGreaterThanOrEqual(3);
           expect(input.axis.ticks.length, `${sub}/${g} ${id}`).toBeLessThanOrEqual(5);

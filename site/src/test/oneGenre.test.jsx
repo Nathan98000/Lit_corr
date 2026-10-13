@@ -575,8 +575,8 @@ describe("the key, in the lists (F86)", () => {
     expect(list.querySelector("h3").textContent).toBe("Higher in Romance than in all genres");
     expect(lower.lastElementChild.textContent).toBe("Show all 10"); // a list ends with its "Show all"
     expect(note.textContent).toBe(
-      "Each dot compares a story in Romance with a story from all genres, counting every story, not only the medians " +
-        "(50 is a tie; how\u00a0this\u00a0is\u00a0decided). Click a row for every genre’s numbers.",
+      "Each dot compares a story in Romance with a story from all genres (50 is a tie; how\u00a0this\u00a0is\u00a0decided). " +
+        "Click a row for every genre’s numbers.",
     );
     expect(note.textContent).not.toMatch(/Gray dots/); // the topics' line says it, over the topics
     expect(note.querySelector("a").getAttribute("href")).toBe("#/methodology/genres");
@@ -601,8 +601,8 @@ describe("the key, in the lists (F86)", () => {
         "How often a story in Fetish comes out higher than a story from all genres, out\u00a0of\u00a0100",
       );
       expect(t.querySelector(".profile-note").textContent).toBe(
-        "Each dot compares a story in Fetish with a story from all genres, counting every story, not only the medians " +
-          "(50 is a tie; how\u00a0this\u00a0is\u00a0decided). Click a row for every genre’s numbers.",
+        "Each dot compares a story in Fetish with a story from all genres (50 is a tie; how\u00a0this\u00a0is\u00a0decided). " +
+          "Click a row for every genre’s numbers.",
       );
     }
   });

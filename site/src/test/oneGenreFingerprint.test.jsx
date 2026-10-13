@@ -5,7 +5,8 @@
 // difference never prints 40 or 60; two shares that would print the same get one decimal), in the rows that commit
 // lists. The markup is stored one tag per line, React's ids numbered in order of appearance; for the open topic, its
 // own markup (nothing else changes). Regenerated for the data update 20261013 (litcorr_stage2_handoff_20261013.zip),
-// with no code change: the numbers, the rows' order and the lists are the new data's.
+// with no code change: the numbers, the rows' order and the lists are the new data's. The owner's change 8 (2026-10-13)
+// took ", counting every story, not only the medians" out of the note: regenerated, only the note's line differs.
 import { cleanup, render, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { readFileSync } from "node:fs";

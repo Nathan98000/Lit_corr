@@ -57,8 +57,8 @@ Trends page does. "What stands out about stories in [Romance]?" gives the genre'
 direction, the increases first (▲ Higher, then ▼ Lower, then ≠ A different mix; a position is listed under its own word,
 after its direction: "▲ Later: where the first sex scene starts", "▼ Earlier", "▼ Sooner"), then a note above the first
 list, in the Trends page's words: "Each dot compares a
-story in Romance with a story from all genres, counting every story, not only the medians (50 is a tie; how this is
-decided). Tap a row for every genre's numbers." ("Click" where the device can hover). Then the
+story in Romance with a story from all genres (50 is a tie; how this is decided). Tap a row for every genre's numbers."
+("Click" where the device can hover). Then the
 characteristics that set the genre apart from all genres, the Higher list first, each list the largest differences
 first. Each row has a dot on one
 scale (under the axis title "How often a story in Romance comes out higher than a story from all genres, out of 100",

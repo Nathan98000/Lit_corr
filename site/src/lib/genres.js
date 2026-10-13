@@ -778,13 +778,14 @@ export const mixLine = (genre, { inTopic = false } = {}) =>
 /**
  * The note above the first list (round 4's W1, where the Trends page's note is, in its words), in three parts, the
  * middle one the link to how a difference is decided (never broken inside): "Each dot compares a story in Romance with
- * a story from all genres, counting every story, not only the medians (50 is a tie; " · "how this is decided" · ").
- * Tap a row for every genre’s numbers." ("Click" on a device that can hover, `tap` false). The gray dots are the
- * topics' line's to explain, over the topics. In an open topic, when no list is shown, the same words (`inTopic`).
+ * a story from all genres (50 is a tie; " · "how this is decided" · "). Tap a row for every genre’s numbers." ("Click"
+ * on a device that can hover, `tap` false; the owner took out ", counting every story, not only the medians" on
+ * 2026-10-13). The gray dots are the topics' line's to explain, over the topics. In an open topic, when no list is
+ * shown, the same words (`inTopic`).
  */
 export function profileNote(genre, { tap = false } = {}) {
   return [
-    `Each dot compares a story in ${genre.name} with a story from all genres, counting every story, not only the medians (50 is a tie; `,
+    `Each dot compares a story in ${genre.name} with a story from all genres (50 is a tie; `,
     "how\u00a0this\u00a0is\u00a0decided",
     `). ${tap ? "Tap" : "Click"} a row for every genre’s numbers.`,
   ];

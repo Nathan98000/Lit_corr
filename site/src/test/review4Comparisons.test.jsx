@@ -101,8 +101,8 @@ const hoverNone = () =>
 describe("W1: “One genre”'s note, above the first list, in the Trends page's words", () => {
   it("says what a dot compares, that 50 is a tie, and what a tap does; its link is one piece", () => {
     expect(joined(profileNote(romance, { tap: true }))).toBe(
-      "Each dot compares a story in Romance with a story from all genres, counting every story, not only the medians " +
-        "(50 is a tie; how this is decided). Tap a row for every genre’s numbers.",
+      "Each dot compares a story in Romance with a story from all genres (50 is a tie; how this is decided). Tap a row " +
+        "for every genre’s numbers.",
     );
     expect(joined(profileNote(romance, { tap: false }))).toMatch(/\. Click a row for every genre’s numbers\.$/);
     // the link's words never break inside, and the gray dots are the topics' line's to explain

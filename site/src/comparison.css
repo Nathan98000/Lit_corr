@@ -184,12 +184,21 @@
   outline-offset: -2px;
 }
 
+/* the "?" after the name stays on its last word's line: a line may break before a button, so the name's box doesn't
+   wrap and holds a word joiner before the "?"; its words and its unit lines wrap. Where the last word and the "?" can't
+   share a line (a very narrow cell), the "?" takes the next one rather than run past the cell */
+.profile-name {
+  white-space: nowrap;
+  overflow-wrap: break-word;
+}
+
 /* the name lies over the "?"'s area, so that a tap on the name always opens the row, between its lines too (its
    lines' boxes meet) */
 .profile-label-text {
   position: relative;
   z-index: 2;
   padding-block: 2px;
+  white-space: normal;
 }
 
 /* the definition's button (I16): an 18 px circle just after the name, its area 44 px wide and the row's height,
@@ -251,7 +260,10 @@
 
 /* a label (wide) and a unit that wrap do so in even lines, never leaving one word alone ("of the way through the" ⏎
    "story"); stacked, a label keeps its lines */
-.genre-profile:not(.stacked) .profile-name,
+.genre-profile:not(.stacked) .profile-name {
+  text-wrap-style: balance; /* not the shorthand text-wrap, which would let the name's box wrap again */
+}
+
 .profile-unit {
   text-wrap: balance;
 }
@@ -272,6 +284,7 @@
 /* the unit: on a line of its own under the label, on every chart (round 4's W1) */
 .profile-unit {
   display: block;
+  white-space: normal;
   font-size: var(--text-13);
   line-height: var(--leading-13);
   color: var(--ink-3);

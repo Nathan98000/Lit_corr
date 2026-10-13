@@ -206,7 +206,7 @@ function ProfileRow({ item, row, zone, layout, marks }) {
           })}
           {description && (
             <>
-              {/* a word joiner keeps the "?" with the name's last word */}
+              {/* a word joiner, in the name's box that doesn't wrap, keeps the "?" with the last word (comparison.css) */}
               {"\u2060"}
               <button
                 type="button"

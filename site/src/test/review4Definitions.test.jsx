@@ -85,9 +85,9 @@ describe("I16: a “?” on every row, just after its name", () => {
         expect(button.getAttribute("type")).toBe("button");
         expect(button.getAttribute("aria-label")).toBe(`What “${label}” measures`);
         expect(button.getAttribute("aria-expanded")).toBe("false");
-        // just after the name, kept with its last word
+        // just after the name, kept with its last word: a word joiner in the name's box, which doesn't wrap
         const link = row.querySelector(".profile-link");
-        expect(link.nextSibling.textContent).toBe("⁠");
+        expect(link.nextSibling.textContent).toBe("\u2060");
         expect(link.nextSibling.nextSibling).toBe(button);
         expect(link.contains(button)).toBe(false); // a button never sits inside a link
         const def = document.getElementById(button.getAttribute("aria-controls"));
@@ -184,6 +184,15 @@ describe("I16: how it looks", () => {
     expect(rule).toMatch(/border-radius: 50%;/);
     expect(rule).toMatch(/color: var\(--ink-2\);/);
     expect(rule).toMatch(/font-size: var\(--text-13\);/);
+  });
+
+  it("keeps it on its name's last line: the name's box doesn't wrap (a word joiner before the “?”), its words and unit lines do", () => {
+    expect(css).toMatch(/\.profile-name \{\s*white-space: nowrap;\s*overflow-wrap: break-word;\s*\}/);
+    // the wide rows' balance mustn't use the shorthand text-wrap, which would set the name's box wrapping again
+    expect(css).toMatch(/\.genre-profile:not\(\.stacked\) \.profile-name \{\s*text-wrap-style: balance;/);
+    expect(css).not.toMatch(/\.profile-name[^{]*\{[^}]*text-wrap: /);
+    expect(css).toMatch(/\.profile-label-text \{[^}]*white-space: normal;/);
+    expect(css).toMatch(/\.profile-unit \{\s*display: block;\s*white-space: normal;/);
   });
 
   it("gives it a 44 px wide area the row's height, centered on it, under the name and over the row's link", () => {

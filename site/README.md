@@ -15,9 +15,10 @@ credit. This page is **Popularity** in the masthead (its addresses stay `#/explo
 
 The **Patterns** page lists every clear pattern for a genre and a measure, topic by topic; it opens as the other pages
 do, with its question, "Clear patterns in [all genres] with the [average rating]", as its h1. It is a part of
-Popularity, not a page of the masthead (the owner, 2026-10-13): "All clear patterns →", at the end of Popularity's
-"Only include" row (named for the genre and measure: "All clear patterns with the average rating across all genres"),
-and Keep exploring's first item lead to it, and on it the masthead marks Popularity.
+Popularity, not a page of the masthead (the owner, 2026-10-13): Keep exploring's first item leads to it ("Every clear
+pattern with the average rating across all genres →"), and on it the masthead marks Popularity. Above its kicker,
+"← Back to Popularity" leads to the Popularity view last shown, as the masthead's link does (Popularity's first view on
+a visit that starts on Patterns).
 
 **The masthead** lists Popularity, Genres, Trends and How it works, in a row from 548 px, the page being read
 underlined. On a phone (below 548 px, where the four don't fit beside the site's name in Verdana; 502 px in the site's
@@ -26,11 +27,11 @@ panel under the masthead, over the page: 48 px rows, the page being read marked 
 on a link, Escape (focus back on the button), a tap or click outside it, or focus leaving it. The footer is one
 sentence: "An independent project, not affiliated with or endorsed by Literotica."
 
-Every page but How it works opens the same way (round 4's X2): a kicker, then the page's question as its h1, at one
-size, in balanced lines at every width and at most 44 characters wide from 760 px (so its last word is never left
-alone on a desktop). On Popularity the kicker is the site's headline; on the others it names the page and the source
-("Genres · about 9,000 Literotica stories · 30 genres", "Trends · about 9,000 Literotica stories · 2000–2026",
-"Patterns · …"), and its "·" never starts or ends a line.
+Every page but How it works opens the same way (round 4's X2; on Patterns, after its way back): a kicker, then the
+page's question as its h1, at one size, in balanced lines at every width and at most 44 characters wide from 760 px (so
+its last word is never left alone on a desktop). On Popularity the kicker is the site's headline; on the others it names
+the page and the source ("Genres · about 9,000 Literotica stories · 30 genres", "Trends · about 9,000 Literotica stories
+· 2000–2026", "Patterns · …"), and its "·" never starts or ends a line.
 
 **The way across** (round 4's I15): under each one-characteristic chart (Popularity's, the Genres page's and the Trends
 page's) the same line of links, named the same way and in the same order: "By genre →" (the Genres page, with this
@@ -241,7 +242,7 @@ src/
                           How it works: PAGE_NAMES), routes, the kicker (Kicker: in pieces, so no line starts or ends
                           with "·"; Popularity's is the site's headline and its h1; on Genres, Trends and Patterns it
                           names the page and the source, a paragraph over the question, which is the h1 there), the
-                          footer (one sentence); remembers the Genres and Trends pages' last addresses, Popularity's
+                          Patterns page's "← Back to Popularity", the footer (one sentence); remembers the Genres and Trends pages' last addresses, Popularity's
                           last measure (for "With popularity →") and the last genre chosen in the visit (the default of
                           "One genre"); an address changed in place keeps the history entry's state (where "One genre"
                           and "What changed" keep their open topics)
@@ -259,8 +260,8 @@ src/
     SiteNav.jsx           the masthead's pages: a row of links on a wider screen; on a phone, the button that names the
                           page being read and opens them all in a panel over the page (Escape, a tap outside, a link
                           or focus leaving it closes it)
-    Controls.jsx          the question sentence, "Only include" and "All clear patterns →" (the Patterns page), the
-                          sheets of the picker and the measure menu, and the question bar on phones
+    Controls.jsx          the question sentence and "Only include", the sheets of the picker and the measure menu, and
+                          the question bar on phones
     CharacteristicPicker.jsx  (lazy) search-first picker body (combobox with listbox): Popular, eight topics, search,
                           a measure typed by mistake; on the Trends page, the characteristics that clearly changed first
     MetricMenu.jsx        (lazy) the popularity-measure menu's body
@@ -328,7 +329,8 @@ src/
                           what stands out"), its lazy code and its failure message (Popularity, both views of the Genres
                           and Trends pages); the file is a PNG
     PatternBrowser.jsx    (lazy) the Patterns page: topics folded with their counts, one row per pattern
-    Methodology.jsx       (lazy) How it works, with "Every characteristic" open: each topic, then every characteristic
+    Methodology.jsx       (lazy) How it works, with "Every characteristic": each topic folded until opened (its name,
+                          count and blurb, and "+" as the Patterns page's topics have), holding every characteristic
                           and what it measures (and a box that finds one); the sticky section bar below 1,000 px
                           ("How it works" beside its
                           Contents button at the top, "How it works › {section}" once a section is reached)
@@ -426,9 +428,9 @@ License 1.1 (`public/fonts/OFL.txt`, taken from `@fontsource/source-serif-4` 5.3
   median dot (radius 6, a 2 px ring) and one interquartile capsule (10 px) on every range chart, one gray for marks and
   control borders, and one page frame (the kicker, then the question as the h1 at one size, balanced, at most 44
   characters wide from 760 px).
-- The masthead names four pages (the owner's follow-up to round 4, 2026-10-13): Popularity (the code's Explore),
-  Genres, Trends and How it works. Patterns is a part of Popularity, reached from its "Only include" row and Keep
-  exploring, and on it the masthead marks Popularity (`aria-current="true"`, the page itself `"page"`). On a phone the
+- The masthead names four pages (the owner's follow-up to round 4, 2026-10-13): Popularity (the code's Explore), Genres,
+  Trends and How it works. Patterns is a part of Popularity, reached from its Keep exploring, with a way back above its
+  kicker, and on it the masthead marks Popularity (`aria-current="true"`, the page itself `"page"`). On a phone the
   pages are a disclosure (a button with `aria-expanded` and a list of links, not an ARIA menu) whose panel lies over the
   page, so opening it moves nothing. The footer is one sentence, with no links.
 - The way across and the definitions in place describe the one characteristic on screen; nothing on the site suggests

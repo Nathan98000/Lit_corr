@@ -167,7 +167,10 @@ function ChangesOverTime({ meta }) {
   );
 }
 
-/** The glossary by topic, every characteristic with its definition, and a filter box that uses the picker's search. */
+/**
+ * The glossary by topic, each topic folded until opened (its name, count and blurb; inside, every characteristic with
+ * its definition: the owner, 2026-10-13), and a filter box that uses the picker's search.
+ */
 function Glossary({ meta }) {
   const [query, setQuery] = useState("");
   const byId = new Map(meta.variables.map((v) => [v.id, v]));
@@ -196,15 +199,14 @@ function Glossary({ meta }) {
           <dl className="glossary">{results.map((r) => entry(r.variable))}</dl>
         </>
       ) : (
-        // every topic open, each characteristic with its definition (the owner, 2026-10-13: topics folded showed none)
         meta.topics.map((t) => (
-          <section key={t.id} className="glossary-group" aria-labelledby={`glossary-${t.id}`}>
-            <h3 id={`glossary-${t.id}`}>
-              {t.label} <span className="glossary-count">({t.ids.length})</span>
-            </h3>
-            <p className="glossary-blurb">{t.blurb}</p>
+          <details key={t.id} className="glossary-group">
+            <summary>
+              {t.label} <span className="muted">({t.ids.length})</span>
+              <span className="glossary-blurb">{t.blurb}</span>
+            </summary>
             <dl className="glossary">{t.ids.map((id) => entry(byId.get(id)))}</dl>
-          </section>
+          </details>
         ))
       )}
     </>

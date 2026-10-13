@@ -359,8 +359,14 @@ export default function App() {
           </>
         ) : route.page === "patterns" ? (
           <>
-            {/* the page opens as the others do (round 4's X2): the kicker names the page and the source */}
+            {/* the page opens as the others do (round 4's X2): the kicker names the page and the source; above it, the
+                way back to the Popularity page it is a part of, to the view last shown there, as the masthead's link
+                (the owner, 2026-10-13) */}
             <div className="intro">
+              <a className="back-link" href={toHash("explore", lastExplore.current)}>
+                <span aria-hidden="true">{"\u2190\u00a0"}</span>
+                Back to Popularity
+              </a>
               <Kicker meta={meta} page="Patterns" />
             </div>
             {meta ? (

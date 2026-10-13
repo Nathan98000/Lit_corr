@@ -318,6 +318,23 @@ h3 {
   padding: var(--space-24) 0 var(--space-8);
 }
 
+/* the Patterns page's way back to Popularity, above its kicker: a 44 px target whose words start where the other
+   pages' kickers do (the owner, 2026-10-13) */
+.back-link {
+  display: flex;
+  align-items: center;
+  width: fit-content;
+  min-height: var(--target);
+  margin-top: calc(-1 * var(--space-12));
+  font-size: var(--text-15);
+  line-height: var(--leading-15);
+  text-decoration: none;
+}
+
+.back-link:hover {
+  text-decoration: underline;
+}
+
 /* The kicker in pieces (App.jsx): the title, then the counts, which take a line of their own when the kicker wraps.
    Each "·" leads its piece in a box of --kicker-sep, pulled back by as much and made up for by the gap: in the middle
    of a line it sits between two pieces, and at a line's start it falls left of the box and is clipped, so no line
@@ -798,9 +815,11 @@ h3 {
 }
 
 .glossary-blurb {
-  margin: 0;
+  display: block;
+  flex-basis: 100%;
   font-size: var(--text-13);
   line-height: var(--leading-13);
+  font-weight: 400;
   color: var(--ink-3);
 }
 
@@ -830,22 +849,45 @@ h3 {
   margin-bottom: var(--space-8);
 }
 
-/* a topic of the glossary: its name and count, its blurb, then every characteristic with its definition */
+/* a topic of the glossary, folded until opened: its name, count and blurb; inside, every characteristic with its
+   definition */
 .glossary-group {
   border-top: 1px solid var(--rule);
-  padding: var(--space-12) 0 0;
+  padding: var(--space-12) 0;
 }
 
-.prose .glossary-group h3 {
-  margin: 0 0 var(--space-4);
+.glossary-group summary {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 6px;
+  min-height: var(--target);
+  padding-right: var(--space-32);
+  list-style: none;
+  cursor: pointer;
+  font-weight: 600;
 }
 
-.glossary-count {
-  font-family: var(--sans);
-  font-size: var(--text-15);
+/* "+" and "–", as the Patterns page's and One genre's topics have, so a folded topic reads as one that opens */
+.glossary-group summary::-webkit-details-marker {
+  display: none;
+}
+
+.glossary-group summary::after {
+  content: "+" / "";
+  position: absolute;
+  top: 50%;
+  right: 0;
+  transform: translateY(-50%);
+  font-size: var(--text-18);
+  line-height: var(--leading-18);
   font-weight: 400;
-  line-height: var(--leading-15);
   color: var(--ink-3);
+}
+
+.glossary-group[open] > summary::after {
+  content: "–" / "";
 }
 
 .glossary {
@@ -1450,19 +1492,6 @@ h3 {
   font-size: var(--text-15);
   line-height: var(--leading-15);
   color: var(--ink-2);
-}
-
-/* Popularity's way to the Patterns page, at the row's end (on a line of its own, at its end, when the row is full) */
-.patterns-link {
-  display: inline-flex;
-  align-items: center;
-  min-height: var(--target);
-  margin-left: auto;
-  text-decoration: none;
-}
-
-.patterns-link:hover {
-  text-decoration: underline;
 }
 
 .include {

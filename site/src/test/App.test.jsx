@@ -348,12 +348,13 @@ describe("How it works", () => {
       expect(within(contents).getAllByRole("link").some((a) => a.getAttribute("href") === `#/methodology/${id}`)).toBe(true);
       expect(document.getElementById(id)).toBeTruthy();
     }
-    // the glossary uses the topics, each open with every characteristic's definition, and can be filtered
-    const topic = screen.getByRole("heading", { level: 3, name: /^Dialogue & characters \(\d+\)$/ });
-    const defs = topic.closest("section").querySelector("dl.glossary");
+    // the glossary uses the topics, folded until opened, each with every characteristic's definition (the owner,
+    // 2026-10-13), and can be filtered
+    const topic = screen.getByText("Dialogue & characters", { selector: "summary" }).closest("details");
+    expect(topic.open).toBe(false);
+    const defs = topic.querySelector("dl.glossary");
     expect(defs.querySelectorAll("dt").length).toBeGreaterThan(0);
     expect([...defs.querySelectorAll("dd")].every((d) => d.textContent.trim().length > 0)).toBe(true);
-    expect(document.querySelector(".glossary-group details, details.glossary-group")).toBeNull();
     await user.type(screen.getByLabelText("Find a characteristic"), "anger");
     expect(screen.getByText("1 match")).toBeTruthy();
     expect(screen.getByRole("link", { name: "See the chart" }).getAttribute("href")).toMatch(/var=emo_anger_per_1k/);

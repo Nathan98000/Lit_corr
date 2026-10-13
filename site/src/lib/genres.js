@@ -198,9 +198,13 @@ export function orderValue(kind, stats) {
   return null;
 }
 
-/** "By median" (or by share): descending, ties A–Z, genres with too few stories last; All genres stays first. */
+/**
+ * The rows in the order chosen. "By median" (or by share, or by share with any) is the default (the owner,
+ * 2026-10-13): descending, ties A–Z, genres with too few stories last, All genres first. `sort` "az" keeps the rows'
+ * alphabetical order, as named groups and bands always do.
+ */
 export function orderRows(rows, kind, sort) {
-  if (sort !== "value") return rows;
+  if (sort === "az" || !sortableKind(kind)) return rows;
   const [all, ...rest] = rows;
   const sorted = rest
     .map((row, k) => ({ row, k, v: orderValue(kind, row.stats) }))
@@ -216,11 +220,12 @@ export const orderLabel = (kind) => (kind === "bin" ? "By share" : kind === "zer
 export const sortableKind = (kind) => kind === "num" || kind === "bin" || kind === "zero";
 
 /**
- * The order line's words (F75): "Genres in alphabetical order", or by the toggle's value "Genres by median, highest
- * first" (yes/no: "by share"; mostly zero: "by share with any"). Named groups and bands are always A–Z.
+ * The order line's words (F75): by the toggle's value, the default, "Genres by median, highest first" (yes/no: "by
+ * share"; mostly zero: "by share with any"), or "Genres in alphabetical order" for A–Z. Named groups and bands are
+ * always A–Z.
  */
 export function orderWords(kind, sort) {
-  if (sort !== "value" || !sortableKind(kind)) return "Genres in alphabetical order";
+  if (sort === "az" || !sortableKind(kind)) return "Genres in alphabetical order";
   if (kind === "bin") return "Genres by share, highest first";
   if (kind === "zero") return "Genres by share with any, highest first";
   return "Genres by median, highest first";

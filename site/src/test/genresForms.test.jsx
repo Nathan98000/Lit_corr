@@ -307,7 +307,7 @@ describe("no median age in a genre's details, in any form (decision 4)", () => {
   ];
 
   it.each(FORMS)("%s: not in the card, the phone's line or the rows' names", async (v, chart) => {
-    await openGenres(`#/genres?var=${v}`, 1032);
+    await openGenres(`#/genres?var=${v}&sort=az`, 1032); // A–Z, so that the third row is Romance
     let rows = [...document.querySelectorAll(`${chart} .row`)];
     expect(rows).toHaveLength(4);
     for (const row of rows) expect(row.getAttribute("aria-label")).not.toMatch(/median age|years/);
@@ -321,7 +321,7 @@ describe("no median age in a genre's details, in any form (decision 4)", () => {
     vi.restoreAllMocks();
     clearCache();
     document.body.innerHTML = "";
-    await openGenres(`#/genres?var=${v}`, 343);
+    await openGenres(`#/genres?var=${v}&sort=az`, 343);
     rows = [...document.querySelectorAll(`${chart} .row`)];
     fireEvent.click(rows[2]);
     const line = document.querySelector(".genre-line");

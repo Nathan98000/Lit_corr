@@ -333,7 +333,7 @@ describe("the chart", () => {
   });
 
   it("marks and names the genres that clearly differ", async () => {
-    await openGenres("#/genres?var=dlg_word_share");
+    await openGenres("#/genres?var=dlg_word_share&sort=az"); // A–Z: Fetish, then Romance
     // the marks in their own column after the names (F61a), the values alone
     const marks = [...document.querySelectorAll(".genre-chart .row")].map((r) => r.querySelector(".gmark")?.textContent ?? "");
     expect(marks).toEqual(["", "▲", "▼", ""]); // All genres, Fetish, Romance, Tiny Genre
@@ -345,42 +345,49 @@ describe("the chart", () => {
     expect(rowNames()[2]).toMatch(/, clearly less dialogue than all genres$/);
   });
 
-  it("orders the genres by median, or by share, with All genres first and ties A–Z (D3)", async () => {
+  it("orders the genres by median by default, or by share, with All genres first and ties A–Z; A–Z on request (the owner, 2026-10-13)", async () => {
     const user = await openGenres("#/genres?var=dlg_word_share");
     const order = () => rowNames().map((n) => n.split(":")[0]);
-    expect(order()).toEqual(["All genres", "Fetish", "Romance", "Tiny Genre"]);
-    expect(screen.getByRole("radiogroup", { name: "Order" })).toBeTruthy();
-    await user.click(screen.getByRole("radio", { name: "By median" }));
-    await waitFor(() => expect(window.location.hash).toBe("#/genres?var=dlg_word_share&include=all&sort=value"));
     const file = fixtureFile("genres/all.json");
     const meds = { Fetish: file.c.dlg_word_share.q[1][2], Romance: file.c.dlg_word_share.q[2][2] };
     const expected = ["Fetish", "Romance"].sort((a, b) => meds[b] - meds[a]);
     expect(order()).toEqual(["All genres", ...expected, "Tiny Genre"]); // too few stories: last
+    expect(screen.getByRole("radio", { name: "By median" }).checked).toBe(true);
+    expect(window.location.hash).toBe("#/genres?var=dlg_word_share"); // the default needs no setting in the address
+    await user.click(screen.getByRole("radio", { name: "A–Z" }));
+    await waitFor(() => expect(window.location.hash).toBe("#/genres?var=dlg_word_share&include=all&sort=az"));
+    expect(order()).toEqual(["All genres", "Fetish", "Romance", "Tiny Genre"]);
     // yes/no: "By share"; named groups: no order to choose
-    window.location.hash = "#/genres?var=dlg_has_dialogue&sort=value";
+    window.location.hash = "#/genres?var=dlg_has_dialogue";
     await waitFor(() => expect(screen.getByRole("radio", { name: "By share" }).checked).toBe(true));
-    window.location.hash = "#/genres?var=pov_class&sort=value";
+    window.location.hash = "#/genres?var=pov_class&sort=az";
     await waitFor(() => expect(screen.queryByRole("radiogroup", { name: "Order" })).toBeNull());
-    expect(window.location.hash).toBe("#/genres?var=pov_class&sort=value"); // the address is read, then sanitized
+    expect(window.location.hash).toBe("#/genres?var=pov_class&sort=az"); // the address is read, then sanitized
+    // an old link to "By median" (sort=value, the default since) opens in that order
+    window.location.hash = "#/genres?var=dlg_word_share&sort=value";
+    await waitFor(() => expect(screen.getByRole("radio", { name: "By median" }).checked).toBe(true));
+    expect(order()).toEqual(["All genres", ...expected, "Tiny Genre"]);
     const rows = [{ all: true, i: 0 }, { i: 1, stats: { median: 2 } }, { i: 2, stats: { median: 5 } }, { i: 3, stats: { median: 2 } }, { i: 4, stats: null }];
+    expect(orderRows(rows, "num", undefined).map((r) => r.i)).toEqual([0, 2, 1, 3, 4]);
     expect(orderRows(rows, "num", "value").map((r) => r.i)).toEqual([0, 2, 1, 3, 4]);
-    expect(orderRows(rows, "num", undefined)).toBe(rows);
+    expect(orderRows(rows, "num", "az")).toBe(rows);
+    expect(orderRows(rows, "grp", undefined)).toBe(rows); // named groups and bands: always A–Z
   });
 
   it("says the order on a line of its own between the legend and the chart, with the toggle at its right (F75)", async () => {
     const user = await openGenres("#/genres?var=dlg_word_share");
     const line = () => document.querySelector(".order-line");
-    expect(line().querySelector(".order-words").textContent).toBe("Genres in alphabetical order");
+    expect(line().querySelector(".order-words").textContent).toBe("Genres by median, highest first"); // the default
     expect(line().querySelector("[role=radiogroup]").getAttribute("aria-label")).toBe("Order");
     expect(document.querySelector(".genres-controls [role=radiogroup][aria-label='Order']")).toBeNull(); // not in the controls
     // between the legend and the chart
     expect(line().previousElementSibling.classList.contains("genre-legend")).toBe(true);
     expect(line().nextElementSibling.classList.contains("genre-chart")).toBe(true);
-    await user.click(screen.getByRole("radio", { name: "By median" }));
-    await waitFor(() => expect(line().querySelector(".order-words").textContent).toBe("Genres by median, highest first"));
-    window.location.hash = "#/genres?var=dlg_has_dialogue&sort=value";
+    await user.click(screen.getByRole("radio", { name: "A–Z" }));
+    await waitFor(() => expect(line().querySelector(".order-words").textContent).toBe("Genres in alphabetical order"));
+    window.location.hash = "#/genres?var=dlg_has_dialogue";
     await waitFor(() => expect(line().querySelector(".order-words").textContent).toBe("Genres by share, highest first"));
-    window.location.hash = "#/genres?var=emo_anger_per_1k&sort=value";
+    window.location.hash = "#/genres?var=emo_anger_per_1k";
     await waitFor(() => expect(line().querySelector(".order-words").textContent).toBe("Genres by share with any, highest first"));
     // named groups: the line without a toggle
     window.location.hash = "#/genres?var=pov_class";
@@ -406,8 +413,8 @@ describe("the chart", () => {
     const user = await openGenres("#/genres?var=dlg_word_share");
     const moved = () => [...document.querySelectorAll(".genre-chart [data-glide]")].filter((el) => el.getAttribute("transform"));
     expect(moved()).toHaveLength(0);
-    await user.click(screen.getByRole("radio", { name: "By median" }));
-    await waitFor(() => expect(window.location.hash).toMatch(/sort=value/));
+    await user.click(screen.getByRole("radio", { name: "A–Z" }));
+    await waitFor(() => expect(window.location.hash).toMatch(/sort=az/));
     const file = fixtureFile("genres/all.json");
     const swapped = file.c.dlg_word_share.q[2][2] > file.c.dlg_word_share.q[1][2]; // Romance's median above Fetish's
     if (swapped) {
@@ -419,8 +426,8 @@ describe("the chart", () => {
     }
     // reduced motion: the rows jump
     vi.stubGlobal("matchMedia", (q) => ({ matches: q.includes("reduce"), addEventListener() {}, removeEventListener() {} }));
-    await user.click(screen.getByRole("radio", { name: "A–Z" }));
-    await waitFor(() => expect(window.location.hash).not.toMatch(/sort=value/));
+    await user.click(screen.getByRole("radio", { name: "By median" }));
+    await waitFor(() => expect(window.location.hash).not.toMatch(/sort=/));
     expect(moved()).toHaveLength(0);
   });
 });
@@ -444,7 +451,7 @@ describe("no story-age note (decision 3)", () => {
 
 describe("details and the keyboard", () => {
   it("is one tab stop; arrows, Home and End move; the card holds the numbers and the link to the genre", async () => {
-    const user = await openGenres("#/genres?var=dlg_word_share");
+    const user = await openGenres("#/genres?var=dlg_word_share&sort=az"); // A–Z: Fetish, then Romance
     const rows = [...document.querySelectorAll(".genre-chart .row")];
     expect(rows.map((r) => r.getAttribute("tabindex"))).toEqual(["0", "-1", "-1", "-1"]);
     rows[0].focus();
@@ -472,18 +479,18 @@ describe("details and the keyboard", () => {
   });
 
   it("opens one genre from the link as a new history entry", async () => {
-    const user = await openGenres("#/genres?var=dlg_word_share");
+    const user = await openGenres("#/genres?var=dlg_word_share&sort=az");
     const rows = [...document.querySelectorAll(".genre-chart .row")];
     fireEvent.click(rows[2]); // a tap keeps the card
     await user.click(within(document.querySelector(".genre-tip")).getByRole("link"));
     await waitFor(() => expect(window.location.hash).toBe("#/genres?view=genre&genre=romance&include=all"));
     window.history.back();
-    await waitFor(() => expect(window.location.hash).toBe("#/genres?var=dlg_word_share"));
+    await waitFor(() => expect(window.location.hash).toBe("#/genres?var=dlg_word_share&sort=az"));
   });
 
   it("shows a line under the chart on phones, with the link, and “Tap again to close.” after a tap", async () => {
     vi.spyOn(Element.prototype, "getBoundingClientRect").mockReturnValue({ width: 343, height: 0, top: 0, left: 0, right: 343, bottom: 0 });
-    await openGenres("#/genres?var=dlg_word_share");
+    await openGenres("#/genres?var=dlg_word_share&sort=az");
     const rows = [...document.querySelectorAll(".genre-chart .row")];
     expect(document.querySelector(".genre-chart").classList.contains("mode-side")).toBe(true); // labels beside the bars
     fireEvent.click(rows[2]);
@@ -515,10 +522,10 @@ describe("the actions and what screen readers hear", () => {
         /^2 of 2 genres clearly differ from all genres\. ▲ More dialogue: Fetish\. ▼ Less dialogue: Romance\. All genres: median .* Too few stories to compare: Tiny Genre \(fewer than 10\)\.$/,
       ),
     );
-    await user.click(screen.getByRole("radio", { name: "By median" }));
-    await waitFor(() => expect(live()).toBe("Genres by median, highest first."));
     await user.click(screen.getByRole("radio", { name: "A–Z" }));
     await waitFor(() => expect(live()).toBe("Genres in alphabetical order."));
+    await user.click(screen.getByRole("radio", { name: "By median" }));
+    await waitFor(() => expect(live()).toBe("Genres by median, highest first."));
   });
 });
 

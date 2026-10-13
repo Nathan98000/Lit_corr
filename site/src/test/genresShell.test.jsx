@@ -62,13 +62,15 @@ describe("Genres addresses", () => {
       sub: "all",
     });
     expect(sanitizeGenres({ v: "pov_class", genre: "all" }, meta)).toEqual({ v: "pov_class", sub: "all" });
-    expect(sanitizeGenres({ v: "emo_anger_per_1k", sub: "y2020", genre: "romance", sort: "value" }, meta)).toEqual({
+    // the order: by the values unless the address asks for A–Z (the owner, 2026-10-13); an old "value" is the default
+    expect(sanitizeGenres({ v: "emo_anger_per_1k", sub: "y2020", genre: "romance", sort: "az" }, meta)).toEqual({
       v: "emo_anger_per_1k",
       sub: "y2020",
-      sort: "value",
+      sort: "az",
     });
-    expect(sanitizeGenres({ v: "dlg_has_dialogue", sort: "value" }, meta).sort).toBe("value"); // yes/no: by share
-    expect(sanitizeGenres({ v: "pov_class", sort: "value" }, meta).sort).toBeUndefined(); // named groups: A–Z only
+    expect(sanitizeGenres({ v: "emo_anger_per_1k", sort: "value" }, meta)).toEqual({ v: "emo_anger_per_1k", sub: "all" });
+    expect(sanitizeGenres({ v: "dlg_has_dialogue", sort: "az" }, meta).sort).toBe("az"); // yes/no: by share, or A–Z
+    expect(sanitizeGenres({ v: "pov_class", sort: "az" }, meta).sort).toBeUndefined(); // named groups: A–Z only
     // one genre: an unknown genre falls back to the remembered one, else the largest genre (D8)
     expect(sanitizeGenres({ view: "genre", genre: "nope" }, meta)).toEqual({ view: "genre", genre: "fetish", sub: "all", v: "dlg_word_share" });
     expect(sanitizeGenres({ view: "genre" }, meta, "romance").genre).toBe("romance");
@@ -82,8 +84,9 @@ describe("Genres addresses", () => {
     expect(sanitizeGenres({ v: "story_words", sub: "short" }, real).sub).toBe("all");
     expect(sanitizeGenres({ v: "pub_year", sub: "y2000" }, real).sub).toBe("all");
     expect(sanitizeGenres({ v: "pub_year", sub: "long" }, real).sub).toBe("long");
-    expect(sanitizeGenres({ v: "author_stories_count", sort: "value" }, real).sort).toBeUndefined(); // ordered bands
-    expect(sanitizeGenres({ v: "rel_romance_per_1k", sort: "value" }, real).sort).toBe("value");
+    expect(sanitizeGenres({ v: "author_stories_count", sort: "az" }, real).sort).toBeUndefined(); // ordered bands: A–Z only
+    expect(sanitizeGenres({ v: "rel_romance_per_1k", sort: "az" }, real).sort).toBe("az");
+    expect(sanitizeGenres({ v: "rel_romance_per_1k", sort: "value" }, real).sort).toBeUndefined(); // by share with any
     // one genre has no characteristic, so no option conflicts with it
     expect(sanitizeGenres({ view: "genre", v: "story_words", sub: "short" }, real).sub).toBe("short");
   });

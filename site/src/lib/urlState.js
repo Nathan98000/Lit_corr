@@ -10,8 +10,8 @@ export const DEFAULT_STATE = {
 
 const PARAMS = { genre: "genre", metric: "metric", v: "var", sub: "include" };
 const PATTERN_PARAMS = { genre: "genre", metric: "metric" };
-// the Genres page: one characteristic in every genre (#/genres?var=…&include=…&sort=value), or one genre against all
-// genres (#/genres?view=genre&genre=…&include=…)
+// the Genres page: one characteristic in every genre (#/genres?var=…&include=…, by median; &sort=az for A–Z), or one
+// genre against all genres (#/genres?view=genre&genre=…&include=…)
 const GENRE_PARAMS = { view: "view", v: "var", genre: "genre", sub: "include", sort: "sort" };
 const GENRE_CHART_ORDER = ["v", "sub", "sort"];
 const GENRE_PROFILE_ORDER = ["view", "genre", "sub"];
@@ -148,8 +148,9 @@ export function defaultGenre(meta, remembered = null) {
  * The Genres page's settings: { v, sub, sort? } for one characteristic in every genre, { view: "genre", genre, sub, v }
  * for one genre (`v` is kept for the way back). An unknown characteristic, or one left out of the page, becomes story
  * length; an unknown or conflicting option, All stories; one characteristic drops any genre (the highlight is gone), and
- * one genre replaces an unknown one by the default (D8); `sort` stays only as "value" for characteristics that can be
- * put in order.
+ * one genre replaces an unknown one by the default (D8); `sort` stays only as "az" (A–Z) for characteristics that can
+ * be put in order, whose genres are otherwise in order of their values (the owner, 2026-10-13; an old "value" settles
+ * to the plain address).
  */
 export function sanitizeGenres(state, meta, remembered = null) {
   const allowed = (id) => meta.variables.find((v) => v.id === id && onGenresPage(v));
@@ -160,7 +161,7 @@ export function sanitizeGenres(state, meta, remembered = null) {
   if (!profile && subsetConflict(meta.subsets.find((x) => x.id === sub), variable)) sub = "all";
   if (profile) return { view: "genre", genre: real(state.genre) ? state.genre : defaultGenre(meta, remembered), sub, v: variable.id };
   const s = { v: variable.id, sub };
-  if (state.sort === "value" && sortable(variable)) s.sort = "value";
+  if (state.sort === "az" && sortable(variable)) s.sort = "az";
   return s;
 }
 

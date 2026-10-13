@@ -263,6 +263,7 @@ describe("what the image says", () => {
       "How do genres differ in dialogue share?",
       ["Median", "Interquartile range", "▲▼ Clearly higher or lower than all genres"], // the dashed line is labeled on the chart
       [],
+      "Genres by median, highest first",
     ],
     [
       "yes/no",
@@ -270,6 +271,7 @@ describe("what the image says", () => {
       "How common are stories with dialogue in each genre?",
       ["Share of stories", "▲▼ Clearly more or less common than in all genres"],
       [],
+      "Genres by share, highest first",
     ],
     [
       "mostly zero",
@@ -277,6 +279,7 @@ describe("what the image says", () => {
       "How do genres differ in anger?",
       ["Median and interquartile range among stories with any", "▲▼ Clearly higher or lower than all genres"],
       ["Among stories with any (per 1,000 words)"],
+      "Genres by share with any, highest first",
     ],
     [
       "named groups",
@@ -284,15 +287,17 @@ describe("what the image says", () => {
       "How do genres differ in narrative perspective?",
       [...fixtureMeta.variables.find((v) => v.id === "pov_class").bins.labels, "≠ A clearly different mix"],
       [],
+      "Genres in alphabetical order",
     ],
-    ["bands", "author_stories_count", "How do genres differ in the author’s number of stories?", [...BAND.bins.labels, "▲▼ Clearly higher or lower than all genres"], []],
+    ["bands", "author_stories_count", "How do genres differ in the author’s number of stories?", [...BAND.bins.labels, "▲▼ Clearly higher or lower than all genres"], [], "Genres in alphabetical order"],
   ];
 
-  it.each(GENRES)("“One characteristic”, %s: the question, the verdict and the order, and the key without its link", async (_, v, title, key, above) => {
+  // the order a chart opens in: by the values where it can be ordered (the owner, 2026-10-13), else A–Z
+  it.each(GENRES)("“One characteristic”, %s: the question, the verdict and the order, and the key without its link", async (_, v, title, key, above, order) => {
     const user = await open(`#/genres?var=${v}`);
     const plan = imagePlan(await press(user));
     expect(plan.title).toEqual([title]);
-    expect(plan.subtitle).toEqual([document.querySelector(".genres-page .chart-title").textContent, "All stories · Genres in alphabetical order"]);
+    expect(plan.subtitle).toEqual([document.querySelector(".genres-page .chart-title").textContent, `All stories · ${order}`]);
     expect(plan.key.map((k) => k.text)).toEqual(key);
     expect(plan.key.every((k) => !/how this is decided|\(|\)$/.test(k.text) || /\((I|we|you)\)$/.test(k.text))).toBe(true);
     expect(plan.above).toEqual(above);

@@ -48,8 +48,10 @@ rows for numbers, share bars for yes/no characteristics, 100% bars for named gro
 over All genres' bar), and, for characteristics where most stories score 0, one row per genre with the range and
 median among its stories with any, then that median and how many have any. All genres' dashed line names itself under
 the plot ("Median of all genres: 3,630"; "Share of all genres: 57%" for yes/no characteristics), so the key doesn't list
-it. ▲ ▼ ≠ mark a genre that clearly differs, in a column beside its name; the line above the chart says the order ("Genres in alphabetical order", or by median or
-share with its A–Z / By … switch); under the chart, the way across ("Over time →", "With popularity →") and "Download
+it. ▲ ▼ ≠ mark a genre that clearly differs, in a column beside its name; the line above the chart says the order, by
+default the values' ("Genres by median, highest first"; by share for yes/no characteristics, by share with any for
+mostly-zero ones; the owner, 2026-10-13), or "Genres in alphabetical order", with its A–Z / By … switch (`&sort=az` in
+the address; named groups and bands are always A–Z); under the chart, the way across ("Over time →", "With popularity →") and "Download
 image". Under its heading the page says what the characteristic measures, from `meta.json`'s description, as the
 Trends page does. "What stands out about stories in [Romance]?" gives the genre's number of stories and a line for each
 direction, the increases first (▲ Higher, then ▼ Lower, then ≠ A different mix; a position is listed under its own word,
@@ -425,8 +427,9 @@ License 1.1 (`public/fonts/OFL.txt`, taken from `@fontsource/source-serif-4` 5.3
 - Story age: totals keep growing while a story is online. The measure menu says so beside its per-month and
   per-1,000-views measures, How it works explains it, and “Only include” can limit any chart to stories published in
   one period. The charts of totals carry no box of their own (the owner, 2026-10-13).
-- Genres are listed alphabetically, never ranked, except where the reader asks for it: the Genres page's "By median"
-  (or "By share") order (owner's decision D3), which the line above the chart says. "One genre" orders characteristics
+- Genres are listed alphabetically, never ranked, except on the Genres page's charts of one characteristic, which open
+  in order of their values ("By median", or by share; owner's decision D3, the default since the owner's changes of
+  2026-10-13), as the line above the chart says, with A–Z one tap away. "One genre" orders characteristics
   by the size of their difference within that genre, never genres; so does "What changed" by the size of their change.
   Both list the increases first (Higher, then Lower; Rose, then Fell; then A different mix), in their takeaways, their
   lists and what screen readers hear (the owner, 2026-10-13). The Trends page's genre slot lists All genres, then every

@@ -129,7 +129,7 @@ function OrderLine({ kind, sort, onSort }) {
             ["az", "A–Z"],
             ["value", orderLabel(kind)],
           ]}
-          value={sort === "value" ? "value" : "az"}
+          value={sort === "az" ? "az" : "value"}
           onChange={onSort}
         />
       )}
@@ -226,7 +226,7 @@ export default function GenreAnswer({ meta, state, file, busy, onChange, onNavig
         </div>
       )}
       <GenreLegend kind={kind} anySmall={anySmall} smallN={meta.small_n} groups={groups} />
-      <OrderLine kind={kind} sort={state.sort} onSort={(o) => onChange({ ...state, sort: o === "value" ? "value" : undefined })} />
+      <OrderLine kind={kind} sort={state.sort} onSort={(o) => onChange({ ...state, sort: o === "az" ? "az" : undefined })} />
       <Chart key={`${variable.id}/${file.s}`} {...chartProps} />
       <WayAcross meta={meta} page="genres" variable={variable} sub={state.sub} metric={lastExplore?.metric} />
       <div className="chart-actions">

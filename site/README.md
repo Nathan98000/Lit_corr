@@ -5,7 +5,7 @@ characteristics, overall and within each of Literotica's genres. The controls ar
 genres], how does the [average rating] vary with [word count]?" (the default view; the average rating is the default
 measure and leads the measure menu; "all genres" is lowercase inside every sentence, and the lists keep "All genres").
 For each group of stories the chart shows the median (with its value printed, starting clear of the dashed line of all
-stories) and the interquartile range, with the number of stories behind every figure ("2,631 stories" beside each row
+stories) and the interquartile range, with the number of stories behind every figure ("3,701 stories" beside each row
 on phones); the mean is in each group's details. Above the chart a line of its own says what the rows are and in what
 unit ("Stories grouped by word count"; yes/no characteristics, whose two rows name themselves, have none), and the
 measure's name sits over the plot, on its ticks, with the rating's scale ("Average rating (1 to 5 stars)"). Right under
@@ -30,7 +30,7 @@ sentence: "An independent project, not affiliated with or endorsed by Literotica
 Every page but How it works opens the same way (round 4's X2; on Patterns, after its way back): a kicker, then the
 page's question as its h1, at one size, in balanced lines at every width and at most 44 characters wide from 760 px (so
 its last word is never left alone on a desktop). On Popularity the kicker is the site's headline; on the others it names
-the page and the source ("Genres · about 9,000 Literotica stories · 30 genres", "Trends · about 9,000 Literotica stories
+the page and the source ("Genres · about 13,000 Literotica stories · 30 genres", "Trends · about 13,000 Literotica stories
 · 2000–2026", "Patterns · …"), and its "·" never starts or ends a line.
 
 **The way across** (round 4's I15): under each one-characteristic chart (Popularity's, the Genres page's and the Trends
@@ -83,13 +83,13 @@ each. The images draw no "?" and no definition.
 
 The **Trends** page shows how the stories themselves changed over time. It opens on **All changes**: "What has changed
 in stories across [all genres]?" ("… in [Romance]?") says how many of the characteristics compared clearly changed from
-2000–2009 to 2020 or later ("26 of 180 characteristics clearly changed …") and how many stories each window has. A
+2000–2009 to 2020 or later ("25 of 180 characteristics clearly changed …") and how many stories each window has. A
 takeaway follows: how word count changed, and the ▲ Rose / ▼ Fell / ≠ lines (what rose first, as on One genre), each
 naming up to three changes and ending "and 2 more" when its list holds more. Then the note, "Each dot compares a story
 from 2020 or later with a story from 2000–2009 (50 is a tie). Tap a row for its chart over time." ("Click" where the
 device can hover), and the lists (Rose, then Fell, then A different mix), the largest change first, in "One genre"'s
 rows (with their "?" definitions and their units on a line of their own). Each reads the two windows' values first
-("51.6 → 38.8 (−25%)", under "Median story or share"), then a dot on a scale zoomed to the view (how often a story from
+("51.6 → 39.1 (−24%)", under "Median story or share"), then a dot on a scale zoomed to the view (how often a story from
 2020 or later comes out higher than a story from 2000–2009, out of 100). "Download image" saves the lists, every
 characteristic by topic follows, and a row opens its chart over time. A genre whose windows have too few stories says
 so, with its stories per period. The switch "All changes · One characteristic" leads to one characteristic over five
@@ -103,7 +103,7 @@ It is drawn in one of four forms on one time axis:
 - a split chart for characteristics where most stories score 0.
 
 Under the plot, aligned with the columns: the periods, their medians or shares, their stories, and brackets under the
-two windows compared, each with its window's number ("2000–2009 · median 2,810"); the periods between them are gray and
+two windows compared, each with its window's number ("2000–2009 · median 2,770"); the periods between them are gray and
 "not compared", as the key says; the key draws each mark as the chart does (the median's capsule with its dot, the
 brackets' line with its ticks), centered on the first line of its words. The heading says whether the characteristic
 clearly rose, fell, moved later or earlier, or changed between the windows, by the Genres page's rule. Under the heading
@@ -138,14 +138,16 @@ characteristic × group of stories × popularity measure, the number of stories 
 the measure, plus a pattern summary used to word chart titles. A group's cell is `[n, m0, m1, …]`, one entry per
 measure in `meta.metrics` order (`[median, p25, p75, mean]`, with a fifth number when fewer stories have the measure,
 or `null`); the stories' median age, never shown, left the cells in round 4 (O18). "All genres" weights each story by
-its genre's size on Literotica. Groups of fewer than 10 stories are left out. The output is committed, so the website
+its genre's size on Literotica. Groups of fewer than 10 stories are left out. While the collection continues, the
+stories still waiting in its queue are left out before anything is counted (they have not been read yet); a story that
+could not be collected still counts as sampled. The output is committed, so the website
 builds without Python and without the private data.
 
 `patterns.json` re-packages the pattern results already in the per-characteristic files ("All stories" only): for
 every genre and measure, one character per characteristic giving the direction and the strength band (weak,
-moderate, strong) of the existing effect. No medians, no counts; about 11 KB gzipped.
+moderate, strong) of the existing effect. No medians, no counts; about 12 KB gzipped.
 
-`genres/<included>.json` (one per "Only include" option, 53–57 KB gzipped) holds, for every characteristic but
+`genres/<included>.json` (one per "Only include" option, 54–57 KB gzipped) holds, for every characteristic but
 publication month and weekday, and for every genre (All genres first): the number of stories with it, their quartiles
 (All genres also the 10th and 90th percentiles) or their shares, and the comparison with all genres (the rank-biserial
 correlation, or for named groups the total variation distance) with whether the genre clearly differs. For mostly-zero
@@ -156,7 +158,7 @@ shown, left the files in round 4). Genres with fewer than 10 stories are left ou
 files; a visit that starts on the Genres page fetches it, and the page's code, while the app starts, before
 `meta.json` arrives (`App.jsx`).
 
-`trends/<included>/<genre>.json` (one per genre and Length option: 4 × 31 files, 1.6–12.4 KB gzipped) holds, for every
+`trends/<included>/<genre>.json` (one per genre and Length option: 4 × 31 files, 3.1–12.4 KB gzipped) holds, for every
 characteristic on the Trends page, each period's number of stories and quartiles or shares (none under 10 stories),
 the 2000–2009 window's, and the comparison of 2020 or later with 2000–2009: the rank-biserial correlation (for named
 groups the total variation distance) with whether it clearly changed. `meta.json`'s `trend` gives the periods, the
@@ -164,18 +166,19 @@ two windows, the rule, the options, the characteristics left out and `too_few` (
 windows can't be compared); a characteristic whose noun is plural has `"plural": true`. `loadTrends(include, genre)` and `prefetchTrends` in `src/lib/data.js` read
 them.
 
-The aggregates are about 70 MB uncompressed (1,818 small files, 26.7 MB gzipped; git and web hosts compress them to
+The aggregates are about 74 MB uncompressed (1,818 small files, 28.1 MB gzipped; git and web hosts compress them to
 roughly a third). A chart loads one file of about 15–20 KB; the Genres page one file of about 55 KB gzipped per
 option; the Trends page one of at most 12.4 KB.
 
 ## First-load budget and lazy parts
 
 The **first load** is the HTML, the main script, the CSS, the heading font, `meta.json` and the first chart file:
-**150.7 KiB of gzip response bodies in 6 requests** (October 13, 2026, after the owner's follow-up to design review 4;
+**151.2 KiB of gzip response bodies in 6 requests** (October 13, 2026, with the 20261013 handoff's data; 150.8 with
+the 20261008 handoff's, measured the same day, and 150.7 when measured after the owner's follow-up to design review 4;
 150.5 after the review, 150.0 before it, 149.7 before the owner's changes to the Trends review, 148.5 before the Trends
 page). The Genres and Trends pages' own code, styles and files load only when they are opened. A visit that starts on
-the Genres page is 210.6 KiB in 9 requests (204.4 in 8 before the Trends page: the code the two pages share is now a
-chunk of its own). One that starts on the Trends page is 177.2 KiB in 9, on either view; one on How it works 142.5 KiB
+the Genres page is 211.8 KiB in 9 requests (210.7 with the 20261008 handoff's data; 204.4 in 8 before the Trends page: the code the two pages share is now a
+chunk of its own). One that starts on the Trends page is 177.4 KiB in 9, on either view; one on How it works 142.6 KiB
 in 7.
 Layout shift is 0 on a visit to any page, and after any change once 500 ms have passed (what moves at once is the
 question or the lists reflowing with the visitor's own choice). The budget is **155 KiB of
@@ -216,7 +219,9 @@ npm run preview    # serve the built site locally
 The Python side has its own tests: `python -m pytest tests/test_stage2_site_data.py` (sample sizes, medians and
 weights checked against the source data; small groups hidden; no story-level data in the output).
 
-To rebuild the aggregates after a new handoff: `python -m litcorr site-data` from the repository root. The
+To rebuild the aggregates after a new handoff: `python -m litcorr site-data` from the repository root, then
+`python scripts/compare_aggregates.py <old aggregates> site/public/aggregates` for what changed (the last update:
+`docs/stage2/DATA_UPDATE_20261013.md`). The
 test fixtures in `src/test/fixtures/` come from a synthetic handoff:
 `python -m litcorr.stage2.synthetic site/src/test/fixtures/aggregates`.
 
@@ -225,6 +230,11 @@ test fixtures in `src/test/fixtures/` come from a synthetic handoff:
 The built site is plain static files with relative paths and hash-based addresses (`#/explore?...`,
 `#/genres?...`, `#/trends?...`, `#/patterns?...`, `#/methodology` and `#/methodology/<section>`), so it needs no
 server configuration.
+
+The hosts' settings let browsers keep `/aggregates/*` for an hour. Every aggregates request carries the data build's
+stamp, `meta.json`'s `generated_at` put in the code at build time (`vite.config.js`, `src/lib/dataStamp.js`):
+`aggregates/meta.json?v=20261013T164459Z`. A new build of new aggregates asks for new addresses, so a browser never
+mixes one build's files with another's.
 
 **Vercel.** Import the GitHub repository, set **Root Directory** to `site`, and keep the detected Vite settings
 (`npm run build`, output `dist`). `site/vercel.json` adds caching headers for the aggregates.
@@ -339,8 +349,9 @@ src/
     useScrollFloor.js     keeps the scroll position when a new question makes the page shorter
     LoadError.jsx, useWidth.js, useMediaQuery.js, useGlide.js
   lib/
-    data.js               loading and reading the aggregates (loadGenres and prefetchGenres for the Genres page,
-                          loadTrends and prefetchTrends for the Trends page)
+    dataStamp.js          the data build's stamp (meta.json's generated_at), for every aggregates address
+    data.js               loading and reading the aggregates, every address with the data build's stamp (loadGenres
+                          and prefetchGenres for the Genres page, loadTrends and prefetchTrends for the Trends page)
     rangeLayout.js        the chart's geometry (pure; tested for overlapping labels), with the Genres page's options
                           (a mark column, a value column with its heading, a Stories column, two-line names in a
                           phone column); STACKED, the chart width under which "One genre"'s rows stack

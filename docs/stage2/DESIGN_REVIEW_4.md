@@ -755,9 +755,348 @@ None of these encourages fishing for patterns: each shows the same characteristi
 ## 10. Files
 
 - This review: `docs/stage2/DESIGN_REVIEW_4.md`; screenshots in `docs/stage2/design-review-4/` (b01–b16 today,
-  m01–m05 mock-ups; palette-compressed).
+  m01–m05 mock-ups, a01–a18 after the round (section 11); palette-compressed).
 - Fresh eyes: `Claude outputs/design-review-4/fresh-eyes/` (`questions/`, `base/` and `scores.md`, `mock/` and
   `scores.md`, `x/` and `scores.md`).
 - Mock-ups: `Claude outputs/design-review-4-mockups/` (`mocks.js`, the screenshot jobs, `shot.mjs`, `fresh.mjs`).
 - Measuring scripts and their outputs: `Claude outputs/design-review-4/tools/` (with `README.txt`) and
   `Claude outputs/design-review-4/measurements/`.
+- The round's implementation (section 11): `Claude outputs/design-review-4/implementation/` (`tools/` with its
+  `README.txt`, `measurements/before/` and `measurements/after/`, the decimals audit) and the fresh eyes after it in
+  `Claude outputs/design-review-4/fresh-eyes/after/`.
+
+---
+
+## 11. Before and after
+
+*Implemented on October 12–13, 2026, on branch `design-review-4`: 13 commits after the review's own (`f106e7a`), the
+last one this write-up; not pushed.* The three checks pass at the last commit: `npm test` (605 tests in 45 files; 509
+in 36 before), `npm run build`, and `.venv/bin/python -m pytest` (220 tests; 218 before).
+
+**How it was measured.** The review's scripts (`Claude outputs/design-review-4/tools/`), the Trends review's
+(`tglyphs2`, `tv2glyphs2`, `breaks`, `labelinname2`, `firstbodies`, `visitbytes`, `fold`) and round 3's (`labels3`,
+`first4`), with this Mac's paths, Playwright 1.56 and axe-core 4.10.3 from a scratch folder, in the cached headless
+Chromium (`chromium_headless_shell-1243`), against frozen builds served with gzip by `serve.mjs`. The wide font is
+Verdana. **Before** is the review's build (`3b04164`) measured again on this Mac with the same scripts; **after** is
+the last commit's build (`bf6c405`) unless a row says otherwise. Where the review's own (Linux) number differs, it is
+given too. New scripts for this round's parts: `clsall.mjs` (layout shift on every page and switch), `defhits.mjs`
+(the "?" areas), `breaks3.mjs` (unit lines, every genre and option of One genre and All changes), `waybreaks.mjs`
+(I15's line), `lastword.mjs` (the questions' last word), `kickers.mjs`, `decaudit.mjs` (the decimals rule) and
+`after-shots.mjs`, in `Claude outputs/design-review-4/implementation/tools/`.
+
+### 11.1 What changed, with its commits
+
+| Decision | What changed | Commits | Before → after |
+|---|---|---|---|
+| O8 | The reading-list measure's `more`/`less`: "get added to more / fewer reading lists per 1,000 views"; tests (Python, and Vitest over `meta.json`) that every measure's `more` and `less` start with a base verb; data rebuilt offline from the October 8 handoff | c9aad6c | chart titles "… tend to are added to …": 1,146 (64 with All genres) → 0 |
+| O9 | `story_words`' noun "word count" (its label stays "Word count"); `age_years` labeled "Story age (years online)"; "all genres" in lowercase inside Explore's and Patterns' questions; the picker's search still finds Word count first for "length"; a test over every rendered page | c9aad6c, 7bd9aec | visible blocks with "story length in words" (the census's 46 states): 30 → 0; "In All genres": 12 → 0 |
+| O18 | No median age in the `v/` cells (`[n, m0, m1, …]`) or the `genres/` files; `data.js`, the docstrings and the tests follow | c9aad6c | `v/` 25.56 → 25.08 MB gzipped; `meta.json` 20,091 → 20,093 B; `v/story_words/all.json` 18,039 → 17,681 B |
+| X1 | One type scale (sans 12–18, serif 18, 20–26, 23–37) with one line height per size, one spacing scale (4–48), one gray for marks and control borders (`#857f75`), one median dot (r 6, 2 px ring) and one 10 px capsule on every range chart; `lib/tokens.js` for the charts' code; a test fails on any other size. Trends' values sized and staggered by their widths in a wide font, the last one set against the edge | a23d4f2, 52d49e2 | page font sizes 22 → 10, chart sizes 5 → 3, text styles 66 → 30, size and line-height pairs 45 → 11; Trends' View 1 glyph problems in Verdana 13 → 0 |
+| O15 | "Download image" on every image button, named "… of this chart", "… of these changes", "… of what stands out"; the file is still a PNG | 7bd9aec | "Download PNG" in the census: 32 blocks → 0 |
+| L1 | Explore's rating axis "Average rating (1 to 5 stars)" (page and image); "2,631 stories" beside each row on phones; a value the dashed line would cross starts 6 px right of it. No explanation of "median" or "interquartile range" (as decided) | 7bd9aec | "n = 2,631": 34 blocks → 0; values within 3 px of the dashed line: 5,555 of 231,880 layouts → 0 |
+| U1 | The phone masthead keeps the page being read (the same number of links per width; the last other link makes room); kickers name the page and the source on Genres, Trends and Patterns; Genres' question is its h1; Trends' "Only include" is always a menu. How it works keeps the earlier masthead (the owner's choice at the checkpoint) | 9f02408, 54e5d9b | phones naming the page they are on (V1): none → 3 of 3; "Length options don't apply…" read as a developer's note: 6 of 6 → 0 |
+| X2 | The question as the h1 at one size, balanced at every width, up to 44 characters from 760 px; Patterns opens with its kicker, its question as the h1 and the count in the takeaway's box; How it works' h1 at the question's size | 4df4e82 | questions leaving their last word alone at 768–1440 px: 194 → 0 (every characteristic, genre and measure); at 375 px 168 → 0; at 320 px 192 → 12 |
+| W1 | One genre's note above the first list in the Trends page's words, with "Tap a row for every genre's numbers."; its axis "How often a story in Romance comes out higher than a story from all genres, out of 100"; "▲ Later" / "▼ Earlier" / "▼ Sooner" in the takeaway; the same decimals in a row; units on a line of their own (their last two words together, after the measuring); the Trends note's "Tap a row for its chart over time." | 3fce690, bf6c405 | V6 "what to tap": 3 of 6 (all guessing) → 6 of 6; V5 uneven decimals within a row: 6 of 6 → 0; units leaving one word alone at 320 px (site font): 132 after W1's first commit → 8 |
+| I15 | "By genre →", "Over time →", "With popularity →" under every one-characteristic chart, for the pages that have the characteristic, the page being read left out, each named for the characteristic; replaces "Open in Explore →", "Compare genres →" and Keep exploring's two characteristic items | 9d910c1 | the line never breaks inside a link: 0 of 1,270 page widths per font (300–1440 px) |
+| I16 | A "?" after every row's name on One genre and All changes, showing the characteristic's description in place; rows restructured around a stretched link; the "?" kept with its name's last word (after the fresh eyes) | 9d910c1, c1c8f20 | tab stops to the first row: unchanged by I16; "?" off its last word's line: 411 → 10 rows (site font), 481 → 35 (Verdana), all at 320 px |
+| F104 | Trends' key draws its marks as the chart does, each centered on its words' first line | 65a315f | the key's marks taken for form controls (V7): 3 of 3 phones → 1 of 6 |
+| F109 | How it works' phone bar reads "How it works" with its Contents button at the top | 65a315f | "How it works › Contents" → "How it works" |
+| F110 | Patterns' rows and the question's two selects answer taps over 44 px; "Only include" back over 44 px | 65a315f | Patterns rows 36 → 44 px, selects 32 → over 44 |
+| F112 | The too-few table's periods may take two lines ("2000" over "–04") | 65a315f | sideways scroll at 400% on `#/trends?genre=chain-stories`: 47 px → 0 |
+| F118 | A takeaway line that names fewer changes than its list ends "and 2 more" (page and live region) | 65a315f | "▼ Fell: … very long paragraphs (‘walls of text’) and 2 more." |
+
+### 11.2 Not done, on purpose
+
+- **O13** (F105): Genres' ▲▼≠ marks and their key are unchanged; the fresh eyes still ask why Mind Control isn't
+  marked while Anal is (6 of 6).
+- **O14** (F111): no source line on the images.
+- **O16**: no dark mode.
+- **O17**: no share image for link previews, no second font weight.
+- **O19**: Patterns keeps its name.
+- **Not in this round**: F101 (Trends' window copy), F106 beyond W1 (new unit lines for rows that have none, the Zipf
+  wording), F113, F115, F117, L2, U2, W2 (values first on One genre), I17, and any change to the Explore headline or
+  the masthead's five pages. From the approved concepts: L1's explanations of "median" and "interquartile range", and
+  U1's Genres key sentence.
+
+### 11.3 Side by side
+
+The `b` images are the review's; the `a` images are the same states on the after build, composed the same way and
+palette-compressed to 64 colors (`compose5.py`, with a Mac font). `a17` and `a18` are new.
+
+| View | Before | After |
+|---|---|---|
+| First screens at 320, 375, 768 and 1440 | [b01](design-review-4/b01-first-screens.png) | [a01](design-review-4/a01-first-screens.png) |
+| Six pages' first screens at 1440 | [b02](design-review-4/b02-desktop-pages.png) | [a02](design-review-4/a02-desktop-pages.png) |
+| Explore at 375 and 1440; a total | [b03](design-review-4/b03-explore.png) | [a03](design-review-4/a03-explore.png) |
+| Patterns | [b04](design-review-4/b04-patterns.png) | [a04](design-review-4/a04-patterns.png) |
+| Genres, one characteristic | [b05](design-review-4/b05-genres.png) | [a05](design-review-4/a05-genres.png) |
+| One genre (Romance) | [b06](design-review-4/b06-onegenre.png) | [a06](design-review-4/a06-onegenre.png) |
+| Trends, All changes | [b07](design-review-4/b07-trends.png) | [a07](design-review-4/a07-trends.png) |
+| Trends, word count | [b08](design-review-4/b08-trend1.png) | [a08](design-review-4/a08-trend1.png) |
+| How it works | [b09](design-review-4/b09-how.png) | [a09](design-review-4/a09-how.png) |
+| The masthead at six widths (Explore) | [b10](design-review-4/b10-masthead.png) | [a10](design-review-4/a10-masthead.png) |
+| The downloaded images | [b11](design-review-4/b11-pngs.png) | [a11](design-review-4/a11-images.png) |
+| Forced colors, dark, six pages | [b12](design-review-4/b12-forced.png) | [a12](design-review-4/a12-forced.png) |
+| The reading-list title | [b13](design-review-4/b13-reading-lists.png) | [a13](design-review-4/a13-reading-lists.png) |
+| One name for word count | [b14](design-review-4/b14-names.png) | [a14](design-review-4/a14-names.png) |
+| The phone tasks (the walk's states) | [b15](design-review-4/b15-tasks.png) | [a15](design-review-4/a15-tasks.png) |
+| The error page; keyboard focus | [b16](design-review-4/b16-error-focus.png) | [a16](design-review-4/a16-error-focus.png) (four new kinds of control at 1:1) |
+| I15's line on Explore, Genres and Trends, at 375 and 1440 | — | [a17](design-review-4/a17-way-across.png) |
+| An open definition on One genre and Trends, at 375 and 1440 | — | [a18](design-review-4/a18-definitions.png) |
+
+![First screens after round 4](design-review-4/a01-first-screens.png)
+
+![One genre after round 4](design-review-4/a06-onegenre.png)
+
+### 11.4 Measurements
+
+| Measure | Before (this Mac) | After | Target |
+|---|---|---|---|
+| First load (gzip bodies) | 150.0 KiB in 6 requests | **150.5 KiB in 6** (JS 85.3, CSS 6.7, `v/story_words/all.json` 17.3); idle prefetch 4.9 → 5.0 KiB | ≤ 155 |
+| A visit starting on Trends / One genre / How it works | 175.2 / 208.9 / 141.3 KiB | 176.9 / 210.3 / 142.3 KiB | — |
+| Aggregates, gzip | 27.17 MB (1,818 files; `genres/` largest 56,658 B) | 26.69 MB (`genres/` largest 56,593 B; `trends/`, `patterns.json` byte for byte the same) | `genres/` ≤ 60 KB, `trends/` ≤ 16 KB |
+| Layout shift, a visit to each page (slow 4G, 375 and 1440) | 0.000 (14 visits) | 0.000 (14 visits) | < 0.1 |
+| Layout shift after every switch, counting shifts more than 500 ms after it | 0.000 (16 switches) | 0.000 (30 switches, the new links and definitions too) | < 0.1 |
+| The same with the shifts within 500 ms of the switch (scripted changes; a visitor's tap or pick makes them "recent input", not counted) | worst 0.332 (One genre: another genre; the review's Trends switches alone: 0.021) | worst 0.325 (the same) | — |
+| "Loading" frames | 0 | 0 | 0 |
+| axe, WCAG 2.0–2.2 A/AA and best practice (the review's set at 375, 1440, 200% and 400%) | the review: 100 runs, 0 violations | 108 runs (with a definition open on One genre and Trends), 0 violations; 15 more on I15 and I16 at 375, 1440 and 400%, 0 | 0 |
+| Sideways scroll at 400% | 47 px (`#/trends?genre=chain-stories`) | 0 in every run | 0 |
+| Label in name (`labelinname2`, Trends and One genre with topics open) | 0 violations | 0 violations; axe marks every "?" "incomplete" (a symbol as the visible label) | 0 |
+| Forced colors | dark: six pages legible ([b12](design-review-4/b12-forced.png)) | light and dark: seven pages, an open definition and the way across, every mark and the "?" drawn in system colors ([a12](design-review-4/a12-forced.png) for dark) | legible |
+| Glyph boxes, Explore's charts (11,220 per font) | site 0; Verdana 995 (the "All stories shown" label 1–3 px past the plot's left edge at 320 and 375; the review's DejaVu Sans: 504) | site 0; Verdana 995 (the same label), the new "2,631 stories" and the moved values included | 0 overlaps |
+| Glyph boxes, Trends one characteristic (21,510 charts) | site 0; Verdana 13 | site 0; Verdana 0 | 0 |
+| Glyph boxes, Trends All changes (620 pages, 49,650 rows) | 0 / 0 | 0 / 0 | 0 |
+| Glyph boxes, One genre (30 genres, three options, every list and topic open) | 0 / 0 (320–1440 px at four widths: 360 pages, 76,328 rows) | 0 / 0 (five widths: 450 pages, 95,410 rows) | 0 |
+| Kickers: a "·" starting or ending a line, a piece broken (six pages, 300–800 px) | — | 0 | 0 |
+| The questions' last word alone (every characteristic, genre and measure) | 768–1440 px: 194; 375 px: 168; 320 px: 192 | 0; 0; 12 (8 Explore, 4 Genres) | none on desktops |
+| A slot's blue phrase broken across lines, 375 px | 255 questions | 200 (Explore 82 → 55, Genres 119 → 63, Trends 54 → 82) | — |
+| I15's line (five states, 300–1440 px, both fonts) | — | no link broken or past the line at 1,270 widths per font; one line everywhere | — |
+| Units leaving one word alone (`breaks3`, every genre and option of One genre and All changes, 320–1440 px) | — (inline units ran past their cell instead: 36 of 54 at 320 px in Verdana on All genres) | site font 8, Verdana 91: cells too narrow for two words (37–78 px at 320 px) and two-word group names; 2 Verdana words broken inside a 37 px cell | none where two words fit |
+| The "?" (`defhits`: every row of three genres and two Trends views, lists and topics open, 320–1440 px) | — | 4,388 rows at 320, 375, 768 and 1440 px: every area at least 44 px wide and 44 px tall (64 on phones), inside its own row and never on the name's text, the rest of the row the link's; opening a definition moved nothing on 20 pages; at 320 px 10 rows put the "?" on the line after the name's last word ("Shame & embarrassment", "Passive constructions", "Build-up of descriptive & sensory language") | ≥ 44 px, never on the name |
+| Tap areas, 1,425 controls at 320 and 375 (`taps.mjs`) | Patterns rows 36–52, its selects 32; "Only include" 45; the question's words 33–35 and its selects 34 | Patterns rows 44, its selects 46; "Only include" 47 (43 after the type scale, until 65a315f); the question's words and selects as before; each "?" 52–71 px tall and, through the circle, 34–35 px wide (its area is 44 px wide less the end of the name's last word, which opens the row); a row's link reads 0–23 px through the center of its name's box where a wrapped name's "?" sits (the name's words and the rest of the row open the row) | 44, except the question's words |
+| Tab stops to the first answer, 1440 / 375 | Explore 14/12, Patterns 13/11, Genres 13/11, One genre 11/9, Trends All changes 11/9, Trends one characteristic 12/10, How it works 8/>40 | the same, except One genre 12/10 (W1's note link now above the rows) and Trends one characteristic 13/11 (U1's "Only include" menu); I16 adds none | — |
+| Explore's first chart row, 375 × 667 / 320 × 568 | ends at 641 / 698 | 655 (on the first screen) / 679 (below, as before) | on the first screen at 375 × 667 |
+| Trends' table at 1280 × 720 | ends at 700 | 704 | above 720 |
+| Inventory: page font sizes / chart sizes / text styles / size and line-height pairs | 22 / 5 / 66 / 45 | 10 / 3 / 30 / 11 | ≤ 11 / ≤ 3 / < 66 |
+| Census (46 states): "story length in words" / "Download PNG" / "In All genres" / "n = 2,631" | 30 / 32 / 12 / 34 blocks | 0 / 0 / 0 / 0 | 0 |
+| Addresses (the review prompt's rule 6) | — | 36 checked, every one opens its view | all |
+| Back and Forward (`backcheck2`) | as in the review; Back from Keep exploring's link landed at the top | the same: a row, a link, a view switch and a control as before; Back from a way-across link lands at the top in 5 of 6 runs (once at the line); an open definition isn't kept across Back | — |
+
+### 11.5 Fresh eyes
+
+48 stand-ins, as in the review: eight views × three phones and three desktops, the same questions, situation line and
+screen-sized captures, on the build at `54e5d9b` (before c1c8f20 and bf6c405). The fixed answers were updated only
+where the site's words changed (`answer-updates.md`). Answers verbatim and scores in
+`Claude outputs/design-review-4/fresh-eyes/after/` (`scores.md`, `scoring-notes.md`).
+
+| View | Q1 | Q2 | Q3 | Q4 | Ease (1–5) |
+|---|---|---|---|---|---|
+| V1 First screen | 6/6 (6/6) | 5.8/6 (5.8) | 6/6 (6/6) | 6/6 (6/6) | **4.0** (3.5) |
+| V2 Explore chart | 6/6 (6/6) | 6/6 (6/6) | 4.7/6 (5/6) | 6/6 (6/6) | **4.0** (3.8) |
+| V3 Patterns | 6/6 | 6/6 | 6/6 | 6/6 | 4.0 (4.0) |
+| V4 Genres, one characteristic | 6/6 | 6/6 | 6/6 | 6/6 | 4.0 (4.0) |
+| V5 One genre | 6/6 | 6/6 | 6/6 | 6/6 | **4.0** (3.2) |
+| V6 Trends, All changes | 6/6 | 6/6 | 6/6 | **6/6** (3/6) | **4.0** (3.0) |
+| V7 Trends, one characteristic | 6/6 | 6/6 | 6/6 | 6/6 | **4.0** (3.7) |
+| V8 How it works | 6/6 | 6/6 | 6/6 | 4.5/6 (4.5/6) | 4.0 (4.0) |
+
+Before in parentheses. All 48 rated the ease and the look 4 of 5 (the look was 4 everywhere before too); in three
+words: clean 48, calm 48, newspaper-like 29, bookish 13.
+
+The items the prompt asked about:
+
+| Item | Before | After |
+|---|---|---|
+| V2: unsure of the rating's scale | 6/6 | **0/6** (all read "1 to 5 stars" off the axis; all six now remark that it starts at 3.5) |
+| V6: what to tap to see a row over time | 3/6, all guessing | **6/6**, all from the note |
+| V5: the note's gray dots, none on screen | 6/6 | **0/6** |
+| V1: phones naming the page they are on | none could | **3/3** ("Explore, the page I'm on: its tab is underlined") |
+| V7: "Length options don't apply…" read as a developer's note | 6/6 | **0/6** |
+| Desktops: the question's last word alone on its line | 11/24 | **0/24** ("average rating" split over two lines: 3/24) |
+
+What still trips them (all counted in `scores.md`): "interquartile range" is still unknown wherever it shows (30 of 30,
+by decision) and the median of an average rating puzzles 18 of 18; the view switches stay unclear (V4 5/6, V5 4/6, V7
+5/6); "Download image" alone between sections (V5 5/6, V6 5/6: which image?); on phones the kicker repeats the page's
+name (V1, V3, V4 3/3, V5 2/3); the way across leaves some unsure whether it opens another page or changes this chart
+(V1 3/3 desktops, V2 3/6, V4 3/6, V7 4/6); a "?" after every name adds noise for some (V5 3/6, V6 4/6); on desktops
+the h1's caret sits tight against its "?" (V5 3/3, V6 3/6); on Explore the "4.19" label beside the dashed line now
+reads as away from its dot (V1 4/6, V2 2/6) and the axis starting at 3.5 under "1 to 5 stars" is noticed (5/6, 6/6); One genre's
+"Later" item sits in the "Higher" list (4/6) and its axis title isn't repeated over the second list (5/6); "Each dot
+compares a story … with a story" is first read as one fixed pair (V6 6/6); Trends' key marks are tiny and faint (V7
+6/6). One thing they found was fixed afterwards: the "?" alone on a line of its own (V5, 3 of 3 phones; c1c8f20).
+
+### 11.6 The decimals rule's rows
+
+Over every One genre row of every genre and option: 49,658 rows with both sides, 23,319 pairs of numbers, 5,072 of
+them printed differently from before. As the rule says, a value takes the decimals the other needs, so some gain more
+than one trailing zero ("0.200" beside "0.197"); and where both round to whole numbers at the pair's decimals, their
+trailing zeros go and the smaller can keep a single significant digit ("9 vs 10" from 9.02 and 10). Every such value
+is listed (the genre's value first, then all genres'; "was" is each value trimmed on its own).
+
+**Below two significant digits: 10 values in 7 characteristics.**
+
+- **Anatomical terms** (3): *All stories:* Letters & Transcripts 9 vs 10 (was 9.02 vs 10); Loving Wives 9 vs 10 (was 8.99 vs 10); Mind Control 7 vs 10 (was 7.04 vs 10)
+- **Affection & love** (2): *2,000–5,000 words:* Fetish 0.9 vs 1.0 (was 0.901 vs 1); Gay Male 0.8 vs 1.0 (was 0.804 vs 1)
+- **Interpersonal closeness** (1): *At least 25 ratings:* Fetish 0.8 vs 1.0 (was 0.803 vs 1)
+- **Sexual language in the first fifth** (1): *5,000 words or more:* Taboo/Incest 11 vs 8 (was 11 vs 7.97)
+- **Sight words** (1): *At least 25 ratings:* Reviews & Essays 5 vs 11 (was 4.99 vs 11)
+- **Thinking verbs** (1): *All stories:* Non-Erotic 10 vs 8 (was 10 vs 8.04)
+- **You / your** (1): *Published 2000–2009:* First Time 9 vs 10 (was 9.01 vs 10)
+
+<details>
+<summary><strong>More than one trailing zero: 471 values in 40 characteristics</strong> (97 exact zeros, 280 round values at
+the other's decimals, 94 larger values at a small one's decimals)</summary>
+
+- **Subordinate clauses per sentence** (83): *All stories:* Anal 0.197 vs 0.200 (was 0.197 vs 0.2); BDSM 0.182 vs 0.200 (was 0.182 vs 0.2); Chain Stories 0.198 vs 0.200 (was 0.198 vs 0.2); Crossdressing 0.211 vs 0.200 (was 0.211 vs 0.2); Erotic Couplings 0.188 vs 0.200 (was 0.188 vs 0.2); Erotic Horror 0.192 vs 0.200 (was 0.192 vs 0.2); Exhibitionist & Voyeur 0.204 vs 0.200 (was 0.204 vs 0.2); Fan Fiction & Celebrities 0.176 vs 0.200 (was 0.176 vs 0.2); Fetish 0.213 vs 0.200 (was 0.213 vs 0.2); First Time 0.203 vs 0.200 (was 0.203 vs 0.2); Gay Male 0.189 vs 0.200 (was 0.189 vs 0.2); Group Sex 0.209 vs 0.200 (was 0.209 vs 0.2); How To 0.347 vs 0.200 (was 0.347 vs 0.2); Humor & Satire 0.197 vs 0.200 (was 0.197 vs 0.2); Interracial Love 0.212 vs 0.200 (was 0.212 vs 0.2); Letters & Transcripts 0.231 vs 0.200 (was 0.231 vs 0.2); Loving Wives 0.214 vs 0.200 (was 0.214 vs 0.2); Mature 0.202 vs 0.200 (was 0.202 vs 0.2); Mind Control 0.194 vs 0.200 (was 0.194 vs 0.2); Non-Erotic 0.198 vs 0.200 (was 0.198 vs 0.2); NonHuman 0.226 vs 0.200 (was 0.226 vs 0.2); Novels and Novellas 0.205 vs 0.200 (was 0.205 vs 0.2); Reluctance/NonConsent 0.184 vs 0.200 (was 0.184 vs 0.2); Reviews & Essays 0.333 vs 0.200 (was 0.333 vs 0.2); Sci-Fi & Fantasy 0.195 vs 0.200 (was 0.195 vs 0.2); Toys & Masturbation 0.202 vs 0.200 (was 0.202 vs 0.2); Transgender 0.203 vs 0.200 (was 0.203 vs 0.2) · *Published 2000–2009:* Anal 0.179 vs 0.200 (was 0.179 vs 0.2); BDSM 0.189 vs 0.200 (was 0.189 vs 0.2); Chain Stories 0.194 vs 0.200 (was 0.194 vs 0.2); Crossdressing 0.216 vs 0.200 (was 0.216 vs 0.2); Erotic Couplings 0.185 vs 0.200 (was 0.185 vs 0.2); Erotic Horror 0.195 vs 0.200 (was 0.195 vs 0.2); Exhibitionist & Voyeur 0.181 vs 0.200 (was 0.181 vs 0.2); Fan Fiction & Celebrities 0.167 vs 0.200 (was 0.167 vs 0.2); Fetish 0.217 vs 0.200 (was 0.217 vs 0.2); Gay Male 0.198 vs 0.200 (was 0.198 vs 0.2); How To 0.347 vs 0.200 (was 0.347 vs 0.2); Humor & Satire 0.205 vs 0.200 (was 0.205 vs 0.2); Interracial Love 0.189 vs 0.200 (was 0.189 vs 0.2); Lesbian Sex 0.191 vs 0.200 (was 0.191 vs 0.2); Letters & Transcripts 0.239 vs 0.200 (was 0.239 vs 0.2); Loving Wives 0.237 vs 0.200 (was 0.237 vs 0.2); Mature 0.237 vs 0.200 (was 0.237 vs 0.2); Mind Control 0.201 vs 0.200 (was 0.201 vs 0.2); Non-Erotic 0.193 vs 0.200 (was 0.193 vs 0.2); NonHuman 0.215 vs 0.200 (was 0.215 vs 0.2); Novels and Novellas 0.172 vs 0.200 (was 0.172 vs 0.2); Reluctance/NonConsent 0.193 vs 0.200 (was 0.193 vs 0.2); Reviews & Essays 0.339 vs 0.200 (was 0.339 vs 0.2); Romance 0.198 vs 0.200 (was 0.198 vs 0.2); Sci-Fi & Fantasy 0.198 vs 0.200 (was 0.198 vs 0.2); Taboo/Incest 0.214 vs 0.200 (was 0.214 vs 0.2); Toys & Masturbation 0.203 vs 0.200 (was 0.203 vs 0.2); Transgender 0.171 vs 0.200 (was 0.171 vs 0.2) · *2,000–5,000 words:* Toys & Masturbation 0.200 vs 0.199 (was 0.2 vs 0.199) · *At least 10,000 views:* Lesbian Sex 0.200 vs 0.201 (was 0.2 vs 0.201); Romance 0.200 vs 0.201 (was 0.2 vs 0.201) · *At least 25 ratings:* Anal 0.198 vs 0.200 (was 0.198 vs 0.2); BDSM 0.182 vs 0.200 (was 0.182 vs 0.2); Chain Stories 0.199 vs 0.200 (was 0.199 vs 0.2); Erotic Couplings 0.188 vs 0.200 (was 0.188 vs 0.2); Erotic Horror 0.195 vs 0.200 (was 0.195 vs 0.2); Exhibitionist & Voyeur 0.205 vs 0.200 (was 0.205 vs 0.2); Fan Fiction & Celebrities 0.176 vs 0.200 (was 0.176 vs 0.2); Fetish 0.207 vs 0.200 (was 0.207 vs 0.2); First Time 0.203 vs 0.200 (was 0.203 vs 0.2); Group Sex 0.214 vs 0.200 (was 0.214 vs 0.2); Humor & Satire 0.196 vs 0.200 (was 0.196 vs 0.2); Interracial Love 0.208 vs 0.200 (was 0.208 vs 0.2); Lesbian Sex 0.198 vs 0.200 (was 0.198 vs 0.2); Letters & Transcripts 0.247 vs 0.200 (was 0.247 vs 0.2); Loving Wives 0.214 vs 0.200 (was 0.214 vs 0.2); Mature 0.202 vs 0.200 (was 0.202 vs 0.2); Mind Control 0.191 vs 0.200 (was 0.191 vs 0.2); Non-Erotic 0.202 vs 0.200 (was 0.202 vs 0.2); NonHuman 0.224 vs 0.200 (was 0.224 vs 0.2); Novels and Novellas 0.211 vs 0.200 (was 0.211 vs 0.2); Reluctance/NonConsent 0.184 vs 0.200 (was 0.184 vs 0.2); Reviews & Essays 0.369 vs 0.200 (was 0.369 vs 0.2); Sci-Fi & Fantasy 0.196 vs 0.200 (was 0.196 vs 0.2); Toys & Masturbation 0.195 vs 0.200 (was 0.195 vs 0.2); Transgender 0.202 vs 0.200 (was 0.202 vs 0.2)
+- **Interpersonal closeness** (31): *2,000–5,000 words:* First Time 1.00 vs 0.93 (was 1 vs 0.933); Mature 1.00 vs 0.93 (was 1 vs 0.933) · *5,000 words or more:* Interracial Love 1.00 vs 1.11 (was 0.998 vs 1.11) · *At least 25 ratings:* Anal 0.88 vs 1.00 (was 0.884 vs 1); BDSM 0.62 vs 1.00 (was 0.616 vs 1); Chain Stories 0.86 vs 1.00 (was 0.861 vs 1); Crossdressing 0.67 vs 1.00 (was 0.67 vs 1); Erotic Couplings 1.18 vs 1.00 (was 1.18 vs 1); Erotic Horror 0.63 vs 1.00 (was 0.627 vs 1); Exhibitionist & Voyeur 0.83 vs 1.00 (was 0.83 vs 1); Fan Fiction & Celebrities 0.89 vs 1.00 (was 0.89 vs 1); First Time 1.06 vs 1.00 (was 1.06 vs 1); Gay Male 1.08 vs 1.00 (was 1.08 vs 1); Group Sex 1.38 vs 1.00 (was 1.38 vs 1); How To 0.68 vs 1.00 (was 0.677 vs 1); Humor & Satire 0.73 vs 1.00 (was 0.727 vs 1); Interracial Love 0.91 vs 1.00 (was 0.914 vs 1); Letters & Transcripts 0.94 vs 1.00 (was 0.938 vs 1); Loving Wives 1.37 vs 1.00 (was 1.37 vs 1); Mature 1.11 vs 1.00 (was 1.11 vs 1); Mind Control 0.78 vs 1.00 (was 0.776 vs 1); Non-Erotic 0.83 vs 1.00 (was 0.828 vs 1); NonHuman 0.79 vs 1.00 (was 0.791 vs 1); Novels and Novellas 1.17 vs 1.00 (was 1.17 vs 1); Reluctance/NonConsent 0.58 vs 1.00 (was 0.584 vs 1); Reviews & Essays 0.76 vs 1.00 (was 0.759 vs 1); Romance 1.41 vs 1.00 (was 1.41 vs 1); Sci-Fi & Fantasy 0.86 vs 1.00 (was 0.857 vs 1); Taboo/Incest 1.19 vs 1.00 (was 1.19 vs 1); Toys & Masturbation 0.83 vs 1.00 (was 0.827 vs 1); Transgender 0.86 vs 1.00 (was 0.858 vs 1)
+- **Physical sensation words** (31): *Published 2010–2019:* BDSM 4.18 vs 3.00 (was 4.18 vs 3); Chain Stories 2.56 vs 3.00 (was 2.56 vs 3); Crossdressing 2.48 vs 3.00 (was 2.48 vs 3); Erotic Couplings 4.07 vs 3.00 (was 4.07 vs 3); Erotic Horror 4.31 vs 3.00 (was 4.31 vs 3); Exhibitionist & Voyeur 2.31 vs 3.00 (was 2.31 vs 3); Fan Fiction & Celebrities 2.96 vs 3.00 (was 2.96 vs 3); Fetish 2.65 vs 3.00 (was 2.65 vs 3); First Time 3.78 vs 3.00 (was 3.78 vs 3); Gay Male 3.06 vs 3.00 (was 3.06 vs 3); Group Sex 2.95 vs 3.00 (was 2.95 vs 3); How To 1.05 vs 3.00 (was 1.05 vs 3); Humor & Satire 1.59 vs 3.00 (was 1.59 vs 3); Interracial Love 2.19 vs 3.00 (was 2.19 vs 3); Lesbian Sex 3.68 vs 3.00 (was 3.68 vs 3); Letters & Transcripts 3.97 vs 3.00 (was 3.97 vs 3); Loving Wives 1.87 vs 3.00 (was 1.87 vs 3); Mature 2.65 vs 3.00 (was 2.65 vs 3); Non-Erotic 1.25 vs 3.00 (was 1.25 vs 3); Novels and Novellas 2.17 vs 3.00 (was 2.17 vs 3); Reluctance/NonConsent 3.87 vs 3.00 (was 3.87 vs 3); Reviews & Essays 0.34 vs 3.00 (was 0.34 vs 3); Romance 2.24 vs 3.00 (was 2.24 vs 3); Sci-Fi & Fantasy 2.78 vs 3.00 (was 2.78 vs 3); Taboo/Incest 3.13 vs 3.00 (was 3.13 vs 3); Toys & Masturbation 5.01 vs 3.00 (was 5.01 vs 3); Transgender 2.54 vs 3.00 (was 2.54 vs 3) · *Published 2020 or later:* Letters & Transcripts 2.00 vs 2.87 (was 2 vs 2.87) · *Under 2,000 words:* Reviews & Essays 0.00 vs 3.63 (was 0 vs 3.63) · *5,000 words or more:* Romance 2.00 vs 2.74 (was 2 vs 2.74) · *At least 25 ratings:* Mind Control 3.00 vs 3.08 (was 3 vs 3.08)
+- **Emotional tone** (28): *All stories:* How To 0.400 vs 0.468 (was 0.4 vs 0.468); Interracial Love 0.500 vs 0.468 (was 0.5 vs 0.468); Romance 0.500 vs 0.468 (was 0.5 vs 0.468); Taboo/Incest 0.500 vs 0.468 (was 0.5 vs 0.468) · *Published 2000–2009:* Mind Control 0.400 vs 0.514 (was 0.4 vs 0.514); Taboo/Incest 0.500 vs 0.514 (was 0.5 vs 0.514) · *Published 2010–2019:* Interracial Love 0.500 vs 0.438 (was 0.5 vs 0.438); NonHuman 0.300 vs 0.438 (was 0.3 vs 0.438) · *Under 2,000 words:* Anal 0.600 vs 0.529 (was 0.6 vs 0.529); First Time 0.500 vs 0.529 (was 0.5 vs 0.529); How To 0.400 vs 0.529 (was 0.4 vs 0.529); Lesbian Sex 0.500 vs 0.529 (was 0.5 vs 0.529); Loving Wives 0.500 vs 0.529 (was 0.5 vs 0.529); Mind Control 0.600 vs 0.529 (was 0.6 vs 0.529); NonHuman 0.400 vs 0.529 (was 0.4 vs 0.529); Taboo/Incest 0.500 vs 0.529 (was 0.5 vs 0.529); Transgender 0.500 vs 0.529 (was 0.5 vs 0.529) · *2,000–5,000 words:* Letters & Transcripts 0.500 vs 0.467 (was 0.5 vs 0.467); Loving Wives 0.500 vs 0.467 (was 0.5 vs 0.467); Non-Erotic 0.200 vs 0.467 (was 0.2 vs 0.467) · *At least 10,000 views:* Erotic Couplings 0.600 vs 0.472 (was 0.6 vs 0.472); Erotic Horror 0.200 vs 0.472 (was 0.2 vs 0.472); Taboo/Incest 0.500 vs 0.472 (was 0.5 vs 0.472) · *At least 25 ratings:* Erotic Couplings 0.600 vs 0.467 (was 0.6 vs 0.467); How To 0.400 vs 0.467 (was 0.4 vs 0.467); Interracial Love 0.500 vs 0.467 (was 0.5 vs 0.467); Novels and Novellas 0.400 vs 0.467 (was 0.4 vs 0.467); Taboo/Incest 0.500 vs 0.467 (was 0.5 vs 0.467)
+- **Hedging ↔ certainty** (28): *All stories:* Erotic Couplings −0.200 vs −0.154 (was −0.2 vs −0.154); Novels and Novellas −0.200 vs −0.154 (was −0.2 vs −0.154) · *Published 2000–2009:* First Time −0.200 vs −0.143 (was −0.2 vs −0.143); How To 0.000 vs −0.143 (was 0 vs −0.143); Humor & Satire −0.100 vs −0.143 (was −0.1 vs −0.143) · *Published 2010–2019:* Erotic Couplings −0.200 vs −0.154 (was −0.2 vs −0.154); Erotic Horror −0.200 vs −0.154 (was −0.2 vs −0.154); Interracial Love 0.000 vs −0.154 (was 0 vs −0.154); Letters & Transcripts 0.000 vs −0.154 (was 0 vs −0.154); Toys & Masturbation −0.200 vs −0.154 (was −0.2 vs −0.154) · *Published 2020 or later:* Fan Fiction & Celebrities −0.100 vs −0.163 (was −0.1 vs −0.163); Novels and Novellas −0.200 vs −0.163 (was −0.2 vs −0.163) · *Under 2,000 words:* Chain Stories 0.0000 vs −0.0909 (was 0 vs −0.091); Crossdressing 0.0000 vs −0.0909 (was 0 vs −0.091); Erotic Couplings −0.200 vs −0.091 (was −0.2 vs −0.091); Fan Fiction & Celebrities 0.0000 vs −0.0909 (was 0 vs −0.091); Fetish 0.0000 vs −0.0909 (was 0 vs −0.091); Group Sex 0.0000 vs −0.0909 (was 0 vs −0.091); Mature 0.0000 vs −0.0909 (was 0 vs −0.091); Mind Control 0.100 vs −0.091 (was 0.1 vs −0.091); NonHuman −0.200 vs −0.091 (was −0.2 vs −0.091) · *2,000–5,000 words:* Exhibitionist & Voyeur −0.200 vs −0.161 (was −0.2 vs −0.161); Novels and Novellas −0.200 vs −0.161 (was −0.2 vs −0.161); Reviews & Essays 0.000 vs −0.161 (was 0 vs −0.161); Transgender −0.100 vs −0.161 (was −0.1 vs −0.161) · *At least 10,000 views:* Letters & Transcripts −0.100 vs −0.148 (was −0.1 vs −0.148); Romance −0.100 vs −0.148 (was −0.1 vs −0.148) · *At least 25 ratings:* Toys & Masturbation −0.200 vs −0.156 (was −0.2 vs −0.156)
+- **Negative emotion** (28): *5,000 words or more:* Anal 2.35 vs 3.00 (was 2.35 vs 3); BDSM 3.26 vs 3.00 (was 3.26 vs 3); Chain Stories 3.57 vs 3.00 (was 3.57 vs 3); Crossdressing 3.85 vs 3.00 (was 3.85 vs 3); Erotic Couplings 2.04 vs 3.00 (was 2.04 vs 3); Erotic Horror 3.97 vs 3.00 (was 3.97 vs 3); Exhibitionist & Voyeur 2.69 vs 3.00 (was 2.69 vs 3); Fan Fiction & Celebrities 2.16 vs 3.00 (was 2.16 vs 3); Fetish 3.29 vs 3.00 (was 3.29 vs 3); First Time 2.98 vs 3.00 (was 2.98 vs 3); Gay Male 3.67 vs 3.00 (was 3.67 vs 3); How To 2.32 vs 3.00 (was 2.32 vs 3); Humor & Satire 2.95 vs 3.00 (was 2.95 vs 3); Interracial Love 2.97 vs 3.00 (was 2.97 vs 3); Lesbian Sex 3.38 vs 3.00 (was 3.38 vs 3); Letters & Transcripts 2.65 vs 3.00 (was 2.65 vs 3); Loving Wives 3.02 vs 3.00 (was 3.02 vs 3); Mature 2.75 vs 3.00 (was 2.75 vs 3); Mind Control 3.47 vs 3.00 (was 3.47 vs 3); NonHuman 3.55 vs 3.00 (was 3.55 vs 3); Novels and Novellas 2.82 vs 3.00 (was 2.82 vs 3); Reluctance/NonConsent 4.48 vs 3.00 (was 4.48 vs 3); Reviews & Essays 2.14 vs 3.00 (was 2.14 vs 3); Romance 3.21 vs 3.00 (was 3.21 vs 3); Taboo/Incest 2.72 vs 3.00 (was 2.72 vs 3); Toys & Masturbation 2.45 vs 3.00 (was 2.45 vs 3); Transgender 3.06 vs 3.00 (was 3.06 vs 3) · *At least 25 ratings:* Mind Control 3.00 vs 2.67 (was 3 vs 2.67)
+- **Affection & love** (27): *2,000–5,000 words:* Anal 1.23 vs 1.00 (was 1.23 vs 1); BDSM 0.95 vs 1.00 (was 0.945 vs 1); Chain Stories 0.93 vs 1.00 (was 0.934 vs 1); Crossdressing 1.44 vs 1.00 (was 1.44 vs 1); Erotic Horror 0.61 vs 1.00 (was 0.607 vs 1); Exhibitionist & Voyeur 0.93 vs 1.00 (was 0.932 vs 1); Fan Fiction & Celebrities 1.35 vs 1.00 (was 1.35 vs 1); First Time 0.93 vs 1.00 (was 0.931 vs 1); Group Sex 1.21 vs 1.00 (was 1.21 vs 1); How To 1.34 vs 1.00 (was 1.34 vs 1); Humor & Satire 0.66 vs 1.00 (was 0.661 vs 1); Lesbian Sex 1.16 vs 1.00 (was 1.16 vs 1); Letters & Transcripts 1.49 vs 1.00 (was 1.49 vs 1); Mature 0.92 vs 1.00 (was 0.922 vs 1); Mind Control 0.78 vs 1.00 (was 0.778 vs 1); Non-Erotic 0.71 vs 1.00 (was 0.709 vs 1); NonHuman 1.12 vs 1.00 (was 1.12 vs 1); Novels and Novellas 0.72 vs 1.00 (was 0.718 vs 1); Reluctance/NonConsent 0.66 vs 1.00 (was 0.656 vs 1); Reviews & Essays 1.69 vs 1.00 (was 1.69 vs 1); Romance 1.54 vs 1.00 (was 1.54 vs 1); Sci-Fi & Fantasy 0.51 vs 1.00 (was 0.51 vs 1); Taboo/Incest 1.21 vs 1.00 (was 1.21 vs 1); Toys & Masturbation 0.91 vs 1.00 (was 0.912 vs 1); Transgender 0.93 vs 1.00 (was 0.932 vs 1) · *At least 10,000 views:* First Time 1.00 vs 1.06 (was 0.999 vs 1.06); Mature 1.00 vs 1.06 (was 0.998 vs 1.06)
+- **Spoken commands** (27): *All stories:* How To 0.00 vs 1.51 (was 0 vs 1.51); Letters & Transcripts 0.00 vs 1.51 (was 0 vs 1.51); Reviews & Essays 0.00 vs 1.51 (was 0 vs 1.51) · *Published 2000–2009:* How To 0.00 vs 1.32 (was 0 vs 1.32); Letters & Transcripts 0.00 vs 1.32 (was 0 vs 1.32); Reluctance/NonConsent 2.00 vs 1.32 (was 2 vs 1.32); Reviews & Essays 0.00 vs 1.32 (was 0 vs 1.32); Toys & Masturbation 0.00 vs 1.32 (was 0 vs 1.32) · *Published 2010–2019:* How To 0.00 vs 1.51 (was 0 vs 1.51); Letters & Transcripts 0.00 vs 1.51 (was 0 vs 1.51); Reviews & Essays 0.00 vs 1.51 (was 0 vs 1.51) · *Published 2020 or later:* How To 0.00 vs 1.59 (was 0 vs 1.59); Letters & Transcripts 0.00 vs 1.59 (was 0 vs 1.59); Reviews & Essays 0.00 vs 1.59 (was 0 vs 1.59) · *Under 2,000 words:* Group Sex 0.600 vs 0.976 (was 0.6 vs 0.976); How To 0.000 vs 0.976 (was 0 vs 0.976); Letters & Transcripts 0.000 vs 0.976 (was 0 vs 0.976); Reviews & Essays 0.000 vs 0.976 (was 0 vs 0.976); Toys & Masturbation 0.000 vs 0.976 (was 0 vs 0.976) · *2,000–5,000 words:* How To 0.00 vs 1.48 (was 0 vs 1.48); Reviews & Essays 0.00 vs 1.48 (was 0 vs 1.48) · *At least 10,000 views:* How To 0.00 vs 1.48 (was 0 vs 1.48); Letters & Transcripts 0.00 vs 1.48 (was 0 vs 1.48); Reviews & Essays 0.00 vs 1.48 (was 0 vs 1.48) · *At least 25 ratings:* How To 0.00 vs 1.54 (was 0 vs 1.54); Letters & Transcripts 0.00 vs 1.54 (was 0 vs 1.54); Reviews & Essays 0.00 vs 1.54 (was 0 vs 1.54)
+- **Build-up of descriptive & sensory language** (25): *All stories:* Loving Wives 1.00 vs 1.25 (was 1 vs 1.25) · *Published 2000–2009:* Gay Male 0.00 vs 1.19 (was 0 vs 1.19); How To 0.00 vs 1.19 (was 0 vs 1.19); Letters & Transcripts 4.00 vs 1.19 (was 4 vs 1.19); Romance 0.0076 vs 1.1900 (was 0.0076 vs 1.19); Toys & Masturbation 8.00 vs 1.19 (was 8 vs 1.19) · *Published 2010–2019:* Novels and Novellas 3.00 vs 1.24 (was 3 vs 1.24); Reviews & Essays 0.00041 vs 1.24000 (was 0.00041 vs 1.24); Transgender 0.00 vs 1.24 (was 0 vs 1.24) · *Published 2020 or later:* Reviews & Essays 0.0069 vs 1.3700 (was 0.0069 vs 1.37) · *Under 2,000 words:* How To 0.0000 vs 0.0545 (was 0 vs 0.055); Interracial Love 0.0700 vs 0.0545 (was 0.07 vs 0.055); Sci-Fi & Fantasy 10.800 vs 0.055 (was 10.8 vs 0.055); Toys & Masturbation 8.000 vs 0.055 (was 8 vs 0.055) · *2,000–5,000 words:* Reluctance/NonConsent 0.00 vs 1.63 (was 0 vs 1.63); Transgender 0.0061 vs 1.6300 (was 0.0061 vs 1.63) · *5,000 words or more:* Gay Male 3.00 vs 1.48 (was 3 vs 1.48); Group Sex 0.0086 vs 1.4800 (was 0.0086 vs 1.48) · *At least 10,000 views:* How To 0.016 vs 1.300 (was 0.015 vs 1.3); Mature 0.041 vs 1.300 (was 0.041 vs 1.3); Mind Control 0.043 vs 1.300 (was 0.043 vs 1.3); NonHuman 0.0083 vs 1.3000 (was 0.0083 vs 1.3); Reluctance/NonConsent 0.037 vs 1.300 (was 0.037 vs 1.3); Romance 0.015 vs 1.300 (was 0.015 vs 1.3) · *At least 25 ratings:* How To 0.0084 vs 1.4600 (was 0.0083 vs 1.46)
+- **Part number** (25): *5,000 words or more:* Anal 3.00 vs 3.63 (was 3 vs 3.63); BDSM 3.00 vs 3.63 (was 3 vs 3.63); Chain Stories 3.00 vs 3.63 (was 3 vs 3.63); Crossdressing 4.00 vs 3.63 (was 4 vs 3.63); Erotic Couplings 2.00 vs 3.63 (was 2 vs 3.63); Erotic Horror 4.00 vs 3.63 (was 4 vs 3.63); Exhibitionist & Voyeur 2.00 vs 3.63 (was 2 vs 3.63); Fan Fiction & Celebrities 3.00 vs 3.63 (was 3 vs 3.63); Fetish 3.00 vs 3.63 (was 3 vs 3.63); First Time 2.00 vs 3.63 (was 2 vs 3.63); Group Sex 4.00 vs 3.63 (was 4 vs 3.63); Humor & Satire 2.00 vs 3.63 (was 2 vs 3.63); Interracial Love 3.00 vs 3.63 (was 3 vs 3.63); Lesbian Sex 3.00 vs 3.63 (was 3 vs 3.63); Loving Wives 3.00 vs 3.63 (was 3 vs 3.63); Mature 3.00 vs 3.63 (was 3 vs 3.63); Mind Control 5.00 vs 3.63 (was 5 vs 3.63); Non-Erotic 2.00 vs 3.63 (was 2 vs 3.63); Novels and Novellas 6.00 vs 3.63 (was 6 vs 3.63); Reluctance/NonConsent 3.00 vs 3.63 (was 3 vs 3.63); Romance 3.00 vs 3.63 (was 3 vs 3.63); Sci-Fi & Fantasy 5.00 vs 3.63 (was 5 vs 3.63); Taboo/Incest 4.00 vs 3.63 (was 4 vs 3.63); Toys & Masturbation 4.00 vs 3.63 (was 4 vs 3.63); Transgender 3.00 vs 3.63 (was 3 vs 3.63)
+- **Build-up of action verbs** (17): *All stories:* How To 0.0034 vs 2.8800 (was 0.0034 vs 2.88); Reviews & Essays 0.00 vs 2.88 (was 0 vs 2.88) · *Published 2000–2009:* How To 0.0006 vs 3.6200 (was 0.0006 vs 3.62); Reviews & Essays 0.00 vs 3.62 (was 0 vs 3.62) · *Published 2010–2019:* Reviews & Essays 0.0036 vs 3.0300 (was 0.0036 vs 3.03) · *Published 2020 or later:* How To 0.00 vs 2.35 (was 0 vs 2.35); Mind Control 0.0065 vs 2.3500 (was 0.0065 vs 2.35); Reviews & Essays 0.00 vs 2.35 (was 0 vs 2.35) · *Under 2,000 words:* How To 0.00 vs 3.19 (was 0 vs 3.19); Reviews & Essays 0.00 vs 3.19 (was 0 vs 3.19) · *2,000–5,000 words:* Reviews & Essays 0.0021 vs 3.1200 (was 0.0021 vs 3.12) · *5,000 words or more:* Mind Control 0.0079 vs 2.6000 (was 0.0079 vs 2.6); Reviews & Essays 0.00079 vs 2.60000 (was 0.00079 vs 2.6) · *At least 10,000 views:* How To 0.0044 vs 3.0900 (was 0.0043 vs 3.09); Reviews & Essays 0.00 vs 3.09 (was 0 vs 3.09) · *At least 25 ratings:* Reluctance/NonConsent 3.00 vs 2.97 (was 3 vs 2.97); Reviews & Essays 0.00 vs 2.97 (was 0 vs 2.97)
+- **Sex scenes per 10,000 words** (16): *Published 2000–2009:* Non-Erotic 0.00 vs 6.28 (was 0 vs 6.28); Reviews & Essays 0.00 vs 6.28 (was 0 vs 6.28) · *Published 2010–2019:* Non-Erotic 0.00 vs 5.76 (was 0 vs 5.76); Reviews & Essays 0.00 vs 5.76 (was 0 vs 5.76) · *Published 2020 or later:* Non-Erotic 0.00 vs 5.71 (was 0 vs 5.71); Reluctance/NonConsent 5.00 vs 5.71 (was 5 vs 5.71); Reviews & Essays 0.00 vs 5.71 (was 0 vs 5.71) · *Under 2,000 words:* Non-Erotic 0.00 vs 7.96 (was 0 vs 7.96); Reviews & Essays 0.00 vs 7.96 (was 0 vs 7.96) · *2,000–5,000 words:* Fan Fiction & Celebrities 5.00 vs 5.67 (was 5 vs 5.67); Non-Erotic 0.00 vs 5.67 (was 0 vs 5.67) · *5,000 words or more:* Non-Erotic 0.00 vs 4.94 (was 0 vs 4.94); Reviews & Essays 0.00 vs 4.94 (was 0 vs 4.94) · *At least 10,000 views:* Non-Erotic 0.00 vs 6.09 (was 0 vs 6.09); Reviews & Essays 0.00 vs 6.09 (was 0 vs 6.09) · *At least 25 ratings:* Non-Erotic 0.00 vs 5.95 (was 0 vs 5.95)
+- **Intimacy** (14): *All stories:* Reviews & Essays 0.00 vs 1.81 (was 0 vs 1.81) · *Published 2000–2009:* How To 0.00 vs 1.95 (was 0 vs 1.95); Reviews & Essays 0.00 vs 1.95 (was 0 vs 1.95) · *Published 2010–2019:* Reviews & Essays 0.00 vs 1.78 (was 0 vs 1.78); Toys & Masturbation 1.00 vs 1.78 (was 0.999 vs 1.78) · *Published 2020 or later:* Reviews & Essays 0.00 vs 1.75 (was 0 vs 1.75) · *Under 2,000 words:* Exhibitionist & Voyeur 1.00 vs 1.75 (was 1 vs 1.75); First Time 3.00 vs 1.75 (was 3 vs 1.75); How To 0.00 vs 1.75 (was 0 vs 1.75); Humor & Satire 0.00 vs 1.75 (was 0 vs 1.75); Reviews & Essays 0.00 vs 1.75 (was 0 vs 1.75) · *At least 10,000 views:* Letters & Transcripts 2.00 vs 1.78 (was 2 vs 1.78); Reviews & Essays 0.00 vs 1.78 (was 0 vs 1.78) · *At least 25 ratings:* Reviews & Essays 0.00 vs 1.81 (was 0 vs 1.81)
+- **Distancing phrases** (10): *Published 2000–2009:* How To 0.000 vs 0.836 (was 0 vs 0.836); Reviews & Essays 0.000 vs 0.836 (was 0 vs 0.836) · *Published 2010–2019:* Fetish 1.00 vs 0.92 (was 1 vs 0.918) · *Under 2,000 words:* Chain Stories 1.00 vs 0.66 (was 1 vs 0.663); Group Sex 0.600 vs 0.663 (was 0.6 vs 0.663); How To 0.000 vs 0.663 (was 0 vs 0.663); Novels and Novellas 1.00 vs 0.66 (was 1 vs 0.663); Reviews & Essays 0.000 vs 0.663 (was 0 vs 0.663) · *2,000–5,000 words:* BDSM 0.700 vs 0.902 (was 0.7 vs 0.902) · *At least 10,000 views:* Transgender 0.900 vs 0.891 (was 0.9 vs 0.891)
+- **General sexual words** (9): *All stories:* Non-Erotic 0.00 vs 2.15 (was 0 vs 2.15) · *Published 2000–2009:* Non-Erotic 0.00 vs 2.21 (was 0 vs 2.21) · *Published 2020 or later:* Mind Control 2.00 vs 2.17 (was 2 vs 2.17); Non-Erotic 0.00 vs 2.17 (was 0 vs 2.17) · *Under 2,000 words:* Non-Erotic 0.00 vs 2.37 (was 0 vs 2.37) · *2,000–5,000 words:* Non-Erotic 0.00 vs 2.14 (was 0 vs 2.14) · *At least 10,000 views:* Non-Erotic 0.00 vs 2.27 (was 0 vs 2.27) · *At least 25 ratings:* How To 4.00 vs 2.21 (was 4 vs 2.21); Non-Erotic 0.00 vs 2.21 (was 0 vs 2.21)
+- **Build-up of emotional language** (7): *Published 2010–2019:* How To 0.0062 vs 3.0800 (was 0.0062 vs 3.08) · *Published 2020 or later:* Crossdressing 4.00 vs 2.98 (was 4 vs 2.98) · *Under 2,000 words:* Chain Stories 4.00 vs 3.88 (was 4 vs 3.88); First Time 5.00 vs 3.88 (was 5 vs 3.88); Mind Control 6.00 vs 3.88 (was 6 vs 3.88); Taboo/Incest 0.00 vs 3.88 (was 0 vs 3.88) · *5,000 words or more:* Letters & Transcripts 0.0048 vs 2.6200 (was 0.0048 vs 2.62)
+- **Profanity** (6): *All stories:* Loving Wives 3.00 vs 2.26 (was 3 vs 2.26) · *Published 2000–2009:* Reviews & Essays 0.00 vs 1.96 (was 0 vs 1.96) · *Published 2020 or later:* Erotic Horror 2.00 vs 2.41 (was 2 vs 2.41) · *Under 2,000 words:* How To 0.00 vs 2.04 (was 0 vs 2.04); Non-Erotic 0.00 vs 2.04 (was 0 vs 2.04); Reviews & Essays 0.00 vs 2.04 (was 0 vs 2.04)
+- **Anatomical terms** (5): *All stories:* Non-Erotic 0.088 vs 10.000 (was 0.088 vs 10); Reviews & Essays 0.72 vs 10.00 (was 0.72 vs 10) · *Published 2010–2019:* Lesbian Sex 7.00 vs 9.43 (was 7 vs 9.43); NonHuman 2.00 vs 9.43 (was 2 vs 9.43) · *5,000 words or more:* Reviews & Essays 0.00 vs 8.27 (was 0 vs 8.27)
+- **Sexual language in the first fifth** (5): *All stories:* Non-Erotic 0.00 vs 7.89 (was 0 vs 7.89) · *Published 2000–2009:* Non-Erotic 0.00 vs 7.41 (was 0 vs 7.41) · *Published 2020 or later:* Non-Erotic 0.00 vs 8.08 (was 0 vs 8.08) · *Under 2,000 words:* Non-Erotic 0.00 vs 8.67 (was 0 vs 8.67) · *5,000 words or more:* Erotic Horror 5.00 vs 7.97 (was 5 vs 7.97)
+- **Build-up of sexual language** (4): *Published 2000–2009:* How To 0.0034 vs 19.2000 (was 0.0034 vs 19.2) · *2,000–5,000 words:* Reviews & Essays 0.0076 vs 15.7000 (was 0.0076 vs 15.7) · *At least 10,000 views:* How To 0.79 vs 15.00 (was 0.79 vs 15); Reviews & Essays 0.0043 vs 15.0000 (was 0.0043 vs 15)
+- **Hedging** (4): *Published 2000–2009:* How To 4.00 vs 3.98 (was 4 vs 3.98); Reluctance/NonConsent 4.00 vs 3.98 (was 4 vs 3.98) · *Published 2010–2019:* Anal 4.00 vs 4.38 (was 4 vs 4.38) · *5,000 words or more:* Non-Erotic 5.00 vs 4.67 (was 5 vs 4.67)
+- **Questions per 1,000 words** (4): *Published 2000–2009:* Fan Fiction & Celebrities 5.00 vs 3.36 (was 5 vs 3.36) · *Published 2020 or later:* Lesbian Sex 5.00 vs 4.97 (was 5 vs 4.97) · *2,000–5,000 words:* Fan Fiction & Celebrities 5.00 vs 4.26 (was 5 vs 4.26) · *5,000 words or more:* Transgender 5.00 vs 5.38 (was 5 vs 5.38)
+- **Sexual-action terms** (4): *Under 2,000 words:* Non-Erotic 0.00 vs 7.21 (was 0 vs 7.21) · *2,000–5,000 words:* Mind Control 5.00 vs 5.92 (was 5 vs 5.92) · *5,000 words or more:* Loving Wives 5.00 vs 5.05 (was 5 vs 5.05) · *At least 10,000 views:* Crossdressing 7.00 vs 6.16 (was 7 vs 6.16)
+- **Sound words** (4): *All stories:* Exhibitionist & Voyeur 4.00 vs 4.25 (was 4 vs 4.25); Transgender 4.00 vs 4.25 (was 4 vs 4.25) · *Published 2020 or later:* Transgender 4.00 vs 4.23 (was 4 vs 4.23) · *At least 25 ratings:* Reviews & Essays 1.00 vs 4.25 (was 1 vs 4.25)
+- **Average word length** (3): *Published 2000–2009:* Taboo/Incest 4.00 vs 4.09 (was 4 vs 4.09) · *At least 10,000 views:* Gay Male 4.00 vs 4.11 (was 4 vs 4.11) · *At least 25 ratings:* Gay Male 4.00 vs 4.11 (was 4 vs 4.11)
+- **Certainty** (3): *Published 2010–2019:* Fan Fiction & Celebrities 3.00 vs 3.25 (was 3 vs 3.25) · *5,000 words or more:* BDSM 3.00 vs 3.34 (was 3 vs 3.34); Group Sex 3.00 vs 3.34 (was 3 vs 3.34)
+- **Sentence-length variety** (3): *Under 2,000 words:* Fetish 7.00 vs 7.54 (was 7 vs 7.54); Gay Male 8.00 vs 7.54 (was 8 vs 7.54) · *At least 25 ratings:* Taboo/Incest 8.00 vs 7.96 (was 8 vs 7.96)
+- **Touch words** (3): *Published 2010–2019:* Reviews & Essays 0.00 vs 3.51 (was 0 vs 3.51) · *Under 2,000 words:* Reviews & Essays 0.00 vs 4.15 (was 0 vs 4.15) · *At least 10,000 views:* Sci-Fi & Fantasy 3.00 vs 3.75 (was 3 vs 3.75)
+- **Agency (deciding & trying)** (2): *At least 25 ratings:* Letters & Transcripts 2.00 vs 2.27 (was 2 vs 2.27); Toys & Masturbation 2.00 vs 2.27 (was 2 vs 2.27)
+- **Dialogue/narration alternation** (2): *Under 2,000 words:* Mature 1.00 vs 0.93 (was 1 vs 0.927); Reviews & Essays 1.00 vs 0.93 (was 1 vs 0.927)
+- **He / him / his** (2): *2,000–5,000 words:* Lesbian Sex 0.81 vs 26.00 (was 0.81 vs 26) · *At least 10,000 views:* Lesbian Sex 0.69 vs 25.00 (was 0.69 vs 25)
+- **They / them / their** (2): *Published 2020 or later:* Fetish 6.00 vs 5.59 (was 6 vs 5.59) · *5,000 words or more:* Fetish 6.00 vs 6.35 (was 6 vs 6.35)
+- **Thinking verbs** (2): *2,000–5,000 words:* Group Sex 7.00 vs 7.91 (was 7 vs 7.91) · *At least 25 ratings:* Sci-Fi & Fantasy 8.00 vs 8.12 (was 8 vs 8.12)
+- **Descriptive words** (1): *5,000 words or more:* Erotic Couplings 5.00 vs 5.24 (was 5 vs 5.24)
+- **Excitement & arousal** (1): *2,000–5,000 words:* Exhibitionist & Voyeur 3.00 vs 3.03 (was 3 vs 3.03)
+- **Immediacy words** (1): *At least 10,000 views:* Romance 4.00 vs 3.88 (was 4 vs 3.88)
+- **Positive emotion** (1): *Under 2,000 words:* Gay Male 6.00 vs 6.95 (was 6 vs 6.95)
+- **Repeated five-word phrases** (1): *Published 2010–2019:* Reviews & Essays 3.00 vs 1.16 (was 3 vs 1.16)
+- **She / her / hers** (1): *Published 2020 or later:* Gay Male 0.54 vs 42.00 (was 0.54 vs 42)
+- **We / us / our** (1): *Published 2020 or later:* Mature 6.00 vs 4.74 (was 6 vs 4.74)
+
+</details>
+
+### 11.7 Judgment calls
+
+Details the prompt left open, with one line of reasoning each.
+
+1. **Baseline.** Measured on this Mac against a frozen build of `3b04164` with the same scripts as the end, so before
+   and after compare like with like; the review's Linux numbers are quoted where they differ.
+2. **O9, search.** A synonym that only one characteristic has now ranks like its name, so "length" still finds Word
+   count first once its noun no longer says "length" (6 of 90 synonym queries change their first three, each toward the
+   characteristic the word names).
+3. **O9, small words.** The "not with …" reasons and the select's note use the noun ("word count"), so no sentence
+   names it the old way.
+4. **X1, sizes by role.** 17 → 18 for the narrow masthead's name, an arrow and a phone's list titles; 17 → 16 for
+   Patterns' count line (the takeaway's size); 23 → 20 for One genre's "Every characteristic, by topic" (the answer's
+   other h3s); the "+" glyphs 20 → 18.
+5. **X1, line heights.** One per size: 12 → 1.3, 13 → 1.4, 14 and 15 → 1.45, 16 → 1.5, 18 → 1.4, the serif 20–26 →
+   1.25, the question 1.32 (1.45 on phones, where its words are tap targets).
+6. **X1, spacing.** Each gap to the nearest step, ties to the larger; Trends' axis title 14 → 12 so the rail stays
+   level at 16; the footer's clear space and the controls' own padding kept, as the prompt protects them.
+7. **X1, the "Other" segment** keeps `#8f8a80`: dark ink on `#857f75` would be 4.3:1.
+8. **X1, Trends' smallest value** is 12 px: 111 of 65,320 tables (288–720 px) now put every other value on a second
+   line instead of printing 11.5 px.
+9. **X1, the phone masthead's links** have 4 px at each side below 484 px (6 before), so every set still fits with
+   the larger name and links.
+10. **X1, Trends' values in a wide font (52d49e2).** Sized by Verdana's measured widths (digits 0.72 em, "%" 1.28)
+    rather than the estimate, the last one set against the chart's edge where, centered, it would reach it: Verdana's
+    13 overlapping tables (27 after the 12 px floor) went to none.
+11. **L1, "runs through".** A value within 3 px of the dashed line (its halo included) starts 6 px right of it; the
+    plot's right margin is the widest value's, so a moved value stays inside the chart (the glyph check finds none
+    outside), and nothing else moves.
+12. **L1, the scale's words** ("(1 to 5 stars)") live in `wording.js`, keyed on the measure's format, so the page and
+    the image say the same.
+13. **L1, phones.** A hidden group reads "fewer than 10", and the short labels' column is as wide as its stories'
+    count.
+14. **U1, the rule.** `navSet` keeps each width's number of links and puts the page being read in place of the set's
+    last other link; How it works keeps the earlier sets (the owner's choice at the checkpoint: its own link didn't fit
+    with 8 px to spare at 300–326, 352–380, 414–439 and 484–513 px, and its section bar names the page).
+15. **U1, Genres' h1.** The question is the h1 in both views, named by its words, and the kicker a paragraph, as on
+    Trends.
+16. **X2, Patterns.** The tab keeps "Patterns · …" though the h1 is now its question; the count line sits in the
+    takeaway's box at the takeaway's size.
+17. **W1, Rose and Fell stay** on the Trends page: "Later" there would read as time.
+18. **W1, the decimals rule** is One genre's only (`pairText`); the Trends page's two values are one characteristic in
+    two windows, already printed with one number format.
+19. **W1, the rule as written.** Trailing zeros included; 11.6 lists every value it pushes past one zero or under two
+    significant digits.
+20. **W1, units (bf6c405, after the measuring).** A unit of three words or more keeps its last two together in an
+    inline block, so a wrapped unit never ends on one word where two fit; `text-wrap: pretty` was tried and left more
+    words alone.
+21. **I15, its place.** On Explore, in the answer's column right under the chart; on the Genres page, under the chart
+    before "Download image"; on Trends, in a new cell with the chart (the rail beside it keeps the takeaway, the key and
+    the actions).
+22. **I15, "With popularity →"** keeps this genre and option, and the measure last used on Explore in the visit (else
+    Explore's default).
+23. **I15, "Over time →"** keeps the genre, and the option where the Trends page offers it (all stories otherwise).
+24. **I15, Keep exploring** keeps Patterns, the chosen genre's "What stands out …?" and the three examples; its Genres
+    and Trends questions went with the way across.
+25. **I16, the row.** A container with the name as a stretched link (`::after`, inset 0), then the "?" (after a word
+    joiner), the unit and the hidden description: one tab stop each, the row opening from anywhere but the "?".
+26. **I16, the "?" area.** 44 px wide and the row's height, centered on the circle and under the name's text, so a tap
+    on the name, or between a wrapped name's lines, opens the row.
+27. **I16, the description** runs under the name across the row (13 px, `--ink-2`, at most 62ch), after a topic's
+    mark column; a new answer or Back starts with every definition closed.
+28. **I16, the "?" with its last word (c1c8f20).** The name's box doesn't wrap and holds the word joiner, its words
+    wrap inside it; where the two can't share a line (a 124 px column at 320 px) the "?" takes the next line rather
+    than run past the cell.
+29. **F104, sizes.** The capsule 10 × 18 px with its dot, the brackets' line 16 px with 4 px ticks, the hollow dot 14,
+    the swatch 16; in forced colors the capsules keep an outline, as the chart's do.
+30. **F110, the selects' areas** reach up (the genre) and down (the measure), so on two lines neither covers the
+    other's words.
+31. **F112.** A period's label breaks only before its dash ("2000" over "–04").
+32. **F118.** "and 2 more" goes to the live region too.
+33. **After screenshots.** The same jobs and compositions as `b01`–`b16`; `a11` is named for its images; `a16`'s focus
+    sheet adds the four new kinds of control at 1:1; `a17` and `a18` are clips around the line and the open row.
+34. **Layout shift** was measured with scripted changes; a visitor's own tap or pick makes the next 500 ms "recent
+    input" (not counted), so shifts in that window are reported apart, before and after alike.
+35. **Fresh eyes** saw `54e5d9b`; c1c8f20 fixed what they found and bf6c405 what the measuring found. They weren't run
+    again: the two commits change only where the "?" and the unit lines break.
+
+### 11.8 Still open
+
+- **No real phone, Safari, Firefox or screen reader.** Everything ran in headless Chromium on the Mac; the
+  accessibility checks are axe and Chrome's accessibility tree. `text-wrap-style`, `:has()` and `1lh` need recent
+  Safari and Firefox.
+- **The "?" at 320 px**: 10 rows (site font) and 35 (Verdana) where the last word and the "?" can't share the name's
+  column; the "?" takes the next line.
+- **Units in the narrowest cells**: at 320–360 px, 8 rows (site font) and 91 (Verdana) still end on one word, in cells
+  of 37–78 px that can't hold two, or two-word group names ("Mostly she/her"); in one 37 px Verdana cell two words
+  break inside.
+- **Questions at 320 px**: 12 still leave their last word alone (192 before).
+- **Shifts right after a change** that reflows the question or the lists, within 500 ms of it: One genre's genre 0.325
+  (0.332 before); Patterns' measure at 1440 px 0.137 (0.039 before: its question is now at the page question's size);
+  Trends' word count, another genre at 375 px 0.184 (0.081 before: the question goes from three lines to two with a
+  short genre name). A visitor's own tap or pick makes them "recent input", which layout shift doesn't count.
+- **Back from a way-across link** lands at the top of the page (5 of 6 runs), as Back from Keep exploring's link did
+  before (F115, not in this round).
+- **Explore's "All stories shown"** label starts 1–3 px past the plot's left edge at 320 and 375 px in Verdana (995
+  charts), as before.
+- **The "?" area on the name's line**: 44 px wide above and below the name's text, but 34–35 px across the circle's
+  middle, where the end of the name's last word keeps its own part (a tap on the name opens the row). Making it 44 px
+  there too would take that part of the name from the row's link.
+- **Taps through a row's center**: a wrapped name's link reads 0 or 23 px at its own box's center, where the "?" area
+  is; the name's text and the rest of the row open the row (`defhits`).
+- **Label in name**: axe marks each "?" "incomplete" (a symbol as the visible label); its name says what it does.
+- **How it works at 375 px**: the first section's link is behind "Contents" (the tab count's ">40", as before).
+- **What the fresh eyes still stumble on** (11.5): where the way across leads, the "?"s' noise, the phones' kicker
+  repeating the page's name, "4.19" beside the dashed line, the axis's 3.5 under "1 to 5 stars", the "Later" row in
+  the "Higher" list, the axis title over the first list only, "a story with a story", the key's faint marks, the caret
+  against the "?", the view switches, "Download image" on its own.
+- **The decimals rule** gives 471 values more than one trailing zero and 10 values fewer than two significant digits
+  (11.6), as written.

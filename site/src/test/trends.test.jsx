@@ -26,6 +26,7 @@ import {
   trendLayout,
   trendOverlaps,
   trendTicks,
+  valueWidth,
 } from "../lib/trendLayout.js";
 import { formatPercent } from "../lib/genres.js";
 import {
@@ -154,14 +155,20 @@ describe("the chart's geometry (trendLayout)", () => {
     const hedge = input(["−0.125", "−0.154", "−0.176", "−0.138", "−0.163"]);
     expect(trendLayout({ width: 736, ...hedge }).valueSize).toBe(13);
     expect(trendLayout({ width: 343, ...hedge }).valueSize).toBe(13);
-    // five digits fit a 288 px chart's columns at 12 px, not at 13
-    const phone = trendLayout({ width: 288, ...input(["10000", "20000", "30000", "40000", "50000"]) });
+    // a 320 px chart (a 352 px phone) prints them at 12 px, allowing for a wider font (valueWidth), not at 13
+    const phone = trendLayout({ width: 320, ...hedge });
     expect([phone.valueSize, phone.stagger]).toEqual([12, false]);
     expect(new Set(phone.columns.map((c) => c.value.y)).size).toBe(1);
+    expect(phone.columns.map((c) => c.value.anchor)).toEqual(["middle", "middle", "middle", "middle", "middle"]);
     // "−0.125" was printed at 11.5 px before the type scale (round 4); at 12 px every other value drops a line
     const crowded = trendLayout({ width: 288, ...hedge });
     expect([crowded.valueSize, crowded.stagger]).toEqual([12, true]);
     expect(trendOverlaps(crowded)).toEqual([]);
+    // the last value is set against the chart's edge where, in a wider font, centered it would reach it
+    const last = crowded.columns[crowded.columns.length - 1];
+    expect(last.x + valueWidth(last.value.text, 12) / 2).toBeGreaterThan(crowded.width - 1);
+    expect([last.value.x, last.value.anchor]).toEqual([crowded.width - 1, "end"]);
+    expect(crowded.columns.slice(0, -1).every((c) => c.value.anchor === "middle" && c.value.x === c.x)).toBe(true);
     const tiny = trendLayout({ width: 288, ...input(["0.78", "0.00060", "0.0032", "3.04", "0.00"]) });
     expect(tiny.stagger).toBe(true);
     expect(tiny.columns.map((c) => c.value.y - tiny.columns[0].value.y)).toEqual([0, 15, 0, 15, 0]);

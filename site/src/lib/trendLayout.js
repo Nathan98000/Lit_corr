@@ -29,6 +29,11 @@ const BRACKET_SIZE = TEXT.tick;
 const NOT_COMPARED_SIZE = TEXT.tick;
 const LABEL_GAP = 12; // between the two brackets' labels on one line
 const LABEL_SLACK = 1.1; // the brackets' labels in a wider font ('"DejaVu Sans", Verdana': 9% over textWidth at 600)
+// The table's values in a wider font than textWidth's estimate (Verdana at 600, measured: digits 0.72 em, "%" 1.28, "−",
+// "<" and ">" 0.87), so that no font puts one on its neighbor or past the chart's edge (textWidth's "%" is half as wide)
+const WIDE_EM = { "%": 1.28, "−": 0.87, "<": 0.87, ">": 0.87, ".": 0.37, ",": 0.37 };
+export const valueWidth = (text, size) =>
+  [...String(text)].reduce((w, ch) => w + (WIDE_EM[ch] ?? (/\d/.test(ch) ? 0.72 : textWidth(ch, 1, 600) * LABEL_SLACK)), 0) * size;
 
 /** "2000–04" (the end's last two digits when both years share their century), "2020–26". */
 export function periodLabel([lo, hi]) {
@@ -158,10 +163,10 @@ export function trendLayout({
   const y = (v) => bottom - ((v - axis.lo) / (axis.hi - axis.lo || 1)) * plotH;
   const periodY = [bottom + 20, bottom + 35]; // two lines of 13 px ("2000" over "–04"), 15 px apart
   const rowY = (two ? periodY[1] : periodY[0]) + 21;
-  // the values' size: the largest that leaves every two neighbors apart; when even the smallest doesn't (a rare pair
-  // like "0.00060" and "0.0032" at 320 px), every other value drops a line
+  // the values' size: the largest that leaves every two neighbors apart, in a wider font too (valueWidth); when even
+  // the smallest doesn't (a rare pair like "0.00060" and "0.0032" at 320 px), every other value drops a line
   const fitsAt = (size) => {
-    const w = texts.map((t) => textWidth(t.value, size, 600));
+    const w = texts.map((t) => valueWidth(t.value, size));
     return w.every((wi, i) => wi <= colW && (i === 0 || (w[i - 1] + wi) / 2 <= colW - VALUE_GAP));
   };
   const valueSize = valueHead ? (VALUE_SIZES.find(fitsAt) ?? VALUE_SIZES[VALUE_SIZES.length - 1]) : VALUE_SIZES[0];
@@ -171,6 +176,13 @@ export function trendLayout({
   const bracketY = storiesY + 15;
   const bracketLabelY = bracketY + 17;
   const inWindow = (p, [a, b]) => p[0] >= a && p[1] <= b;
+  // a value is centered under its column, or set against the chart's edge where, in a wider font, it would reach it
+  // (the last column's "−0.163" at 320 px)
+  const valueAt = (text, x, vy) => {
+    const half = valueWidth(text, valueSize) / 2;
+    if (x + half > W - 1) return { text, x: W - 1, y: vy, anchor: "end" };
+    return { text, x, y: vy, anchor: "middle" };
+  };
   // a 100% column, wide enough for the shares printed in it (a yes/no share is a dot on the line, as a median is)
   const barW = Math.min(52, colW * 0.72);
   const columns = periods.map((p, i) => {
@@ -186,7 +198,7 @@ export function trendLayout({
       middle: !inWindow(p, then) && p[0] < now[0], // outside both windows: drawn quiet, "not compared"
       period: periodLabel(p),
       lines: two ? periodLines(p).map((t, k) => ({ text: t, y: periodY[k] })) : [{ text: periodLabel(p), y: periodY[0] }],
-      value: valueHead ? { text: texts[i].value, x, y: valueY + (stagger && i % 2 ? 15 : 0) } : null,
+      value: valueHead ? valueAt(texts[i].value, x, valueY + (stagger && i % 2 ? 15 : 0)) : null,
       stories: { text: texts[i].stories, x, y: storiesY },
     };
     if (!c) {
@@ -333,19 +345,19 @@ export function splitOverlaps(split) {
 
 /**
  * Text boxes that overlap in a layout (for the tests): the period labels, the table's values and counts, the row
- * heads, the tick labels, the brackets' labels (each line) and "not compared", each estimated with textWidth, and the
- * brackets' lines; and anything outside the chart.
+ * heads, the tick labels, the brackets' labels (each line) and "not compared", each estimated with textWidth (the
+ * values in a wider font, valueWidth), and the brackets' lines; and anything outside the chart.
  */
 export function trendOverlaps(layout) {
   const boxes = [];
   const add = (kind, text, x, yy, size, anchor = "middle", weight = 400) => {
-    const w = textWidth(text, size, weight);
+    const w = kind === "value" ? valueWidth(text, size) : textWidth(text, size, weight);
     const x0 = anchor === "middle" ? x - w / 2 : anchor === "end" ? x - w : x;
     boxes.push({ kind, text, x0, x1: x0 + w, y0: yy - size, y1: yy + 2 });
   };
   for (const c of layout.columns) {
     for (const l of c.lines) add("period", l.text, c.x, l.y, PERIOD_SIZE);
-    if (c.value) add("value", c.value.text, c.value.x, c.value.y, layout.valueSize, "middle", 600);
+    if (c.value) add("value", c.value.text, c.value.x, c.value.y, layout.valueSize, c.value.anchor, 600);
     add("stories", c.stories.text, c.stories.x, c.stories.y, STORIES_SIZE);
     for (const l of c.none || []) add("none", l.text, l.x, l.y, NONE_SIZE);
   }

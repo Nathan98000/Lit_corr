@@ -70,7 +70,7 @@ export function Table({ layout }) {
             </text>
           ))}
           {c.value && (
-            <text className="gval" x={c.value.x} y={c.value.y} textAnchor="middle" style={valueStyle}>
+            <text className="gval" x={c.value.x} y={c.value.y} textAnchor={c.value.anchor} style={valueStyle}>
               {c.value.text}
             </text>
           )}

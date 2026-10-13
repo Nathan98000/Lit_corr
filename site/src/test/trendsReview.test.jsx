@@ -39,6 +39,7 @@ import {
 import { searchCharacteristics } from "../lib/search.js";
 import { onTrendsPage } from "../lib/urlState.js";
 import { fixtureFetch, fixtureFile, fixtureMeta, realMeta } from "./fixtures.js";
+import { rowName, rowNames } from "./rows.js";
 
 vi.mock("../lib/chartImage.js", async (original) => ({ ...(await original()), downloadChartImage: vi.fn(async () => {}) }));
 
@@ -198,10 +199,10 @@ describe("the kicker and the footer, site-wide (phase 2)", () => {
     expect(styles).toMatch(/\.kicker-piece \{\s*white-space: nowrap;/);
   });
 
-  it("leaves space above the footer in one place, and lets the page list wrap in balanced lines", () => {
+  it("leaves space above the footer in one place (the footer is one sentence since the owner's follow-up)", () => {
     expect(styles).toMatch(/main\.wrap \{[^}]*min-height: 100vh;[^}]*padding-bottom: 64px;/);
     expect(styles).toMatch(/@media \(max-width: 760px\) \{[^@]*main\.wrap \{\s*padding-bottom: 48px;/);
-    expect(styles).toMatch(/\.footer-pages \{[^}]*text-wrap: balance;/);
+    expect(styles).not.toMatch(/\.footer-pages/);
   });
 });
 
@@ -245,8 +246,6 @@ describe("the default view, the switch and the actions (phase 3)", () => {
     await waitFor(() => expect(window.location.hash).toBe("#/trends?genre=fetish&include=all"));
     const masthead = within(screen.getByRole("navigation", { name: "Pages" })).getByRole("link", { name: "Trends" });
     expect(masthead.getAttribute("href")).toBe("#/trends?genre=fetish&include=all");
-    const footer = within(screen.getByRole("navigation", { name: "All pages" })).getByRole("link", { name: "Trends" });
-    expect(footer.getAttribute("href")).toBe("#/trends?genre=fetish&include=all");
     // back to one characteristic: the one it came from
     await user.click(screen.getByRole("radio", { name: "One characteristic" }));
     await waitFor(() => expect(window.location.hash).toBe("#/trends?var=pov_class&genre=fetish&include=all"));
@@ -708,7 +707,7 @@ describe("View 2 (phase 6)", () => {
     await user.click([...document.querySelectorAll(".profile-topic summary")].find((x) => x.textContent.startsWith("Narration")));
     await waitFor(() => expect(document.querySelector(".profile-topic .profile-plot rect")).toBeTruthy());
     const pov = fixtureFile("trends/all/all.json").c.pov_class;
-    const row = [...document.querySelectorAll(".profile-topic .profile-row")].find((r) => r.querySelector(".profile-label-text").textContent === "Narrative perspective");
+    const row = [...document.querySelectorAll(".profile-topic .profile-row")].find((r) => rowName(r) === "Narrative perspective");
     const width = (y) => [...row.querySelectorAll(`.profile-plot rect[y='${y}']`)].map((r) => parseFloat(r.getAttribute("width")));
     expect(width(1)).toEqual(pov.t.slice(1).filter((x) => x > 0).map((x) => expect.closeTo(x * 100, 6))); // 2000–2009 above
     expect(width(12)).toEqual(pov.q[4].slice(1).filter((x) => x > 0).map((x) => expect.closeTo(x * 100, 6)));
@@ -756,7 +755,7 @@ describe("View 2 (phase 6)", () => {
     await user.click(button());
     await waitFor(() => expect(downloadChartImage).toHaveBeenCalledTimes(1));
     const plan = listsImagePlan(downloadChartImage.mock.calls[0][0]);
-    const shown = [...document.querySelectorAll(".profile-list .profile-row .profile-label-text")].map((t) => t.textContent);
+    const shown = rowNames(".profile-list");
     expect(plan.lists.flatMap((l) => l.rows.map((r) => r.label))).toEqual(shown);
     expect(plan.lists.map((l) => l.title)).toEqual(["▲ Rose", "≠ A different mix"]);
     expect(plan.lists[1].caption).toBe("A different mix: 2000–2009 above, 2020 or later below");
@@ -801,7 +800,8 @@ describe("View 2 (phase 6)", () => {
     expect(spec.lists.valuesFirst).toBe(false);
     expect(spec.lists.heads).toEqual(["Romance", "All genres"]);
     expect(spec.lists.scale).toMatchObject({ lo: 0, hi: 100, ticks: [0, 25, 50, 75, 100] });
-    expect(plan.lists.map((l) => l.title)).toEqual(["Lower in Romance than in all genres", "Higher in Romance than in all genres", "A different mix"]);
+    // higher first, as on the page (the owner, 2026-10-13)
+    expect(plan.lists.map((l) => l.title)).toEqual(["Higher in Romance than in all genres", "Lower in Romance than in all genres", "A different mix"]);
     expect(plan.lists[0].rows[0].numbers).toHaveLength(2);
     expect(plan.lists[2].caption).toBe("A different mix: Romance above, all genres below");
     expect(plan.lists[2].rows[0]).toMatchObject({ label: "Narrative perspective", bars: true });

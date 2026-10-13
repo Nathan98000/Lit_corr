@@ -28,6 +28,7 @@ import {
   trimZeros,
 } from "../lib/genres.js";
 import { fixtureFetch, fixtureFile, fixtureMeta, realMeta } from "./fixtures.js";
+import { rowName } from "./rows.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const real = realMeta();
@@ -334,7 +335,7 @@ describe("the rows (concept R3)", () => {
     for (const row of rows) {
       const link = row.querySelector(".profile-link"); // the name, stretched over the row (round 4's I16)
       expect(link.hasAttribute("aria-label")).toBe(false);
-      const label = row.querySelector(".profile-label-text").textContent;
+      const label = rowName(row);
       const name = profileRowName(p.items.find((x) => x.variable.label === label), romance, meta.min_n);
       expect(screen.getAllByRole("link", { name }).includes(link)).toBe(true);
       expect(name.startsWith(`${label}:`) || name.startsWith(`${label}, % of stories:`)).toBe(true); // named groups say their unit
@@ -488,9 +489,10 @@ describe("the takeaway (S1, F90)", () => {
   it("is a line per list: its first three, in its order, as the list words them", async () => {
     await openGenre("#/genres?view=genre&genre=romance&include=all");
     const box = document.querySelector(".profile-takeaway");
+    // higher first, as the lists are (the owner, 2026-10-13)
     expect([...box.querySelectorAll("p")].map((p) => p.textContent)).toEqual([
-      "▼ Lower: dialogue share.",
       "▲ Higher: anger, has dialogue.",
+      "▼ Lower: dialogue share.",
       "≠ A different mix: narrative perspective.",
     ]);
     for (const p of box.querySelectorAll("p")) {
@@ -504,11 +506,11 @@ describe("the takeaway (S1, F90)", () => {
   it("leaves story age out when publication year is shown, and takes the next one; a line left with nothing goes", () => {
     const year = item("pub_year", "Publication year", -1);
     const age = item("age_years", "Years online", 1);
-    expect(lines({ lower: [year], higher: [age, item("b", "Anger", 1)] })).toEqual(["▼ Lower: publication year.", "▲ Higher: anger."]);
+    expect(lines({ lower: [year], higher: [age, item("b", "Anger", 1)] })).toEqual(["▲ Higher: anger.", "▼ Lower: publication year."]);
     expect(lines({ lower: [year], higher: [age] })).toEqual(["▼ Lower: publication year."]);
     // publication year not among the three shown: story age stays
     const three = ["Alpha", "Beta", "Gamma"].map((l, i) => item(`l${i}`, l, -1));
-    expect(lines({ lower: [...three, year], higher: [age] })).toEqual(["▼ Lower: alpha, beta, gamma.", "▲ Higher: years online."]);
+    expect(lines({ lower: [...three, year], higher: [age] })).toEqual(["▲ Higher: years online.", "▼ Lower: alpha, beta, gamma."]);
   });
 
   it("is left out when nothing stands out, and the sentence about all genres stays", async () => {
@@ -521,7 +523,7 @@ describe("the takeaway (S1, F90)", () => {
   it("is what screen readers hear after the heading, without its marks", () => {
     const file = standOuts(fixtureFile("genres/all.json"));
     expect(profileAnnouncement(fixtureMeta, file, { genre: "romance", sub: "all" })).toBe(
-      "4 characteristics clearly set Romance apart from all genres. Lower: dialogue share. Higher: anger, has dialogue. " +
+      "4 characteristics clearly set Romance apart from all genres. Higher: anger, has dialogue. Lower: dialogue share. " +
         "A different mix: narrative perspective.",
     );
     expect(profileAnnouncement(fixtureMeta, file, { genre: "fetish", sub: "all" })).toBe("No characteristic clearly sets Fetish apart from all genres.");
@@ -540,14 +542,16 @@ describe("the key, in the lists (F86)", () => {
     expect(titles[0].nextElementSibling.classList.contains("profile-block")).toBe(true);
   });
 
-  it("goes over the Higher list when there is no Lower list", async () => {
+  it("goes over the Lower list when there is no Higher list (the Higher list comes first: the owner, 2026-10-13)", async () => {
     serveWith((body) => {
-      body.c.dlg_word_share.f = [0, 0, 0, 0];
+      body.c.emo_anger_per_1k.f = [0, 0, 0, 0];
+      body.c.dlg_has_dialogue.f = [0, 0, 0, 0];
       return body;
     });
     await openGenre("#/genres?view=genre&genre=romance&include=all");
+    expect(document.querySelector(".profile-list h3").textContent).toBe("Lower in Romance than in all genres");
     const title = document.querySelector(".profile-axis-title");
-    expect(title.closest(".profile-list").querySelector("h3").textContent).toBe("Higher in Romance than in all genres");
+    expect(title.closest(".profile-list").querySelector("h3").textContent).toBe("Lower in Romance than in all genres");
   });
 
   it("draws the bracket from the rule's zone, never from literals", async () => {
@@ -565,10 +569,11 @@ describe("the key, in the lists (F86)", () => {
   it("puts the note above the first list, as the Trends page does, in its words, with its link (round 4's W1)", async () => {
     serveWith(...nineMore);
     await openGenre("#/genres?view=genre&genre=romance&include=all");
-    const list = document.querySelector(".profile-list");
+    const [list, lower] = document.querySelectorAll(".profile-list");
     const note = list.previousElementSibling;
     expect(note.className).toBe("profile-note");
-    expect(list.lastElementChild.textContent).toBe("Show all 10"); // the list ends with its "Show all"
+    expect(list.querySelector("h3").textContent).toBe("Higher in Romance than in all genres");
+    expect(lower.lastElementChild.textContent).toBe("Show all 10"); // a list ends with its "Show all"
     expect(note.textContent).toBe(
       "Each dot compares a story in Romance with a story from all genres, counting every story, not only the medians " +
         "(50 is a tie; how\u00a0this\u00a0is\u00a0decided). Click a row for every genre’s numbers.",
@@ -631,7 +636,7 @@ describe("the key, in the lists (F86)", () => {
     const lines = [...document.querySelectorAll(".profile-topic .profile-mix-line")];
     const barred = [...document.querySelectorAll(".profile-topic .profile-row")].filter((row) => row.querySelector(".segment"));
     expect(lines.map((p) => p.nextElementSibling)).toEqual(barred);
-    expect(barred.map((row) => row.querySelector(".profile-label-text").textContent)).toEqual([
+    expect(barred.map(rowName)).toEqual([
       "Person of the blurb", // the story's description is its blurb on the site (meta.json, the owner's changes)
       "Narrative perspective",
       "Narration tense",
@@ -654,7 +659,7 @@ describe("the key, in the lists (F86)", () => {
     expect(named).toHaveLength(4);
     const rows = [...document.querySelectorAll(".profile-topic .profile-row")];
     for (const item of named) {
-      const row = rows.find((r) => r.querySelector(".profile-label-text").textContent === item.variable.label);
+      const row = rows.find((r) => rowName(r) === item.variable.label);
       const { unit, group } = profileColumns(item);
       const cls = mixColors("grp", item.all.shares)[group].cls;
       const swatch = row.querySelector(".profile-unit .profile-swatch");
@@ -675,7 +680,7 @@ describe("the key, in the lists (F86)", () => {
     const user = await openGenre("#/genres?view=genre&genre=chain-stories&include=y2020"); // 12 stories: nothing compared
     await openAllTopics(user);
     const named = ["Person of the blurb", "Narrative perspective", "Narration tense", "Pronoun composition"];
-    const rows = [...document.querySelectorAll(".profile-row")].filter((r) => named.includes(r.querySelector(".profile-label-text").textContent));
+    const rows = [...document.querySelectorAll(".profile-row")].filter((r) => named.includes(rowName(r)));
     expect(rows).toHaveLength(4);
     for (const row of rows) {
       expect(row.querySelector(".profile-few").textContent).toBe("Too few stories to compare");
@@ -693,7 +698,7 @@ describe("the key, in the lists (F86)", () => {
     const named = genreProfile(real, file, file.genres.indexOf("adult-romance")).items.filter((x) => x.kind === "grp");
     const rows = [...document.querySelectorAll(".profile-topic .profile-row")];
     for (const item of named) {
-      const row = rows.find((r) => r.querySelector(".profile-label-text").textContent === item.variable.label);
+      const row = rows.find((r) => rowName(r) === item.variable.label);
       const colors = mixColors("grp", item.all.shares);
       // under the bars, in the plot's cell (hidden from screen readers, as the bars are): every group in the bars' order
       const key = row.querySelector(".profile-plot-cell[aria-hidden='true'] .profile-plot + .profile-key");
@@ -855,7 +860,7 @@ describe("the way back (F88, quick win 6)", () => {
     const user = await openGenre("#/genres?view=genre&genre=romance&include=all");
     vi.spyOn(window, "scrollY", "get").mockReturnValue(640);
     await user.click(document.querySelector(".profile-list .profile-row .profile-link"));
-    await waitFor(() => expect(window.location.hash).toBe("#/genres?var=dlg_word_share&include=all"));
+    await waitFor(() => expect(window.location.hash).toBe("#/genres?var=emo_anger_per_1k&include=all")); // the Higher list's first
     expect(window.history.state).toBeNull(); // the new entry starts empty
     window.history.back();
     await waitFor(() => expect(window.location.hash).toBe("#/genres?view=genre&genre=romance&include=all"));

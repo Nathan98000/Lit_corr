@@ -462,6 +462,19 @@ export function profileHeading(count, genre) {
   return `${count} characteristics clearly set ${genre.name} apart from all genres`;
 }
 
+/**
+ * What a characteristic measures, under one characteristic's heading on the Genres and Trends pages (meta's
+ * description), or null when a description only repeats the label and the unit (as "Touch words per 1,000 words." did
+ * before meta.json defined them): it would look like a definition and give none.
+ */
+export function whatItMeasures(variable) {
+  const d = variable.description;
+  if (!d) return null;
+  const plain = (t) => String(t || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+  const said = plain(d);
+  return said === plain(variable.label) || said === plain(`${variable.label} ${variable.unit || ""}`) ? null : d;
+}
+
 /** The word for one stand-out in the takeaway: the D10 word in lower case, else lower/higher, more/less common, different mix. */
 export function standOutWord(item) {
   if (item.kind === "grp") return "different mix";
@@ -482,8 +495,8 @@ export function positionWord(item) {
 
 /**
  * The takeaway (concept S1, F90): a line per list that has items, in the lists' order, each naming its first three as
- * the list words them (`lowerFirst(label)`): [{ mark: "▼", word: "Lower", items: ["sexual language", …] }, { mark: "▲",
- * word: "Higher", … }, { mark: "≠", word: "A different mix", … }]. A characteristic whose words name a position is
+ * the list words them (`lowerFirst(label)`): [{ mark: "▲", word: "Higher", items: ["romance language", …] }, { mark:
+ * "▼", word: "Lower", … }, { mark: "≠", word: "A different mix", … }]. A characteristic whose words name a position is
  * listed under its own word (round 4's W1): "▲ Later: where the first sex scene starts.", "▼ Earlier: …", "▼ Sooner:
  * …", after the line of its own direction; the lists below keep their titles. Story age is the publication year again,
  * so it is left out when publication year is among the items shown, and the next one is taken (F78); a line left with
@@ -494,12 +507,13 @@ export function profileTakeaway(p) {
   const named = (list) => list.filter((x) => !(year && x.id === "age_years")).slice(0, 3).map((x) => lowerFirst(x.variable.label));
   const amounts = (list) => list.filter((x) => !positionWord(x));
   const at = (list, word) => list.filter((x) => positionWord(x) === word);
+  // higher first, as the lists are (the owner, 2026-10-13)
   return [
+    { mark: "▲", word: "Higher", items: named(amounts(p.higher)) },
+    { mark: "▲", word: "Later", items: named(at(p.higher, "Later")) },
     { mark: "▼", word: "Lower", items: named(amounts(p.lower)) },
     { mark: "▼", word: "Earlier", items: named(at(p.lower, "Earlier")) },
     { mark: "▼", word: "Sooner", items: named(at(p.lower, "Sooner")) },
-    { mark: "▲", word: "Higher", items: named(amounts(p.higher)) },
-    { mark: "▲", word: "Later", items: named(at(p.higher, "Later")) },
     { mark: "≠", word: "A different mix", items: named(p.mix) },
   ].filter((line) => line.items.length);
 }

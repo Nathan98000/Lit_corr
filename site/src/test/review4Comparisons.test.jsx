@@ -191,7 +191,7 @@ describe("W1: a position under its own word in the takeaway", () => {
   });
 
   it.skipIf(!real)("keeps the lines' order and puts each position under its word, for every genre and option", { timeout: 30000 }, () => {
-    const ORDER = ["Lower", "Earlier", "Sooner", "Higher", "Later", "A different mix"];
+    const ORDER = ["Higher", "Later", "Lower", "Earlier", "Sooner", "A different mix"]; // higher first (the owner, 2026-10-13)
     let positioned = 0;
     for (const sub of realOptions()) {
       const file = realFile(sub);

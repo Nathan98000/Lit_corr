@@ -174,6 +174,16 @@ function GroupKey({ labels, colors }) {
 }
 
 /**
+ * A name with its last word apart: it goes with the "?" in a box that doesn't wrap, so the "?" is never on a line of its
+ * own (a line may break before a button whatever comes before it). Where the two are wider than the name's cell (at
+ * 320 px, "Shame & embarrassment"), they run into the gap beside it, toward the row's numbers, which are set right.
+ */
+export function nameEnd(label) {
+  const cut = label.lastIndexOf(" ") + 1;
+  return [label.slice(0, cut), label.slice(cut)];
+}
+
+/**
  * One characteristic (concept R3, F85, F87, F92): a row whose name is a link (the page's `row.link`) to its numbers
  * elsewhere, stretched over the whole row, so the row opens from anywhere but its definition's button (round 4's I16).
  * Its label, with its unit line, the plot, the two columns' numbers (`row.columns`: { genre, all, unit, group, of },
@@ -194,6 +204,7 @@ function ProfileRow({ item, row, zone, layout, marks }) {
   const [defined, setDefined] = useState(false);
   const defId = useId();
   const { label, description } = item.variable;
+  const [head, tail] = description ? nameEnd(label) : [label, ""];
   const cols = row.columns(item);
   const values = valuesFirst && row.values(item);
   const colors = cols.group != null && item.r != null && mixColors("grp", item.all.shares);
@@ -217,16 +228,31 @@ function ProfileRow({ item, row, zone, layout, marks }) {
             className: "profile-link",
             children: (
               <>
-                <span className="profile-label-text" aria-hidden="true">
-                  {label}
-                </span>
+                {head && (
+                  <span className="profile-label-text" aria-hidden="true">
+                    {head}
+                  </span>
+                )}
                 <span className="visually-hidden">{row.name(item)}</span>
               </>
             ),
           })}
           {description && (
-            <>
-              {/* a word joiner, in the name's box that doesn't wrap, keeps the "?" with the last word (comparison.css) */}
+            // the name's last word, a word joiner and the "?", in a box that doesn't wrap (comparison.css), with a copy of
+            // the row's link for the word, out of the tab order and hidden from screen readers (the row's link says the
+            // whole name)
+            <span className="profile-name-end">
+              {row.link({
+                item,
+                className: "profile-link-end",
+                tabIndex: -1,
+                "aria-hidden": "true",
+                children: (
+                  <span className="profile-label-text" aria-hidden="true">
+                    {tail}
+                  </span>
+                ),
+              })}
               {"\u2060"}
               <button
                 type="button"
@@ -238,7 +264,7 @@ function ProfileRow({ item, row, zone, layout, marks }) {
               >
                 ?
               </button>
-            </>
+            </span>
           )}
           {/* the unit on a line of its own under the name, on every chart (round 4's W1) */}
           {cols.unit && (
@@ -522,8 +548,8 @@ function TopicRows({ items, lead, layout, rowProps }) {
 /** The lists shown, as the page shows them: [{ id, items }], each list's first seven or all of them ("Show all"). */
 function listsShown(p, open) {
   return [
-    ["lower", p.lower],
     ["higher", p.higher],
+    ["lower", p.lower],
     ["mix", p.mix],
   ]
     .filter(([, items]) => items.length)
@@ -718,9 +744,9 @@ export default function ComparisonProfile({
 
   const p = profile;
   const zone = noDifferenceZone(rule);
-  // the note goes above the first list with dots, which carries the axis title; with none (nothing stands out), every
-  // open topic with dots carries them
-  const lead = p.lower.length ? "lower" : p.higher.length ? "higher" : null;
+  // the note goes above the first list with dots (the higher list, then the lower: the owner, 2026-10-13), which carries
+  // the axis title; with none (nothing stands out), every open topic with dots carries them
+  const lead = p.higher.length ? "higher" : p.lower.length ? "lower" : null;
   // the values' column fits the widest value on the page, so every list and topic has the same grid
   const valuesW = valuesFirst ? valuesWidth(p.items.map((x) => row.values(x).text)) : null;
   const layout = {
@@ -752,20 +778,20 @@ export default function ComparisonProfile({
         <Fragment key={answerKey}>
           {top}
           {lead && <Note words={words} />}
-          {p.lower.length > 0 && (
-            <ProfileList
-              title={words.lists.lower}
-              items={p.lower}
-              caption={lead === "lower" && <AxisTitle words={words} />}
-              {...listProps("lower")}
-            />
-          )}
           {p.higher.length > 0 && (
             <ProfileList
               title={words.lists.higher}
               items={p.higher}
               caption={lead === "higher" && <AxisTitle words={words} />}
               {...listProps("higher")}
+            />
+          )}
+          {p.lower.length > 0 && (
+            <ProfileList
+              title={words.lists.lower}
+              items={p.lower}
+              caption={lead === "lower" && <AxisTitle words={words} />}
+              {...listProps("lower")}
             />
           )}
           {p.mix.length > 0 && <ProfileList title={words.lists.mix} items={p.mix} all caption={<MixLine words={words} />} {...listProps("mix")} />}

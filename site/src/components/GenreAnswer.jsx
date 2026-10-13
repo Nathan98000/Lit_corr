@@ -9,6 +9,7 @@ import {
   sortableKind,
   takeawayLists,
   tooFewLine,
+  whatItMeasures,
 } from "../lib/genres.js";
 import { toHash } from "../lib/urlState.js";
 import { bandPalette, mixColors } from "../lib/genreLayout.js";
@@ -163,8 +164,9 @@ export function genresImage({ variable, heading, subset, kind, sort, state }, pa
 }
 
 /**
- * One characteristic in every genre (View 1): the verdict heading, the takeaway (▲/▼ lists in the D10 words, then
- * All genres, then the genres with too few stories to compare), the legend, the line that says the order (with the
+ * One characteristic in every genre (View 1): the verdict heading, what the characteristic measures (meta's
+ * description, as on the Trends page), the takeaway (▲/▼ lists in the D10 words, then All genres, then the genres with
+ * too few stories to compare), the legend, the line that says the order (with the
  * toggle), the chart for the characteristic's form, the way across to the other pages (round 4's I15: "Over time →",
  * "With popularity →" with the measure last used on Explore) and "Download image".
  */
@@ -180,6 +182,7 @@ export default function GenreAnswer({ meta, state, file, busy, onChange, onNavig
   const tooFew = tooFewLine(rows, meta.min_n);
   const anySmall = rows.some((r) => r.small);
   const question = chartQuestionText(variable);
+  const what = whatItMeasures(variable);
 
   const chartProps = {
     meta,
@@ -208,6 +211,7 @@ export default function GenreAnswer({ meta, state, file, busy, onChange, onNavig
           {heading}
         </h2>
       </header>
+      {what && <p className="genre-what">{what}</p>}
       {(lists.length > 0 || allLine || tooFew) && (
         <div className="takeaway genre-takeaway">
           {lists.map((l) => (

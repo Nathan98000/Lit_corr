@@ -95,16 +95,15 @@ describe("Trends addresses", () => {
 });
 
 describe("the masthead and the footer (D7, D8)", () => {
-  it("puts Trends between Genres and Patterns, current on its page, and lists every page in the footer", async () => {
+  it("puts Trends between Genres and How it works, current on its page; the footer has no list of pages", async () => {
     await openTrends();
     const links = within(masthead()).getAllByRole("link");
-    expect(links.map((a) => a.textContent)).toEqual(["Explore", "Genres", "Trends", "Patterns", "How it works"]);
+    expect(links.map((a) => a.textContent)).toEqual(["Popularity", "Genres", "Trends", "How it works"]);
     expect(within(masthead()).getByRole("link", { name: "Trends" }).getAttribute("aria-current")).toBe("page");
-    const pages = within(screen.getByRole("navigation", { name: "All pages" })).getAllByRole("link");
-    expect(pages.map((a) => a.textContent)).toEqual(["Explore", "Genres", "Trends", "Patterns", "How it works"]);
-    expect(pages[2].getAttribute("href")).toBe(within(masthead()).getByRole("link", { name: "Trends" }).getAttribute("href"));
+    expect(within(masthead()).getByRole("button", { name: "Trends, menu" })).toBeTruthy(); // on a phone
+    expect(screen.queryByRole("navigation", { name: "All pages" })).toBeNull(); // the owner, 2026-10-13
     const css = readFileSync(path.join(here, "..", "styles.css"), "utf8");
-    expect(css).toMatch(/\.footer-pages a \{[^}]*min-height: var\(--target\);/); // 44 px targets
+    expect(css).not.toMatch(/footer-pages/);
   });
 
   it("links Trends to the last Trends address of the visit, else the page's own, and fetches the code and file ahead", async () => {

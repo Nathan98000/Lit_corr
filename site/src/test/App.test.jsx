@@ -99,9 +99,8 @@ describe("the explorer", () => {
   it("has a How it works page that keeps the limits of the sample", async () => {
     const user = await renderApp();
     await user.click(within(screen.getByRole("navigation", { name: "Pages" })).getByRole("link", { name: "How it works" }));
-    // nav and footer agree: the masthead and the footer's list of every page (D7); the independence statement no
-    // longer links to it, so the footer has it once (the trends review)
-    expect(screen.getAllByRole("link", { name: "How it works" })).toHaveLength(2);
+    // the masthead is the one way to every page: the footer is the independence statement alone (the owner, 2026-10-13)
+    expect(screen.getAllByRole("link", { name: "How it works" })).toHaveLength(1);
     await screen.findByRole("heading", { level: 1, name: "How it works" });
     expect(document.title).toBe("How it works · What do popular Literotica stories have in common?");
     expect(screen.getByText(/do not stand for erotic fiction, readers or human sexuality in general/)).toBeTruthy();
@@ -131,13 +130,11 @@ describe("no causation reminders (decision 1 of round 2)", () => {
     expect(footer.querySelector("p").textContent).toBe("An independent project, not affiliated with or endorsed by Literotica.");
     // round 3, change 5: the footer no longer lists what the site does not hold; How it works keeps that section
     expect(footer.textContent).not.toMatch(/story-by-story records/);
-    // the statement keeps its words but not its link: the line with every page, in the masthead's order (D7), has How
-    // it works, once (the trends review)
-    expect(within(footer.querySelector("p")).queryByRole("link")).toBeNull();
-    const pages = within(within(footer).getByRole("navigation", { name: "All pages" })).getAllByRole("link");
-    expect(pages.map((a) => a.textContent)).toEqual(["Explore", "Genres", "Trends", "Patterns", "How it works"]);
-    expect(within(footer).getAllByRole("link", { name: "How it works" })).toHaveLength(1);
-    expect(within(footer).getByRole("link", { name: "How it works" }).getAttribute("href")).toBe("#/methodology");
+    // the statement is the whole footer, with no link and no list of pages (the owner, 2026-10-13): the masthead has
+    // every page, in its menu on a phone
+    expect(footer.textContent).toBe("An independent project, not affiliated with or endorsed by Literotica.");
+    expect(within(footer).queryAllByRole("link")).toHaveLength(0);
+    expect(within(footer).queryByRole("navigation")).toBeNull();
   });
 
   it("leaves the note on chance to How it works (the owner's follow-up, 2)", async () => {
@@ -351,8 +348,12 @@ describe("How it works", () => {
       expect(within(contents).getAllByRole("link").some((a) => a.getAttribute("href") === `#/methodology/${id}`)).toBe(true);
       expect(document.getElementById(id)).toBeTruthy();
     }
-    // the glossary uses the topics and can be filtered
-    expect(screen.getByText("Dialogue & characters", { selector: "summary" })).toBeTruthy();
+    // the glossary uses the topics, each open with every characteristic's definition, and can be filtered
+    const topic = screen.getByRole("heading", { level: 3, name: /^Dialogue & characters \(\d+\)$/ });
+    const defs = topic.closest("section").querySelector("dl.glossary");
+    expect(defs.querySelectorAll("dt").length).toBeGreaterThan(0);
+    expect([...defs.querySelectorAll("dd")].every((d) => d.textContent.trim().length > 0)).toBe(true);
+    expect(document.querySelector(".glossary-group details, details.glossary-group")).toBeNull();
     await user.type(screen.getByLabelText("Find a characteristic"), "anger");
     expect(screen.getByText("1 match")).toBeTruthy();
     expect(screen.getByRole("link", { name: "See the chart" }).getAttribute("href")).toMatch(/var=emo_anger_per_1k/);

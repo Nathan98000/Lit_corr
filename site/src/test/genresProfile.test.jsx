@@ -21,6 +21,7 @@ import {
   takeawayLine,
 } from "../lib/genres.js";
 import { fixtureFetch, fixtureMeta, realMeta } from "./fixtures.js";
+import { rowName, rowNames } from "./rows.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const real = realMeta();
@@ -82,7 +83,7 @@ describe("the heading and the takeaway", () => {
     await openGenre("#/genres?view=genre&genre=romance&include=all");
     expect(heading()).toBe("4 characteristics clearly set Romance apart from all genres");
     expect(document.querySelector(".profile-takeaway").textContent).toBe(
-      "▼ Lower: dialogue share.▲ Higher: anger, has dialogue.≠ A different mix: narrative perspective.",
+      "▲ Higher: anger, has dialogue.▼ Lower: dialogue share.≠ A different mix: narrative perspective.", // higher first (the owner, 2026-10-13)
     );
     expect(profileTakeaway({ lower: [], higher: [], mix: [] })).toEqual([]);
   });
@@ -100,17 +101,17 @@ describe("the heading and the takeaway", () => {
 });
 
 describe("the lists", () => {
-  it("order the stand-outs by the size of the difference, lower, then higher, then a different mix", async () => {
+  it("order the stand-outs by the size of the difference, higher, then lower, then a different mix", async () => {
     await openGenre("#/genres?view=genre&genre=romance&include=all");
-    expect(listTitles()).toEqual(["Lower in Romance than in all genres", "Higher in Romance than in all genres", "A different mix"]);
+    // higher first (the owner, 2026-10-13)
+    expect(listTitles()).toEqual(["Higher in Romance than in all genres", "Lower in Romance than in all genres", "A different mix"]);
     const lists = [...document.querySelectorAll(".profile-list")];
-    const names = (l) => [...l.querySelectorAll(".profile-label-text")].map((x) => x.textContent);
-    expect(names(lists[0])).toEqual(["Dialogue share"]);
-    expect(names(lists[1])).toEqual(["Anger", "Has dialogue"]); // 0.24 before 0.21
-    expect(names(lists[2])).toEqual(["Narrative perspective"]);
+    expect(rowNames(lists[0])).toEqual(["Anger", "Has dialogue"]); // 0.24 before 0.21
+    expect(rowNames(lists[1])).toEqual(["Dialogue share"]);
+    expect(rowNames(lists[2])).toEqual(["Narrative perspective"]);
     // stacked (the test's chart is 720 px): the count is for screen readers, the columns' heads take its place
-    expect(lists[1].querySelector(".profile-list-head .visually-hidden").textContent).toBe("2 characteristics");
-    expect(lists[1].querySelector(".profile-heads").getAttribute("aria-hidden")).toBe("true");
+    expect(lists[0].querySelector(".profile-list-head .visually-hidden").textContent).toBe("2 characteristics");
+    expect(lists[0].querySelector(".profile-heads").getAttribute("aria-hidden")).toBe("true");
   });
 
   it("show seven rows, then all of them with “Show all”", async () => {
@@ -131,7 +132,7 @@ describe("the lists", () => {
       return { ok: true, status: 200, json: async () => body };
     });
     const user = await openGenre("#/genres?view=genre&genre=romance&include=all");
-    const list = document.querySelector(".profile-list");
+    const list = [...document.querySelectorAll(".profile-list")].find((l) => l.querySelector("h3").textContent.startsWith("Lower"));
     expect(list.querySelector("h3").textContent).toBe("Lower in Romance than in all genres");
     expect(list.querySelectorAll(".profile-row")).toHaveLength(7);
     const more = within(list).getByRole("button", { name: "Show all 9" });
@@ -139,13 +140,13 @@ describe("the lists", () => {
     await user.click(more);
     expect(list.querySelectorAll(".profile-row")).toHaveLength(9);
     expect(within(list).getByRole("button", { name: "Show fewer" }).getAttribute("aria-expanded")).toBe("true");
-    expect([...list.querySelectorAll(".profile-label-text")].map((x) => x.textContent)[0]).toBe("Extra 0"); // |r| 0.30 first
+    expect(rowNames(list)[0]).toBe("Extra 0"); // |r| 0.30 first
   });
 
   it("are links to every genre's numbers, without a genre (decision 8), as a new history entry", async () => {
     const user = await openGenre("#/genres?view=genre&genre=romance&include=all");
     // the row's link is its name, stretched over the row (round 4's I16)
-    const row = document.querySelector(".profile-list .profile-row .profile-link");
+    const row = [...document.querySelectorAll(".profile-list .profile-row")].find((r) => rowName(r) === "Dialogue share").querySelector(".profile-link");
     expect(row.getAttribute("href")).toBe("#/genres?var=dlg_word_share&include=all");
     for (const link of document.querySelectorAll(".profile-row .profile-link")) expect(link.getAttribute("href")).not.toMatch(/genre=/);
     // the name is the row's own content (F76, F92): the label, the dot's number, the numbers, how it compares
@@ -290,7 +291,7 @@ describe("one scale for every row (concepts P2 and R3)", () => {
     // a wide screen: the row's own grid
     vi.spyOn(Element.prototype, "getBoundingClientRect").mockReturnValue({ width: 1032, height: 0, top: 0, left: 0, right: 1032, bottom: 0 });
     await openGenre("#/genres?view=genre&genre=romance&include=all");
-    const row = document.querySelector(".profile-list .profile-row"); // dialogue share, r −0.32
+    const row = [...document.querySelectorAll(".profile-list .profile-row")].find((r) => rowName(r) === "Dialogue share"); // r −0.32
     expect(row.querySelector(".p2-zone").getAttribute("x")).toBe("40%");
     expect(row.querySelector(".p2-zone").getAttribute("width")).toBe("20%");
     expect([...row.querySelectorAll(".p2-edge")].map((l) => l.getAttribute("x1"))).toEqual(["40%", "60%"]);
@@ -336,7 +337,7 @@ describe("one scale for every row (concepts P2 and R3)", () => {
     const user = await openGenre("#/genres?view=genre&genre=romance&include=all");
     await user.click(document.querySelector(".profile-topic:nth-of-type(2) summary") || document.querySelectorAll(".profile-topic summary")[1]);
     const row = await waitFor(() => {
-      const r = [...document.querySelectorAll(".profile-topic .profile-row")].find((x) => x.querySelector(".profile-label-text").textContent === "Dialogue share");
+      const r = [...document.querySelectorAll(".profile-topic .profile-row")].find((x) => rowName(x) === "Dialogue share");
       expect(r).toBeTruthy();
       return r;
     });
@@ -348,7 +349,7 @@ describe("one scale for every row (concepts P2 and R3)", () => {
   it("names every row by what is on screen first (F76, F92)", async () => {
     await openGenre("#/genres?view=genre&genre=romance&include=all");
     for (const row of document.querySelectorAll(".profile-row")) {
-      const label = row.querySelector(".profile-label-text").textContent;
+      const label = rowName(row);
       // (a named group's name says its unit after the label: "Narrative perspective, % of stories: …")
       const name = screen.getByRole("link", { name: new RegExp(`^${label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(, % of stories)?: \\S`) });
       expect(name).toBe(row.querySelector(".profile-link"));
@@ -377,11 +378,12 @@ describe("one genre on the real data", () => {
     expect(genreProfile(real, file, at("reviews-and-essays")).flagged).toHaveLength(115);
     expect(genreProfile(real, file, at("erotic-couplings")).flagged).toHaveLength(10);
     expect(genreProfile(real, file, at("anal-sex-stories")).flagged).toHaveLength(28);
-    // where a thing starts is "Later", not "Higher" (round 4's W1): its own line, after Higher's
+    // where a thing starts is "Later", not "Higher" (round 4's W1): its own line, after Higher's; higher first (the
+    // owner, 2026-10-13)
     expect(profileAnnouncement(real, file, { genre: "adult-romance", sub: "all" })).toBe(
-      "28 characteristics clearly set Romance apart from all genres. Lower: sexual language, sentences with sexual " +
-        "language, anatomical terms. Higher: romance language, everyday vocabulary, affection & love. Later: where the " +
-        "first sex scene starts, words before first explicit term.",
+      "28 characteristics clearly set Romance apart from all genres. Higher: romance language, everyday vocabulary, " +
+        "affection & love. Later: where the first sex scene starts, words before first explicit term. Lower: sexual " +
+        "language, sentences with sexual language, anatomical terms.",
     );
   });
 
@@ -408,9 +410,9 @@ describe("one genre on the real data", () => {
     expect(chain.lower[0].id).toBe("pub_year");
     expect(chain.higher[0].id).toBe("age_years");
     expect(profileTakeaway(chain).map(takeawayLine)).toEqual([
-      "Lower: publication year, sexual language, sexual language in the last fifth.",
       "Higher: italics, author’s story count, vocabulary variety (moving average).", // the next one is taken
       "Later: where the first sex scene starts, words before first explicit term.",
+      "Lower: publication year, sexual language, sexual language in the last fifth.",
       "A different mix: narrative perspective.",
     ]);
     // "5,000 words or more": Fetish's only lower item is story age, so that line goes

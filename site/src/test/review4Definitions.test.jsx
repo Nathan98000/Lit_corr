@@ -10,10 +10,12 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "../App.jsx";
+import { nameEnd } from "../components/ComparisonProfile.jsx";
 import { downloadChartImage, listsImagePlan } from "../lib/chartImage.js";
 import { clearCache } from "../lib/data.js";
 import { CAUSAL, UK_SPELLINGS } from "./scans.js";
 import { fixtureFetch, fixtureMeta } from "./fixtures.js";
+import { rowName } from "./rows.js";
 
 vi.mock("../lib/chartImage.js", async (original) => ({ ...(await original()), downloadChartImage: vi.fn(async () => {}) }));
 
@@ -79,17 +81,27 @@ describe("I16: a “?” on every row, just after its name", () => {
       expect(rows.some((r) => r.closest(".profile-list"))).toBe(true);
       expect(rows.some((r) => r.closest(".profile-topic"))).toBe(true);
       for (const row of rows) {
-        const label = row.querySelector(".profile-label-text").textContent;
+        const label = rowName(row);
         const button = row.querySelector(".profile-def-button");
         expect(button.textContent).toBe("?");
         expect(button.getAttribute("type")).toBe("button");
         expect(button.getAttribute("aria-label")).toBe(`What “${label}” measures`);
         expect(button.getAttribute("aria-expanded")).toBe("false");
-        // just after the name, kept with its last word: a word joiner in the name's box, which doesn't wrap
+        // just after the name, with its last word, in a box that doesn't wrap (the owner, 2026-10-13: never on a line of
+        // its own): the word in a copy of the row's link, out of the tab order and hidden from screen readers, then a
+        // word joiner and the "?"
         const link = row.querySelector(".profile-link");
-        expect(link.nextSibling.textContent).toBe("\u2060");
-        expect(link.nextSibling.nextSibling).toBe(button);
-        expect(link.contains(button)).toBe(false); // a button never sits inside a link
+        const end = link.nextSibling;
+        expect(end.className).toBe("profile-name-end");
+        const copy = end.firstChild;
+        expect(copy.className).toBe("profile-link-end");
+        expect(copy.getAttribute("href")).toBe(link.getAttribute("href"));
+        expect(copy.getAttribute("tabindex")).toBe("-1");
+        expect(copy.getAttribute("aria-hidden")).toBe("true");
+        expect(copy.textContent).toBe(label.slice(label.lastIndexOf(" ") + 1));
+        expect(copy.nextSibling.textContent).toBe("\u2060");
+        expect(copy.nextSibling.nextSibling).toBe(button);
+        expect(link.contains(button) || copy.contains(button)).toBe(false); // a button never sits inside a link
         const def = document.getElementById(button.getAttribute("aria-controls"));
         expect(row.contains(def)).toBe(true);
         expect(def.hidden).toBe(true);
@@ -102,7 +114,7 @@ describe("I16: a “?” on every row, just after its name", () => {
 
   it("shows the description under the row's name when pressed, and hides it when pressed again", async () => {
     const user = await open(...PAGES[0].slice(1));
-    const row = document.querySelector(".profile-list .profile-row");
+    const row = [...document.querySelectorAll(".profile-list .profile-row")].find((r) => rowName(r) === "Dialogue share");
     const button = within(row).getByRole("button", { name: /^What “Dialogue share” measures$/ });
     const def = document.getElementById(button.getAttribute("aria-controls"));
     const hash = window.location.hash;
@@ -121,17 +133,21 @@ describe("I16: a “?” on every row, just after its name", () => {
     expect(row.classList.contains("defined")).toBe(false);
   });
 
-  it("leaves the row opening from its name, as before", async () => {
+  it("leaves the row opening from its name, its last word too, as before", async () => {
     const user = await open(...PAGES[0].slice(1));
-    const row = document.querySelector(".profile-list .profile-row");
-    await user.click(within(row).getByRole("button", { name: /measures$/ }));
-    await user.click(row.querySelector(".profile-link"));
+    const row = () => [...document.querySelectorAll(".profile-list .profile-row")].find((r) => rowName(r) === "Dialogue share");
+    await user.click(within(row()).getByRole("button", { name: /measures$/ }));
+    await user.click(row().querySelector(".profile-link"));
+    await waitFor(() => expect(window.location.hash).toBe("#/genres?var=dlg_word_share&include=all"));
+    window.history.back();
+    await waitFor(() => expect(document.querySelector(".genres-page .genre-profile[aria-busy='false'] .profile-list")).toBeTruthy());
+    await user.click(row().querySelector(".profile-link-end"));
     await waitFor(() => expect(window.location.hash).toBe("#/genres?var=dlg_word_share&include=all"));
   });
 
   it("is never remembered: the way back and a new answer start with every definition closed", async () => {
     const user = await open(...PAGES[0].slice(1));
-    const first = () => document.querySelector(".profile-list .profile-row");
+    const first = () => [...document.querySelectorAll(".profile-list .profile-row")].find((r) => rowName(r) === "Dialogue share");
     await user.click(within(first()).getByRole("button", { name: /measures$/ }));
     expect(first().classList.contains("defined")).toBe(true);
     await user.click(first().querySelector(".profile-link"));
@@ -186,13 +202,18 @@ describe("I16: how it looks", () => {
     expect(rule).toMatch(/font-size: var\(--text-13\);/);
   });
 
-  it("keeps it on its name's last line: the name's box doesn't wrap (a word joiner before the “?”), its words and unit lines do", () => {
-    expect(css).toMatch(/\.profile-name \{\s*white-space: nowrap;\s*overflow-wrap: break-word;\s*\}/);
-    // the wide rows' balance mustn't use the shorthand text-wrap, which would set the name's box wrapping again
+  it("never lets it take a line of its own: its name's last word and it share a box that doesn't wrap; the rest wraps", () => {
+    expect(css).toMatch(/\.profile-name-end \{\s*white-space: nowrap;\s*\}/);
+    expect(css).toMatch(/\.profile-name \{\s*overflow-wrap: break-word;\s*\}/); // the name's words wrap
+    expect(css).not.toMatch(/\.profile-name \{[^}]*white-space: nowrap/);
     expect(css).toMatch(/\.genre-profile:not\(\.stacked\) \.profile-name \{\s*text-wrap-style: balance;/);
-    expect(css).not.toMatch(/\.profile-name[^{]*\{[^}]*text-wrap: /);
-    expect(css).toMatch(/\.profile-label-text \{[^}]*white-space: normal;/);
     expect(css).toMatch(/\.profile-unit \{\s*display: block;\s*white-space: normal;/);
+    // the last word goes with it: the whole of a one-word name, never inside a word
+    expect(nameEnd("Shame & embarrassment")).toEqual(["Shame & ", "embarrassment"]);
+    expect(nameEnd("Uncertainty")).toEqual(["", "Uncertainty"]);
+    expect(nameEnd("Word variety (type–token ratio)")).toEqual(["Word variety (type–token ", "ratio)"]);
+    // hovering the name or its last word underlines the whole name and marks the row
+    expect(css).toMatch(/\.profile-row:has\(\.profile-link:hover, \.profile-link-end:hover\) \.profile-label-text \{\s*text-decoration: underline;/);
   });
 
   it("gives it a 44 px wide area the row's height, centered on it, under the name and over the row's link", () => {

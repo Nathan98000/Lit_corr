@@ -163,12 +163,12 @@ describe("the picker on the Genres page (F77)", () => {
     expect(note()).toBe("");
   });
 
-  it("says a popularity measure is one, with a link to see it in Explore", async () => {
+  it("says a popularity measure is one, with a link to see it on the Popularity page", async () => {
     const user = userEvent.setup();
     genresPicker();
     await user.type(screen.getByRole("combobox"), "rating");
-    expect(note()).toBe("“Ratings (number of)” is a popularity measure, not a story characteristic. See it in Explore →");
-    expect(within(document.querySelector(".pick-measure-note")).getByRole("link", { name: /See it in Explore/ }).getAttribute("href")).toBe(
+    expect(note()).toBe("“Ratings (number of)” is a popularity measure, not a story characteristic. See it on the Popularity page →");
+    expect(within(document.querySelector(".pick-measure-note")).getByRole("link", { name: /See it on the Popularity page/ }).getAttribute("href")).toBe(
       "#/explore?metric=pop_rating_count",
     );
   });
@@ -187,10 +187,10 @@ describe("the picker on the Genres page (F77)", () => {
     expect(topic.querySelector(".topic-blurb").textContent).toBe("Year, month, weekday, years online");
     await user.type(screen.getByRole("combobox"), "rating");
     expect(screen.getByRole("button", { name: "Show ratings (number of)" })).toBeTruthy();
-    expect(screen.queryByRole("link", { name: /See it in Explore/ })).toBeNull();
+    expect(screen.queryByRole("link", { name: /See it on the Popularity page/ })).toBeNull();
   });
 
-  it("is given the note and the link by the Genres page, and opens Explore with the measure and the characteristic", async () => {
+  it("is given the note and the link by the Genres page, and opens Popularity (Explore) with the measure and the characteristic", async () => {
     window.history.replaceState(null, "", "/#/genres?var=dlg_word_share");
     const user = userEvent.setup();
     render(<App />);
@@ -198,7 +198,7 @@ describe("the picker on the Genres page (F77)", () => {
     await user.click(screen.getByRole("button", { name: /^Story characteristic:/ }));
     const box = await screen.findByRole("combobox", { name: /^Search/ });
     await user.type(box, "rating");
-    const link = await within(document.querySelector(".pick-measure-note")).findByRole("link", { name: /See it in Explore/ });
+    const link = await within(document.querySelector(".pick-measure-note")).findByRole("link", { name: /See it on the Popularity page/ });
     expect(link.getAttribute("href")).toBe("#/explore?genre=all&metric=pop_rating_count&var=dlg_word_share&include=all");
   });
 });

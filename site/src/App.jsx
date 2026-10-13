@@ -3,6 +3,7 @@ import Explorer, { ChartPlaceholder } from "./components/Explorer.jsx";
 import { PartBoundary } from "./components/lazyPart.jsx";
 import LoadError from "./components/LoadError.jsx";
 import { GenresPage, Methodology, PatternBrowser, TrendsPage } from "./components/pages.js";
+import SiteNav from "./components/SiteNav.jsx";
 import useScrollFloor from "./components/useScrollFloor.js";
 import { clearCache, loadMeta, prefetchGenres, prefetchTrends } from "./lib/data.js";
 import { scrollBehavior } from "./lib/motion.js";
@@ -23,35 +24,16 @@ const PAGE_TITLES = {
 };
 const DEFAULT_QUESTION = "In all genres, how does the average rating vary with word count?";
 
-// The masthead's pages, in its order (D7), and the links a phone shows below each width (D4; styles.css hides a link
-// from its width down): four below 602 px, three below 414, two below 352.
-export const NAV = ["explore", "genres", "trends", "patterns", "methodology"];
-export const NAV_TIERS = [
-  { below: 602, links: ["explore", "genres", "trends", "patterns"] },
-  { below: 414, links: ["genres", "trends", "patterns"] },
-  { below: 352, links: ["genres", "trends"] },
-];
-// pages whose masthead keeps the sets above as they are: How it works's own link is too long to take another's place
-// with 8 px to spare at 300–326, 352–380, 414–439 and 484–513 px, and its section bar names the page (the owner's
-// choice, 2026-10-13)
-const NAV_AS_BEFORE = new Set(["methodology"]);
-
-/**
- * The links a phone's masthead shows on `page` from a set of today's (round 4's U1): the same number, the page being
- * read always one of them; where it isn't in the set, the set's last link (in the masthead's order) that isn't it
- * makes room for it ("Explore Genres Trends" at 375 px on Explore).
- */
-export function navSet(links, page) {
-  if (NAV_AS_BEFORE.has(page) || !NAV.includes(page) || links.includes(page)) return links;
-  const last = [...links].reverse().find((l) => l !== page);
-  return NAV.filter((l) => (links.includes(l) && l !== last) || l === page);
-}
-
-/** The class that hides a masthead link on this page from the width where it leaves ("drop-414"), or "". */
-export function navDrop(link, page) {
-  const tier = NAV_TIERS.find(({ links }) => !navSet(links, page).includes(link));
-  return tier ? `drop-${tier.below}` : "";
-}
+// The masthead's pages, in its order (D7): Patterns is a part of Popularity (the Popularity page links to it), and on a
+// phone every page is in the masthead's menu (SiteNav.jsx; the owner, 2026-10-13)
+export const NAV = ["explore", "genres", "trends", "methodology"];
+export const PAGE_NAMES = {
+  explore: "Popularity",
+  genres: "Genres",
+  trends: "Trends",
+  patterns: "Patterns",
+  methodology: "How it works",
+};
 
 /**
  * A new address in place (a control's change; an old link's setting dropped): no new history entry, and the entry's
@@ -239,7 +221,6 @@ export default function App() {
     TrendsPage.preload();
     prefetchTrends(lastTrends.current?.sub || "all", lastTrends.current?.genre || "all");
   };
-  const patternsLink = toHash("patterns", { genre: lastExplore.current.genre, metric: lastExplore.current.metric });
 
   const updatePatterns = useCallback((next) => {
     replaceHash(toHash("patterns", next));
@@ -282,52 +263,38 @@ export default function App() {
           <a className="brand" href={toHash("explore", lastExplore.current)}>
             {SITE_NAME}
           </a>
-          {/* on phones the links that leave keep the page being read (navDrop, U1) */}
-          <nav aria-label="Pages">
-            <a
-              className={`nav-explore ${navDrop("explore", route.page)}`.trim()}
-              href={toHash("explore", lastExplore.current)}
-              aria-current={route.page === "explore" ? "page" : undefined}
-            >
-              Explore
-            </a>
-            <a
-              className={`nav-genres ${navDrop("genres", route.page)}`.trim()}
-              href={genresLink}
-              aria-current={route.page === "genres" ? "page" : undefined}
-              onPointerEnter={preloadGenres}
-              onFocus={preloadGenres}
-            >
-              Genres
-            </a>
-            <a
-              className={`nav-trends ${navDrop("trends", route.page)}`.trim()}
-              href={trendsLink}
-              aria-current={route.page === "trends" ? "page" : undefined}
-              onPointerEnter={preloadTrends}
-              onFocus={preloadTrends}
-            >
-              Trends
-            </a>
-            <a
-              className={`nav-patterns ${navDrop("patterns", route.page)}`.trim()}
-              href={patternsLink}
-              aria-current={route.page === "patterns" ? "page" : undefined}
-              onPointerEnter={PatternBrowser.preload}
-              onFocus={PatternBrowser.preload}
-            >
-              Patterns
-            </a>
-            <a
-              className={`nav-how ${navDrop("methodology", route.page)}`.trim()}
-              href="#/methodology"
-              aria-current={route.page === "methodology" ? "page" : undefined}
-              onPointerEnter={Methodology.preload}
-              onFocus={Methodology.preload}
-            >
-              How it works
-            </a>
-          </nav>
+          <SiteNav
+            here={PAGE_NAMES[route.page] || PAGE_NAMES.explore}
+            links={[
+              {
+                id: "explore",
+                label: PAGE_NAMES.explore,
+                href: toHash("explore", lastExplore.current),
+                current: route.page === "explore" ? "page" : route.page === "patterns" ? "section" : null,
+              },
+              {
+                id: "genres",
+                label: PAGE_NAMES.genres,
+                href: genresLink,
+                current: route.page === "genres" ? "page" : null,
+                preload: preloadGenres,
+              },
+              {
+                id: "trends",
+                label: PAGE_NAMES.trends,
+                href: trendsLink,
+                current: route.page === "trends" ? "page" : null,
+                preload: preloadTrends,
+              },
+              {
+                id: "how",
+                label: PAGE_NAMES.methodology,
+                href: "#/methodology",
+                current: route.page === "methodology" ? "page" : null,
+                preload: Methodology.preload,
+              },
+            ]}
+          />
         </div>
       </header>
 
@@ -435,34 +402,6 @@ export default function App() {
       <footer className="site-footer">
         <div className="wrap">
           <p>An independent project, not affiliated with or endorsed by Literotica.</p>
-          {/* every page in the masthead's order (D7): on phones the masthead keeps only some of them */}
-          <nav aria-label="All pages">
-            <ul className="footer-pages">
-              <li>
-                <a href={toHash("explore", lastExplore.current)}>Explore</a>
-              </li>
-              <li>
-                <a href={genresLink} onPointerEnter={preloadGenres} onFocus={preloadGenres}>
-                  Genres
-                </a>
-              </li>
-              <li>
-                <a href={trendsLink} onPointerEnter={preloadTrends} onFocus={preloadTrends}>
-                  Trends
-                </a>
-              </li>
-              <li>
-                <a href={patternsLink} onPointerEnter={PatternBrowser.preload} onFocus={PatternBrowser.preload}>
-                  Patterns
-                </a>
-              </li>
-              <li>
-                <a href="#/methodology" onPointerEnter={Methodology.preload} onFocus={Methodology.preload}>
-                  How it works
-                </a>
-              </li>
-            </ul>
-          </nav>
         </div>
       </footer>
     </div>

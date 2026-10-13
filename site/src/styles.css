@@ -215,7 +215,10 @@ main.wrap {
 }
 
 /* ---------------------------------------------------------------- masthead */
+/* over the page (and How it works' section bar), so that the phone's menu opens over it */
 .masthead {
+  position: relative;
+  z-index: 25;
   border-bottom: 1px solid var(--rule);
   background: var(--paper);
 }
@@ -242,14 +245,24 @@ main.wrap {
   white-space: nowrap;
 }
 
-.masthead nav {
+/* the pages in a row, the page being read (or, on Patterns, its section) underlined; on a phone, a menu (below) */
+.site-nav {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.nav-links {
   display: flex;
   gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
   font-size: var(--text-15);
   line-height: var(--leading-15);
 }
 
-.masthead nav a {
+.nav-links a {
   display: inline-flex;
   align-items: center;
   height: 52px;
@@ -260,9 +273,13 @@ main.wrap {
   border-bottom: 2px solid transparent;
 }
 
-.masthead nav a[aria-current="page"] {
+.nav-links a[aria-current] {
   color: var(--ink);
   border-bottom-color: var(--accent);
+}
+
+.menu-button {
+  display: none;
 }
 
 h1,
@@ -781,11 +798,9 @@ h3 {
 }
 
 .glossary-blurb {
-  display: block;
-  flex-basis: 100%;
+  margin: 0;
   font-size: var(--text-13);
   line-height: var(--leading-13);
-  font-weight: 400;
   color: var(--ink-3);
 }
 
@@ -815,19 +830,22 @@ h3 {
   margin-bottom: var(--space-8);
 }
 
+/* a topic of the glossary: its name and count, its blurb, then every characteristic with its definition */
 .glossary-group {
   border-top: 1px solid var(--rule);
-  padding: var(--space-12) 0;
+  padding: var(--space-12) 0 0;
 }
 
-.glossary-group summary {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0 6px;
-  min-height: var(--target);
-  cursor: pointer;
-  font-weight: 600;
+.prose .glossary-group h3 {
+  margin: 0 0 var(--space-4);
+}
+
+.glossary-count {
+  font-family: var(--sans);
+  font-size: var(--text-15);
+  font-weight: 400;
+  line-height: var(--leading-15);
+  color: var(--ink-3);
 }
 
 .glossary {
@@ -864,30 +882,6 @@ h3 {
   margin: 0 0 var(--space-12);
 }
 
-/* every page, in the masthead's order (D7), as the mock-up draws them: spaced links, each a 44 px target; when they
-   don't fit on one line they wrap in balanced lines, so no link sits alone on a line */
-.footer-pages {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  text-wrap: balance;
-}
-
-.footer-pages li {
-  display: inline;
-}
-
-.footer-pages a {
-  display: inline-flex;
-  align-items: center;
-  min-height: var(--target);
-  margin-right: var(--space-16);
-}
-
-.footer-pages li:last-child a {
-  margin-right: 0;
-}
-
 
 
 /* -------------------------------------------------------------- small screens */
@@ -900,9 +894,6 @@ h3 {
     padding-bottom: 48px;
   }
 
-  .masthead nav {
-    gap: 14px;
-  }
 
 }
 
@@ -1461,6 +1452,19 @@ h3 {
   color: var(--ink-2);
 }
 
+/* Popularity's way to the Patterns page, at the row's end (on a line of its own, at its end, when the row is full) */
+.patterns-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--target);
+  margin-left: auto;
+  text-decoration: none;
+}
+
+.patterns-link:hover {
+  text-decoration: underline;
+}
+
 .include {
   display: inline-flex;
   align-items: center;
@@ -1945,38 +1949,80 @@ html[data-page="explore"] body {
   }
 }
 
-/* Phones (D4, D7; round 4's U1): four links below 602 px, three below 414 and two below 352, the links tightening below
-   484, and the page being read always one of them: a link leaves from the width its class names (drop-602 …,
-   App.jsx's navDrop: How it works first, then Explore, then Patterns, unless one of them is the page being read, when
-   the set's last other link leaves instead). The footer lists every page. Each breakpoint is the narrowest width that
-   keeps 8 px to spare, measured on this Mac (masthead.mjs, mastfit5.mjs: every page's set); with the type scale's sizes
-   (the name 18 px, the links 15) the tightened links have 4 px at each side, so every breakpoint holds. */
-@media (max-width: 601px) {
-  .masthead nav a.drop-602 {
-    display: none;
-  }
-}
-
-@media (max-width: 483px) {
-  .masthead nav {
-    gap: 0;
+/* Phones (the owner's follow-up to round 4): below 548 px the pages don't fit in a row beside the site's name, so one
+   button names the page being read beside a menu icon, and opens every page in a panel under the masthead, over the
+   page (SiteNav.jsx); each a 48 px row, the page being read marked by a bar at its start. 548 px is the narrowest
+   width at which the row keeps 8 px to spare on every page in Verdana (502 in the site's font), measured on this Mac
+   (navfit.mjs); the button fits beside the name from 300 px. */
+@media (max-width: 547px) {
+  .menu-button {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-8);
+    min-height: var(--target);
+    margin-right: -8px;
+    padding: 0 8px;
+    border: 0;
+    background: none;
+    color: var(--ink);
+    font: inherit;
     font-size: var(--text-15);
+    line-height: var(--leading-15);
+    white-space: nowrap;
+    cursor: pointer;
   }
 
-  .masthead nav a {
-    padding: 0 4px;
+  /* where the name and the button can't share the bar (a wide font under 320 px), the page's name gives way: "How it
+     wo…", never a sideways scroll */
+  .menu-button {
+    min-width: 0;
   }
-}
 
-@media (max-width: 413px) {
-  .masthead nav a.drop-414 {
+  .nav-here {
+    overflow: hidden;
+    padding: 2px 0;
+    border-bottom: 2px solid var(--accent);
+    text-overflow: ellipsis;
+  }
+
+  .menu-icon {
+    flex: none;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+  }
+
+  .nav-links {
     display: none;
   }
-}
 
-@media (max-width: 351px) {
-  .masthead nav a.drop-352 {
-    display: none;
+  .site-nav.open .nav-links {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    display: block;
+    padding: var(--space-4) 0;
+    border-bottom: 1px solid var(--rule-2);
+    background: var(--paper);
+    box-shadow: 0 8px 16px rgb(20 20 26 / 0.08);
+  }
+
+  .site-nav.open .nav-links a {
+    display: flex;
+    height: auto;
+    min-height: 48px;
+    padding: 0 16px 0 13px;
+    border-bottom: 0;
+    border-left: 3px solid transparent;
+    font-size: var(--text-16);
+    line-height: var(--leading-16);
+  }
+
+  .site-nav.open .nav-links a[aria-current] {
+    border-left-color: var(--accent);
+    font-weight: 600;
   }
 }
 

@@ -63,7 +63,7 @@ function PeriodStories({ file, minN }) {
 /**
  * What changed (View 2, §4.1), the page's default: "One genre" as approved, relabeled and drawn by ComparisonProfile.
  * The heading (how many of the characteristics compared clearly changed from 2000–2009 to 2020 or later) and the
- * sample line; the takeaway (word count's change, "▼ Fell", "▲ Rose", "≠ A different mix"); the note; the lists,
+ * sample line; the takeaway (word count's change, "▲ Rose", "▼ Fell", "≠ A different mix"); the note; the lists,
  * ordered by the size of the change, each row's values first ("51.6 → 38.8 (−25%)") and its dot on a scale zoomed to
  * the view (changesScale); "Download image" of the lists; every characteristic by topic. Each row compares a story from
  * 2020 or later with one from 2000–2009 (the dot, out of 100) and opens its chart over time. When a window has too few
@@ -130,11 +130,11 @@ export default function TrendChanges({ meta, state, file, busy, onSwitch, onNavi
     columns: changesColumns,
     values: changesValues,
     name: (item) => changesRowName(item, file, meta.min_n),
-    link: ({ item, className, children }) => {
+    link: ({ item, className, children, ...rest }) => {
       // a characteristic the option leaves out of View 1 (a length option and a length characteristic) opens with all stories
       const sub = subsetConflict(subset, item.variable) ? "all" : file.s;
       return (
-        <ChartLink className={className} to={{ v: item.id, genre: file.g, sub }} onNavigate={onNavigate}>
+        <ChartLink className={className} to={{ v: item.id, genre: file.g, sub }} onNavigate={onNavigate} {...rest}>
           {children}
         </ChartLink>
       );

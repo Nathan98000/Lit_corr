@@ -27,7 +27,7 @@ const plainClick = (e) => !(e.defaultPrevented || e.button !== 0 || e.metaKey ||
  * A link to the other view: a row's to its chart over time (View 1), for its characteristic, genre and option; View
  * 1's "See all changes →" to what changed in its genre and option. A new history entry, focus on the question.
  */
-export function ChartLink({ to, onNavigate, className, label, children }) {
+export function ChartLink({ to, onNavigate, className, label, children, ...rest }) {
   return (
     <a
       className={className}
@@ -38,6 +38,7 @@ export function ChartLink({ to, onNavigate, className, label, children }) {
         e.preventDefault();
         onNavigate(to, { focus: true });
       }}
+      {...rest}
     >
       {children}
     </a>

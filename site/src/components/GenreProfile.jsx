@@ -29,7 +29,7 @@ export const tooFewText = (genre, subset, minN) =>
 
 /**
  * One genre against all genres (View 2), drawn by ComparisonProfile: how many characteristics clearly set the genre
- * apart, the three biggest differences, the characteristics lower and higher in the genre (ordered by the size of the
+ * apart, the three biggest differences, the characteristics higher and lower in the genre (ordered by the size of the
  * difference: this ranks characteristics within one genre, never genres), the named groups with a different mix,
  * "Download image" of those lists, and every characteristic by topic, folded (a topic's rows are drawn when it is
  * opened). Every row opens that characteristic's chart in every genre. With fewer stories than the rule needs, nothing
@@ -113,8 +113,8 @@ export default function GenreProfile({ meta, state, file, busy, onSwitch, onNavi
   const row = {
     columns: profileColumns,
     name: (item) => profileRowName(item, genre, minN),
-    link: ({ item, className, children }) => (
-      <ViewLink className={className} to={{ v: item.id, sub: state.sub }} onNavigate={onNavigate}>
+    link: ({ item, className, children, ...rest }) => (
+      <ViewLink className={className} to={{ v: item.id, sub: state.sub }} onNavigate={onNavigate} {...rest}>
         {children}
       </ViewLink>
     ),

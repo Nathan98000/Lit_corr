@@ -50,8 +50,8 @@ function withoutExcluded(meta, exclude, keepBlurbs = []) {
  *
  * A query that names a popularity measure ("rating") says so above any results, with a button that switches the
  * measure instead (F45), where the page has measures (`onPickMetric`), or a link to see it on another page
- * (`metricHref(id)`, the Genres page's "See it in Explore →", F77). A query that names a characteristic the page leaves
- * out says so (`excludedNote`).
+ * (`metricHref(id)`, the Genres page's "See it on the Popularity page →", F77). A query that names a characteristic the
+ * page leaves out says so (`excludedNote`).
  *
  * While a query is typed in the phone's sheet, results are one line each (the label, then the topic) and Close moves
  * into the search row, so that more results stay above the on-screen keyboard (F57; styles.css does the folding).
@@ -382,7 +382,7 @@ export default function CharacteristicPicker({
           <p className="pick-measure">
             “{named.label}” is a popularity measure, not a story characteristic.{" "}
             {metricHref ? (
-              <a href={metricHref(named.id)}>See it in Explore{"\u00a0"}→</a>
+              <a href={metricHref(named.id)}>See it on the Popularity page{"\u00a0"}→</a>
             ) : (
               <button type="button" className="link-button" onClick={() => onPickMetric(named.id)}>
                 Show {named.label.toLowerCase()}

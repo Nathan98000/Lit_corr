@@ -6,6 +6,15 @@
    variables of styles.css. */
 
 /* ------------------------------------------------------------------ takeaway and notes */
+/* what the characteristic measures, under the heading (meta's description, as on the Trends page) */
+.genre-what {
+  margin: var(--space-4) 0 0;
+  max-width: 62ch;
+  font-size: var(--text-14);
+  line-height: var(--leading-14);
+  color: var(--ink-3);
+}
+
 .genre-takeaway p {
   margin: 0 0 var(--space-4);
 }

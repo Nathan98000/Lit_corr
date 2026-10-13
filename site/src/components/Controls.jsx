@@ -1,11 +1,12 @@
 import { forwardRef, useCallback, useEffect, useId, useRef, useState } from "react";
 import { prefetchVariable } from "../lib/data.js";
 import { scrollBehavior } from "../lib/motion.js";
-import { conflictNote, subsetConflict } from "../lib/urlState.js";
-import { genreWords, questionParts, questionText } from "../lib/wording.js";
+import { conflictNote, subsetConflict, toHash } from "../lib/urlState.js";
+import { genreWords, questionParts, questionText, theMeasure } from "../lib/wording.js";
 import InlineSelect, { SlotWords } from "./InlineSelect.jsx";
 import { PartBoundary, lazyPart } from "./lazyPart.jsx";
 import Overlay from "./Overlay.jsx";
+import { PatternBrowser } from "./pages.js";
 import useMediaQuery from "./useMediaQuery.js";
 
 // The picker and the measure menu load their code when first needed; the explorer fetches it once the first chart is
@@ -116,7 +117,8 @@ export const SlotButton = forwardRef(function SlotButton({ expanded, onPress, ch
  * The controls are the question itself (concept B): "In [all genres], how do [favorites per 1,000 views] vary with
  * [word count]?" (the genre in lower case inside the sentence, its option "All genres"), then "Only include: [All
  * stories]". Genre and "only include" are native selects styled as words; the measure and the characteristic open a
- * menu and a picker.
+ * menu and a picker. At the row's end, "All clear patterns →" opens the Patterns page for this genre and measure (it
+ * is no longer in the masthead: the owner, 2026-10-13).
  */
 export default function Controls({ meta, state, onChange }) {
   const set = (patch) => onChange({ ...state, ...patch });
@@ -224,6 +226,16 @@ export default function Controls({ meta, state, onChange }) {
             )}
           </InlineSelect>
         </span>
+        {/* named for this genre and measure, its words first (label in name) */}
+        <a
+          className="patterns-link"
+          href={toHash("patterns", { genre: state.genre, metric: state.metric })}
+          aria-label={`All clear patterns with ${theMeasure(metric)}${genre.id === "all" ? " across all genres" : ` in ${genre.name}`}`}
+          onPointerEnter={PatternBrowser.preload}
+          onFocus={PatternBrowser.preload}
+        >
+          All clear patterns{"\u00a0→"}
+        </a>
       </div>
       {anyConflict && (
         <p className="include-note visually-hidden" id={`${ids}-include-note`}>

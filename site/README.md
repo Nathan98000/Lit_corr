@@ -11,19 +11,31 @@ unit ("Stories grouped by word count"; yes/no characteristics, whose two rows na
 measure's name sits over the plot, on its ticks, with the rating's scale ("Average rating (1 to 5 stars)"). Right under
 the chart one line leads to the same characteristic on the other pages: "By genre →" and "Over time →" (the way across;
 see below). "Download image" saves the chart on screen as a PNG: its title, subtitle and key, the chart, and the
-credit. The Patterns page lists every clear pattern for a genre and a measure, topic by topic; it opens as the other
-pages do, with its question, "Clear patterns in [all genres] with the [average rating]", as its h1.
+credit. This page is **Popularity** in the masthead (its addresses stay `#/explore…`; the code calls it Explore).
+
+The **Patterns** page lists every clear pattern for a genre and a measure, topic by topic; it opens as the other pages
+do, with its question, "Clear patterns in [all genres] with the [average rating]", as its h1. It is a part of
+Popularity, not a page of the masthead (the owner, 2026-10-13): "All clear patterns →", at the end of Popularity's
+"Only include" row (named for the genre and measure: "All clear patterns with the average rating across all genres"),
+and Keep exploring's first item lead to it, and on it the masthead marks Popularity.
+
+**The masthead** lists Popularity, Genres, Trends and How it works, in a row from 548 px, the page being read
+underlined. On a phone (below 548 px, where the four don't fit beside the site's name in Verdana; 502 px in the site's
+font) one button names the page being read beside a menu icon (☰), named "Genres, menu", and opens every page in a
+panel under the masthead, over the page: 48 px rows, the page being read marked by a bar at its start. The panel closes
+on a link, Escape (focus back on the button), a tap or click outside it, or focus leaving it. The footer is one
+sentence: "An independent project, not affiliated with or endorsed by Literotica."
 
 Every page but How it works opens the same way (round 4's X2): a kicker, then the page's question as its h1, at one
 size, in balanced lines at every width and at most 44 characters wide from 760 px (so its last word is never left
-alone on a desktop). On Explore the kicker is the site's headline; on the others it names the page and the source
+alone on a desktop). On Popularity the kicker is the site's headline; on the others it names the page and the source
 ("Genres · about 9,000 Literotica stories · 30 genres", "Trends · about 9,000 Literotica stories · 2000–2026",
 "Patterns · …"), and its "·" never starts or ends a line.
 
-**The way across** (round 4's I15): under each one-characteristic chart (Explore's, the Genres page's and the Trends
+**The way across** (round 4's I15): under each one-characteristic chart (Popularity's, the Genres page's and the Trends
 page's) the same line of links, named the same way and in the same order: "By genre →" (the Genres page, with this
 "Only include" option), "Over time →" (the Trends page, with this genre and option where it offers them) and "With
-popularity →" (Explore, with this genre and option and the measure last used there). A link shows only where its page
+popularity →" (Popularity, with this genre and option and the measure last used there). A link shows only where its page
 has the characteristic, the page being read drops out, and each is named for the characteristic ("Word count by
 genre"); it describes that one characteristic and never suggests another.
 
@@ -34,12 +46,15 @@ over All genres' bar), and, for characteristics where most stories score 0, one 
 median among its stories with any, then that median and how many have any. ▲ ▼ ≠ mark a genre that clearly differs, in
 a column beside its name; the line above the chart says the order ("Genres in alphabetical order", or by median or
 share with its A–Z / By … switch); under the chart, the way across ("Over time →", "With popularity →") and "Download
-image". "What stands out about stories in [Romance]?" gives the genre's number of stories and a line for each direction
-(▼ Lower, ▲ Higher, ≠ A different mix; a position is listed under its own word: "▲ Later: where the first sex scene
-starts", "▼ Earlier", "▼ Sooner"), then a note above the first list, in the Trends page's words: "Each dot compares a
+image". Under its heading the page says what the characteristic measures, from `meta.json`'s description, as the
+Trends page does. "What stands out about stories in [Romance]?" gives the genre's number of stories and a line for each
+direction, the increases first (▲ Higher, then ▼ Lower, then ≠ A different mix; a position is listed under its own word,
+after its direction: "▲ Later: where the first sex scene starts", "▼ Earlier", "▼ Sooner"), then a note above the first
+list, in the Trends page's words: "Each dot compares a
 story in Romance with a story from all genres, counting every story, not only the medians (50 is a tie; how this is
 decided). Tap a row for every genre's numbers." ("Click" where the device can hover). Then the
-characteristics that set the genre apart from all genres, the largest differences first. Each row has a dot on one
+characteristics that set the genre apart from all genres, the Higher list first, each list the largest differences
+first. Each row has a dot on one
 scale (under the axis title "How often a story in Romance comes out higher than a story from all genres, out of 100",
 with the no-difference zone at 40–60 bracketed), the genre's and all genres' numbers in two columns with the same
 decimals ("7.8 vs 19.3", "10.0 vs 3.8": three significant digits for the larger, at least two for the smaller), the
@@ -56,27 +71,29 @@ genres (for named groups, a total variation distance of at least 0.2), clear at 
 stories; a genre with fewer is named as too few to compare.
 
 **Definitions in place** (round 4's I16): every row of "One genre" and of the Trends page's "What changed" (lists and
-open topics) has a "?" just after its name, kept on the line of the name's last word (in a cell too narrow for the two,
-it takes the next line rather than run past the cell): an 18 px circle named "What “Word count” measures", with
-`aria-expanded` and `aria-controls`. Pressing it shows the characteristic's `description` from `meta.json` under the
-row's name (13 px, at most 62ch); pressing it again hides it, and a new answer or Back starts with every definition
-closed. The row is a container whose link (its name, stretched over the row) opens its chart from
-anywhere but the "?", whose area is 44 px wide and the row's height; one tab stop for each. The images draw no "?" and
-no definition.
+open topics) has a "?" just after its name, never on a line of its own: the name's last word and the "?" share a box
+that doesn't wrap (the word in a copy of the row's link, out of the tab order and hidden from screen readers), and where
+the two are wider than the cell (at 320 px, "Shame & embarrassment") they run into the gap beside it. The "?" is an
+18 px circle named "What “Word count” measures", with `aria-expanded` and `aria-controls`. Pressing it shows the
+characteristic's `description` from `meta.json` under the row's name (13 px, at most 62ch); pressing it again hides it,
+and a new answer or Back starts with every definition closed. The row is a container whose link (its name, stretched
+over the row) opens its chart from anywhere but the "?", whose area is 44 px wide and the row's height; one tab stop for
+each. The images draw no "?" and no definition.
 
-The **Trends** page shows how the stories themselves changed over time. It opens on **All changes**: "What has
-changed in stories across [all genres]?" ("… in [Romance]?") says how many of the characteristics compared clearly
-changed from 2000–2009 to 2020 or later ("26 of 180 characteristics clearly changed …") and how many stories each
-window has. A takeaway follows: how word count changed, and the ▼ Fell / ▲ Rose / ≠ lines, each naming up to three
-changes and ending "and 2 more" when its list holds more. Then the note, "Each dot compares a story from 2020 or later
-with a story from 2000–2009 (50 is a tie). Tap a row for its chart over time." ("Click" where the device can hover),
-and the lists, the largest change first, in "One genre"'s rows (with their "?" definitions and their units on a line of
-their own). Each reads the two windows' values first ("51.6 → 38.8 (−25%)", under "Median story or share"), then a dot
-on a scale zoomed to the view (how often a story from 2020 or later comes out higher than a story from 2000–2009, out
-of 100). "Download image" saves the lists, every characteristic by topic follows, and a row opens its chart over time.
-A genre whose windows have too few stories says so, with its stories per period. The switch "All changes · One
-characteristic" leads to one characteristic over five periods of publication (2000–04 to 2020 and later): "Across
-[all genres], how has [word count] changed over time?" ("how have" for a plural noun; "In [Romance], …").
+The **Trends** page shows how the stories themselves changed over time. It opens on **All changes**: "What has changed
+in stories across [all genres]?" ("… in [Romance]?") says how many of the characteristics compared clearly changed from
+2000–2009 to 2020 or later ("26 of 180 characteristics clearly changed …") and how many stories each window has. A
+takeaway follows: how word count changed, and the ▲ Rose / ▼ Fell / ≠ lines (what rose first, as on One genre), each
+naming up to three changes and ending "and 2 more" when its list holds more. Then the note, "Each dot compares a story
+from 2020 or later with a story from 2000–2009 (50 is a tie). Tap a row for its chart over time." ("Click" where the
+device can hover), and the lists (Rose, then Fell, then A different mix), the largest change first, in "One genre"'s
+rows (with their "?" definitions and their units on a line of their own). Each reads the two windows' values first
+("51.6 → 38.8 (−25%)", under "Median story or share"), then a dot on a scale zoomed to the view (how often a story from
+2020 or later comes out higher than a story from 2000–2009, out of 100). "Download image" saves the lists, every
+characteristic by topic follows, and a row opens its chart over time. A genre whose windows have too few stories says
+so, with its stories per period. The switch "All changes · One characteristic" leads to one characteristic over five
+periods of publication (2000–04 to 2020 and later): "Across [all genres], how has [word count] changed over time?" ("how
+have" for a plural noun; "In [Romance], …").
 It is drawn in one of four forms on one time axis:
 
 - range columns for numbers;
@@ -153,11 +170,12 @@ option; the Trends page one of at most 12.4 KB.
 ## First-load budget and lazy parts
 
 The **first load** is the HTML, the main script, the CSS, the heading font, `meta.json` and the first chart file:
-**150.5 KiB of gzip response bodies in 6 requests** (October 13, 2026, after design review 4; 150.0 before it, 149.7
-before the owner's changes to the Trends review, 148.5 before the Trends page). The Genres and Trends pages' own
-code, styles and files load only when they are opened. A visit that starts on the Genres page is 210.3 KiB in 9
-requests (204.4 in 8 before the Trends page: the code the two pages share is now a chunk of its own). One that starts
-on the Trends page is 176.9 KiB in 9, on either view; one on How it works 142.3 KiB in 7.
+**150.7 KiB of gzip response bodies in 6 requests** (October 13, 2026, after the owner's follow-up to design review 4;
+150.5 after the review, 150.0 before it, 149.7 before the owner's changes to the Trends review, 148.5 before the Trends
+page). The Genres and Trends pages' own code, styles and files load only when they are opened. A visit that starts on
+the Genres page is 210.6 KiB in 9 requests (204.4 in 8 before the Trends page: the code the two pages share is now a
+chunk of its own). One that starts on the Trends page is 177.2 KiB in 9, on either view; one on How it works 142.5 KiB
+in 7.
 Layout shift is 0 on a visit to any page, and after any change once 500 ms have passed (what moves at once is the
 question or the lists reflowing with the visitor's own choice). The budget is **155 KiB of
 gzip response bodies** for that set, measured on the built site served with gzip (the design review's `firstload.mjs`
@@ -219,17 +237,14 @@ server configuration.
 
 ```
 src/
-  App.jsx                 page shell: masthead with five pages (four links below 602 px, three below 414 and two below
-                          352, its links tighter below 484 px; the page being read is always one of them: where a
-                          width's set leaves it out, that set's last link that isn't it makes room (navSet, navDrop),
-                          so 375 px on Explore reads "Explore Genres Trends"; How it works keeps the earlier sets, How
-                          it works leaving first, as its section bar names the page; the footer lists every page),
-                          routes, the kicker (Kicker: in pieces, so no line starts or ends with "·"; Explore's is the
-                          site's headline and its h1; on Genres, Trends and Patterns it names the page and the source,
-                          a paragraph over the question, which is the h1 there), footer; remembers the Genres and
-                          Trends pages' last addresses, Explore's last measure (for "With popularity →") and the last
-                          genre chosen in the visit (the default of "One genre"); an address changed in place keeps the
-                          history entry's state (where "One genre" and "What changed" keep their open topics)
+  App.jsx                 page shell: the masthead (the site's name and SiteNav with Popularity, Genres, Trends and
+                          How it works: PAGE_NAMES), routes, the kicker (Kicker: in pieces, so no line starts or ends
+                          with "·"; Popularity's is the site's headline and its h1; on Genres, Trends and Patterns it
+                          names the page and the source, a paragraph over the question, which is the h1 there), the
+                          footer (one sentence); remembers the Genres and Trends pages' last addresses, Popularity's
+                          last measure (for "With popularity →") and the last genre chosen in the visit (the default of
+                          "One genre"); an address changed in place keeps the history entry's state (where "One genre"
+                          and "What changed" keep their open topics)
   genres.css              the Genres page's styles, loaded with its code
   trends.css              the Trends page's styles, loaded with its code
   comparison.css          "One genre"'s and "What changed"'s styles; genres.css and trends.css import it
@@ -241,8 +256,11 @@ src/
     WayAcross.jsx         the way across (I15): "By genre →", "Over time →", "With popularity →" under each
                           one-characteristic chart, for the pages that have the characteristic, the page being read
                           left out; each named for the characteristic and fetching its page ahead on hover and focus
-    Controls.jsx          the question sentence, "Only include", the sheets of the picker and the measure menu, and
-                          the question bar on phones
+    SiteNav.jsx           the masthead's pages: a row of links on a wider screen; on a phone, the button that names the
+                          page being read and opens them all in a panel over the page (Escape, a tap outside, a link
+                          or focus leaving it closes it)
+    Controls.jsx          the question sentence, "Only include" and "All clear patterns →" (the Patterns page), the
+                          sheets of the picker and the measure menu, and the question bar on phones
     CharacteristicPicker.jsx  (lazy) search-first picker body (combobox with listbox): Popular, eight topics, search,
                           a measure typed by mistake; on the Trends page, the characteristics that clearly changed first
     MetricMenu.jsx        (lazy) the popularity-measure menu's body
@@ -258,7 +276,8 @@ src/
     GenresPage.jsx        (lazy) the Genres page: the question, the view switch and "Only include"; keeps
                           the shown file until the next one has loaded; the live region (only the order's words after
                           an order change); the tab's title; focus to the answer's heading after a button that changes it
-    GenreAnswer.jsx       (lazy) one characteristic in every genre: heading (the genres compared), ▲/▼ lists, All
+    GenreAnswer.jsx       (lazy) one characteristic in every genre: heading (the genres compared), what the
+                          characteristic measures (whatItMeasures, genres.js), ▲/▼ lists, All
                           genres line, the genres too few to compare, legend, the order line with its A–Z / By …
                           switch, the chart for its form, the way across and "Download image"
     GenreChart.jsx        (lazy) range rows (numbers) and share bars (yes/no), built on rangeLayout: the mark column,
@@ -273,11 +292,12 @@ src/
     GenreProfile.jsx      (lazy) one genre against all genres: the heading, the sample line and the takeaway (▼ ▲ ≠),
                           the small-sample and too-few states, and "One genre"'s words for ComparisonProfile
     ComparisonProfile.jsx (lazy) a comparison of two sides, characteristic by characteristic ("One genre" and "What
-                          changed"): the note above the first list, the lists with the first one's axis title,
-                          "Download image" of the lists (listsPlan: the image is drawn from the data), every
-                          characteristic by topic; each row a container whose stretched link is its name, then its
-                          "?" (the description shown in place) and its unit on a line of its own (the last two
-                          words together), a dot on one 0–100 scale and two number columns (for "What changed",
+                          changed"): the note above the first list, the lists (the higher, or what rose, first) with
+                          the first one's axis title, "Download image" of the lists (listsPlan: the image is drawn from
+                          the data), every characteristic by topic; each row a container whose stretched link is its
+                          name, its last word kept with the "?" (nameEnd; the description shown in place), its unit on
+                          a line of its own (the last two words together), a dot on one 0–100 scale and two number
+                          columns (for "What changed",
                           opt-in props: the values first and a scale zoomed to the view), on one grid for the whole
                           page (stacked under a 900 px chart); the open topics and lists shown in full kept in the
                           history entry, so Back returns to them; configured by each page's words and rows
@@ -305,10 +325,12 @@ src/
     ChartNotes.jsx        the totals box (story age) with its switch, and the three explanations (disclosures at every
                           width)
     DownloadPng.jsx       "Download image": the button ("Download image of this chart", "… of these changes", "… of
-                          what stands out"), its lazy code and its failure message (Explore, both views of the Genres
+                          what stands out"), its lazy code and its failure message (Popularity, both views of the Genres
                           and Trends pages); the file is a PNG
     PatternBrowser.jsx    (lazy) the Patterns page: topics folded with their counts, one row per pattern
-    Methodology.jsx       (lazy) How it works, with the sticky section bar below 1,000 px ("How it works" beside its
+    Methodology.jsx       (lazy) How it works, with "Every characteristic" open: each topic, then every characteristic
+                          and what it measures (and a box that finds one); the sticky section bar below 1,000 px
+                          ("How it works" beside its
                           Contents button at the top, "How it works › {section}" once a section is reached)
     lazyPart.jsx          lazy parts with preload, their error boundary, and whenIdle
     pages.js              the lazy pages, shared by App and Explorer
@@ -382,7 +404,9 @@ License 1.1 (`public/fonts/OFL.txt`, taken from `@fontsource/source-serif-4` 5.3
 - Genres are listed alphabetically, never ranked, except where the reader asks for it: the Genres page's "By median"
   (or "By share") order (owner's decision D3), which the line above the chart says. "One genre" orders characteristics
   by the size of their difference within that genre, never genres; so does "What changed" by the size of their change.
-  The Trends page's genre slot lists All genres, then every genre A–Z.
+  Both list the increases first (Higher, then Lower; Rose, then Fell; then A different mix), in their takeaways, their
+  lists and what screen readers hear (the owner, 2026-10-13). The Trends page's genre slot lists All genres, then every
+  genre A–Z.
 - On the Trends page a characteristic "clearly" changed only by the rule in `meta.trend` (the Genres page's, applied to
   stories from 2020 or later against stories from 2000–2009, with at least 30 stories on each side). Its words say what
   changed (rose, fell, moved later), never why, and no year is written in its code. The Patterns page is grouped by
@@ -402,6 +426,11 @@ License 1.1 (`public/fonts/OFL.txt`, taken from `@fontsource/source-serif-4` 5.3
   median dot (radius 6, a 2 px ring) and one interquartile capsule (10 px) on every range chart, one gray for marks and
   control borders, and one page frame (the kicker, then the question as the h1 at one size, balanced, at most 44
   characters wide from 760 px).
+- The masthead names four pages (the owner's follow-up to round 4, 2026-10-13): Popularity (the code's Explore),
+  Genres, Trends and How it works. Patterns is a part of Popularity, reached from its "Only include" row and Keep
+  exploring, and on it the masthead marks Popularity (`aria-current="true"`, the page itself `"page"`). On a phone the
+  pages are a disclosure (a button with `aria-expanded` and a list of links, not an ARIA menu) whose panel lies over the
+  page, so opening it moves nothing. The footer is one sentence, with no links.
 - The way across and the definitions in place describe the one characteristic on screen; nothing on the site suggests
   which characteristic to look at next, or ranks them.
 - Keyboard: each chart is one tab stop (arrow keys, Home and End move between rows, and between the Trends page's

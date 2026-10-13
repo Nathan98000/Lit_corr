@@ -1,9 +1,11 @@
-// Design review 4, phase 4 (U1): where am I. The phone masthead keeps the page being read; the kickers of Genres and
-// Trends name the page and the source; Genres' question is its h1, as Trends' is; Trends' word count keeps "Only
-// include" a menu. (The masthead's fit is measured in a browser, mastfit5.mjs; here, the rule and its classes.)
+// Design review 4, phase 4 (U1): where am I. The phone masthead names the page being read (since the owner's follow-up
+// of 2026-10-13, on the button that opens every page in a menu); the kickers of Genres and Trends name the page and the
+// source; Genres' question is its h1, as Trends' is; Trends' word count keeps "Only include" a menu. (The masthead's fit
+// is measured in a browser, navfit.mjs; here, its parts and the menu's behavior.)
 import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import App, { NAV, NAV_TIERS, navDrop, navSet } from "../App.jsx";
+import userEvent from "@testing-library/user-event";
+import App, { NAV, PAGE_NAMES } from "../App.jsx";
 import { clearCache } from "../lib/data.js";
 import { aboutCount } from "../lib/wording.js";
 import { fixtureFetch, fixtureMeta } from "./fixtures.js";
@@ -25,60 +27,72 @@ async function open(hash) {
   await waitFor(() => expect(document.querySelector("main [aria-busy='true']")).toBeNull());
 }
 
-const NAMES = { explore: "Explore", genres: "Genres", trends: "Trends", patterns: "Patterns", methodology: "How it works" };
-const shownAt = (tier, page) => navSet(NAV_TIERS.find((t) => t.below === tier).links, page).map((l) => NAMES[l]).join(" ");
+const PAGES = [
+  ["explore", "#/explore"],
+  ["genres", "#/genres"],
+  ["trends", "#/trends"],
+  ["patterns", "#/patterns"],
+  ["methodology", "#/methodology"],
+];
 
-describe("U1: the phone masthead keeps the page being read", () => {
-  it("shows as many links as before at each width, the page being read among them, the last other link making room", () => {
-    // before: four links below 602 px, three below 414, two below 352
-    expect(NAV_TIERS.map((t) => [t.below, t.links.length])).toEqual([[602, 4], [414, 3], [352, 2]]);
-    expect(shownAt(414, "explore")).toBe("Explore Genres Trends"); // 375 px on Explore (the prompt's example)
-    expect(shownAt(352, "explore")).toBe("Explore Genres");
-    expect(shownAt(602, "explore")).toBe("Explore Genres Trends Patterns");
-    expect(shownAt(352, "patterns")).toBe("Genres Patterns");
-    expect(shownAt(414, "patterns")).toBe("Genres Trends Patterns");
-    for (const page of ["genres", "trends"]) {
-      expect([602, 414, 352].map((t) => shownAt(t, page))).toEqual(["Explore Genres Trends Patterns", "Genres Trends Patterns", "Genres Trends"]);
-    }
-    for (const page of ["explore", "genres", "trends", "patterns"]) {
-      for (const t of NAV_TIERS) {
-        const set = navSet(t.links, page);
-        expect(set).toHaveLength(t.links.length);
-        expect(set).toContain(page);
-      }
-    }
-  });
-
-  it("keeps How it works's masthead as before: its own link doesn't fit in another's place, and its bar names the page (the owner, 2026-10-13)", () => {
-    expect([602, 414, 352].map((t) => shownAt(t, "methodology"))).toEqual([
-      "Explore Genres Trends Patterns",
-      "Genres Trends Patterns",
-      "Genres Trends",
-    ]);
-  });
-
-  it("hides each link from the width where it leaves, on every page (its class), and never the page being read", async () => {
-    for (const [page, hash] of [
-      ["explore", "#/explore"],
-      ["genres", "#/genres"],
-      ["trends", "#/trends"],
-      ["patterns", "#/patterns"],
-      ["methodology", "#/methodology"],
-    ]) {
+describe("U1, with the owner's follow-up: every page in the masthead, the page being read named", () => {
+  it("lists Popularity, Genres, Trends and How it works on every page, the page being read marked (Patterns: Popularity)", async () => {
+    expect(NAV).toEqual(["explore", "genres", "trends", "methodology"]);
+    for (const [page, hash] of PAGES) {
       await open(hash);
       const nav = screen.getByRole("navigation", { name: "Pages" });
       const links = within(nav).getAllByRole("link");
-      expect(links.map((a) => a.textContent)).toEqual(NAV.map((l) => NAMES[l]));
-      links.forEach((a, i) => {
-        const drop = navDrop(NAV[i], page);
-        if (drop) expect(a.classList.contains(drop)).toBe(true);
-        expect([...a.classList].filter((c) => c.startsWith("drop-"))).toEqual(drop ? [drop] : []);
-      });
-      const current = links.find((a) => a.getAttribute("aria-current") === "page");
-      expect(current.textContent).toBe(NAMES[page]);
-      if (page !== "methodology") expect([...current.classList].some((c) => c.startsWith("drop-"))).toBe(false);
+      expect(links.map((a) => a.textContent)).toEqual(["Popularity", "Genres", "Trends", "How it works"]);
+      const marked = links.filter((a) => a.hasAttribute("aria-current"));
+      expect(marked).toHaveLength(1);
+      if (page === "patterns") {
+        expect(marked[0].textContent).toBe("Popularity"); // a part of Popularity
+        expect(marked[0].getAttribute("aria-current")).toBe("true");
+      } else {
+        expect(marked[0].textContent).toBe(PAGE_NAMES[page]);
+        expect(marked[0].getAttribute("aria-current")).toBe("page");
+      }
+      // the phone's button: the page being read, then the menu (label in name)
+      const button = within(nav).getByRole("button", { name: `${PAGE_NAMES[page]}, menu` });
+      expect(button.querySelector(".nav-here").textContent).toBe(PAGE_NAMES[page]);
+      expect(button.querySelector("svg").getAttribute("aria-hidden")).toBe("true");
+      expect(nav.querySelector("[class*='drop-']")).toBeNull();
       cleanup();
     }
+  });
+
+  it("opens and closes the menu: the button, a link, Escape (focus back on the button), a tap outside, focus leaving", async () => {
+    const user = userEvent.setup();
+    await open("#/genres");
+    const nav = screen.getByRole("navigation", { name: "Pages" });
+    const button = within(nav).getByRole("button", { name: "Genres, menu" });
+    const isOpen = () => button.getAttribute("aria-expanded") === "true" && nav.classList.contains("open");
+    const isClosed = () => button.getAttribute("aria-expanded") === "false" && !nav.classList.contains("open");
+    await user.click(button);
+    expect(isOpen()).toBe(true);
+    await user.click(button);
+    expect(isClosed()).toBe(true);
+    // Escape, with focus inside it
+    await user.click(button);
+    await user.tab();
+    expect(document.activeElement.textContent).toBe("Popularity");
+    await user.keyboard("{Escape}");
+    expect(isClosed()).toBe(true);
+    expect(document.activeElement).toBe(button);
+    // a tap outside
+    await user.click(button);
+    await user.click(document.querySelector("main"));
+    expect(isClosed()).toBe(true);
+    // focus leaving it
+    await user.click(button);
+    nav.querySelector(".nav-links a").focus();
+    document.querySelector(".brand").focus();
+    await waitFor(() => expect(isClosed()).toBe(true));
+    // a link
+    await user.click(button);
+    await user.click(within(nav).getByRole("link", { name: "Trends" }));
+    expect(isClosed()).toBe(true);
+    await waitFor(() => expect(within(nav).getByRole("button", { name: "Trends, menu" })).toBeTruthy());
   });
 });
 

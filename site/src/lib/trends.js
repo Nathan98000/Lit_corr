@@ -223,18 +223,8 @@ export function numbersLine({ variable, entry, file, fmt, smallN = 30 }) {
   return ["Median ", { strong: first }, `${unit} in ${w.then}, `, { strong: fmt.value(now.median) }, ` in ${w.now}.`];
 }
 
-/**
- * What a characteristic measures, for View 1 (meta's description), or null when a description only repeats the label
- * and the unit (as "Touch words per 1,000 words." did before meta.json defined them): it would look like a definition
- * and give none.
- */
-export function whatItMeasures(variable) {
-  const d = variable.description;
-  if (!d) return null;
-  const plain = (t) => String(t || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
-  const said = plain(d);
-  return said === plain(variable.label) || said === plain(`${variable.label} ${variable.unit || ""}`) ? null : d;
-}
+// what a characteristic measures, under one characteristic's heading (genres.js: both pages say it)
+export { whatItMeasures } from "./genres.js";
 
 /** Does a period lie outside both windows compared (2010–14 and 2015–19 today), by the file's windows? */
 export const middlePeriod = (p, file) => !(p[0] >= file.then[0] && p[1] <= file.then[1]) && p[0] < file.now[0];
@@ -643,7 +633,7 @@ export function overTimeCharacteristic(meta, state) {
 }
 
 /**
- * The takeaway (S1): "▼ Fell: …", "▲ Rose: …", "≠ A different mix: …", each up to three labels, as the lists word them,
+ * The takeaway (S1): "▲ Rose: …", "▼ Fell: …", "≠ A different mix: …", each up to three labels, as the lists word them,
  * and how many more its list holds (`more`, round 4's F118).
  */
 export function changesTakeaway(p) {
@@ -653,7 +643,8 @@ export function changesTakeaway(p) {
     items: list.slice(0, 3).map((x) => lowerFirst(x.variable.label)),
     more: Math.max(0, list.length - 3),
   });
-  return [line("▼", "Fell", p.lower), line("▲", "Rose", p.higher), line("≠", "A different mix", p.mix)].filter((l) => l.items.length);
+  // what rose first, as the lists are (the owner, 2026-10-13)
+  return [line("▲", "Rose", p.higher), line("▼", "Fell", p.lower), line("≠", "A different mix", p.mix)].filter((l) => l.items.length);
 }
 
 /** A takeaway line's words after its word: "average paragraph length, median paragraph length, very long paragraphs and 2 more." */

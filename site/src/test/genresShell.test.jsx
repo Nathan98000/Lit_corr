@@ -101,19 +101,21 @@ describe("Genres addresses", () => {
 });
 
 describe("the masthead (D4, D9; with the Trends page, D7)", () => {
-  it("lists Explore, Genres, Trends, Patterns and How it works; the footer has How it works once", async () => {
+  it("lists Popularity, Genres, Trends and How it works (Patterns is a part of Popularity); the footer has no link", async () => {
     await openGenres();
     const nav = screen.getByRole("navigation", { name: "Pages" });
     const links = within(nav).getAllByRole("link");
-    expect(links.map((a) => a.textContent)).toEqual(["Explore", "Genres", "Trends", "Patterns", "How it works"]);
+    expect(links.map((a) => a.textContent)).toEqual(["Popularity", "Genres", "Trends", "How it works"]);
     expect(within(nav).getByRole("link", { name: "Genres" }).getAttribute("aria-current")).toBe("page");
     expect(within(nav).getByRole("link", { name: "How it works" }).classList.contains("nav-how")).toBe(true);
-    const footer = screen.getByRole("contentinfo");
-    expect(within(footer).getAllByRole("link", { name: "How it works" })).toHaveLength(1); // in the line of every page
-    expect(screen.queryByRole("button", { name: "Menu" })).toBeNull(); // no Menu button (D4)
+    expect(within(screen.getByRole("contentinfo")).queryAllByRole("link")).toHaveLength(0);
+    // on a phone, one button names the page being read and opens every page (the owner, 2026-10-13)
+    const menu = within(nav).getByRole("button", { name: "Genres, menu" });
+    expect(menu.getAttribute("aria-expanded")).toBe("false");
+    expect(document.getElementById(menu.getAttribute("aria-controls"))).toBe(links[0].closest("ul"));
   });
 
-  it("keeps four links below 602 px, tightens below 484, three below 414 and two below 352 (measured)", () => {
+  it("puts the pages in a menu below 548 px, where they don't fit in a row beside the name (measured)", () => {
     const css = readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "styles.css"), "utf8");
     // every block of a media query, joined
     const block = (q) =>
@@ -122,12 +124,15 @@ describe("the masthead (D4, D9; with the Trends page, D7)", () => {
         .slice(1)
         .map((b) => b.split(/\n}\n/)[0])
         .join("\n");
-    expect(block("max-width: 601px")).toMatch(/\.masthead nav a\.drop-602 \{\s*display: none;/);
-    expect(block("max-width: 483px")).toMatch(/\.masthead nav \{\s*gap: 0;\s*font-size: var\(--text-15\);/);
-    expect(block("max-width: 483px")).toMatch(/\.masthead nav a \{\s*padding: 0 4px;/);
-    expect(block("max-width: 413px")).toMatch(/\.masthead nav a\.drop-414 \{\s*display: none;/);
-    expect(block("max-width: 351px")).toMatch(/\.masthead nav a\.drop-352 \{\s*display: none;/);
-    for (const old of ["559px", "419px", "359px"]) expect(block(`max-width: ${old}`)).not.toMatch(/\.masthead|\.brand/); // the old ones
+    const phone = block("max-width: 547px");
+    expect(phone).toMatch(/\.menu-button \{\s*display: inline-flex;/);
+    expect(phone).toMatch(/\.nav-links \{\s*display: none;/);
+    expect(phone).toMatch(/\.site-nav\.open \.nav-links \{\s*position: absolute;/);
+    expect(phone).toMatch(/\.site-nav\.open \.nav-links a \{[^}]*min-height: 48px;/);
+    expect(css).toMatch(/\.menu-button \{\s*display: none;\s*\}/); // a row of links above it
+    // the earlier rule (links leaving the phone's masthead one by one) is gone
+    expect(css).not.toMatch(/drop-(602|414|352)/);
+    for (const old of ["601px", "483px", "413px", "351px"]) expect(block(`max-width: ${old}`)).not.toMatch(/\.masthead|\.brand|\.nav-links/);
   });
 
   it("links Genres to the last Genres address of the visit and fetches the page's code and file ahead", async () => {

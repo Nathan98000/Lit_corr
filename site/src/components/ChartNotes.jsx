@@ -1,5 +1,5 @@
 import { toHash } from "../lib/urlState.js";
-import { howToRead, methodSection } from "../lib/wording.js";
+import { howToRead } from "../lib/wording.js";
 
 /**
  * The notes beside (wide screens, E2) or under (narrow screens, E1) a one-genre chart: how to read the chart, what the
@@ -14,7 +14,7 @@ export default function ChartNotes({ meta, d, wide }) {
     <>
       {variable.description}
       {variable.caveat ? <span className="caveat"> {variable.caveat}</span> : null}{" "}
-      <a href={toHash("methodology", { section: methodSection(variable) })}>How was this measured?</a>
+      <a href={toHash("methodology", { section: "measures" })}>How was this measured?</a>
     </>
   );
   const sections = [

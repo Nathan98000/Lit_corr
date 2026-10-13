@@ -82,15 +82,6 @@ export function patternNote({ variable, direction, effect, shown = null, smallN 
   return ["The groups differ only a little, or not consistently."];
 }
 
-/** The section of “How it works” that explains how a characteristic was measured. */
-export function methodSection(variable) {
-  const id = variable.id;
-  if (/^(pov_|narr_|reader_address)/.test(id)) return "point-of-view";
-  if (/^(sex_|pace_sex_)/.test(id)) return "explicitness";
-  if (/^(emo_|humor_|psy_|hedge_|rel_|agency_)/.test(id)) return "emotion";
-  return "measures";
-}
-
 const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 /**

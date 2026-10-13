@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import App from "../App.jsx";
 import { clearCache } from "../lib/data.js";
+import { parseHash } from "../lib/urlState.js";
 import { fixtureFetch, fixtureFile, fixtureMeta } from "./fixtures.js";
 
 let fetchMock;
@@ -238,6 +239,12 @@ describe("notes", () => {
     expect([...document.querySelectorAll(".notes > *")].every((el) => el.matches("details.disclosure"))).toBe(true);
   });
 
+  it("links every characteristic's “How was this measured?” to How the story characteristics were measured", async () => {
+    // narration, sexual language and emotion had subsections of their own until the owner's changes of 2026-10-13
+    await renderApp("#/explore?var=pov_class");
+    expect(screen.getByRole("link", { name: "How was this measured?" }).getAttribute("href")).toBe("#/methodology/measures");
+  });
+
   it("puts the definitions behind three disclosures and links to How it works", async () => {
     await renderApp();
     expect(screen.getByText("How to read this chart", { selector: "summary" })).toBeTruthy();
@@ -332,6 +339,15 @@ describe("the pattern browser (concept G2)", () => {
 });
 
 describe("How it works", () => {
+  it("opens an old subsection's address at How the story characteristics were measured, and settles the address", async () => {
+    for (const old of ["point-of-view", "explicitness", "emotion"]) expect(parseHash(`#/methodology/${old}`).section).toBe("measures");
+    window.history.replaceState(null, "", "/#/methodology/explicitness");
+    render(<App />);
+    const heading = await screen.findByRole("heading", { level: 2, name: "How the story characteristics were measured" });
+    await waitFor(() => expect(document.activeElement).toBe(heading));
+    await waitFor(() => expect(window.location.hash).toBe("#/methodology/measures"));
+  });
+
   it("has an In short box, contents, linkable sections and a filterable glossary", async () => {
     window.history.replaceState(null, "", "/#/methodology/tend-to");
     const user = userEvent.setup();
@@ -343,10 +359,20 @@ describe("How it works", () => {
     expect(short.textContent).toMatch(/collected October 1, 2026 to October 8, 2026/);
     await user.click(screen.getByRole("button", { name: "Contents" })); // narrow screens: the section bar's panel
     const contents = screen.getByRole("navigation", { name: "Contents" });
-    for (const id of ["point-of-view", "explicitness", "emotion", "charts", "tend-to", "missing-data"]) {
+    for (const id of ["measures", "charts", "tend-to", "missing-data"]) {
       expect(within(contents).getAllByRole("link").some((a) => a.getAttribute("href") === `#/methodology/${id}`)).toBe(true);
       expect(document.getElementById(id)).toBeTruthy();
     }
+    // "How the story characteristics were measured" has no subsections (the owner, 2026-10-13): their paragraphs stay
+    for (const id of ["point-of-view", "explicitness", "emotion"]) {
+      expect(within(contents).queryAllByRole("link").some((a) => a.getAttribute("href") === `#/methodology/${id}`)).toBe(false);
+      expect(document.getElementById(id)).toBeNull();
+    }
+    const measures = document.getElementById("measures");
+    expect(measures.closest("article").querySelectorAll("h3")).toHaveLength(0);
+    expect(measures.closest("article").textContent).toMatch(/Point of view is estimated from pronouns in the narration only/);
+    expect(measures.closest("article").textContent).toMatch(/Sexual language is counted from three editable lists/);
+    expect(measures.closest("article").textContent).toMatch(/Emotion measures count words from small, hand-checked lists/);
     // the glossary uses the topics, folded until opened, each with every characteristic's definition (the owner,
     // 2026-10-13), and can be filtered
     const topic = screen.getByText("Dialogue & characters", { selector: "summary" }).closest("details");

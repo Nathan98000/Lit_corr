@@ -355,7 +355,9 @@ src/
                           count and blurb, and "+" as the Patterns page's topics have), holding every characteristic
                           and what it measures (and a box that finds one); the sticky section bar below 1,000 px
                           ("How it works" beside its
-                          Contents button at the top, "How it works › {section}" once a section is reached)
+                          Contents button at the top, "How it works › {section}" once a section is reached); "How the
+                          story characteristics were measured" has no subsections (the owner, 2026-10-13): their old
+                          addresses (#/methodology/point-of-view, …/explicitness, …/emotion) open it
     lazyPart.jsx          lazy parts with preload, their error boundary, and whenIdle
     pages.js              the lazy pages, shared by App and Explorer
     useScrollFloor.js     keeps the scroll position when a new question makes the page shorter

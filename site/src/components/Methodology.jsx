@@ -21,9 +21,6 @@ export const SECTIONS = [
   ["popularity", "How popularity was recorded"],
   ["age", "Story age"],
   ["measures", "How the characteristics were measured"],
-  ["point-of-view", "First person or third person?", true],
-  ["explicitness", "Explicitness", true],
-  ["emotion", "Emotion and psychological language", true],
   ["charts", "How the charts summarize stories"],
   ["tend-to", "When a title says “tend to”"],
   ["genres", "Comparing genres"],
@@ -273,7 +270,7 @@ function ContentsList({ current, onPick }) {
 
 /**
  * How it works on narrow screens (concept H3 of the second review): a 44 px bar under the masthead that sticks to the
- * top of the screen, naming the section being read ("How it works › Explicitness"; at the page's top, before any
+ * top of the screen, naming the section being read ("How it works › Story age"; at the page's top, before any
  * section, "How it works" alone: round 4's F109), with a "Contents" button that opens the sections under it.
  * Escape, the button again or a tap outside close the panel and give focus back to the button.
  */
@@ -439,9 +436,6 @@ export default function Methodology({ meta, section }) {
           stories can be compared. Word lists cannot see context: “not happy” still counts as a happy word, and irony
           is invisible to them.
         </p>
-        <h3 id="point-of-view" tabIndex={-1}>
-          First person or third person?
-        </h3>
         <p>
           Point of view is estimated from pronouns in the narration only (characters say “I” and “you” in dialogue
           whatever the narration does). Plenty of I/me/my means first person; very few, or very few compared with
@@ -450,18 +444,12 @@ export default function Methodology({ meta, section }) {
           known, the rule labeled 94% correctly and was confidently wrong 3% of the time; a hand check of stories
           from this collection found similar accuracy. It counts words; it does not understand the story.
         </p>
-        <h3 id="explicitness" tabIndex={-1}>
-          Explicitness
-        </h3>
         <p>
           Sexual language is counted from three editable lists: anatomical terms, sexual-action terms and other sexual
           vocabulary. Everyday words with innocent meanings (head, lips, came, ride …) are left out, so euphemistic
           writing is undercounted. A “sex scene” is a stretch of about 200 words that is dense with sexual terms. A
           keyword count is not a measure of how explicit a story feels to a reader.
         </p>
-        <h3 id="emotion" tabIndex={-1}>
-          Emotion and psychological language
-        </h3>
         <p>
           Emotion measures count words from small, hand-checked lists (positive, negative, affection, anxiety, anger,
           sadness, excitement and arousal, shame, jealousy, humor). Psychological measures count kinds of wording:

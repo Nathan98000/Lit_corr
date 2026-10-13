@@ -10,8 +10,8 @@ export const DEFAULT_STATE = {
 
 const PARAMS = { genre: "genre", metric: "metric", v: "var", sub: "include" };
 const PATTERN_PARAMS = { genre: "genre", metric: "metric" };
-// the Genres page: one characteristic in every genre (#/genres?var=…&include=…, by median; &sort=az for A–Z), or one
-// genre against all genres (#/genres?view=genre&genre=…&include=…)
+// the Genres page: one characteristic in every genre (#/genres?var=…&include=…, by median; &sort=az for A–Z), or
+// one genre against all genres (#/genres?view=genre&genre=…&include=…)
 const GENRE_PARAMS = { view: "view", v: "var", genre: "genre", sub: "include", sort: "sort" };
 const GENRE_CHART_ORDER = ["v", "sub", "sort"];
 const GENRE_PROFILE_ORDER = ["view", "genre", "sub"];
@@ -21,6 +21,10 @@ const GENRE_PROFILE_ORDER = ["view", "genre", "sub"];
 const TREND_PARAMS = { view: "view", v: "var", genre: "genre", sub: "include" };
 const TREND_CHART_ORDER = ["v", "genre", "sub"];
 const TREND_CHANGES_ORDER = ["genre", "sub"];
+
+// How it works' sections that are part of another now (the owner, 2026-10-13: no subsections under "How the story
+// characteristics were measured"): their old addresses open that section
+const MOVED_SECTIONS = { "point-of-view": "measures", explicitness: "measures", emotion: "measures" };
 
 /**
  * Pages: #/explore?… (the explorer), #/genres?… (the Genres page), #/trends?… (the Trends page),
@@ -38,7 +42,9 @@ export function parseHash(hash) {
     }
     return state;
   };
-  if (parts[0] === "methodology") return { page: "methodology", section: parts[1] || null, state: {} };
+  if (parts[0] === "methodology") {
+    return { page: "methodology", section: MOVED_SECTIONS[parts[1]] || parts[1] || null, state: {} };
+  }
   if (parts[0] === "patterns") return { page: "patterns", state: read(PATTERN_PARAMS) };
   if (parts[0] === "genres") return { page: "genres", state: read(GENRE_PARAMS) };
   if (parts[0] === "trends") return { page: "trends", state: read(TREND_PARAMS) };

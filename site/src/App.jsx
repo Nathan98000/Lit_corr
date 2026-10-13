@@ -147,6 +147,12 @@ export default function App() {
       if (state.genre !== "all") chosenGenre.current = state.genre;
     }
   }, [route.page, state]);
+  // How it works: an old section's address (a subsection now part of another) settles to the section's own
+  useEffect(() => {
+    if (route.page !== "methodology" || !route.section) return;
+    const own = toHash("methodology", { section: route.section });
+    if (window.location.hash !== own) replaceHash(own);
+  }, [route]);
 
   // the Genres page: one genre keeps the characteristic it came from, for the way back
   const genresState = useMemo(() => {

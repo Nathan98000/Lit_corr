@@ -72,8 +72,8 @@ describe("the section bar below 1,000 px", () => {
     readSection(null);
     expect(where()).toBe("How it works"); // the page's top: no "› Contents" beside the Contents button (round 4's F109)
     expect(screen.getByRole("button", { name: "Contents" })).toBeTruthy();
-    readSection("explicitness");
-    expect(where()).toBe("How it works › Explicitness");
+    readSection("age");
+    expect(where()).toBe("How it works › Story age");
     readSection("tend-to");
     expect(where()).toBe("How it works › When a title says “tend to”");
     expect(contentsNavs()).toHaveLength(0); // the list waits behind its button
@@ -82,7 +82,7 @@ describe("the section bar below 1,000 px", () => {
   it("opens the contents under the bar, and closes them with Escape, the button or a tap outside", async () => {
     screenWidth(375);
     const user = await openPage();
-    readSection("emotion");
+    readSection("measures");
     const button = screen.getByRole("button", { name: "Contents" });
     expect(button.getAttribute("aria-expanded")).toBe("false");
     await user.click(button);
@@ -90,9 +90,9 @@ describe("the section bar below 1,000 px", () => {
     const nav = screen.getByRole("navigation", { name: "Contents" });
     expect(button.getAttribute("aria-controls")).toBe(nav.id);
     const links = within(nav).getAllByRole("link");
-    expect(links).toHaveLength(15);
+    expect(links).toHaveLength(12); // no subsections under "How the characteristics were measured" (the owner, 2026-10-13)
     expect(links.filter((a) => a.getAttribute("aria-current") === "location").map((a) => a.textContent)).toEqual([
-      "Emotion and psychological language",
+      "How the characteristics were measured",
     ]);
     expect(contentsNavs()).toHaveLength(1);
     await user.keyboard("{Escape}");

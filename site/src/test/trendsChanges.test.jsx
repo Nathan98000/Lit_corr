@@ -197,7 +197,7 @@ describe("View 2 on the page", () => {
     expect([...answer.querySelectorAll(".profile-values-head")].map((h) => [...h.children].map((l) => l.textContent))).toEqual([
       ["Median story or share", "2000–09 → 2020+"],
     ]);
-    const row = answer.querySelector(".profile-list .profile-row");
+    const row = answer.querySelector(".profile-list .profile-row .profile-link");
     expect(row.getAttribute("href")).toBe("#/trends?var=dlg_word_share&genre=all&include=all");
     expect(row.querySelector(".visually-hidden").textContent).toMatch(/^Dialogue share: \d+ in 100; 2000–2009 \d+%, 2020 or later \d+%; clearly rose\. Opens its chart over time\.$/);
     const note = answer.querySelector(".profile-note");
@@ -233,7 +233,7 @@ describe("View 2 on the page", () => {
     await waitFor(() => expect(narration.closest("details").querySelector(".profile-row")).toBeTruthy());
     // over the compared named group, which bar is which
     expect(narration.closest("details").querySelector(".profile-mix-line").textContent).toBe("2000–2009 above, 2020 or later below");
-    const row = narration.closest("details").querySelector(".profile-row");
+    const row = narration.closest("details").querySelector(".profile-row .profile-link");
     expect(row.getAttribute("href")).toBe("#/trends?var=pov_class&genre=all&include=all");
     await user.click(row);
     await waitFor(() => expect(window.location.hash).toBe("#/trends?var=pov_class&genre=all&include=all"));

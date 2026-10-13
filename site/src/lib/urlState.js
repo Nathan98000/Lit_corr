@@ -168,6 +168,17 @@ export function sanitizeGenres(state, meta, remembered = null) {
 export const TREND_PAGE_EXCLUDED = ["pub_year", "age_years", "pub_month", "pub_weekday", "pub_is_weekend", "meta_tag_count", "author_stories_count"];
 export const onTrendsPage = (variable) => Boolean(variable) && !TREND_PAGE_EXCLUDED.includes(variable.id);
 
+/**
+ * The Trends page's chart of a characteristic seen with `genre` and the option `sub` elsewhere ("Over time →", round
+ * 4's I15): that genre and, when the page offers it, that option, else all stories. { v, genre, sub }, or null for a
+ * characteristic the page leaves out (or without meta.trend).
+ */
+export function overTimeState(meta, variable, genre = "all", sub = "all") {
+  if (!meta.trend || !onTrendsPage(variable)) return null;
+  const offered = meta.trend.subsets.includes(sub) && !subsetConflict(meta.subsets.find((s) => s.id === sub), variable);
+  return { v: variable.id, genre, sub: offered ? sub : "all" };
+}
+
 /** Does a Trends address open what changed? Without a characteristic (the page's default, O4), or with `view=changes`. */
 export const trendsChanges = (state) => state.view === "changes" || state.v == null;
 

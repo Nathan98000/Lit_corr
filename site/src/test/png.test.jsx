@@ -103,14 +103,15 @@ describe("the button", () => {
     }
   });
 
-  it("shows the label “Download image”, its name starting with it, in the actions row (with Open in Explore after it)", async () => {
+  it("shows the label “Download image”, its name starting with it, alone in the actions row (the ways across are a line above it)", async () => {
     await open("#/genres?var=dlg_word_share");
     const button = pngButton();
     expect(button.textContent).toBe("Download image");
     expect(button.getAttribute("aria-label")).toBe("Download image of this chart");
     expect(button.className).toBe("btn"); // Copy link's look and size
     const actions = button.closest(".chart-actions");
-    expect([...actions.querySelectorAll("button, a")].map((el) => el.textContent)).toEqual(["Download image", "Open in Explore →"]);
+    expect([...actions.querySelectorAll("button, a")].map((el) => el.textContent)).toEqual(["Download image"]);
+    expect(actions.previousElementSibling.className).toBe("way-across");
   });
 
   it("is the only action on Explore, and is not there when no chart is drawn", async () => {

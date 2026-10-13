@@ -1,12 +1,10 @@
 import { useEffect, useId, useState } from "react";
-import { cellStats, groupRows, loadVariable, pattern, prefetchTrends } from "../lib/data.js";
+import { cellStats, groupRows, loadVariable, pattern } from "../lib/data.js";
 import { chartValueText } from "../lib/rangeLayout.js";
 import {
   RATE_FOR,
   announcement,
   answerHeading,
-  changedOverTime,
-  chartQuestionText,
   chartTitle,
   oneGroupNote,
   patternNote,
@@ -17,15 +15,16 @@ import {
   theMeasure,
   totalsNote,
 } from "../lib/wording.js";
-import { onGenresPage, onTrendsPage, sanitize, subsetConflict, toHash } from "../lib/urlState.js";
+import { sanitize, toHash } from "../lib/urlState.js";
 import ChartNotes from "./ChartNotes.jsx";
 import Controls, { preloadMenus } from "./Controls.jsx";
 import DownloadPng from "./DownloadPng.jsx";
 import { whenIdle } from "./lazyPart.jsx";
 import LoadError from "./LoadError.jsx";
-import { GenresPage, PatternBrowser, TrendsPage } from "./pages.js";
+import { GenresPage, PatternBrowser } from "./pages.js";
 import RangeChart from "./RangeChart.jsx";
 import useMediaQuery from "./useMediaQuery.js";
+import WayAcross from "./WayAcross.jsx";
 
 const fileKey = (s) => `${s.v}/${s.sub}`;
 
@@ -179,45 +178,26 @@ export function keepExploring(meta, view) {
 }
 
 /**
- * The Genres page's question for this view: what stands out about the chosen genre's stories (one genre), or with All
- * genres how the genres differ in this characteristic (none for those the page leaves out). { text, hash } or null.
+ * The Genres page's question for this view when a genre is chosen: what stands out about its stories ("One genre",
+ * with this option). { text, hash }, or null with All genres: the characteristic itself is one link away under the
+ * chart ("By genre →", round 4's I15).
  */
 export function genresQuestion(meta, view, d) {
   const { genre } = d;
-  if (genre.id !== "all") {
-    return { text: standsOutQuestion(genre), hash: toHash("genres", { view: "genre", genre: genre.id, sub: view.sub }) };
-  }
-  if (!onGenresPage(d.variable)) return null;
-  return { text: chartQuestionText(d.variable), hash: toHash("genres", { v: d.variable.id, sub: view.sub }) };
+  if (genre.id === "all") return null;
+  return { text: standsOutQuestion(genre), hash: toHash("genres", { view: "genre", genre: genre.id, sub: view.sub }) };
 }
 
 /**
- * The Trends page's question for this view's characteristic (§5): "How has word count changed over time?",
- * opening its chart over time with this view's genre and, when the Trends page offers it, this view's option (else all
- * stories); none for the characteristics the page leaves out. { text, hash, state } or null.
- */
-export function trendsQuestion(meta, view, d) {
-  if (!meta.trend || !onTrendsPage(d.variable)) return null;
-  const subset = meta.subsets.find((s) => s.id === view.sub);
-  const offered = meta.trend.subsets.includes(view.sub) && !subsetConflict(subset, d.variable);
-  const state = { v: d.variable.id, genre: view.genre, sub: offered ? view.sub : "all" };
-  return { text: changedOverTime(d.variable), hash: toHash("trends", state), state };
-}
-
-/**
- * One list after the chart: every clear pattern with this measure, the Genres page's question for this view, the
- * Trends page's, then three example questions. A no-break space keeps each "→" with its last word.
+ * One list after the chart: every clear pattern with this measure, what stands out about the chosen genre's stories,
+ * then three example questions (the characteristic on the Genres and Trends pages is under the chart, I15). A no-break
+ * space keeps each "→" with its last word.
  */
 function KeepExploring({ meta, view, d, onAsk }) {
   const headingId = useId();
   const { genre } = d;
   const genres = genresQuestion(meta, view, d);
-  const trends = trendsQuestion(meta, view, d);
   const preloadGenres = () => GenresPage.preload();
-  const preloadTrends = () => {
-    TrendsPage.preload();
-    prefetchTrends(trends.state.sub, trends.state.genre);
-  };
   const plainClick = (e) => !(e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey);
   return (
     <nav className="keep-exploring" aria-labelledby={headingId}>
@@ -238,14 +218,6 @@ function KeepExploring({ meta, view, d, onAsk }) {
           <li>
             <a href={genres.hash} onPointerEnter={preloadGenres} onFocus={preloadGenres}>
               {genres.text}
-              {"\u00a0→"}
-            </a>
-          </li>
-        )}
-        {trends && (
-          <li>
-            <a href={trends.hash} onPointerEnter={preloadTrends} onFocus={preloadTrends}>
-              {trends.text}
               {"\u00a0→"}
             </a>
           </li>
@@ -361,6 +333,7 @@ export default function Explorer({ meta, state, onChange, onAsk, onHoldScroll })
                 n={d.gd?.n}
                 emptyActions={wayOut}
               />
+              <WayAcross meta={meta} page="explore" variable={d.variable} genre={view.genre} sub={view.sub} />
             </div>
             <ChartNotes meta={meta} d={d} view={view} wide={wide} onChange={keepPlace} />
             {d.shownCount > 0 && (

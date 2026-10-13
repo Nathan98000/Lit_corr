@@ -154,20 +154,26 @@ function GroupKey({ labels, colors }) {
 }
 
 /**
- * One characteristic (concept R3, F85, F87, F92): a link (the page's `row.link`) to its numbers elsewhere. Its label,
- * with its unit line, the plot, the two columns' numbers (`row.columns`: { genre, all, unit, group, of }, the first
- * side's column and the second's) and "›"; with the values first ("What changed", `layout.valuesFirst`), the label,
- * the values (`row.values`: "51.6 → 38.8 (−25%)"), the plot and "›". Its accessible name is its content, with no aria-label: one visually hidden
- * line that says the label, the dot's number, the numbers in reading order, the unit and how it compares (`row.name`);
- * the visible parts are hidden from screen readers, since their words are all there in that order. (Visible text
- * followed by hidden text would read "Sexual language : 26 in 100" in Chrome, which puts a space before a box taken
- * out of the flow.) In a topic (`marks`), a stand-out's ▲ ▼ ≠ sits in a column before the label. A named group's unit
- * line names its printed group, then "% of stories" on a line of its own; where its bars are drawn (not with too few
- * stories to compare), the name follows a swatch of that group's color and the bars have a key of every group under
- * them.
+ * One characteristic (concept R3, F85, F87, F92): a row whose name is a link (the page's `row.link`) to its numbers
+ * elsewhere, stretched over the whole row, so the row opens from anywhere but its definition's button (round 4's I16).
+ * Its label, with its unit line, the plot, the two columns' numbers (`row.columns`: { genre, all, unit, group, of },
+ * the first side's column and the second's) and "›"; with the values first ("What changed", `layout.valuesFirst`), the
+ * label, the values (`row.values`: "51.6 → 38.8 (−25%)"), the plot and "›". The link's accessible name is its content,
+ * with no aria-label: one visually hidden line that says the label, the dot's number, the numbers in reading order, the
+ * unit and how it compares (`row.name`); the visible parts are hidden from screen readers, since their words are all
+ * there in that order. (Visible text followed by hidden text would read "Sexual language : 26 in 100" in Chrome, which
+ * puts a space before a box taken out of the flow.) Just after the name, kept with its last word, a "?" shows the
+ * characteristic's description from meta.json under the row and hides it again (I16): one more tab stop, named "What
+ * “Word count” measures"; it is never remembered, so a new answer or the way back starts with every definition
+ * closed. In a topic (`marks`), a stand-out's ▲ ▼ ≠ sits in a column before the label. A named group's unit line names
+ * its printed group, then "% of stories" on a line of its own; where its bars are drawn (not with too few stories to
+ * compare), the name follows a swatch of that group's color and the bars have a key of every group under them.
  */
 function ProfileRow({ item, row, zone, layout, marks }) {
   const { plotW, valuesFirst } = layout;
+  const [defined, setDefined] = useState(false);
+  const defId = useId();
+  const { label, description } = item.variable;
   const cols = row.columns(item);
   const values = valuesFirst && row.values(item);
   const colors = cols.group != null && item.r != null && mixColors("grp", item.all.shares);
@@ -186,10 +192,34 @@ function ProfileRow({ item, row, zone, layout, marks }) {
           </span>
         )}
         <span className="profile-name">
-          <span className="profile-label-text" aria-hidden="true">
-            {item.variable.label}
-          </span>
-          <span className="visually-hidden">{row.name(item)}</span>
+          {row.link({
+            item,
+            className: "profile-link",
+            children: (
+              <>
+                <span className="profile-label-text" aria-hidden="true">
+                  {label}
+                </span>
+                <span className="visually-hidden">{row.name(item)}</span>
+              </>
+            ),
+          })}
+          {description && (
+            <>
+              {/* a word joiner keeps the "?" with the name's last word */}
+              {"\u2060"}
+              <button
+                type="button"
+                className="profile-def-button"
+                aria-label={`What “${label}” measures`}
+                aria-expanded={defined}
+                aria-controls={defId}
+                onClick={() => setDefined(!defined)}
+              >
+                ?
+              </button>
+            </>
+          )}
           {/* the unit on a line of its own under the name, on every chart (round 4's W1) */}
           {cols.unit && (
             <span className="profile-unit" aria-hidden="true">
@@ -221,9 +251,14 @@ function ProfileRow({ item, row, zone, layout, marks }) {
       <span className="profile-chev" aria-hidden="true">
         ›
       </span>
+      {description && (
+        <p id={defId} className="profile-def" hidden={!defined}>
+          {description}
+        </p>
+      )}
     </>
   );
-  return row.link({ item, className: `profile-row${item.r == null ? " few" : ""}`, children });
+  return <div className={`profile-row${item.r == null ? " few" : ""}${defined ? " defined" : ""}`}>{children}</div>;
 }
 
 /**

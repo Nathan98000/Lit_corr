@@ -1,13 +1,13 @@
-// The Trends page's links in from other pages (STAGE2_TRENDS_PAGE_PROMPT.md, section 5): Explore's "Keep exploring"
-// item and How it works' "Changes over time", whose numbers come from meta.trend and meta.source.
+// The Trends page's links in from other pages (STAGE2_TRENDS_PAGE_PROMPT.md, section 5): the "Over time →" under
+// Explore's chart (round 4's I15, once Keep exploring's item) and How it works' "Changes over time", whose numbers come
+// from meta.trend and meta.source.
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "../App.jsx";
 import { SECTIONS } from "../components/Methodology.jsx";
-import { trendsQuestion } from "../components/Explorer.jsx";
 import { clearCache } from "../lib/data.js";
-import { changedOverTime } from "../lib/wording.js";
+import { overTimeState, toHash } from "../lib/urlState.js";
 import { fixtureFetch, fixtureMeta } from "./fixtures.js";
 
 /** Serves the fixture, with `edit(meta)` applied to meta.json; `asked` lists the addresses fetched. */
@@ -42,35 +42,34 @@ async function open(hash) {
 }
 
 const byId = (id) => fixtureMeta.variables.find((v) => v.id === id);
-const d = (id, genre = "all") => ({ variable: byId(id), genre: fixtureMeta.genres.find((g) => g.id === genre) });
 
-describe("Explore's “Keep exploring” item", () => {
-  it("asks how the characteristic changed over time, the share for yes/no characteristics", () => {
-    expect(changedOverTime(byId("dlg_word_share"))).toBe("How has dialogue share changed over time?");
-    expect(changedOverTime(byId("dlg_has_dialogue"))).toBe("How has the share of stories with dialogue changed over time?");
-    expect(changedOverTime({ noun: "story length in words" })).toBe("How has story length in words changed over time?");
-  });
-
+describe("Explore's “Over time →” (round 4's I15)", () => {
   it("opens View 1 with Explore's genre and, when the Trends page offers it, Explore's option, else all stories", () => {
-    const view = (sub, genre = "all") => ({ genre, metric: "pop_views", v: "dlg_word_share", sub });
-    expect(trendsQuestion(fixtureMeta, view("medium", "romance"), d("dlg_word_share", "romance")).hash).toBe(
-      "#/trends?var=dlg_word_share&genre=romance&include=medium",
-    );
-    expect(trendsQuestion(fixtureMeta, view("y2020"), d("dlg_word_share")).hash).toBe("#/trends?var=dlg_word_share&genre=all&include=all");
-    expect(trendsQuestion(fixtureMeta, view("views10k"), d("dlg_word_share")).state.sub).toBe("all");
-    // a characteristic the page leaves out: no item
-    expect(trendsQuestion(fixtureMeta, view("all"), { variable: { id: "pub_year", label: "Publication year", noun: "publication year" } })).toBeNull();
+    const over = (sub, genre = "all") => toHash("trends", overTimeState(fixtureMeta, byId("dlg_word_share"), genre, sub));
+    expect(over("medium", "romance")).toBe("#/trends?var=dlg_word_share&genre=romance&include=medium");
+    expect(over("y2020")).toBe("#/trends?var=dlg_word_share&genre=all&include=all"); // not one of the page's options
+    expect(overTimeState(fixtureMeta, byId("dlg_word_share"), "all", "views10k").sub).toBe("all");
+    // word count with a Length option: the option would leave one group, so all stories
+    const words = { id: "story_words", label: "Word count", noun: "word count" };
+    expect(overTimeState(fixtureMeta, words, "all", "short").sub).toBe("all");
+    // a characteristic the page leaves out, or no Trends page: no link
+    expect(overTimeState(fixtureMeta, { id: "pub_year", label: "Publication year", noun: "publication year" })).toBeNull();
+    expect(overTimeState({ ...fixtureMeta, trend: undefined }, byId("dlg_word_share"))).toBeNull();
   });
 
-  it("sits after the Genres page's question, and fetches the page's code and file when hovered", async () => {
+  it("sits under the chart after “By genre →”, and fetches the page's code and file when hovered", async () => {
     await open("#/explore?var=dlg_has_dialogue&genre=fetish&include=short");
-    await waitFor(() => expect(screen.getByRole("navigation", { name: "Keep exploring" })).toBeTruthy());
-    const links = within(screen.getByRole("navigation", { name: "Keep exploring" })).getAllByRole("link");
-    const i = links.findIndex((a) => a.textContent === "How has the share of stories with dialogue changed over time? →");
-    expect(i).toBe(2);
-    expect(links[1].textContent).toMatch(/^What stands out about stories in Fetish\?/);
-    expect(links[i].getAttribute("href")).toBe("#/trends?var=dlg_has_dialogue&genre=fetish&include=short");
-    fireEvent.pointerEnter(links[i]);
+    const line = await waitFor(() => {
+      const el = document.querySelector(".chart-panel[aria-busy='false'] .way-across");
+      expect(el).toBeTruthy();
+      return el;
+    });
+    const links = within(line).getAllByRole("link");
+    expect(links.map((a) => a.textContent)).toEqual(["By genre\u00a0→", "Over time\u00a0→"]);
+    const over = links[1];
+    expect(over.getAttribute("aria-label")).toBe("Has dialogue over time");
+    expect(over.getAttribute("href")).toBe("#/trends?var=dlg_has_dialogue&genre=fetish&include=short");
+    fireEvent.pointerEnter(over);
     await waitFor(() => expect(asked.some((u) => u.endsWith("trends/short/fetish.json"))).toBe(true));
   });
 });

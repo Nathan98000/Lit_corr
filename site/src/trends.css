@@ -129,8 +129,9 @@
     grid-area: key;
   }
 
-  .trend-answer > .trend-chart {
+  .trend-answer > .trend-chart-cell {
     grid-area: chart;
+    min-width: 0;
   }
 
   .trend-answer > .chart-actions {
@@ -455,6 +456,15 @@
 .trend-changes.stacked .profile-row {
   grid-template-columns: minmax(0, 1fr) auto 12px;
   grid-template-areas: "label values chev" "plot plot plot";
+}
+
+/* an open definition (round 4's I16) goes under the name's line, over the plot */
+.trend-changes.stacked .profile-row.defined {
+  grid-template-areas: "label values chev" "def def def" "plot plot plot";
+}
+
+.trend-changes.stacked .profile-def {
+  grid-area: def;
 }
 
 .trend-changes.stacked .profile-values {

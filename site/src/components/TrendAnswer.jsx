@@ -1,5 +1,4 @@
 import { bandPalette } from "../lib/genreLayout.js";
-import { nounOf } from "../lib/genres.js";
 import {
   genreWords,
   nothingToDraw,
@@ -18,6 +17,7 @@ import { toHash } from "../lib/urlState.js";
 import DownloadPng from "./DownloadPng.jsx";
 import TrendChart, { TrendSplit } from "./TrendChart.jsx";
 import TrendMix from "./TrendMix.jsx";
+import WayAcross from "./WayAcross.jsx";
 
 export const HOW_DECIDED = toHash("methodology", { section: "trends" });
 
@@ -122,12 +122,13 @@ export function trendsImage({ variable, genre, heading, subset, state }, panel) 
 /**
  * One characteristic over time (View 1, section 3): the verdict heading, what the characteristic measures (meta's
  * description), the takeaway (the windows' numbers; what happened in between, when a period outside the windows lies
- * beyond both), the key, the chart and the actions: "See all changes →" (what changed in the same genre and option, a
- * new history entry), "Compare genres →" and "Download image".
+ * beyond both), the key, the chart, the way across to the other pages (round 4's I15: "By genre →", "With popularity
+ * →" with this genre and the measure last used on Explore, `lastExplore`) and the actions: "See all changes →" (what
+ * changed in the same genre and option, a new history entry) and "Download image".
  * A genre with fewer than MIN_N stories in every period gets the too-few sentence and a way out: all stories when an
  * option is on, else All genres.
  */
-export default function TrendAnswer({ meta, state, file, busy, onSwitch, onNavigate, headingRef }) {
+export default function TrendAnswer({ meta, state, file, busy, onSwitch, onNavigate, lastExplore, headingRef }) {
   const variable = meta.variables.find((v) => v.id === state.v);
   const entry = file.c[state.v];
   const genre = meta.genres.find((g) => g.id === file.g);
@@ -186,9 +187,13 @@ export default function TrendAnswer({ meta, state, file, busy, onSwitch, onNavig
         </div>
       )}
       <TrendLegend kind={kind} anySmall={anySmall} minStories={file.rule.min_n} groups={groups} />
-      <Chart key={variable.id} meta={meta} variable={variable} entry={entry} file={file} title={`${question} ${heading}`} />
+      {/* the chart and the way across under it, in the chart's cell beside the rail on wide screens */}
+      <div className="trend-chart-cell">
+        <Chart key={variable.id} meta={meta} variable={variable} entry={entry} file={file} title={`${question} ${heading}`} />
+        <WayAcross meta={meta} page="trends" variable={variable} genre={file.g} sub={file.s} metric={lastExplore?.metric} />
+      </div>
       <div className="chart-actions">
-        {/* the names start with the visible words (label in name), then the genre, or the noun as the question has it */}
+        {/* the name starts with the visible words (label in name), then the genre */}
         <ChartLink
           className="btn primary"
           to={{ view: "changes", genre: file.g, sub: file.s }}
@@ -197,9 +202,6 @@ export default function TrendAnswer({ meta, state, file, busy, onSwitch, onNavig
         >
           See all changes →
         </ChartLink>
-        <a className="btn" href={toHash("genres", { v: variable.id, sub: state.sub })} aria-label={`Compare genres: ${nounOf(variable)}`}>
-          Compare genres →
-        </a>
         <DownloadPng busy={busy} image={image} />
       </div>
     </article>

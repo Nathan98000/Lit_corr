@@ -382,6 +382,7 @@ export default function App() {
                   onNavigate={goTrends}
                   onHoldScroll={holdScroll}
                   lastChart={lastTrendChart}
+                  lastExplore={lastExplore.current}
                 />
               </PartBoundary>
             ) : (

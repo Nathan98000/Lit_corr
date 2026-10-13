@@ -147,25 +147,98 @@
 }
 
 .profile-row {
+  position: relative; /* the link's area and the definition's button lie over the row (round 4's I16) */
   min-height: var(--target);
   padding: 5px 0;
   border-bottom: 1px solid var(--rule);
   color: var(--ink);
+}
+
+/* the row's link is its name, stretched over the whole row: the row opens from anywhere but the "?" */
+.profile-link {
+  color: inherit;
   text-decoration: none;
 }
 
-a.profile-row:hover {
+.profile-link::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+
+.profile-row:has(.profile-link:hover) {
   background: rgb(74 137 243 / 0.05);
 }
 
-a.profile-row:hover .profile-label-text {
+.profile-link:hover .profile-label-text {
   text-decoration: underline;
   text-underline-offset: 2px;
 }
 
-.profile-row:focus-visible {
+.profile-link:focus-visible {
+  outline: none;
+}
+
+.profile-link:focus-visible::after {
   outline: 2px solid var(--accent-ink);
   outline-offset: -2px;
+}
+
+/* the name lies over the "?"'s area, so that a tap on the name always opens the row */
+.profile-label-text {
+  position: relative;
+  z-index: 2;
+}
+
+/* the definition's button (I16): an 18 px circle just after the name, its area 44 px wide and the row's height,
+   centered on it (a flex container centers its absolutely placed child), so it never reaches another row */
+.profile-def-button {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  box-sizing: border-box;
+  width: 18px;
+  height: 18px;
+  margin-left: var(--space-4);
+  padding: 0;
+  border: 1px solid var(--control);
+  border-radius: 50%;
+  background: none;
+  color: var(--ink-2);
+  font-size: var(--text-13);
+  line-height: var(--leading-13);
+  cursor: pointer;
+}
+
+.profile-def-button::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 1;
+  width: var(--target);
+}
+
+.profile-def-button:hover {
+  border-color: var(--ink-2);
+}
+
+/* the characteristic's description, under the row's name and across the row, over the link's area (it reads and
+   selects as text) */
+.profile-def {
+  grid-column: 1 / -1;
+  position: relative;
+  z-index: 2;
+  max-width: 62ch;
+  margin: var(--space-4) 0 0;
+  font-size: var(--text-13);
+  line-height: var(--leading-13);
+  color: var(--ink-2);
+}
+
+/* in a topic, under the name, after the ▲ ▼ ≠ column */
+.profile-block.marks .profile-def {
+  padding-left: 16px;
 }
 
 .profile-label {
@@ -472,6 +545,15 @@ a.profile-row:hover .profile-label-text {
   grid-template-areas: "label n1 n2 chev" "plot plot plot plot";
   row-gap: 2px;
   padding: 7px 0 6px;
+}
+
+/* an open definition goes under the name's line, over the plot */
+.genre-profile.stacked .profile-row.defined {
+  grid-template-areas: "label n1 n2 chev" "def def def def" "plot plot plot plot";
+}
+
+.genre-profile.stacked .profile-def {
+  grid-area: def;
 }
 
 .genre-profile.stacked .profile-label {

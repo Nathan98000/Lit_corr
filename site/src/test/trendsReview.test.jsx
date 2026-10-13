@@ -38,7 +38,6 @@ import {
 } from "../lib/trends.js";
 import { searchCharacteristics } from "../lib/search.js";
 import { onTrendsPage } from "../lib/urlState.js";
-import { changedOverTime } from "../lib/wording.js";
 import { fixtureFetch, fixtureFile, fixtureMeta, realMeta } from "./fixtures.js";
 
 vi.mock("../lib/chartImage.js", async (original) => ({ ...(await original()), downloadChartImage: vi.fn(async () => {}) }));
@@ -102,10 +101,6 @@ describe("has or have (phase 2)", () => {
       "Across all genres, how has the share of stories that announce a continuation changed over time?",
     );
     expect(trendQuestion(paragraphs, ALL)).toEqual({ before: "Across ", middle: ", how have ", slot: "very long paragraphs", after: " changed over time" });
-    // Explore's "Keep exploring" item agrees
-    expect(changedOverTime(paragraphs)).toBe("How have very long paragraphs changed over time?");
-    expect(changedOverTime(pages)).toBe("How has the number of pages changed over time?");
-    expect(changedOverTime(continuation)).toBe("How has the share of stories that announce a continuation changed over time?");
   });
 
   it.skipIf(!real)("never puts “has” before a plural noun, for every Trends characteristic in the real meta.json", () => {
@@ -120,12 +115,13 @@ describe("has or have (phase 2)", () => {
         expect(q, v.id).toMatch(new RegExp(`^(Across all genres|In Romance), how ${verb} `));
         if (v.plural) expect(q, v.id).not.toContain(`how has ${v.noun}`);
       }
-      expect(changedOverTime(v), v.id).toMatch(new RegExp(`^How ${verb} `));
     }
     expect(plural).toBe(78);
     const byId = (id) => shown.find((v) => v.id === id);
-    expect(changedOverTime(byId("punct_comma_per_1k"))).toBe("How have commas changed over time?");
-    expect(changedOverTime(byId("pace_action_peak_position"))).toBe("How has where action verbs peak changed over time?");
+    expect(trendQuestionText(byId("punct_comma_per_1k"), ALL)).toBe("Across all genres, how have commas changed over time?");
+    expect(trendQuestionText(byId("pace_action_peak_position"), ALL)).toBe(
+      "Across all genres, how has where action verbs peak changed over time?",
+    );
     expect(trendQuestionText(byId("sex_scenes_per_10k"), ALL)).toBe(
       "Across all genres, how have sex scenes per 10,000 words changed over time?",
     );
@@ -139,11 +135,12 @@ describe("has or have (phase 2)", () => {
     await waitFor(() => expect(region.textContent).toMatch(/^Across all genres, how have dialogue lines changed over time\? /));
   });
 
-  it("words Explore's item with “have” for a plural noun", async () => {
+  it("asks the Trends page's question with “have” for a plural noun, reached from Explore's “Over time →”", async () => {
     await open("#/explore?var=dlg_word_share", { meta: pluralMeta });
-    const nav = await screen.findByRole("navigation", { name: "Keep exploring" });
-    const texts = within(nav).getAllByRole("link").map((a) => a.textContent);
-    expect(texts).toContain("How have dialogue lines changed over time?\u00a0→");
+    const over = await screen.findByRole("link", { name: "Dialogue share over time" });
+    expect(over.getAttribute("href")).toBe("#/trends?var=dlg_word_share&genre=all&include=all");
+    window.location.hash = over.getAttribute("href");
+    await waitFor(() => expect(question()).toBe("Across all genres, how have dialogue lines changed over time?"));
   });
 });
 
@@ -258,15 +255,11 @@ describe("the default view, the switch and the actions (phase 3)", () => {
   it("makes “See all changes →” View 1's primary action, a new history entry to what changed in the same genre and option", async () => {
     const user = await open("#/trends?var=pov_class&genre=romance&include=medium", { ready: trends });
     const actions = document.querySelector(".trend-answer .chart-actions");
-    expect([...actions.querySelectorAll("a, button")].map((el) => el.textContent)).toEqual([
-      "See all changes →",
-      "Compare genres →",
-      "Download image",
-    ]);
+    // "Compare genres →" is the line's "By genre →" under the chart (round 4's I15)
+    expect([...actions.querySelectorAll("a, button")].map((el) => el.textContent)).toEqual(["See all changes →", "Download image"]);
     const see = screen.getByRole("link", { name: "See all changes in Romance" });
     expect(see.className).toBe("btn primary");
     expect(see.getAttribute("href")).toBe("#/trends?genre=romance&include=medium");
-    expect(screen.getByRole("link", { name: /^Compare genres/ }).className).toBe("btn"); // secondary
     const length = window.history.length;
     await user.click(see);
     await waitFor(() => expect(window.location.hash).toBe("#/trends?genre=romance&include=medium"));
@@ -552,7 +545,10 @@ describe("View 1's layout (phase 5)", () => {
     await open("#/trends?var=dlg_word_share", { ready: trends });
     const answer = document.querySelector(".trend-answer");
     expect(answer.classList.contains("with-chart")).toBe(true);
-    expect([...answer.children].map((el) => el.classList[0] === "chart-head" ? "head" : el.classList.contains("trend-takeaway") ? "takeaway" : el.classList.contains("trend-legend") ? "key" : el.classList.contains("trend-chart") ? "chart" : el.className)).toEqual(["head", "trend-what", "takeaway", "key", "chart", "chart-actions"]);
+    expect([...answer.children].map((el) => el.classList[0] === "chart-head" ? "head" : el.classList.contains("trend-takeaway") ? "takeaway" : el.classList.contains("trend-legend") ? "key" : el.className)).toEqual(["head", "trend-what", "takeaway", "key", "trend-chart-cell", "chart-actions"]);
+    // the chart's cell: the chart, then the way across right under it (round 4's I15)
+    const cell = [...answer.querySelector(".trend-chart-cell").children];
+    expect(cell.map((el) => (el.classList.contains("trend-chart") ? "chart" : el.className))).toEqual(["chart", "way-across"]);
     // what the characteristic measures, meta's description, under the heading (the rail's first line on a desktop)
     expect(answer.querySelector(".trend-what").textContent).toBe(fixtureMeta.variables.find((v) => v.id === "dlg_word_share").description);
     // an answer at least 960 px wide: the page at least 1,008 px (main's 24 px sides)

@@ -39,25 +39,21 @@ const items = () => within(screen.getByRole("navigation", { name: "Keep explorin
 const view = (v) => ({ genre: "all", metric: "pop_fav_per_1k_views", v: "dlg_word_share", sub: "all", ...v });
 
 describe("keep exploring", () => {
-  it("lists the Patterns page, the Genres and Trends pages' questions, then the first three example questions that open another view", async () => {
+  it("lists the Patterns page, then the first three example questions that open another view (the characteristic's other pages are under the chart, round 4's I15)", async () => {
     await renderApp("#/explore?var=dlg_word_share&metric=pop_fav_per_1k_views");
     const links = items();
-    expect(links.length).toBeLessThanOrEqual(6);
     expect(links.map((a) => a.textContent)).toEqual([
       "Every clear pattern with favorites per 1,000 views across all genres\u00a0→",
-      "How do genres differ in dialogue share?\u00a0→", // the Genres page, for All genres
-      "How has dialogue share changed over time?\u00a0→", // the Trends page (§5)
       "Q2: dialogue share in Romance, views per month?\u00a0→", // Q1 is the chart shown
       "Q3: anger, views?\u00a0→",
       "Q4: perspective, favorites?\u00a0→",
     ]);
     expect(links[0].getAttribute("href")).toBe("#/patterns?genre=all&metric=pop_fav_per_1k_views");
-    expect(links[1].getAttribute("href")).toBe("#/genres?var=dlg_word_share&include=all");
-    expect(links[2].getAttribute("href")).toBe("#/trends?var=dlg_word_share&genre=all&include=all");
-    expect(links[3].getAttribute("href")).toBe(
+    expect(links[1].getAttribute("href")).toBe(
       "#/explore?genre=romance&metric=pop_views_per_month&var=dlg_word_share&include=all",
     );
     for (const a of links) expect(a.getAttribute("href")).not.toBe(window.location.hash); // none opens this view
+    expect(links.some((a) => /^How (do genres differ|has)/.test(a.textContent))).toBe(false);
   });
 
   it("never repeats the age box's “Switch to …”", async () => {
@@ -66,9 +62,7 @@ describe("keep exploring", () => {
     const texts = items().map((a) => a.textContent);
     expect(texts[0]).toBe("Every clear pattern with views in Romance\u00a0→");
     expect(texts[1]).toBe("What stands out about stories in Romance?\u00a0→"); // the Genres page, for the genre chosen
-    expect(texts[2]).toBe("How has dialogue share changed over time?\u00a0→"); // the Trends page, in the genre chosen
-    expect(items()[2].getAttribute("href")).toBe("#/trends?var=dlg_word_share&genre=romance&include=all");
-    expect(texts.slice(3)).toEqual(["Q1: dialogue share, favorites?\u00a0→", "Q3: anger, views?\u00a0→", "Q4: perspective, favorites?\u00a0→"]);
+    expect(texts.slice(2)).toEqual(["Q1: dialogue share, favorites?\u00a0→", "Q3: anger, views?\u00a0→", "Q4: perspective, favorites?\u00a0→"]);
   });
 
   it("chooses by view only, never by a result", () => {

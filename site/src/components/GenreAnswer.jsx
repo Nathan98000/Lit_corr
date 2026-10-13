@@ -2,7 +2,6 @@ import {
   allGenresLine,
   chartQuestionText,
   genreRows,
-  nounOf,
   orderLabel,
   orderRows,
   orderWords,
@@ -18,6 +17,7 @@ import GenreChart from "./GenreChart.jsx";
 import GenreMix from "./GenreMix.jsx";
 import GenreAny from "./GenreAny.jsx";
 import Segmented from "./GenreSwitch.jsx";
+import WayAcross from "./WayAcross.jsx";
 
 export const HOW_DECIDED = toHash("methodology", { section: "genres" });
 
@@ -165,7 +165,8 @@ export function genresImage({ variable, heading, subset, kind, sort, state }, pa
 /**
  * One characteristic in every genre (View 1): the verdict heading, the takeaway (▲/▼ lists in the D10 words, then
  * All genres, then the genres with too few stories to compare), the legend, the line that says the order (with the
- * toggle), the chart for the characteristic's form and the actions.
+ * toggle), the chart for the characteristic's form, the way across to the other pages (round 4's I15: "Over time →",
+ * "With popularity →" with the measure last used on Explore) and "Download image".
  */
 export default function GenreAnswer({ meta, state, file, busy, onChange, onNavigate, lastExplore, headingRef }) {
   const variable = meta.variables.find((v) => v.id === state.v);
@@ -179,12 +180,6 @@ export default function GenreAnswer({ meta, state, file, busy, onChange, onNavig
   const tooFew = tooFewLine(rows, meta.min_n);
   const anySmall = rows.some((r) => r.small);
   const question = chartQuestionText(variable);
-  const explore = toHash("explore", {
-    genre: "all",
-    metric: lastExplore?.metric,
-    v: variable.id,
-    sub: state.sub,
-  });
 
   const chartProps = {
     meta,
@@ -235,12 +230,9 @@ export default function GenreAnswer({ meta, state, file, busy, onChange, onNavig
       <GenreLegend kind={kind} anySmall={anySmall} smallN={meta.small_n} groups={groups} />
       <OrderLine kind={kind} sort={state.sort} onSort={(o) => onChange({ ...state, sort: o === "value" ? "value" : undefined })} />
       <Chart key={`${variable.id}/${file.s}`} {...chartProps} />
+      <WayAcross meta={meta} page="genres" variable={variable} sub={state.sub} metric={lastExplore?.metric} />
       <div className="chart-actions">
         <DownloadPng busy={busy} image={image} />
-        {/* the name starts with the visible words (label in name), then the noun as the question has it (F76) */}
-        <a className="btn primary" href={explore} aria-label={`Open in Explore: ${nounOf(variable)}`}>
-          Open in Explore →
-        </a>
       </div>
     </article>
   );

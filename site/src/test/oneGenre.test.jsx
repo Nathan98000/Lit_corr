@@ -315,7 +315,8 @@ describe("the rows (concept R3)", () => {
     await openAllTopics(user);
     const rows = [...document.querySelectorAll(".profile-row")];
     for (const row of rows) {
-      const chev = row.lastElementChild;
+      // the last cell, before the definition the "?" opens (round 4's I16)
+      const chev = [...row.children].filter((el) => !el.classList.contains("profile-def")).pop();
       expect(chev.textContent).toBe("›");
       expect(chev.getAttribute("aria-hidden")).toBe("true");
     }
@@ -331,14 +332,15 @@ describe("the rows (concept R3)", () => {
     const romance = meta.genres.find((g) => g.id === "romance");
     const rows = [...document.querySelectorAll(".profile-row")];
     for (const row of rows) {
-      expect(row.hasAttribute("aria-label")).toBe(false);
+      const link = row.querySelector(".profile-link"); // the name, stretched over the row (round 4's I16)
+      expect(link.hasAttribute("aria-label")).toBe(false);
       const label = row.querySelector(".profile-label-text").textContent;
       const name = profileRowName(p.items.find((x) => x.variable.label === label), romance, meta.min_n);
-      expect(screen.getAllByRole("link", { name }).includes(row)).toBe(true);
+      expect(screen.getAllByRole("link", { name }).includes(link)).toBe(true);
       expect(name.startsWith(`${label}:`) || name.startsWith(`${label}, % of stories:`)).toBe(true); // named groups say their unit
       // the name is one visually hidden line; what the row shows (the label, the unit line, the cells and "›") is hidden
       // from screen readers, and its words are all in the name: the dot's number and the cells' numbers in reading order
-      expect(row.querySelector(".profile-name > .visually-hidden").textContent).toBe(name);
+      expect(link.querySelector(".visually-hidden").textContent).toBe(name);
       for (const el of row.querySelectorAll(".profile-label-text, .profile-unit, .profile-n, .profile-chev, .profile-plot-cell, .profile-mark")) {
         expect(el.getAttribute("aria-hidden")).toBe("true");
       }
@@ -852,7 +854,7 @@ describe("the way back (F88, quick win 6)", () => {
   it("keeps the scroll position before a row's link adds the next entry", async () => {
     const user = await openGenre("#/genres?view=genre&genre=romance&include=all");
     vi.spyOn(window, "scrollY", "get").mockReturnValue(640);
-    await user.click(document.querySelector(".profile-list .profile-row"));
+    await user.click(document.querySelector(".profile-list .profile-row .profile-link"));
     await waitFor(() => expect(window.location.hash).toBe("#/genres?var=dlg_word_share&include=all"));
     expect(window.history.state).toBeNull(); // the new entry starts empty
     window.history.back();

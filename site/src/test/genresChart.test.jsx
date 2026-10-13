@@ -484,11 +484,12 @@ describe("details and the keyboard", () => {
 });
 
 describe("the actions and what screen readers hear", () => {
-  it("open the characteristic in Explore, for All genres", async () => {
+  it("open the characteristic in Explore, for All genres, from the line under the chart (round 4's I15)", async () => {
     await openGenres("#/genres?var=dlg_word_share&include=y2020");
-    const explore = screen.getByRole("link", { name: "Open in Explore: dialogue share" }); // starts with its visible words (F76)
-    expect(explore.textContent).toBe("Open in Explore →");
+    const explore = screen.getByRole("link", { name: "Dialogue share with popularity" }); // its visible words in its name
+    expect(explore.textContent).toBe("With popularity\u00a0→");
     expect(explore.getAttribute("href")).toBe("#/explore?genre=all&var=dlg_word_share&include=y2020");
+    expect(screen.queryByRole("link", { name: /^Open in Explore/ })).toBeNull();
   });
 
   it("announces the heading and the takeaway, and only the order's words when the order changes (F75)", async () => {

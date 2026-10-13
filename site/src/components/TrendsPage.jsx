@@ -83,7 +83,7 @@ function useAnnouncement(text, key) {
  * the address in place; the view switch and the links between the views add a history entry, so Back returns. The page
  * opens on All genres (D9).
  */
-export default function TrendsPage({ meta, state, onChange, onNavigate, onHoldScroll, lastChart }) {
+export default function TrendsPage({ meta, state, onChange, onNavigate, onHoldScroll, lastChart, lastExplore }) {
   const { file, busy, error, retry } = useShownTrends(state.sub, state.genre);
   const changes = state.view === "changes";
   const variable = meta.variables.find((v) => v.id === state.v);
@@ -277,7 +277,16 @@ export default function TrendsPage({ meta, state, onChange, onNavigate, onHoldSc
       ) : answer.changes ? (
         <TrendChanges meta={meta} state={view} file={file} busy={busy} onSwitch={switchFromAnswer} onNavigate={onNavigate} headingRef={heading} />
       ) : (
-        <TrendAnswer meta={meta} state={view} file={file} busy={busy} onSwitch={switchFromAnswer} onNavigate={onNavigate} headingRef={heading} />
+        <TrendAnswer
+          meta={meta}
+          state={view}
+          file={file}
+          busy={busy}
+          onSwitch={switchFromAnswer}
+          onNavigate={onNavigate}
+          lastExplore={lastExplore}
+          headingRef={heading}
+        />
       )}
     </section>
   );

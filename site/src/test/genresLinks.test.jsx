@@ -45,14 +45,13 @@ describe("Keep exploring", () => {
     expect(screen.getByLabelText("Genre").value).toBe("romance");
   });
 
-  it("asks how the genres differ in the characteristic with All genres", async () => {
+  it("has no Genres item with All genres: the characteristic is “By genre →” under the chart (round 4's I15)", async () => {
     await renderApp("#/explore?var=dlg_has_dialogue");
-    const link = keepExploring()[1];
-    expect(link.textContent).toBe("How common are stories with dialogue in each genre?\u00a0→");
-    expect(link.getAttribute("href")).toBe("#/genres?var=dlg_has_dialogue&include=all");
+    expect(keepExploring().map((a) => a.getAttribute("href")).some((h) => h.startsWith("#/genres"))).toBe(false);
+    expect(screen.getByRole("link", { name: "Has dialogue by genre" }).getAttribute("href")).toBe("#/genres?var=dlg_has_dialogue&include=all");
   });
 
-  it("leaves the item out for characteristics the Genres page does not show", () => {
+  it("asks what stands out with a genre chosen, whatever the characteristic (month and weekday too)", () => {
     const meta = real || fixtureMeta;
     const month = meta.variables.find((v) => v.id === "pub_month");
     if (!month) return;

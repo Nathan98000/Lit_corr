@@ -462,9 +462,6 @@ export function profileHeading(count, genre) {
   return `${count} characteristics clearly set ${genre.name} apart from all genres`;
 }
 
-/** What a characteristic is called in a sentence: its noun, or for yes/no ones their subject ("first-person stories"). */
-export const nounOf = (variable) => (variable.yes_subject ? lowerFirst(variable.yes_subject) : variable.noun);
-
 /** The word for one stand-out in the takeaway: the D10 word in lower case, else lower/higher, more/less common, different mix. */
 export function standOutWord(item) {
   if (item.kind === "grp") return "different mix";

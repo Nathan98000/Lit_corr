@@ -537,11 +537,12 @@ describe("View 1 on the page", () => {
     await waitFor(() => expect(window.location.hash).toBe("#/trends?var=dlg_word_share&genre=all&include=all"));
   });
 
-  it("ends with Download image and Compare genres, which opens the Genres page for the characteristic and option", async () => {
+  it("ends with Download image, after “By genre →”, which opens the Genres page for the characteristic and option (round 4's I15)", async () => {
     await openTrends("#/trends?var=pov_class&include=medium");
-    const compare = screen.getByRole("link", { name: "Compare genres: narrative perspective" });
-    expect(compare.textContent).toBe("Compare genres →");
-    expect(compare.getAttribute("href")).toBe("#/genres?var=pov_class&include=medium");
+    const byGenre = screen.getByRole("link", { name: "Narrative perspective by genre" });
+    expect(byGenre.textContent).toBe("By genre\u00a0→");
+    expect(byGenre.getAttribute("href")).toBe("#/genres?var=pov_class&include=medium");
+    expect(screen.queryByRole("link", { name: /^Compare genres/ })).toBeNull();
     expect(screen.getByRole("button", { name: "Download image of this chart" })).toBeTruthy();
   });
 });

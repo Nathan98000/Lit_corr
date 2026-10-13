@@ -144,9 +144,10 @@ describe("the lists", () => {
 
   it("are links to every genre's numbers, without a genre (decision 8), as a new history entry", async () => {
     const user = await openGenre("#/genres?view=genre&genre=romance&include=all");
-    const row = document.querySelector(".profile-list .profile-row");
+    // the row's link is its name, stretched over the row (round 4's I16)
+    const row = document.querySelector(".profile-list .profile-row .profile-link");
     expect(row.getAttribute("href")).toBe("#/genres?var=dlg_word_share&include=all");
-    for (const link of document.querySelectorAll(".profile-row")) expect(link.getAttribute("href")).not.toMatch(/genre=/);
+    for (const link of document.querySelectorAll(".profile-row .profile-link")) expect(link.getAttribute("href")).not.toMatch(/genre=/);
     // the name is the row's own content (F76, F92): the label, the dot's number, the numbers, how it compares
     expect(row.hasAttribute("aria-label")).toBe(false);
     expect(
@@ -350,7 +351,7 @@ describe("one scale for every row (concepts P2 and R3)", () => {
       const label = row.querySelector(".profile-label-text").textContent;
       // (a named group's name says its unit after the label: "Narrative perspective, % of stories: …")
       const name = screen.getByRole("link", { name: new RegExp(`^${label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(, % of stories)?: \\S`) });
-      expect(name).toBe(row);
+      expect(name).toBe(row.querySelector(".profile-link"));
     }
   });
 

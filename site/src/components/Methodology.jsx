@@ -6,13 +6,14 @@ import { defaultMetric, toHash } from "../lib/urlState.js";
 import { typicalSample } from "../lib/wording.js";
 import useMediaQuery from "./useMediaQuery.js";
 
+// the words for Stage 1's exclusion reasons (their codes: litcorr/build/quality.py)
 const REASONS = {
   no_text: "had no story text that could be collected",
   text_too_short: "had fewer than 100 words of text",
   possibly_not_english: "did not look like English",
   missing_date: "had no publication date",
   missing_views: "had no view count",
-  duplicate_text: "had the same text as another story",
+  duplicate_of_another_story: "had the same text as another story",
 };
 
 export const SECTIONS = [

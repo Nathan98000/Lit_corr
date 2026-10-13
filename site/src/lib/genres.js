@@ -107,7 +107,7 @@ export function numberFormat(variable, entry) {
  * The unit written after a number, when it is a plain unit (words, per 1,000 words, letters, names …): ranges only,
  * no parentheses, not a share, yes/no, "1 =", position or year, and a plural or a rate ("part" and "US school grade"
  * are left out); never for percentages, years or scales. Unlike unitNote() in wording.js it is kept when the noun names
- * the unit too, so story length reads "3,610 words".
+ * the unit too, so word count reads "3,610 words".
  */
 export function plainUnit(variable, fmt = "num") {
   const u = variable.unit || "";

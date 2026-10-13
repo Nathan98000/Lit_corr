@@ -1,5 +1,5 @@
 import { useId } from "react";
-import { subsetConflict } from "../lib/urlState.js";
+import { conflictNote, subsetConflict } from "../lib/urlState.js";
 import InlineSelect from "./InlineSelect.jsx";
 
 /**
@@ -62,7 +62,7 @@ export default function IncludeSelect({ subsets: offered, value, variable, onCha
       </InlineSelect>
       {anyConflict && (
         <span className="visually-hidden" id={`${ids}-note`}>
-          Options that would leave only one group of {variable.label.toLowerCase()} are turned off.
+          {conflictNote(variable)}
         </span>
       )}
     </span>

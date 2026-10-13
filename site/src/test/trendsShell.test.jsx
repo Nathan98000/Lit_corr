@@ -237,7 +237,7 @@ describe("the characteristic picker on this page", () => {
     expect(trends["Length & structure"]).toMatch(/Word count, paragraphs, series, titles/);
     // the Genres page's picker is as before: When published lists what is left of it (F77)
     const genres = topics(GENRE_PAGE_EXCLUDED, null);
-    expect(genres["When published"]).toMatch(/Publication year, published on a weekend, years online/);
+    expect(genres["When published"]).toMatch(/Publication year, published on a weekend, story age \(years online\)/);
     expect(genres["Length & structure"]).toMatch(/Word count, paragraphs, series, titles/);
   });
 });

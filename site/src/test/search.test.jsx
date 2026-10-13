@@ -28,7 +28,9 @@ describe("F45: search", () => {
   const top = (q, n = 3) => searchCharacteristics(real, q).slice(0, n).map((r) => r.variable.id);
 
   it.skipIf(!real)("finds the review's queries on the real data", () => {
-    expect(top("length")).toContain("story_words"); // its noun is "story length"
+    // its noun is "word count" (round 4's O9); "length" is a synonym only it has, so it still comes first
+    expect(top("length", 1)).toEqual(["story_words"]);
+    expect(top("difficulty", 1)).toEqual(["read_grade_composite"]); // a synonym of every reading measure: its name wins
     expect(top("age")).toContain("age_years"); // its noun is "story age"
     const age = searchCharacteristics(real, "age").map((r) => r.variable.label);
     expect(age.filter((l) => /page|language|average/i.test(l))).toEqual([]); // word beginnings only

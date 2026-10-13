@@ -30,20 +30,39 @@ function nameRank(name, q) {
   return 0;
 }
 
+const synonymOwners = new WeakMap();
+
+/** How many characteristics have each synonym word ("length": 1, Word count's own; "dialog": every dialogue one). */
+function ownersOf(meta) {
+  if (!synonymOwners.has(meta)) {
+    const count = new Map();
+    for (const v of meta.variables) for (const w of new Set(wordsOf(fold(v.syn || "")))) count.set(w, (count.get(w) || 0) + 1);
+    synonymOwners.set(meta, count);
+  }
+  return synonymOwners.get(meta);
+}
+
 /**
  * Search results: [{ variable, topic, rank }] with rank 3 (the label or noun starts with the query), 2 (a word of the
- * label or noun does) or 1 (every word of the query starts a word of the label, noun, description, topic or
- * synonyms: "age" finds "story age", not "page", "language" or "average").
+ * label or noun does, or every word of the query is a synonym that only this characteristic has: "length" names Word
+ * count, whose noun was "story length in words" before round 4's one name, while "difficulty", a synonym of every
+ * reading measure, leaves "Reading difficulty" first) or 1 (every word of the query starts a word of the label, noun,
+ * description, topic or synonyms: "age" finds "story age", not "page", "language" or "average").
  */
 export function searchCharacteristics(meta, query) {
   const q = fold(query).trim().replace(/\s+/g, " ");
   if (!q) return [];
   const qWords = wordsOf(q);
   const topics = new Map(meta.topics.map((t) => [t.id, t]));
+  const owners = ownersOf(meta);
   const out = [];
   browsingOrder(meta).forEach((variable, order) => {
     const topic = topics.get(variable.topic);
     let rank = Math.max(nameRank(fold(variable.label), q), nameRank(fold(variable.noun), q));
+    if (rank < 2 && variable.syn && qWords.length) {
+      const own = wordsOf(fold(variable.syn));
+      if (qWords.every((w) => own.includes(w) && owners.get(w) === 1)) rank = 2;
+    }
     if (!rank && qWords.length) {
       const hay = wordsOf(
         fold([variable.label, variable.noun, variable.description, topic?.label, variable.syn, topic?.syn].join(" ")),

@@ -36,9 +36,9 @@ const text = (segs) => segs.map((s) => (typeof s === "string" ? s : s.strong)).j
 
 /**
  * The test data's genres files, with differences put in on purpose: in dialogue share Romance clearly lower (r −0.32)
- * and Fetish clearly higher (+0.25); in "has dialogue" Romance clearly more common; and genres published years apart.
+ * and Fetish clearly higher (+0.25); in "has dialogue" Romance clearly more common.
  */
-function flaggedFetch({ ages = [11, 4.1, 16.2, null] } = {}) {
+function flaggedFetch() {
   const serve = fixtureFetch();
   const fn = async (url) => {
     const res = await serve(url);
@@ -49,7 +49,6 @@ function flaggedFetch({ ages = [11, 4.1, 16.2, null] } = {}) {
     c.dlg_word_share.f = [0, 1, -1, 0];
     c.dlg_has_dialogue.r = [null, 0.01, 0.21, null];
     c.dlg_has_dialogue.f = [0, 0, 1, 0];
-    body.age = ages;
     return { ok: true, status: 200, json: async () => body };
   };
   fn.calls = serve.calls;
@@ -128,7 +127,7 @@ describe("headings and lists", () => {
   });
 
   it.skipIf(!real)("ask the approved questions, with the genres as the subject", () => {
-    expect(chartQuestionText(v(real, "story_words"))).toBe("How do genres differ in story length in words?");
+    expect(chartQuestionText(v(real, "story_words"))).toBe("How do genres differ in word count?");
     expect(chartQuestionText(v(real, "pov_is_first_person"))).toBe("How common are first-person stories in each genre?");
     expect(chartQuestionText(v(real, "sex_anatomy_per_1k"))).toBe("How do genres differ in anatomical terms?");
   });
@@ -412,8 +411,8 @@ describe("the chart", () => {
 });
 
 describe("no story-age note (decision 3)", () => {
-  it("is left out even when the genres' median ages are far apart, in any option", async () => {
-    vi.stubGlobal("fetch", flaggedFetch({ ages: [11, 2, 22, null] }));
+  it("is left out in any option, and the files have no median age (O18)", async () => {
+    expect(fixtureFile("genres/all.json")).not.toHaveProperty("age");
     const user = await openGenres("#/genres?var=dlg_word_share");
     const noNote = () => {
       expect(document.querySelector(".genre-age, .agebox")).toBeNull();

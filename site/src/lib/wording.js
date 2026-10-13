@@ -2,7 +2,7 @@
 //
 // A title states a pattern ("Longer stories tend to get more favorites per 1,000 views") only when the
 // aggregates mark it as clear (direction +1 / -1, see litcorr/stage2/site_data.py). Otherwise it is neutral
-// ("How favorites per 1,000 views vary with story length"). Titles use descriptive verbs only: never
+// ("How favorites per 1,000 views vary with word count"). Titles use descriptive verbs only: never
 // "cause", "drive", "make readers" and the like.
 
 export function lowerFirst(s) {
@@ -106,7 +106,7 @@ const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 /**
  * The unit of a characteristic's ranges, when it helps to read the group labels (" (per 1,000 words)"), and only when
- * the noun does not name it already: "story length in words", not "story length in words (words)"; "the number of
+ * the noun does not name it already: "word count", not "word count (words)"; "the number of
  * sentences", not "… (sentences)"; "title word count", not "… (words)".
  */
 export function unitNote(variable) {
@@ -118,7 +118,7 @@ export function unitNote(variable) {
 }
 
 /**
- * What the rows of a chart are, and in what unit: "Stories grouped by story length in words" (above the rows). None
+ * What the rows of a chart are, and in what unit: "Stories grouped by word count" (above the rows). None
  * for a yes/no characteristic: its two rows name themselves ("Has dialogue", "No dialogue"), and its noun does not
  * read after "grouped by" ("has dialogue").
  */
@@ -172,7 +172,7 @@ export function answerHeading({ variable, metric, genre, direction, effect, show
 
 /**
  * What screen readers hear when a chart has loaded (F47): the full chart title, then the answer when it says
- * something else ("How views vary with story length across all genres. No clear pattern.").
+ * something else ("How views vary with word count across all genres. No clear pattern.").
  */
 export function announcement(title, answer) {
   if (!answer || answer === title) return title;
@@ -235,7 +235,7 @@ export function chartSummary({ rows, valueText, n }) {
 
 /**
  * The question sentence (concept B), in pieces so that each bracketed part can be a control:
- * "In [All genres], how do [favorites per 1,000 views] vary with [story length]?"
+ * "In [All genres], how do [favorites per 1,000 views] vary with [word count]?"
  * "does the" for singular measures ("how does the [average rating] vary"; the article stays outside the measure's
  * word); "vary with" for ordered characteristics, "vary by" for unordered ones and "differ between [first-person
  * stories and third-person stories]" for yes/no ones.
@@ -262,7 +262,7 @@ export function questionText({ variable, metric, genre }) {
 
 /**
  * The Genres page's question about one characteristic, in parts so that the characteristic can be a control: "How do
- * genres differ in [story length in words]?"; for yes/no characteristics "How common are [first-person stories] in
+ * genres differ in [word count]?"; for yes/no characteristics "How common are [first-person stories] in
  * each genre?" (the genres, not the characteristic, are the subject: many nouns are plural).
  */
 export function chartQuestion(variable) {
@@ -279,9 +279,9 @@ export function chartQuestionText(variable) {
 export const standsOutQuestion = (genre) => `What stands out about stories in ${genre.name}?`;
 
 /**
- * The Trends page's question for one characteristic, as Explore's "Keep exploring" asks it (§5): "How has story length
- * in words changed over time?", "How have very long paragraphs changed over time?" (a plural noun); yes/no, "How has
- * the share of stories with an author’s note changed over time?".
+ * The Trends page's question for one characteristic, as Explore's "Keep exploring" asks it (§5): "How has word count
+ * changed over time?", "How have very long paragraphs changed over time?" (a plural noun); yes/no, "How has the share
+ * of stories with an author’s note changed over time?".
  */
 export const changedOverTime = (variable) =>
   variable.yes_subject

@@ -1,7 +1,7 @@
 """Plain-English wording for the website: popularity measures, the "stories included" filter, and phrases
 for every story characteristic. The site builds chart titles from these pieces, e.g.
 
-    neutral:  "How favorites per 1,000 views vary with story length in Romance"
+    neutral:  "How favorites per 1,000 views vary with word count in Romance"
     pattern:  "In Romance, longer stories tend to get more favorites per 1,000 views"
 
 Only descriptive verbs are used ("tend to", "vary with"); never "cause", "drive" or "make readers".
@@ -27,8 +27,8 @@ METRICS = [
      "help": "How many readers gave the story a star rating, per 1,000 views."},
     {"id": "pop_reading_lists_per_1k_views", "label": "Reading-list adds per 1,000 views",
      "group": "Per 1,000 views", "noun": "reading-list adds per 1,000 views", "plural": True,
-     "more": "are added to more reading lists per 1,000 views",
-     "less": "are added to fewer reading lists per 1,000 views", "format": "rate", "age": False,
+     "more": "get added to more reading lists per 1,000 views",
+     "less": "get added to fewer reading lists per 1,000 views", "format": "rate", "age": False,
      "help": "How often readers saved the story to one of their reading lists, per 1,000 views."},
     {"id": "pop_views_per_month", "label": "Views per month", "group": "Per month online",
      "noun": "views per month", "plural": True, "more": "receive more views per month",
@@ -200,7 +200,7 @@ BINARY = {
 NOUN = {
     "pub_year": "publication year", "pub_month": "publication month", "pub_weekday": "publication weekday",
     "age_years": "story age", "story_pages": "the number of pages", "meta_tag_count": "the number of tags",
-    "author_stories_count": "the author's number of stories", "story_words": "story length in words",
+    "author_stories_count": "the author's number of stories", "story_words": "word count",
     "story_sentences": "the number of sentences", "story_paragraphs": "the number of paragraphs",
     "story_one_sentence_paragraph_share": "one-sentence paragraphs",
     "story_long_paragraph_share": "very long paragraphs",
@@ -328,7 +328,7 @@ _PACE_NOUNS = {"sex": ("sexual language", False), "emotion": ("emotional languag
 # Characteristics whose noun is grammatically plural, so a sentence says "how have very long paragraphs changed" (meta's
 # `plural`, as the measures have it). Decided by the head word, not by a trailing "s": "very long paragraphs", "commas",
 # "sex scenes per 10,000 words", "syllables per word", "words before the first explicit term" are plural; "the number
-# of pages", "story length in words", "reliance on a few words", "overlap between neighboring sentences", "part number
+# of pages", "word count", "reliance on a few words", "overlap between neighboring sentences", "part number
 # in a series", "the use of 'we / us / our'" are not. Two nouns joined by "and" are plural ("affection and love",
 # "control and restraint"), but not when they only describe one ("consent and check-in language"). Yes/no
 # characteristics are asked about through "the share of …", which is singular.
@@ -428,6 +428,7 @@ FEATURED = [  # example questions under the chart: (question, settings). Each op
 # description is its "blurb" on the site: "Description length" was read as the length of descriptive writing (the
 # Trends review's fresh eyes, 3 in 6, beside "Descriptive words"), and the readers' own word for it was "blurb".
 SITE_LABEL = {
+    "age_years": "Story age (years online)",  # one name for the idea: its noun is "story age" (O9)
     "pace_action_peak_position": "Where action verbs peak",
     "rel_romance_per_1k": "Romance language",
     "lex_ttr": "Word variety (type–token ratio)",

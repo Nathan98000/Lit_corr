@@ -7,16 +7,15 @@ Output (default site/public/aggregates/):
                              groups of stories, and whether their noun is plural), the "stories included" options,
                              collection facts, and the Trends page's periods, rule and genres too few to compare
   v/<characteristic>/<included>.json
-                             for every genre (and "all"): per group of stories, the number of stories, their
-                             median age, and per popularity measure the median, quartiles and mean; plus the
-                             genre's overall figures and a pattern summary used to word the chart title
+                             for every genre (and "all"): per group of stories, the number of stories and per
+                             popularity measure the median, quartiles and mean; plus the genre's overall figures and
+                             a pattern summary used to word the chart title
   patterns.json              the pattern summaries of the v/ files ("All stories"), one character per
                              characteristic, for the Patterns page
   genres/<included>.json     the Genres page: for every characteristic (but publication month and weekday) and
                              every genre, the number of stories and their quartiles or shares, with the rank-biserial
                              correlation (or, for named groups, the total variation distance) against all genres and
-                             whether the genre clearly differs (GENRE_*); plus each genre's number of stories and
-                             median age
+                             whether the genre clearly differs (GENRE_*); plus each genre's number of stories
   trends/<included>/<genre>.json
                              the Trends page (trends.py), for All stories and the Length options: for every
                              characteristic but the left-out ones, per five-year period of publication year the number
@@ -306,13 +305,12 @@ def _init(shared: dict[str, Any]) -> None:
 
 
 def _cell(mask: np.ndarray) -> list[Any] | None:
+    """One group of stories: [n, m0, m1, ...], one entry per popularity measure (None under MIN_N stories with it)."""
     n = int(mask.sum())
     if n < MIN_N:
         return None
     w, Y = _S["w"][mask], _S["Y"][mask]
-    age = _S["age"][mask]
-    ok_age = np.isfinite(age)
-    out: list[Any] = [n, round(float(weighted_quantiles(age[ok_age], w[ok_age], [0.5])[0]), 1) if ok_age.any() else None]
+    out: list[Any] = [n]
     for k in range(Y.shape[1]):
         y = Y[:, k]
         ok = np.isfinite(y)
@@ -354,8 +352,8 @@ def _pattern(mask: np.ndarray, codes: np.ndarray, x: np.ndarray, kind: str, cell
         if not math.isfinite(rho):
             return [0, None]
         lo, hi = spearman_ci(rho, effective_n(w[ok]), PATTERN_Z)
-        meds = [c[2 + k][0] for c in cells if c is not None and c[2 + k] is not None
-                and (c[2 + k][4] if len(c[2 + k]) > 4 else c[0]) >= SMALL_N]
+        meds = [c[1 + k][0] for c in cells if c is not None and c[1 + k] is not None
+                and (c[1 + k][4] if len(c[1 + k]) > 4 else c[0]) >= SMALL_N]
         sign = math.copysign(1, rho)
         clear = (abs(rho) >= PATTERN_MIN_EFFECT and (lo > 0 or hi < 0) and len(meds) >= 2
                  and _gap_ok(meds[0], meds[-1], k, sign))
@@ -368,11 +366,11 @@ def _pattern(mask: np.ndarray, codes: np.ndarray, x: np.ndarray, kind: str, cell
         r = 2 * weighted_auc(y[a], w[a], y[b], w[b]) - 1
         se = rank_biserial_se(effective_n(w[a]), effective_n(w[b]))
         ca, cb = cells[0], cells[1]
-        if ca is None or cb is None or ca[2 + k] is None or cb[2 + k] is None:
+        if ca is None or cb is None or ca[1 + k] is None or cb[1 + k] is None:
             return [0, round(r, 2)]
         sign = math.copysign(1, r)
         clear = abs(r) >= PATTERN_MIN_EFFECT and abs(r) >= PATTERN_Z * se and \
-            _gap_ok(cb[2 + k][0], ca[2 + k][0], k, sign)  # the "yes" group compared with the "no" group
+            _gap_ok(cb[1 + k][0], ca[1 + k][0], k, sign)  # the "yes" group compared with the "no" group
         return [int(sign) if clear else 0, round(r, 2)]
     return [0, None]
 
@@ -505,19 +503,13 @@ def _genre_task(name: str, kind: str, fmt: str, x: np.ndarray, codes: np.ndarray
     return {sid: _genre_entry(kind, fmt, x, codes, nbins, smask) for sid, smask in _S["subsets"].items() if sid not in skip}
 
 
-def genre_file(sid: str, smask: np.ndarray, g: np.ndarray, w: np.ndarray, age: np.ndarray, genre_ids: list[str],
+def genre_file(sid: str, smask: np.ndarray, g: np.ndarray, genre_ids: list[str],
                entries: dict[str, dict[str, Any]]) -> dict[str, Any]:
-    """genres/<included>.json: the rule, the genres (meta.json's order), each genre's number of stories and median
-    age in this option (no age for fewer than MIN_N stories), and one entry per characteristic."""
-    ns, ages = [], []
-    for gi, gid in enumerate(genre_ids):
-        m = smask if gid == "all" else smask & (g == gi)
-        ok = m & np.isfinite(age)
-        wv = w[ok] if gid == "all" else np.ones(int(ok.sum()))
-        ns.append(int(m.sum()))
-        ages.append(round(float(weighted_quantiles(age[ok], wv, [0.5])[0]), 1) if ok.sum() >= MIN_N else None)
+    """genres/<included>.json: the rule, the genres (meta.json's order), each genre's number of stories in this option,
+    and one entry per characteristic."""
+    ns = [int((smask if gid == "all" else smask & (g == gi)).sum()) for gi, gid in enumerate(genre_ids)]
     return {"s": sid, "rule": {"min_r": GENRE_MIN_R, "z": GENRE_Z, "min_tvd": GENRE_MIN_TVD, "min_n": SMALL_N},
-            "genres": genre_ids, "n": ns, "age": ages, "c": entries}
+            "genres": genre_ids, "n": ns, "c": entries}
 
 
 # ------------------------------------------------------------------------------------------------- building
@@ -650,7 +642,7 @@ def build_site_data(handoff: Path | None = None, out_dir: Path | None = None, wo
     year = _numeric(df["pub_year"])
     periods = T.trend_periods(year[np.isfinite(year)])
     trend_subsets = [sid for sid in W.TREND_SUBSETS if sid in subsets]
-    shared = {"g": g, "w": w, "Y": Y, "age": _numeric(df["age_years"]), "genre_ids": genre_ids, "subsets": subsets,
+    shared = {"g": g, "w": w, "Y": Y, "genre_ids": genre_ids, "subsets": subsets,
               "rating": [m["format"] == "rating" for m in metrics], "year": year, "trend_periods": periods,
               "trend_subsets": trend_subsets}
     if out_dir.exists():
@@ -711,7 +703,7 @@ def build_site_data(handoff: Path | None = None, out_dir: Path | None = None, wo
     (out_dir / "genres").mkdir()
     for sid, smask in subsets.items():
         entries = {name: per[sid] for name, per in genre_entries.items() if sid in per}
-        payload = genre_file(sid, smask, g, w, shared["age"], genre_ids, entries)
+        payload = genre_file(sid, smask, g, genre_ids, entries)
         (out_dir / "genres" / f"{sid}.json").write_text(json.dumps(payload, separators=(",", ":"), allow_nan=False),
                                                        encoding="utf-8")
     for sid in trend_subsets:

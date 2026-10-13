@@ -129,14 +129,15 @@ def test_sample_sizes_and_medians_match_the_handoff(built):
             continue
         assert cell[0] == mask.sum()
         y = df["pop_fav_per_1k_views"].to_numpy()[mask]
-        med, p25, p75, mean = cell[2 + k][:4]
+        assert len(cell) == 1 + len(ids)  # [n, m0, m1, ...]: no median age (O18)
+        med, p25, p75, mean = cell[1 + k][:4]
         assert med == sig(np.quantile(y, 0.5, method="hazen")) and mean == sig(y.mean())
         assert p25 == sig(np.quantile(y, 0.25, method="hazen")) and p75 == sig(np.quantile(y, 0.75, method="hazen"))
     # "All genres" weights each story by its category's sampling weight
     allc = data["all"]["o"]
     y, w = df["pop_fav_per_1k_views"].to_numpy(), df["sampling_weight"].to_numpy()
-    assert allc[0] == len(df) and allc[2 + k][0] == sig(weighted_quantiles(y, w, [0.5])[0])
-    assert allc[2 + k][3] == sig(np.average(y, weights=w))
+    assert allc[0] == len(df) and allc[1 + k][0] == sig(weighted_quantiles(y, w, [0.5])[0])
+    assert allc[1 + k][3] == sig(np.average(y, weights=w))
 
 
 def test_small_groups_are_hidden_and_no_story_level_data_leaks(built):
@@ -262,6 +263,36 @@ def test_us_english_and_generated_phrases():
     assert W.synonyms_for("pov_is_first_person").startswith("pov point of view")
 
 
+# the forms that can't follow "tend to" (F97: "… tend to are added to more reading lists")
+NOT_AFTER_TEND_TO = {"are", "is", "has", "were", "was", "does", "gets", "receives", "collects"}
+
+
+def test_every_measures_more_and_less_read_after_tend_to():
+    """A pattern title is "{subject} tend to {more}": every measure's `more` and `less` start with a base verb (O8)."""
+    for m in W.METRICS:
+        for key in ("more", "less"):
+            first = m[key].split(" ")[0]
+            assert first not in NOT_AFTER_TEND_TO and not (first.endswith("s") and not first.endswith("ss")), (m["id"], key)
+    reading = next(m for m in W.METRICS if m["id"] == "pop_reading_lists_per_1k_views")
+    assert reading["more"] == "get added to more reading lists per 1,000 views"
+    assert reading["less"] == "get added to fewer reading lists per 1,000 views"
+    assert f"Longer stories tend to {reading['more']}" == "Longer stories tend to get added to more reading lists per 1,000 views"
+
+
+def test_one_name_per_idea():
+    """O9: word count is "Word count" and "word count" everywhere; story age is labeled with its years online."""
+    assert W.noun_for("story_words", "Word count") == "word count" and "story_words" not in W.PLURAL
+    assert W.label_for("story_words", "Word count") == "Word count"
+    assert W.label_for("age_years", "Years online") == "Story age (years online)"
+    assert W.noun_for("age_years", W.label_for("age_years", "Years online")) == "story age"
+    if REAL_META.exists():
+        real = json.loads(REAL_META.read_text())
+        v = {x["id"]: x for x in real["variables"]}
+        assert (v["story_words"]["label"], v["story_words"]["noun"]) == ("Word count", "word count")
+        assert (v["age_years"]["label"], v["age_years"]["noun"]) == ("Story age (years online)", "story age")
+        assert "story length in words" not in REAL_META.read_text(encoding="utf-8").lower()
+
+
 def test_search_synonyms_are_search_only_and_keep_their_spelling(built):
     assert "1st person" in W.synonyms_for("pov_class") and "first person" in W.synonyms_for("pov_is_first_person")
     assert W.synonyms_for("humor_per_1k") == "humour"
@@ -361,8 +392,7 @@ def test_genres_arrays_cells_and_shares(built_genres):
         data = _genres(out, sid)
         assert data["s"] == sid and data["genres"] == genre_ids
         assert data["rule"] == {"min_r": 0.2, "z": 3.29, "min_tvd": 0.2, "min_n": 30}
-        assert len(data["n"]) == len(data["age"]) == len(genre_ids)
-        assert all((a is None) == (n < sd.MIN_N) for n, a in zip(data["n"], data["age"]))
+        assert len(data["n"]) == len(genre_ids) and "age" not in data  # no median age (O18)
         for name, e in data["c"].items():
             arrays = [e["q"], e["r"], e["f"]] + ([e["z"]] if e["k"] == "zero" else [])
             assert all(len(a) == len(genre_ids) for a in arrays), name
@@ -467,8 +497,6 @@ def test_all_genres_quartiles_and_shares_match_a_weighted_computation(built_genr
     tense = df["narr_tense_class"].to_numpy()
     shares = [w[tense == t].sum() / w.sum() for t in ("past", "present", "mixed")]
     assert data["c"]["narr_tense_class"]["q"][0][1:] == pytest.approx(shares, abs=0.0011)
-    ages = df["age_years"].to_numpy()
-    assert data["age"][0] == round(weighted_quantiles(ages, w, [0.5])[0], 1)
     assert data["n"] == [len(df)] + [int((df["queue_category_slug"] == g["id"]).sum()) for g in meta["genres"][1:]]
 
 
@@ -510,7 +538,7 @@ def test_genres_and_trends_output_is_deterministic(built_genres, tmp_path):
         assert f.read_bytes() == (again / "trends" / f.relative_to(out / "trends")).read_bytes(), f.name
 
 
-def test_genres_builder_reads_only_the_characteristic_genre_weight_and_age(built_genres):
+def test_genres_builder_reads_only_the_characteristic_genre_and_weight(built_genres):
     _, meta, _, df = built_genres
     genre_ids = [g["id"] for g in meta["genres"]]
     g = df["queue_category_slug"].map({gid: i for i, gid in enumerate(genre_ids)}).to_numpy()
@@ -520,8 +548,8 @@ def test_genres_builder_reads_only_the_characteristic_genre_weight_and_age(built
     codes = np.zeros(len(df), dtype=np.int16)
     entry = sd._genre_task("sex_terms_per_1k", "num", "num", x, codes, 1, set())["all"]
     assert set(entry) == {"k", "fmt", "q", "r", "f"}
-    payload = sd.genre_file("all", np.ones(len(df), bool), g, w, df["age_years"].to_numpy(), genre_ids, {"x": entry})
-    assert set(payload) == {"s", "rule", "genres", "n", "age", "c"}
+    payload = sd.genre_file("all", np.ones(len(df), bool), g, genre_ids, {"x": entry})
+    assert set(payload) == {"s", "rule", "genres", "n", "c"}
     text = json.dumps(payload)
     assert "kromance" not in text and "story_key" not in text
 
@@ -744,7 +772,7 @@ def test_plural_nouns_are_decided_by_their_head_word():
               "sex_scenes_per_10k": "sex scenes per 10,000 words", "read_mean_syllables_per_word": "syllables per word",
               "pace_action_early": "action verbs in the first fifth", "setting_home_per_1k": "home settings",
               "emo_affection_per_1k": "affection and love"}
-    singular = {"story_pages": "the number of pages", "story_words": "story length in words",
+    singular = {"story_pages": "the number of pages", "story_words": "word count",
                 "pace_action_shift": "the build-up of action verbs", "pace_action_peak_position": "where action verbs peak",
                 "rep_top10_content_share": "reliance on a few words",
                 "rep_adjacent_sentence_overlap": "overlap between neighboring sentences",

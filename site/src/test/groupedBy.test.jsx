@@ -27,17 +27,17 @@ describe("the line that says what the rows are", () => {
     expect(unitNote({ noun: "publication month", unit: "month (1–12)", bins: { type: "levels" } })).toBe("");
   });
 
-  it.skipIf(!real)("reads “story length in words” on the real data", () => {
+  it.skipIf(!real)("reads “word count” on the real data (one name for the idea, round 4's O9)", () => {
     const words = real.variables.find((v) => v.id === "story_words");
     const rating = real.metrics.find((m) => m.id === "pop_rating");
-    expect(words.noun).toBe("story length in words");
+    expect(words.noun).toBe("word count");
     expect(questionText({ variable: words, metric: rating, genre: real.genres[0] })).toBe(
-      "In All genres, how does the average rating vary with story length in words?",
+      "In All genres, how does the average rating vary with word count?",
     );
     expect(chartTitle({ variable: words, metric: rating, genre: real.genres[0], direction: 0 })).toBe(
-      "How the average rating varies with story length in words across all genres",
+      "How the average rating varies with word count across all genres",
     );
-    expect(groupedBy(words)).toBe("Stories grouped by story length in words");
+    expect(groupedBy(words)).toBe("Stories grouped by word count");
     for (const v of real.variables) expect(groupedBy(v)).not.toMatch(/\((\w[\w ,]*)\).*\(\1\)|in words \(words\)/);
     // no "Stories grouped by has dialogue": yes/no characteristics have no such line
     for (const v of real.variables) expect(groupedBy(v) === "").toBe(Boolean(v.yes_subject));

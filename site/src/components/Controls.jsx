@@ -1,7 +1,7 @@
 import { forwardRef, useCallback, useEffect, useId, useRef, useState } from "react";
 import { prefetchVariable } from "../lib/data.js";
 import { scrollBehavior } from "../lib/motion.js";
-import { subsetConflict } from "../lib/urlState.js";
+import { conflictNote, subsetConflict } from "../lib/urlState.js";
 import { questionParts, questionText } from "../lib/wording.js";
 import InlineSelect, { SlotWords } from "./InlineSelect.jsx";
 import { PartBoundary, lazyPart } from "./lazyPart.jsx";
@@ -114,7 +114,7 @@ export const SlotButton = forwardRef(function SlotButton({ expanded, onPress, ch
 
 /**
  * The controls are the question itself (concept B): "In [All genres], how do [favorites per 1,000 views] vary with
- * [story length]?", then "Only include: [All stories]". Genre and "only include" are native selects styled as words;
+ * [word count]?", then "Only include: [All stories]". Genre and "only include" are native selects styled as words;
  * the measure and the characteristic open a menu and a picker.
  */
 export default function Controls({ meta, state, onChange }) {
@@ -226,7 +226,7 @@ export default function Controls({ meta, state, onChange }) {
       </div>
       {anyConflict && (
         <p className="include-note visually-hidden" id={`${ids}-include-note`}>
-          Options that would leave only one group of {variable.label.toLowerCase()} are turned off.
+          {conflictNote(variable)}
         </p>
       )}
 

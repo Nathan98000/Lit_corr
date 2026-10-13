@@ -7,8 +7,7 @@
 //   o  the same summary for all of those stories together
 //   p  per popularity measure: [direction, effect]; direction is +1 / -1 when the pattern is clear enough to
 //      say "tend to", 0 otherwise; effect is a rank correlation (null when not computed)
-// A cell is [n, medianAgeYears, m0, m1, ...] with one entry per popularity measure (meta.metrics order; the site no
-// longer shows the median age):
+// A cell is [n, m0, m1, ...] with one entry per popularity measure (meta.metrics order), each
 //   [median, p25, p75, mean] or [median, p25, p75, mean, nWithThisMeasure], or null if too few stories.
 
 const BASE = import.meta.env.BASE_URL || "./";
@@ -41,7 +40,7 @@ export const loadPatterns = () => getJson("patterns.json");
 
 /**
  * genres/<included>.json, the Genres page's file for one "Only include" option: `genres` (meta.genres' order), each
- * genre's stories `n` and median `age` (not shown), and per characteristic `c[id]`: its form `k` (num, zero, bin, grp, band),
+ * genre's stories `n`, and per characteristic `c[id]`: its form `k` (num, zero, bin, grp, band),
  * `fmt` for numbers (num, percent, year), per genre `q` (num: [n, p25, median, p75], all genres [n, p10, p25, median,
  * p75, p90]; bin: [n, share]; grp and band: [n, share per group]; zero: [n]), for zero `z` (stories above 0, then for
  * all genres their share, then their quartiles), `r` (rank-biserial r, or for grp the total variation distance,
@@ -75,7 +74,7 @@ export function prefetchVariable(variable, subset) {
 /** Summary of one popularity measure in one cell, or null if the group is not shown. */
 export function cellStats(cell, k) {
   if (!cell) return null;
-  const m = cell[2 + k];
+  const m = cell[1 + k];
   if (!m) return { n: cell[0], suppressed: true };
   return {
     n: m.length > 4 ? m[4] : cell[0],

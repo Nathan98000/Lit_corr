@@ -21,7 +21,7 @@ const PAGE_TITLES = {
   genres: GENRES_TITLE, // while the page or its file loads; then the question on screen (GenresPage, F73)
   trends: TRENDS_TITLE, // the same (TrendsPage)
 };
-const DEFAULT_QUESTION = "In All genres, how does the average rating vary with story length in words?";
+const DEFAULT_QUESTION = "In All genres, how does the average rating vary with word count?";
 
 /**
  * A new address in place (a control's change; an old link's setting dropped): no new history entry, and the entry's

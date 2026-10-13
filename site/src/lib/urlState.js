@@ -90,18 +90,25 @@ export function settledHash(hash, page, state) {
   return keys(hash).some((k) => RETIRED.includes(k) && !kept.has(k)) ? own : null;
 }
 
+/** What a characteristic is called inside a sentence: its noun ("story age", not "story age (years online)"). */
+const called = (variable) => variable.noun || variable.label.toLowerCase();
+
 /**
  * "Only include" options that cannot go with a characteristic: a length option while the chart is about word
- * count, a "Published …" option while it is about publication year or years online. Returns the reason, or null.
+ * count, a "Published …" option while it is about publication year or story age. Returns the reason ("not with word
+ * count", "not with story age"), or null.
  */
 export function subsetConflict(subset, variable) {
   if (!subset || !variable) return null;
-  if (subset.group === "Length" && variable.id === "story_words") return "not with word count";
+  if (subset.group === "Length" && variable.id === "story_words") return `not with ${called(variable)}`;
   if (subset.group === "Published" && (variable.id === "pub_year" || variable.id === "age_years")) {
-    return `not with ${variable.label.toLowerCase()}`;
+    return `not with ${called(variable)}`;
   }
   return null;
 }
+
+/** "Options that would leave only one group of story age are turned off." (the select's description) */
+export const conflictNote = (variable) => `Options that would leave only one group of ${called(variable)} are turned off.`;
 
 const has = (list, id) => list.some((x) => x.id === id);
 
@@ -166,10 +173,10 @@ export const trendsChanges = (state) => state.view === "changes" || state.v == n
 
 /**
  * The Trends page's settings: { view: "changes", genre, sub, v } for what changed, the page's default (`v` is kept for
- * the way back: the remembered characteristic, else story length), { v, genre, sub } for one characteristic over time
+ * the way back: the remembered characteristic, else word count), { v, genre, sub } for one characteristic over time
  * (an address with `var`, unless it says `view=changes`). An unknown characteristic, or one left out of the page,
- * becomes story length; an unknown genre, All genres (the page opens on All genres, D9); an option the page doesn't
- * offer (meta.trend.subsets) All stories, and so does a Length option with story length in one characteristic's view.
+ * becomes word count; an unknown genre, All genres (the page opens on All genres, D9); an option the page doesn't
+ * offer (meta.trend.subsets) All stories, and so does a Length option with word count in one characteristic's view.
  */
 export function sanitizeTrends(state, meta) {
   const allowed = (id) => meta.variables.find((v) => v.id === id && onTrendsPage(v));

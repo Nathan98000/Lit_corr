@@ -22,7 +22,7 @@ import { lowerFirst, upperFirst } from "./wording.js";
 export const genreWords = (genre) => (genre.id === "all" ? "all genres" : genre.name);
 
 /**
- * View 1's question, in parts around its two slots: "Across [all genres], how has [story length in words] changed over
+ * View 1's question, in parts around its two slots: "Across [all genres], how has [word count] changed over
  * time?" ("In [Romance], …" for a genre), "have" for a plural noun ("…, how have [very long paragraphs] changed …"),
  * and for yes/no characteristics the share of its stories, which is singular: "…, how has the share of [stories with
  * an author's note] changed over time?".
@@ -179,7 +179,7 @@ function tooFewSentence(genre, subset, file, which) {
 }
 
 /**
- * View 1's heading: "Story length in words clearly rose from 2000–2009 to 2020 or later", "The share of stories with an
+ * View 1's heading: "Word count clearly rose from 2000–2009 to 2020 or later", "The share of stories with an
  * author’s note clearly fell …", "Where sexual language peaks clearly moved later …", "Narrative perspective clearly
  * changed …", "No clear change in … from 2000–2009 to 2020 or later", or the too-few sentence when a window has fewer
  * than the rule's stories (r is null). The site's rule alone decides (the file's `f`).

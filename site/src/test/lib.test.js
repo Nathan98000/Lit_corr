@@ -48,9 +48,10 @@ describe("consistent number formats", () => {
 });
 
 describe("reading the aggregates", () => {
-  const cell = [120, 8.5, [0.5, 0.2, 0.9, 0.6], [4.4, 4.1, 4.7, 4.3, 110], null];
+  // [n, m0, m1, ...]: the stories, then one entry per measure (no median age since round 4's O18)
+  const cell = [120, [0.5, 0.2, 0.9, 0.6], [4.4, 4.1, 4.7, 4.3, 110], null];
   it("unpacks a cell, with a measure-specific count when one is given", () => {
-    expect(cellStats(cell, 0)).toEqual({ n: 120, median: 0.5, p25: 0.2, p75: 0.9, mean: 0.6 }); // the median age (8.5) is not read
+    expect(cellStats(cell, 0)).toEqual({ n: 120, median: 0.5, p25: 0.2, p75: 0.9, mean: 0.6 });
     expect(cellStats(cell, 1).n).toBe(110);
     expect(cellStats(cell, 2)).toEqual({ n: 120, suppressed: true });
     expect(cellStats(null, 0)).toBeNull();

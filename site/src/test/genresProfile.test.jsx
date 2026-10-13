@@ -29,10 +29,9 @@ const realFile = (sub = "all") =>
 
 /**
  * The test data with Romance standing out on purpose: less dialogue (r −0.32), more anger above 0 (+0.24), more
- * often with dialogue (+0.21) and a different mix of perspectives (0.27); Fetish stands out on nothing. Romance's
- * stories are 6 years older than all genres'.
+ * often with dialogue (+0.21) and a different mix of perspectives (0.27); Fetish stands out on nothing.
  */
-function profileFetch({ ages = [11, 10.8, 17, null] } = {}) {
+function profileFetch() {
   const serve = fixtureFetch();
   const fn = async (url) => {
     const res = await serve(url);
@@ -43,7 +42,6 @@ function profileFetch({ ages = [11, 10.8, 17, null] } = {}) {
     set("emo_anger_per_1k", [null, 0.02, 0.24, null], [0, 0, 1, 0]);
     set("dlg_has_dialogue", [null, -0.01, 0.21, null], [0, 0, 1, 0]);
     set("pov_class", [null, 0.03, 0.27, null], [0, 0, 1, 0]);
-    body.age = ages;
     return { ok: true, status: 200, json: async () => body };
   };
   fn.calls = serve.calls;
@@ -231,7 +229,7 @@ describe("edge states", () => {
     await waitFor(() => expect(window.location.hash).toBe("#/genres?view=genre&genre=romance&include=all"));
   });
 
-  it("has no story-age note, in the full and the small-sample states, even with ages 6 years apart (decision 3)", async () => {
+  it("has no story-age note, in the full and the small-sample states (decision 3; the files have no median age, O18)", async () => {
     const noNote = () => {
       expect(document.querySelector(".genre-age, .agebox")).toBeNull();
       expect(document.querySelector(".genres-page").textContent).not.toMatch(/Story age|median ages?/);

@@ -192,7 +192,7 @@ export function genresQuestion(meta, view, d) {
 }
 
 /**
- * The Trends page's question for this view's characteristic (§5): "How has story length in words changed over time?",
+ * The Trends page's question for this view's characteristic (§5): "How has word count changed over time?",
  * opening its chart over time with this view's genre and, when the Trends page offers it, this view's option (else all
  * stories); none for the characteristics the page leaves out. { text, hash, state } or null.
  */

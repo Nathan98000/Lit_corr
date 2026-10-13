@@ -163,6 +163,8 @@ describe("only include", () => {
     const published = { id: "y2000", group: "Published" };
     expect(subsetConflict(length, { id: "story_words", label: "Word count" })).toBe("not with word count");
     expect(subsetConflict(published, { id: "pub_year", label: "Publication year" })).toBe("not with publication year");
+    // the noun, so "Story age (years online)" never puts parentheses inside parentheses (round 4's O9)
+    expect(subsetConflict(published, { id: "age_years", label: "Story age (years online)", noun: "story age" })).toBe("not with story age");
     expect(subsetConflict(published, { id: "story_words", label: "Word count" })).toBeNull();
   });
 

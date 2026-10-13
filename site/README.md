@@ -339,8 +339,8 @@ src/
                           when its list holds more) and the too-few state (stories per period, a period's label
                           breaking only before its dash), with "What changed"'s words and values for
                           ComparisonProfile
-    ChartNotes.jsx        the totals box (story age) with its switch, and the three explanations (disclosures at every
-                          width)
+    ChartNotes.jsx        the three explanations beside or under the chart (disclosures at every width); no story-age
+                          box since the owner's changes of 2026-10-13
     DownloadPng.jsx       "Download image": the button ("Download image of this chart", "… of these changes", "… of
                           what stands out"), its lazy code and its failure message (Popularity, both views of the Genres
                           and Trends pages); the file is a PNG
@@ -414,13 +414,14 @@ License 1.1 (`public/fonts/OFL.txt`, taken from `@fontsource/source-serif-4` 5.3
 ## Design notes
 
 - Literotica's own accent blue (`#4a89f3`, the theme color its pages declare) carries the data; a warm orange marks
-  "lower" and story-age warnings; everything else is neutral. All colors are variables in `styles.css`.
+  "lower"; everything else is neutral. All colors are variables in `styles.css`.
 - A chart's heading says "tend to" only when the pattern is clear: a rank correlation of at least 0.1 that is clear
   of zero at the 99% level, groups of at least 30 stories at both ends, and a gap of at least 10% between their
   medians (0.1 stars for ratings). Otherwise it says "No clear pattern" (or "Too few stories to judge a pattern");
   characteristics without an order say "Each group on its own".
-- Story age: totals carry a warning with a switch to a per-month or per-1,000-views measure, and “Only include” can
-  limit any chart to stories published in one period.
+- Story age: totals keep growing while a story is online. The measure menu says so beside its per-month and
+  per-1,000-views measures, How it works explains it, and “Only include” can limit any chart to stories published in
+  one period. The charts of totals carry no box of their own (the owner, 2026-10-13).
 - Genres are listed alphabetically, never ranked, except where the reader asks for it: the Genres page's "By median"
   (or "By share") order (owner's decision D3), which the line above the chart says. "One genre" orders characteristics
   by the size of their difference within that genre, never genres; so does "What changed" by the size of their change.

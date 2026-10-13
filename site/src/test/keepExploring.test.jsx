@@ -56,13 +56,17 @@ describe("keep exploring", () => {
     expect(links.some((a) => /^How (do genres differ|has)/.test(a.textContent))).toBe(false);
   });
 
-  it("never repeats the age box's “Switch to …”", async () => {
+  it("offers the per-month view of a total like any other question (no story-age box: the owner, 2026-10-13)", async () => {
     await renderApp("#/explore?genre=romance&var=dlg_word_share&metric=pop_views");
-    expect(screen.getByRole("button", { name: "Switch to views per month" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /^Switch to / })).toBeNull();
     const texts = items().map((a) => a.textContent);
     expect(texts[0]).toBe("Every clear pattern with views in Romance\u00a0→");
     expect(texts[1]).toBe("What stands out about stories in Romance?\u00a0→"); // the Genres page, for the genre chosen
-    expect(texts.slice(2)).toEqual(["Q1: dialogue share, favorites?\u00a0→", "Q3: anger, views?\u00a0→", "Q4: perspective, favorites?\u00a0→"]);
+    expect(texts.slice(2)).toEqual([
+      "Q1: dialogue share, favorites?\u00a0→",
+      "Q2: dialogue share in Romance, views per month?\u00a0→", // the box's switch led here
+      "Q3: anger, views?\u00a0→",
+    ]);
   });
 
   it("chooses by view only, never by a result", () => {
@@ -71,7 +75,7 @@ describe("keep exploring", () => {
     expect(picks({})).toEqual(["Q2", "Q3", "Q4"]);
     expect(picks({ v: "emo_anger_per_1k", metric: "pop_views" })).toEqual(["Q1", "Q2", "Q4"]);
     expect(picks({ genre: "romance", metric: "pop_views_per_month" })).toEqual(["Q1", "Q3", "Q4"]); // Q2 is this view
-    expect(picks({ v: "dlg_word_share", metric: "pop_views" })).toEqual(["Q1", "Q2", "Q3"]); // Q6 would be the switch
+    expect(picks({ v: "dlg_word_share", metric: "pop_views" })).toEqual(["Q1", "Q2", "Q3"]);
   });
 
   it("is there when no group has enough stories", async () => {

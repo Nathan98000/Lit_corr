@@ -2,7 +2,6 @@ import { useEffect, useId, useState } from "react";
 import { cellStats, groupRows, loadVariable, pattern } from "../lib/data.js";
 import { chartValueText } from "../lib/rangeLayout.js";
 import {
-  RATE_FOR,
   announcement,
   answerHeading,
   chartTitle,
@@ -13,7 +12,6 @@ import {
   subtitleParts,
   takeawaySegments,
   theMeasure,
-  totalsNote,
 } from "../lib/wording.js";
 import { sanitize, toHash } from "../lib/urlState.js";
 import ChartNotes from "./ChartNotes.jsx";
@@ -92,7 +90,6 @@ export function describeView(meta, view, data) {
     effect,
     title,
     sub,
-    totalsNote: totalsNote(metric),
     readable,
     pNote,
     answer,
@@ -162,18 +159,15 @@ const sameView = (a, b) => a.genre === b.genre && a.metric === b.metric && a.v =
 
 /**
  * "Keep exploring" (concept J2 of the second review): the first three example questions, in their fixed order, that
- * open a view other than the one shown and other than the totals box's "Switch to …". Never chosen or ordered by a
- * result. Returns [{ question, state }].
+ * open a view other than the one shown. Never chosen or ordered by a result. Returns [{ question, state }].
  */
 export function keepExploring(meta, view) {
-  const rate = RATE_FOR[view.metric];
-  const avoid = [view, rate && meta.metrics.some((m) => m.id === rate) ? { ...view, metric: rate } : null].filter(Boolean);
   return meta.featured
     .map((q) => ({
       question: q.question,
       state: sanitize({ genre: q.genre || "all", metric: q.metric, v: q.var, sub: "all" }, meta),
     }))
-    .filter(({ state }) => !avoid.some((a) => sameView(a, state)))
+    .filter(({ state }) => !sameView(view, state))
     .slice(0, 3);
 }
 
@@ -255,8 +249,8 @@ export default function Explorer({ meta, state, onChange, onAsk, onHoldScroll })
   const ready = Boolean(d && !busy);
   useEffect(() => (ready ? whenIdle(preloadMenus) : undefined), [ready]);
 
-  // a new measure or characteristic, from the sentence or the totals box's "Switch to …", keeps the scroll position even
-  // when the new chart is shorter (round 3)
+  // a new measure or characteristic, from the sentence, keeps the scroll position even when the new chart is shorter
+  // (round 3)
   const keepPlace = (next) => {
     onHoldScroll?.();
     onChange(next);
@@ -335,7 +329,7 @@ export default function Explorer({ meta, state, onChange, onAsk, onHoldScroll })
               />
               <WayAcross meta={meta} page="explore" variable={d.variable} genre={view.genre} sub={view.sub} />
             </div>
-            <ChartNotes meta={meta} d={d} view={view} wide={wide} onChange={keepPlace} />
+            <ChartNotes meta={meta} d={d} wide={wide} />
             {d.shownCount > 0 && (
               <div className="chart-actions">
                 <DownloadPng busy={busy} image={(panel) => exploreImage(d, view, panel)} />

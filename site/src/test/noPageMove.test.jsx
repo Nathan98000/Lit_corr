@@ -197,7 +197,7 @@ describe("a shorter chart keeps the scroll position", () => {
     expect(floor.style.height).toBe("");
   });
 
-  it("is held for a new question from the sentence or the totals box's switch, not for a way out", async () => {
+  it("is held for a new question from the sentence, not for a way out", async () => {
     const hold = vi.fn();
     const state = sanitize({ v: "dlg_word_share", metric: "pop_views" }, fixtureMeta);
     const user = userEvent.setup();
@@ -206,13 +206,11 @@ describe("a shorter chart keeps the scroll position", () => {
     await waitFor(() => expect(document.querySelector(".chart-panel[aria-busy='false']")).toBeTruthy());
     await user.selectOptions(screen.getByLabelText("Genre"), "romance");
     expect([hold.mock.calls.length, onChange.mock.calls.length]).toEqual([1, 1]);
-    await user.click(screen.getByRole("button", { name: "Switch to views per month" }));
-    expect([hold.mock.calls.length, onChange.mock.calls.length]).toEqual([2, 2]);
     cleanup();
     // a way out of a selection with too few stories (back to All genres) is another view: no hold
     render(<Explorer meta={fixtureMeta} state={{ ...state, genre: "tiny" }} onChange={onChange} onAsk={() => {}} onHoldScroll={hold} />);
     await user.click(await screen.findByRole("button", { name: "All genres" }));
-    expect([hold.mock.calls.length, onChange.mock.calls.length]).toEqual([2, 3]);
+    expect([hold.mock.calls.length, onChange.mock.calls.length]).toEqual([1, 2]);
   });
 });
 

@@ -62,7 +62,6 @@ describe("the explorer", () => {
 
     await pickMeasure(user, "Views");
     await waitFor(() => expect(fullTitle()).toBe("How views vary with dialogue share in Romance"));
-    expect(screen.getByText(/Totals grow with time online/)).toBeTruthy();
 
     await pickCharacteristic(user, "anger");
     await waitFor(() => expect(fullTitle()).toMatch(/anger/i));
@@ -230,13 +229,13 @@ describe("notes", () => {
     return fn;
   }
 
-  it("warns about totals with a one-tap switch to the per-month measure", async () => {
-    const user = await renderApp("#/explore?var=dlg_word_share&metric=pop_views");
-    expect(screen.getByText("Totals grow with time online.")).toBeTruthy();
-    expect(screen.getByText(/Older stories have had longer to collect views\./)).toBeTruthy();
-    await user.click(screen.getByRole("button", { name: "Switch to views per month" }));
-    await waitFor(() => expect(window.location.hash).toMatch(/metric=pop_views_per_month/));
-    expect(screen.queryByText("Totals grow with time online.")).toBeNull();
+  it("has no story-age box for totals, nor its switch (the owner, 2026-10-13)", async () => {
+    await renderApp("#/explore?var=dlg_word_share&metric=pop_views");
+    expect(document.querySelector(".agebox")).toBeNull();
+    expect(screen.queryByText(/Totals grow with time online|Older stories have had longer/)).toBeNull();
+    expect(screen.queryByRole("button", { name: /^Switch to / })).toBeNull();
+    // the notes beside the chart are its three explanations
+    expect([...document.querySelectorAll(".notes > *")].every((el) => el.matches("details.disclosure"))).toBe(true);
   });
 
   it("puts the definitions behind three disclosures and links to How it works", async () => {

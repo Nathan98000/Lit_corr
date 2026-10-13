@@ -83,14 +83,14 @@ describe("F40, F44: the takeaway", () => {
 });
 
 describe("F41: the notes beside the chart on wide screens (concept N1)", () => {
-  it("keeps the story-age boxes open and folds the three explanations into one-line disclosures", async () => {
+  it("folds the three explanations into one-line disclosures, with no story-age box", async () => {
     const original = window.matchMedia;
     window.matchMedia = (q) => ({ matches: q === "(min-width: 900px)", addEventListener() {}, removeEventListener() {} });
     try {
       await renderApp("#/explore?var=dlg_word_share&metric=pop_views");
       const margin = document.querySelector(".notes-margin");
       expect(margin).toBeTruthy();
-      expect(within(margin).getByText("Totals grow with time online.").closest("details")).toBeNull();
+      expect(within(margin).queryByText(/Totals grow with time online/)).toBeNull();
       const folded = [...margin.querySelectorAll("details.disclosure")];
       expect(folded.map((d) => d.querySelector("summary").textContent)).toEqual([
         "How to read this chart",

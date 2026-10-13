@@ -82,23 +82,6 @@ export function patternNote({ variable, direction, effect, shown = null, smallN 
   return ["The groups differ only a little, or not consistently."];
 }
 
-// Totals and the measure that makes old and new stories easier to compare.
-export const RATE_FOR = {
-  pop_views: "pop_views_per_month",
-  pop_favorites: "pop_fav_per_1k_views",
-  pop_comments: "pop_comments_per_1k_views",
-  pop_rating_count: "pop_ratings_per_1k_views",
-};
-
-/**
- * The story-age warning of a measure that is a total, which grows with time online: a bold lead and a sentence, shown
- * as a box with its switch to the per-month or per-1,000-views measure. Null for every other measure.
- */
-export function totalsNote(metric) {
-  if (!metric.age) return null;
-  return { lead: "Totals grow with time online.", text: `Older stories have had longer to collect ${metric.noun}.` };
-}
-
 /** The section of “How it works” that explains how a characteristic was measured. */
 export function methodSection(variable) {
   const id = variable.id;

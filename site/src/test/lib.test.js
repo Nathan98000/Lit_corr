@@ -10,7 +10,7 @@ import {
   stepDecimals,
 } from "../lib/format.js";
 import { DEFAULT_STATE, defaultMetric, parseHash, sanitize, settledHash, toHash } from "../lib/urlState.js";
-import { aboutCount, chartTitle, howToRead, patternNote, segmentsText, strengthWord, totalsNote } from "../lib/wording.js";
+import { aboutCount, chartTitle, howToRead, patternNote, segmentsText, strengthWord } from "../lib/wording.js";
 import { fixtureMeta, realMeta } from "./fixtures.js";
 
 describe("formatting", () => {
@@ -189,14 +189,6 @@ describe("chart titles", () => {
     expect(aboutCount(8996)).toBe("about 9,000");
     expect(aboutCount(9499)).toBe("about 9,000");
     expect(aboutCount(278)).toBe("278");
-  });
-
-  it("warns about story age for totals only", () => {
-    expect(totalsNote(m("pop_views"))).toEqual({
-      lead: "Totals grow with time online.",
-      text: "Older stories have had longer to collect views.",
-    });
-    expect(totalsNote(m("pop_fav_per_1k_views"))).toBeNull();
   });
 });
 

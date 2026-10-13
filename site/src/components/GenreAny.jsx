@@ -46,7 +46,7 @@ export default function GenreAny({ meta, variable, entry, rows, sub, title, onNa
   const layout = anyLayout({
     rows: aRows,
     width,
-    domain: chartDomain(aRows.map((r) => ({ stats: r.above })), "num"),
+    domain: chartDomain(aRows.map((r) => ({ stats: r.above })), "num", entry.fmt),
     printed: nf.value,
     shareText: formatPercent,
     tickFormat: tickFormatFor("zero", entry.fmt),

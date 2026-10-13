@@ -139,7 +139,7 @@ describe("F118: “and 2 more” when the takeaway names fewer changes than its 
     const fell = changesTakeaway(p).find((l) => l.word === "Fell");
     expect(fell.more).toBe(p.lower.length - 3);
     expect(`${fell.mark} ${fell.word}: ${changesLineWords(fell)}`).toBe(
-      "▼ Fell: average paragraph length, median paragraph length, very long paragraphs (‘walls of text’) and 2 more.",
+      "▼ Fell: average paragraph length, median paragraph length, very long paragraphs (‘walls of text’) and 1 more.",
     );
     expect(changesAnnouncement(real, file, {})).toContain(`Fell: ${changesLineWords(fell)}`);
   });

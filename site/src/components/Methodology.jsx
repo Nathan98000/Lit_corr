@@ -6,13 +6,14 @@ import { defaultMetric, toHash } from "../lib/urlState.js";
 import { typicalSample } from "../lib/wording.js";
 import useMediaQuery from "./useMediaQuery.js";
 
+// the words for Stage 1's exclusion reasons (their codes: litcorr/build/quality.py)
 const REASONS = {
   no_text: "had no story text that could be collected",
   text_too_short: "had fewer than 100 words of text",
   possibly_not_english: "did not look like English",
   missing_date: "had no publication date",
   missing_views: "had no view count",
-  duplicate_text: "had the same text as another story",
+  duplicate_of_another_story: "had the same text as another story",
 };
 
 export const SECTIONS = [
@@ -37,13 +38,12 @@ export const SECTIONS = [
 function InShort({ meta }) {
   const { counts, source } = meta;
   const genres = meta.genres.length - 1;
-  const perGenre = Math.round(counts.sampled / Math.max(1, genres));
   return (
     <aside className="in-short" aria-labelledby="in-short-title">
       <h2 id="in-short-title">In short</h2>
       <ul>
         <li>
-          A random sample: {formatCount(perGenre)} stories in each of {genres} genres, collected{" "}
+          A random sample: about {formatCount(typicalSample(meta))} stories in each of {genres} genres, collected{" "}
           {formatDate(source.collected_from)} to {formatDate(source.collected_to)}; {formatCount(counts.included)} are
           used in the charts.
         </li>
@@ -381,11 +381,11 @@ export default function Methodology({ meta, section }) {
           Literotica holds far more stories than could be read politely, so this site uses a <strong>sample</strong>.
           For each of {genres.length} of Literotica’s genres (the site itself calls them categories), the collector read an evenly spread
           selection of the category’s alphabetical listing pages, which list every story whatever its popularity,
-          and then picked 300 stories at random from them. The audio, illustrated and non-English categories were
+          put the stories found there in a random order, and collected them in that order: about{" "}
+          {formatCount(typicalSample(meta))} stories per genre. The audio, illustrated and non-English categories were
           left out, since the measures need English prose. When a sampled story could not be collected (it had
           been removed, or the site kept returning an error for it), the next story in that category’s random order
-          took its place, so every genre has its full sample. In all, {formatCount(counts.with_text)} stories were
-          collected with their text.
+          took its place. In all, {formatCount(counts.with_text)} stories were collected with their text.
         </p>
         <p>
           A story is identified by its address on the site, which avoids counting the same story twice. Literotica
@@ -536,8 +536,8 @@ export default function Methodology({ meta, section }) {
         <h2 id="limits" tabIndex={-1}>Limitations</h2>
         <ul>
           <li>
-            <strong>A sample.</strong> 300 random stories per genre, not every story on the site. Small groups are
-            uncertain, which is why sample sizes are always shown.
+            <strong>A sample.</strong> About {formatCount(typicalSample(meta))} random stories per genre, not every
+            story on the site. Small groups are uncertain, which is why sample sizes are always shown.
           </li>
           <li>
             <strong>Snapshots.</strong> Views and favorites keep growing; each story’s numbers were recorded once.

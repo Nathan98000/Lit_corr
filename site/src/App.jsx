@@ -46,13 +46,15 @@ const replaceHash = (hash) => window.history.replaceState(window.history.state, 
  * The kicker, with the story and genre counts (filled in when the data arrives; the placeholder says the same). The
  * story count is rounded, so it never contradicts a chart's exact count (F55). On Explore it is the site's headline,
  * the page's h1; on the other pages (round 4's U1) it names the page and the source, a paragraph over the question,
- * which is the h1 there: "Genres · about 9,000 Literotica stories · 30 genres", and the Trends page's years instead of
+ * which is the h1 there: "Genres · about 13,000 Literotica stories · 30 genres", and the Trends page's years instead of
  * the genres (meta.trend; until the data arrives, figure spaces hold their place). When it wraps, the counts take a
  * line of their own, and a "·" never starts or ends a line: each separator leads its piece, and one at a line's start
- * is clipped (styles.css); the pieces ("about 9,000 Literotica stories", "2000–2026") never break inside.
+ * is clipped (styles.css); the pieces ("about 13,000 Literotica stories", "2000–2026") never break inside. The
+ * placeholder is the data's own count, so the words don't change when it arrives; a test (dataUpdate.test.jsx) checks it,
+ * and index.html's descriptions, against meta.json.
  */
 function Kicker({ meta, page = null, years = false }) {
-  const stories = meta ? aboutCount(meta.counts.included) : "about 9,000";
+  const stories = meta ? aboutCount(meta.counts.included) : "about 13,000";
   const span = meta?.trend ? `${meta.trend.periods[0][0]}–${meta.trend.now[1]}` : "\u2007\u2007\u2007\u2007–\u2007\u2007\u2007\u2007";
   const Tag = page ? "p" : "h1";
   return (

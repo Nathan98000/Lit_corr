@@ -3,8 +3,10 @@ handoff zip (sample sizes, medians, weights, suppression of small groups, no per
 
 from __future__ import annotations
 
+import io
 import json
 import re
+import zipfile
 
 import numpy as np
 import pandas as pd
@@ -831,5 +833,54 @@ def test_real_too_few_genres():
     if not REAL_META.exists():
         pytest.skip("site aggregates not generated")
     too_few = json.loads(REAL_META.read_text())["trend"]["too_few"]
-    assert too_few["all"] == ["chain-stories", "transgender"]
-    assert {sid: len(ids) for sid, ids in too_few.items()} == {"all": 2, "short": 24, "medium": 16, "long": 29}
+    assert too_few["all"] == ["chain-stories"]  # and transgender until the data update 20261013
+    assert {sid: len(ids) for sid, ids in too_few.items()} == {"all": 1, "short": 16, "medium": 9, "long": 25}
+
+
+def _rezip(src, dst, stories):
+    """A copy of the handoff zip at `src` with its stories replaced."""
+    buf = io.BytesIO()
+    stories.to_parquet(buf, index=False)
+    with zipfile.ZipFile(src) as zin, zipfile.ZipFile(dst, "w") as zout:
+        for item in zin.namelist():
+            zout.writestr(item, buf.getvalue() if item == "stories_features.parquet" else zin.read(item))
+    return dst
+
+
+def _same_files(a, b):
+    files = sorted(p.relative_to(a) for p in a.rglob("*.json"))
+    assert files == sorted(p.relative_to(b) for p in b.rglob("*.json"))
+    for rel in files:
+        ja, jb = json.loads((a / rel).read_text()), json.loads((b / rel).read_text())
+        if rel.name == "meta.json" and len(rel.parts) == 1:
+            ja.pop("generated_at"), jb.pop("generated_at")
+        assert ja == jb, rel
+
+
+def test_stories_still_waiting_to_be_collected_are_left_out(built, tmp_path):
+    """D3 (data update 20261013): rows of stories whose collection had not finished (queued or partial) are dropped as
+    the handoff is loaded, so the aggregates are those of the same handoff without them; a story that could not be
+    collected still counts as sampled."""
+    src = sorted(built[2].parent.glob("*.zip"))[0]
+    with zipfile.ZipFile(src) as z:
+        stories = pd.read_parquet(io.BytesIO(z.read("stories_features.parquet")))
+    stories["qc_flags"] = [np.array([], dtype=object) for _ in range(len(stories))]
+    lost = {**stories.iloc[0].to_dict(), "story_key": "kfailed", "analysis_include": False, "has_text": False,
+            "exclusion_reasons": ["no_text"], "qc_flags": np.array(["no_text", "status_failed"], dtype=object),
+            "sampling_weight": np.nan}
+    finished = pd.DataFrame(stories.to_dict("records") + [lost])
+    waiting = [{**lost, "story_key": f"kwait{i}", "queue_category_slug": slug, "category_slug": slug,
+                "qc_flags": np.array(["no_text", flag], dtype=object)}
+               for i, (slug, flag) in enumerate([("romance", "status_queued"), ("fetish", "status_queued"),
+                                                 ("romance", "status_partial")])]
+    unfinished = pd.DataFrame(finished.to_dict("records")[:5] + waiting + finished.to_dict("records")[5:])
+    a, b = tmp_path / "finished", tmp_path / "unfinished"
+    for out, frame in ((a, finished), (b, unfinished)):
+        out.mkdir()
+        sd.build_site_data(_rezip(src, out / src.name, frame), out / "aggregates", workers=1)
+    a, b = a / "aggregates", b / "aggregates"
+    _same_files(a, b)
+    counts = json.loads((b / "meta.json").read_text())["counts"]
+    assert counts["sampled"] == len(finished)  # the story that could not be collected still counts
+    assert counts["excluded_reasons"]["no_text"] == 2  # the synthetic excluded story and the lost one
+    assert len(sd.drop_unfinished(unfinished)) == len(finished)

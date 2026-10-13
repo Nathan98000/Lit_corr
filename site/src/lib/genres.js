@@ -829,13 +829,38 @@ export function chartRows(rows, variable, kind) {
 }
 
 /**
- * The value axis of the range chart: from the lowest quartile to the highest (with 4% to spare), starting at 0 when
- * the lowest is near it (within half the span); shares run from 0 to 100%.
+ * The value axis of values that don't vary (every quartile the same: every genre's pages on site with "Under 2,000
+ * words", 1 page; How To's in every period on the Trends page), which have no spread to zoom on. It shows the value
+ * against 0: from 0 to twice the value, with three ticks, 0, the value and twice the value, so that the line sits
+ * halfway up on a labeled value and no axis reads "0.96" to "1.04" pages; 0 to 2 for a value of 0 (on the baseline),
+ * mirrored for a value under 0. Percentages keep a share's axis, from 0 to the smallest of 25%, 50%, 75% and 100% that
+ * holds the value (steps of 5%, 10% or 25%, as yes/no charts have); years run a year either side. `fmt`: the entry's
+ * (num, percent or year). Returns [lo, hi, step] (the ticks every step from lo: stepTicks), or null when the values
+ * vary.
  */
-export function chartDomain(rows, kind) {
+export function flatDomain(vals, fmt = "num") {
+  if (!vals.length || vals.some((v) => v !== vals[0])) return null;
+  const v = vals[0];
+  if (fmt === "year") return [v - 1, v + 1, 1];
+  if (fmt === "percent") {
+    const top = [0.25, 0.5, 0.75, 1].find((t) => Math.abs(v) <= t + 1e-9) ?? 1;
+    const step = top <= 0.25 ? 0.05 : top <= 0.5 ? 0.1 : 0.25;
+    return v < 0 ? [-top, 0, step] : [0, top, step];
+  }
+  if (v === 0) return [0, 2, 1];
+  return v > 0 ? [0, 2 * v, v] : [2 * v, 0, -v];
+}
+
+/**
+ * The value axis of the range chart: from the lowest quartile to the highest (with 4% to spare), starting at 0 when
+ * the lowest is near it (within half the span); shares run from 0 to 100%; values that don't vary: flatDomain.
+ */
+export function chartDomain(rows, kind, fmt = "num") {
   if (kind === "bin") return [0, 1];
   const vals = rows.filter((r) => r.stats).flatMap((r) => [r.stats.p25, r.stats.median, r.stats.p75]);
   if (!vals.length) return [0, 1];
+  const flat = flatDomain(vals, fmt);
+  if (flat) return flat;
   let lo = Math.min(...vals);
   let hi = Math.max(...vals);
   const pad = (hi - lo) * 0.04 || Math.abs(hi) * 0.04 || 1;

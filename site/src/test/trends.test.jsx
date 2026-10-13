@@ -239,6 +239,10 @@ describe("the chart's geometry (trendLayout)", () => {
           const input =
             entry.k === "num" ? trendChartInput(real, byId.get(id), entry, file) : entry.k === "zero" ? trendSplitInputs(real, byId.get(id), entry, file)[1].input : null;
           if (!input) continue;
+          // values that don't vary (How To's pages on site) have no height to fill: from 0 to twice the value
+          // (flatCharts.test.jsx)
+          const vals = input.cells.filter(Boolean).flatMap((c) => [c.p25, c.median, c.p75]);
+          if (vals.every((v) => v === vals[0])) continue;
           const [lo, hi] = trendDomain("num", input.cells);
           expect(input.axis.ticks.length, `${sub}/${g} ${id}`).toBeGreaterThanOrEqual(3);
           expect(input.axis.ticks.length, `${sub}/${g} ${id}`).toBeLessThanOrEqual(5);
@@ -395,8 +399,10 @@ describe("the heading and the numbers line", () => {
         for (const [id, e] of Object.entries(file.c)) expect(Object.keys(e).filter((k) => !["k", "fmt", "q", "t", "r", "f"].includes(k)), `${sub}/${g.id} ${id}`).toEqual([]);
       }
     }
-    const touch = realTrends("all", "all").c.sense_touch_per_1k;
-    expect([touch.r, touch.f]).toEqual([-0.213, -1]);
+    // physical action verbs fell by exactly the rule's 0.2 and clearly changed: r and f decide alone (touch words, r
+    // −0.213, until the data update 20261013)
+    const verbs = realTrends("all", "all").c.style_action_verbs_per_1k;
+    expect([verbs.r, verbs.f]).toEqual([-0.2, -1]);
   });
 });
 

@@ -4,7 +4,8 @@
 
 import { stepDecimals } from "./format.js";
 import { wrapText } from "./genreLayout.js";
-import { PHONE, niceTicks, textWidth } from "./rangeLayout.js";
+import { flatDomain } from "./genres.js";
+import { PHONE, niceTicks, stepTicks, textWidth } from "./rangeLayout.js";
 import { MARK, TEXT } from "./tokens.js";
 
 export const TREND_MAX_W = 760; // five columns don't need the page's width (§3.1)
@@ -52,9 +53,12 @@ export const periodLines = (period) => {
 /**
  * The value axis of numbers (num: the quartiles' range, 4% to spare, from 0 when the lowest is within half the span,
  * as the Genres page's charts do) and of shares (bin: from 0 to the smallest of 25%, 50%, 75% and 100% that holds every
- * share). `cells`: per period { p25, median, p75 } or { share } (null under MIN_N). Returns [lo, hi].
+ * share). Numbers that don't vary (How To's pages on site, 1 page in every period) are drawn against 0, as the Genres
+ * page draws them: flatDomain, from 0 to twice the value with ticks 0, the value and twice the value. `cells`: per
+ * period { p25, median, p75 } or { share } (null under MIN_N); `fmt`: the entry's (num, percent or year). Returns
+ * [lo, hi], or [lo, hi, step] with its own ticks (trendTicks).
  */
-export function trendDomain(kind, cells) {
+export function trendDomain(kind, cells, fmt = "num") {
   const shown = cells.filter(Boolean);
   if (kind === "bin") {
     const top = Math.max(0, ...shown.map((c) => c.share));
@@ -62,6 +66,8 @@ export function trendDomain(kind, cells) {
   }
   const vals = shown.flatMap((c) => [c.p25, c.median, c.p75]);
   if (!vals.length) return [0, 1];
+  const flat = flatDomain(vals, fmt);
+  if (flat) return flat;
   let lo = Math.min(...vals);
   let hi = Math.max(...vals);
   const pad = (hi - lo) * 0.04 || Math.abs(hi) * 0.04 || 1;
@@ -73,9 +79,11 @@ export function trendDomain(kind, cells) {
  * The axis's ticks. Numbers: three to five nice values; the domain grows to its outer ticks when that leaves at least
  * 80% of the plot to the data (2,500 to 7,488 words: 0 to 8,000), else it stays and the ticks sit inside it (0 to
  * 0.411: 0, 0.1 … 0.4, as the Genres page's axes do). Shares: from 0 to the domain's top in steps of 5% (to 25%), 10%
- * (to 50%) or 25%. Returns { lo, hi, step, ticks }.
+ * (to 50%) or 25%. A domain with its own step (trendDomain's for numbers that don't vary) has a tick every step.
+ * Returns { lo, hi, step, ticks }.
  */
-export function trendTicks(kind, [lo, hi]) {
+export function trendTicks(kind, [lo, hi, fixed]) {
+  if (fixed) return { lo, hi, ...stepTicks(lo, hi, fixed) };
   const range = (a, b, step) => {
     const out = [];
     for (let v = a; v <= b + step / 2; v += step) out.push(Number(v.toFixed(10)));

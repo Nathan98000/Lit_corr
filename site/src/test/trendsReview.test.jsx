@@ -584,7 +584,7 @@ describe("View 2 (phase 6)", () => {
     return open(hash, { ready: trends.replace(".trends-page", String(hash).includes("genres") ? ".genres-page" : ".trends-page") });
   }
 
-  it.skipIf(!real)("counts the characteristics compared: 26 of 180 for All genres, 8, 16 and 15 of 179 with the Length options", () => {
+  it.skipIf(!real)("counts the characteristics compared: 25 of 180 for All genres, 8, 13 and 15 of 179 with the Length options", () => {
     const counts = Object.fromEntries(
       real.trend.subsets.map((sub) => {
         const file = realTrends(sub, "all");
@@ -593,9 +593,9 @@ describe("View 2 (phase 6)", () => {
       }),
     );
     expect(counts).toEqual({
-      all: "26 of 180 characteristics clearly changed from 2000–2009 to 2020 or later",
+      all: "25 of 180 characteristics clearly changed from 2000–2009 to 2020 or later",
       short: "8 of 179 characteristics clearly changed from 2000–2009 to 2020 or later",
-      medium: "16 of 179 characteristics clearly changed from 2000–2009 to 2020 or later",
+      medium: "13 of 179 characteristics clearly changed from 2000–2009 to 2020 or later",
       long: "15 of 179 characteristics clearly changed from 2000–2009 to 2020 or later",
     });
   });
@@ -603,7 +603,7 @@ describe("View 2 (phase 6)", () => {
   it.skipIf(!real)("says how long stories got first (All genres, All stories)", () => {
     const file = realTrends("all", "all");
     const p = trendProfile(real, file);
-    expect(lengthLine(p, file)).toBe("Stories got longer: median 2,810 words in 2000–2009, 4,100 in 2020 or later.");
+    expect(lengthLine(p, file)).toBe("Stories got longer: median 2,770 words in 2000–2009, 4,150 in 2020 or later.");
     // the Length options leave word count out
     expect(lengthLine(trendProfile(real, realTrends("medium", "all")), realTrends("medium", "all"))).toBeNull();
   });
@@ -651,12 +651,12 @@ describe("View 2 (phase 6)", () => {
   it.skipIf(!real)("prints the values first, with the medians' relative change only for numbers with a plain unit", () => {
     const p = trendProfile(real, realTrends("all", "all"));
     const values = (id) => changesValues(p.items.find((x) => x.id === id)).text;
-    expect(values("story_mean_paragraph_words")).toBe("51.6 → 38.8 (−25%)");
-    expect(values("story_paragraphs")).toBe("56 → 102 (+82%)");
-    expect(values("story_words")).toBe("2,810 → 4,100 (+46%)");
+    expect(values("story_mean_paragraph_words")).toBe("51.6 → 39.1 (−24%)");
+    expect(values("story_paragraphs")).toBe("56 → 104 (+86%)");
+    expect(values("story_words")).toBe("2,770 → 4,150 (+50%)");
     // shares, the shares with any, scales, bands and named groups: no percent
-    expect(values("story_long_paragraph_share")).toBe("57% → 40%"); // mostly zero: the shares with any
-    expect(values("story_has_author_note")).toBe("18% → 33%");
+    expect(values("story_long_paragraph_share")).toBe("58% → 41%"); // mostly zero: the shares with any
+    expect(values("story_has_author_note")).toBe("19% → 33%");
     expect(values("dlg_word_share")).toMatch(/^\d+% → \d+%$/); // a share, written as a percent
     expect(values("lex_mean_word_zipf")).toMatch(/^[\d.]+ → [\d.]+$/); // "Zipf scale (higher = more common)"
     expect(values("read_grade_composite")).toMatch(/^[\d.]+ → [\d.]+$/); // "US school grade"
@@ -823,14 +823,14 @@ describe("finding what changed, and no dead ends (phase 7)", () => {
   it.skipIf(!real)("lists what clearly changed, largest first, each with its mark and word; none when nothing was compared", () => {
     const all = pickerChanges(real, realTrends("all", "all"));
     expect(all.title).toBe("Clearly changed in all genres");
-    expect(all.items).toHaveLength(26);
+    expect(all.items).toHaveLength(25);
     expect(all.items.slice(0, 3)).toEqual([
       { id: "story_paragraphs", mark: "▲", word: "rose" },
       { id: "story_mean_paragraph_words", mark: "▼", word: "fell" },
-      { id: "desc_chars", mark: "▲", word: "rose" },
+      { id: "story_sentences", mark: "▲", word: "rose" },
     ]);
     expect(pickerChanges(real, realTrends("medium", "all")).title).toBe("Clearly changed in all genres · 2,000–5,000 words");
-    expect(pickerChanges(real, realTrends("medium", "all")).items).toHaveLength(16);
+    expect(pickerChanges(real, realTrends("medium", "all")).items).toHaveLength(13);
     expect(pickerChanges(real, realTrends("all", "adult-romance")).title).toBe("Clearly changed in Romance");
     expect(pickerChanges(real, realTrends("all", "chain-stories"))).toBeNull(); // too few to compare
   });

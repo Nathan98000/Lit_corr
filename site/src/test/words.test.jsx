@@ -113,7 +113,7 @@ describe("F55: story counts", () => {
     expect(within(sub).getByRole("link", { name: "278 stories" }).getAttribute("href")).toBe("#/methodology/missing-data");
   });
 
-  it("says “about 9,000 stories” in the kicker before and after the data arrives", async () => {
+  it("says “about 13,000 stories” in the kicker before and after the data arrives", async () => {
     let release;
     const gate = new Promise((r) => {
       release = r;
@@ -122,16 +122,16 @@ describe("F55: story counts", () => {
     vi.stubGlobal("fetch", async (url) => {
       if (String(url).endsWith("meta.json")) {
         await gate;
-        const meta = { ...fixtureMeta, counts: { ...fixtureMeta.counts, included: 8996 } };
+        const meta = { ...fixtureMeta, counts: { ...fixtureMeta.counts, included: 12568 } };
         return { ok: true, status: 200, json: async () => meta };
       }
       return serve(url);
     });
     render(<App />);
     const kicker = screen.getByRole("heading", { level: 1 });
-    expect(kicker.textContent).toBe("What do popular Literotica stories have in common? · about 9,000 stories · 30 genres");
+    expect(kicker.textContent).toBe("What do popular Literotica stories have in common? · about 13,000 stories · 30 genres");
     release();
-    await waitFor(() => expect(kicker.textContent).toMatch(/· about 9,000 stories · 3 genres$/));
+    await waitFor(() => expect(kicker.textContent).toMatch(/· about 13,000 stories · 3 genres$/));
   });
 });
 

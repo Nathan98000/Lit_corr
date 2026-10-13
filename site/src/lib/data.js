@@ -11,10 +11,16 @@
 //   [median, p25, p75, mean] or [median, p25, p75, mean, nWithThisMeasure], or null if too few stories.
 
 const BASE = import.meta.env.BASE_URL || "./";
-const cache = new Map();
+const cache = new Map(); // keyed by the plain path
 
+/* global __DATA_BUILD__ */
+// the data build's stamp (lib/dataStamp.js), put in the code by vite.config.js; "" in the tests
+const dataBuild = () => (typeof __DATA_BUILD__ === "string" ? __DATA_BUILD__ : "");
+
+/** An aggregates file's address, with the data build's stamp: "./aggregates/meta.json?v=20261013T164459Z". */
 export function aggregatesUrl(path) {
-  return `${BASE}aggregates/${path}`;
+  const v = dataBuild();
+  return `${BASE}aggregates/${path}${v ? `?v=${v}` : ""}`;
 }
 
 function getJson(path) {

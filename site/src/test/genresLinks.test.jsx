@@ -106,8 +106,8 @@ describe("How it works", () => {
     expect(heading.nextElementSibling.textContent).toMatch(/All genres includes each genre’s own stories; the largest genre, Erotic Couplings, is about 12% of it\.$/);
   });
 
-  it("says “about 300 stories” from the data, never from a literal", () => {
-    if (real) expect(typicalSample(real)).toBe(300);
+  it("says “about 420 stories” from the data, never from a literal", () => {
+    if (real) expect(typicalSample(real)).toBe(420);
     expect(typicalSample({ genres: [{ id: "all", n: 9 }, { n: 296 }, { n: 300 }, { n: 299 }] })).toBe(300);
     expect(typicalSample({ genres: [{ id: "all", n: 9 }, { n: 101 }, { n: 117 }] })).toBe(110);
   });

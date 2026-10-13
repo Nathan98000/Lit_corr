@@ -57,6 +57,16 @@ export function niceTicks(lo, hi, count) {
 }
 
 /**
+ * Ticks every `step` from lo to hi, for a domain that comes with its own step (the axis of values that don't vary:
+ * flatDomain in genres.js, [0, 2, 1] for 1 page in every row, ticks 0, 1 and 2).
+ */
+export function stepTicks(lo, hi, step) {
+  const ticks = [];
+  for (let k = 0; lo + k * step <= hi + step / 2; k += 1) ticks.push(Number((lo + k * step).toFixed(10)));
+  return { step, ticks };
+}
+
+/**
  * The value axis: counts and rates start at 0; ratings keep a zoomed domain (most stories score 4–5).
  * Returns [lo, hi, ticks, step].
  */
@@ -114,9 +124,10 @@ export function chartValueText(rows, overall, format) {
  * ({x0, x1, y0, y1}) so that tests can check that nothing overlaps.
  *
  * The Genres page draws one row per genre with these options; absent (the explorer), the layout is unchanged:
- * `domain` ([lo, hi] of the value axis), `tickFormat(v, step)` (the axis labels), `printed(stats)` (a row's value),
- * `valueColumn` (values right-aligned in a column at the right, each after its row's `mark`, ▲ or ▼), `storiesColumn`
- * (the stories in a muted column at the right; in the phone layout under the label, below `storiesBelow` stories),
+ * `domain` ([lo, hi] of the value axis, or [lo, hi, step] with its own ticks: stepTicks), `tickFormat(v, step)` (the
+ * axis labels), `printed(stats)` (a row's value), `valueColumn` (values right-aligned in a column at the right, each
+ * after its row's `mark`, ▲ or ▼), `storiesColumn` (the stories in a muted column at the right; in the phone layout
+ * under the label, below `storiesBelow` stories),
  * `phoneLabelW` (in the phone layout, the labels in a column this wide, wrapped to two lines, instead of above the
  * bars), `rowHeight` (of rows beside their labels), `refText(value)` (the dashed line's label), `noneText` (a row
  * with too few stories), `markColumn` (the marks in an 18 px column right after the labels, the values without
@@ -200,7 +211,7 @@ export function rangeLayout({
   for (;;) {
     if (domain) {
       [lo, hi] = domain;
-      ({ step, ticks } = niceTicks(lo, hi, count));
+      ({ step, ticks } = domain[2] ? stepTicks(lo, hi, domain[2]) : niceTicks(lo, hi, count));
       ticks = ticks.filter((t) => t >= lo - 1e-9 && t <= hi + 1e-9);
     } else {
       [lo, hi, ticks, step] = valueDomain(rows, overall, format, count);

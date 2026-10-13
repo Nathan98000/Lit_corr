@@ -4,7 +4,8 @@
 // ComparisonProfile.jsx left it unchanged; since then only the two fixes of section 4.2 have changed it (a clear
 // difference never prints 40 or 60; two shares that would print the same get one decimal), in the rows that commit
 // lists. The markup is stored one tag per line, React's ids numbered in order of appearance; for the open topic, its
-// own markup (nothing else changes).
+// own markup (nothing else changes). Regenerated for the data update 20261013 (litcorr_stage2_handoff_20261013.zip),
+// with no code change: the numbers, the rows' order and the lists are the new data's.
 import { cleanup, render, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { readFileSync } from "node:fs";

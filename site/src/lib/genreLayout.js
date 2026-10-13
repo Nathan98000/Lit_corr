@@ -4,7 +4,7 @@
 // screens or under the name on phones (below 250), rows 31 px tall on wider screens and at least 44 px on phones.
 
 import { formatCount, stepDecimals, formatFixed } from "./format.js";
-import { MARK_GAP, MARK_W, PHONE, niceTicks, textWidth, wrapLabel } from "./rangeLayout.js";
+import { MARK_GAP, MARK_W, PHONE, niceTicks, stepTicks, textWidth, wrapLabel } from "./rangeLayout.js";
 import { TEXT } from "./tokens.js";
 
 const ROW = 31;
@@ -134,11 +134,14 @@ export function mixLayout({ rows, width, labels = [] }) {
   return { ...grid, width, height: grid.bottom + 8, top, barX: x0, barW, rows: laid, names: groupNames };
 }
 
-/** Ticks for a plot on [lo, hi]: nice steps, fewer when their labels would touch (`tickFormat(v, step)` writes them). */
-function plotTicks(lo, hi, x, plotW, phone, tickFormat) {
+/**
+ * Ticks for a plot on [lo, hi]: nice steps, fewer when their labels would touch (`tickFormat(v, step)` writes them), or
+ * every `fixed` step for a domain with its own ticks.
+ */
+function plotTicks(lo, hi, x, plotW, phone, tickFormat, fixed = null) {
   let count = phone ? 4 : 5;
   for (;;) {
-    const { step, ticks } = niceTicks(lo, hi, count);
+    const { step, ticks } = fixed ? stepTicks(lo, hi, fixed) : niceTicks(lo, hi, count);
     const text = tickFormat ? (v) => tickFormat(v, step) : (v) => formatFixed(v, stepDecimals(step));
     const out = ticks.filter((t) => t >= lo - 1e-9 && t <= hi + 1e-9).map((v) => ({ v, x: x(v), text: text(v) }));
     const widest = Math.max(0, ...out.map((t) => textWidth(t.text, TEXT.tick)));
@@ -168,8 +171,8 @@ export function wrapText(text, maxW, size) {
  * "Median" over "with any". All genres (the first row) is the plot's dashed line, labeled under the plot.
  *
  * rows: { index, label, n, share (null: fewer than meta.min_n stories), above: { n, p25, median, p75 } | null (fewer
- * than min_n stories with any), mark, noneText, fewAboveText }; `domain` is the plot's [lo, hi]; `printed(v)` writes a
- * median, `shareText(v)` a share, `tickFormat(v, step)` a tick.
+ * than min_n stories with any), mark, noneText, fewAboveText }; `domain` is the plot's [lo, hi] (or [lo, hi, step]:
+ * chartDomain); `printed(v)` writes a median, `shareText(v)` a share, `tickFormat(v, step)` a tick.
  */
 export function anyLayout({ rows, width, domain, printed, shareText, tickFormat = null }) {
   const phone = width < PHONE;
@@ -198,7 +201,7 @@ export function anyLayout({ rows, width, domain, printed, shareText, tickFormat 
     x1 = medianX - medW - 14;
     heads.push({ x: medianX, y: top - 10, text: "Median" }, { x: right, y: top - 10, text: "With any" });
   }
-  const [lo, hi] = domain;
+  const [lo, hi, fixed] = domain; // fixed: the step of a domain with its own ticks (flatDomain in genres.js)
   let plotW;
   let x;
   let ticks;
@@ -208,7 +211,7 @@ export function anyLayout({ rows, width, domain, printed, shareText, tickFormat 
     plotW = Math.max(40, x1 - x0);
     const pw = plotW;
     x = (v) => x0 + ((Math.min(Math.max(v, lo), hi) - lo) / (hi - lo || 1)) * pw;
-    ticks = plotTicks(lo, hi, x, plotW, phone, tickFormat);
+    ticks = plotTicks(lo, hi, x, plotW, phone, tickFormat, fixed);
     const last = ticks[ticks.length - 1];
     const over = last ? last.x + textWidth(last.text, TEXT.tick) / 2 + 10 - headsLeft : 0;
     if (over <= 0) break;

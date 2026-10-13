@@ -56,7 +56,8 @@ describe("Explore's chart layout is unchanged by the Genres page's options", () 
     // label's x by 1 px (8 px from a dot of radius 6, 7 before): every row, tick and height is as before (912c2d47bb675e32).
     // Then round 4's L1 (d940822bbc6c5207 before it): the stories in words on phones ("2,631 stories"), the short labels'
     // column as wide as its stories (1,760 of these layouts: their plot narrower), and a value the dashed line would run
-    // through starting 6 px right of it
-    expect(out).toEqual({ digest: "b026d24a6ef5724a", count: 14960 });
+    // through starting 6 px right of it. The data update 20261013 (litcorr_stage2_handoff_20261013.zip, no code change)
+    // moved the medians, counts and some groups' edges: b026d24a6ef5724a on the 20261008 handoff
+    expect(out).toEqual({ digest: "4c2d87eddc236323", count: 14960 });
   });
 });

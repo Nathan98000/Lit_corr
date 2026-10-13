@@ -91,7 +91,23 @@ def load_handoff(path: Path) -> Handoff:
         categories = pd.read_parquet(io.BytesIO(z.read("category_frame.parquet")))
         dictionary = json.loads(z.read("data_dictionary.json"))["variables"]
         manifest = json.loads(z.read("collection_manifest.json"))
-    return Handoff(path, stories, categories, dictionary, manifest)
+    return Handoff(path, drop_unfinished(stories), categories, dictionary, manifest)
+
+
+UNFINISHED = ("status_queued", "status_partial")  # qc_flags of stories still waiting in the collector's queue
+
+
+def drop_unfinished(stories: pd.DataFrame) -> pd.DataFrame:
+    """Leave out the stories whose collection had not finished when the data were processed: they have not been read
+    yet, so they are neither sampled stories lost nor part of any count. A story that could not be collected (gone,
+    failed, unavailable) stays: it was sampled and lost. With a finished collection this drops nothing."""
+    if "qc_flags" not in stories.columns:
+        return stories
+    waiting = stories["qc_flags"].map(
+        lambda f: isinstance(f, (list, tuple, np.ndarray)) and any(s in UNFINISHED for s in f)).to_numpy(bool)
+    if waiting.any():
+        log.info("Leaving out %d stories still waiting to be collected.", int(waiting.sum()))
+    return stories[~waiting].reset_index(drop=True)
 
 
 def _numeric(s: pd.Series) -> np.ndarray:

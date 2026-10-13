@@ -62,10 +62,10 @@ describe("the windows and the words", () => {
     expect(windowsCompared(fixtureFile("trends/short/all.json"))).toBe(false); // 28 stories from 2000–2009
   });
 
-  it.skipIf(!real)("counts 2,561 and 3,346 stories for All genres, and leaves Chain Stories and Transgender uncompared", () => {
-    expect(windowCounts(realTrends("all", "all"))).toEqual({ then: 2561, now: 3346 });
+  it.skipIf(!real)("counts 3,571 and 4,647 stories for All genres, and leaves Chain Stories uncompared", () => {
+    expect(windowCounts(realTrends("all", "all"))).toEqual({ then: 3571, now: 4647 });
     const uncompared = real.genres.filter((g) => !windowsCompared(realTrends("all", g.id))).map((g) => g.name);
-    expect(uncompared).toEqual(["Chain Stories", "Transgender"]);
+    expect(uncompared).toEqual(["Chain Stories"]); // and Transgender until the data update 20261013
   });
 
   it("words the heading, the sample line and the too-few heading from the file", () => {
@@ -143,23 +143,24 @@ describe("the rows", () => {
     expect(changesTakeaway(p)).toEqual([{ mark: "▲", word: "Rose", items: ["dialogue share", "has dialogue"], more: 0 }]);
   });
 
-  it.skipIf(!real)("are named by their content, then numbers in reading order: “Paragraph count: 68 in 100; 2000–2009 56, 2020 or later 102 paragraphs; clearly rose”", () => {
+  it.skipIf(!real)("are named by their content, then numbers in reading order: “Paragraph count: 68 in 100; 2000–2009 56, 2020 or later 104 paragraphs; clearly rose”", () => {
     const file = realTrends("all", "all");
     const p = trendProfile(real, file);
     const name = (id) => changesRowName(p.items.find((x) => x.id === id), file, real.min_n);
     // the values' relative change, as the row prints it (the trends review)
-    expect(name("story_paragraphs")).toBe("Paragraph count: 68 in 100; 2000–2009 56, 2020 or later 102 paragraphs (+82%); clearly rose. Opens its chart over time.");
-    expect(name("story_has_author_note")).toBe("Has an author’s note: 57 in 100; 2000–2009 18%, 2020 or later 33%; no clear change. Opens its chart over time.");
+    expect(name("story_paragraphs")).toBe("Paragraph count: 68 in 100; 2000–2009 56, 2020 or later 104 paragraphs (+86%); clearly rose. Opens its chart over time.");
+    expect(name("story_has_author_note")).toBe("Has an author’s note: 57 in 100; 2000–2009 19%, 2020 or later 33%; no clear change. Opens its chart over time.");
     expect(name("rel_consent_per_1k")).toMatch(
       /^Consent and check-in language: \d+ in 100; 2000–2009 11% with any, 2020 or later 21%; no clear change\. Opens its chart over time\.$/,
     );
     expect(name("desc_pov")).toMatch(/^Person of the blurb, % of stories: 2000–2009 First person [\d.]+%, .*; 2020 or later .*; no clear change\. /);
     expect(name("pace_sex_peak_position")).toMatch(/^Where sexual language peaks: \d+ in 100; 2000–2009 median [^,]+, 2020 or later median .+; no clear change\./);
-    // a clear change never prints the zone's edge (section 4.2): the build-up of sexual language, r −0.206
-    const buildUp = p.items.find((x) => x.id === "pace_sex_shift");
-    expect(buildUp.r).toBe(-0.206);
-    expect(comparisonBar(buildUp.r).times).toBe(40);
-    expect(name("pace_sex_shift")).toMatch(/^Build-up of sexual language: 39 in 100; /);
+    // a clear change never prints the zone's edge (section 4.2): physical action verbs, r −0.2 (the build-up of sexual
+    // language, r −0.206, until the data update 20261013)
+    const verbs = p.items.find((x) => x.id === "style_action_verbs_per_1k");
+    expect(verbs.r).toBe(-0.2);
+    expect(comparisonBar(verbs.r).times).toBe(40);
+    expect(name("style_action_verbs_per_1k")).toMatch(/^Physical action verbs: 39 in 100; /);
     const few = trendProfile(real, realTrends("all", "adult-how-to")).items.find((x) => x.r == null);
     if (few) expect(changesRowName(few, realTrends("all", "adult-how-to"), real.min_n)).toMatch(/; too few stories to compare\. Opens its chart over time\.$/);
   });
@@ -175,7 +176,7 @@ describe("the rows", () => {
       "Pacing & setting",
       "Word choice & style",
     ]);
-    expect(p.flagged).toHaveLength(26);
+    expect(p.flagged).toHaveLength(25);
   });
 });
 

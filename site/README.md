@@ -307,7 +307,8 @@ src/
     GenreAny.jsx          (lazy) mostly-zero characteristics: one row per genre with the range and median among its
                           stories with any, then that median and how many have any
     GenreMix.jsx          (lazy) 100% bars for named groups and ordered bands, the groups' names over All genres' bar
-    GenreGlide.jsx        (lazy) the rows' glide to a new order (transforms only; none under reduced motion)
+    GenreGlide.jsx        (lazy) the rows' glide to a new order (transforms only; none under reduced motion or in a
+                          hidden tab, and always ending with the rows in place, even when no animation frame comes)
     GenreSwitch.jsx       (lazy) the two-option switches (the view; the order, drawn compact)
     GenreDetails.jsx      (lazy) a genre's details: a compact card on wider charts, or on phones a line that sticks to
                           the bottom of the screen while its chart is in view; the link to the genre's own view

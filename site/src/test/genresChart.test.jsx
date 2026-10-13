@@ -7,6 +7,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "../App.jsx";
+import { ORDER_GLIDE_MS } from "../components/GenreGlide.jsx";
 import { clearCache } from "../lib/data.js";
 import {
   allGenresLine,
@@ -429,6 +430,94 @@ describe("the chart", () => {
     await user.click(screen.getByRole("radio", { name: "By median" }));
     await waitFor(() => expect(window.location.hash).not.toMatch(/sort=/));
     expect(moved()).toHaveLength(0);
+  });
+
+  it("ends a glide with every row at its place even when no animation frame comes, and jumps in a hidden tab (the owner's change 7)", async () => {
+    vi.stubGlobal("requestAnimationFrame", () => 1); // a tab left during the glide: the frames never come
+    vi.stubGlobal("cancelAnimationFrame", () => {});
+    const user = await openGenres("#/genres?var=dlg_word_share");
+    const moved = () => [...document.querySelectorAll(".genre-chart [data-glide]")].filter((el) => el.getAttribute("transform"));
+    await user.click(screen.getByRole("radio", { name: "A–Z" }));
+    await waitFor(() => expect(window.location.hash).toMatch(/sort=az/));
+    expect(moved().length).toBeGreaterThan(0); // drawn at their old places first (the test data's Fetish and Romance swap)
+    await new Promise((r) => setTimeout(r, ORDER_GLIDE_MS + 300));
+    expect(moved()).toHaveLength(0); // at their new places all the same
+    // a tab that isn't on screen: the rows jump to their places
+    Object.defineProperty(document, "hidden", { configurable: true, get: () => true });
+    try {
+      await user.click(screen.getByRole("radio", { name: "By median" }));
+      await waitFor(() => expect(window.location.hash).not.toMatch(/sort=/));
+      expect(moved()).toHaveLength(0);
+    } finally {
+      delete document.hidden;
+    }
+  });
+
+  it("stops a glide under way when the order changes again, leaving no row out of its place", async () => {
+    const pending = new Map();
+    let next = 0;
+    vi.stubGlobal("requestAnimationFrame", (f) => {
+      next += 1;
+      pending.set(next, f);
+      return next;
+    });
+    vi.stubGlobal("cancelAnimationFrame", (k) => pending.delete(k));
+    const user = await openGenres("#/genres?var=dlg_word_share");
+    const moved = () => [...document.querySelectorAll(".genre-chart [data-glide]")].filter((el) => el.getAttribute("transform"));
+    await user.click(screen.getByRole("radio", { name: "A–Z" }));
+    await waitFor(() => expect(window.location.hash).toMatch(/sort=az/));
+    expect(moved().length).toBeGreaterThan(0);
+    await user.click(screen.getByRole("radio", { name: "By median" })); // before the first glide's frames
+    await waitFor(() => expect(window.location.hash).not.toMatch(/sort=/));
+    let t = 0;
+    while (pending.size) {
+      const [k, f] = [...pending][0];
+      pending.delete(k);
+      f((t += 100));
+    }
+    expect(moved()).toHaveLength(0);
+  });
+
+  it("puts a mostly-zero characteristic's genres in order of their share with any, as its switch says (the owner's change 7)", async () => {
+    // the test data's Fetish and Romance both have half their stories with any: give Romance 80%, and keep their
+    // medians among those with any the same, so that only the share decides
+    const serve = flaggedFetch();
+    vi.stubGlobal("fetch", async (url) => {
+      const res = await serve(url);
+      if (!String(url).split("?")[0].endsWith("genres/all.json")) return res;
+      const body = await res.json();
+      const z = body.c.emo_anger_per_1k.z;
+      z[2] = [96, ...z[2].slice(1)]; // Romance: 96 of its 120 stories with any
+      return { ok: true, status: 200, json: async () => body };
+    });
+    const user = await openGenres("#/genres?var=emo_anger_per_1k");
+    const rows = () => [...document.querySelectorAll(".genre-any .row")];
+    const order = () => rows().map((r) => r.getAttribute("aria-label").split(":")[0]);
+    const tops = () => rows().map((r) => Number(r.querySelector(".glabel").getAttribute("y")));
+    expect(screen.getByRole("radio", { name: "By share with any" }).checked).toBe(true);
+    expect(order()).toEqual(["All genres", "Romance", "Fetish", "Tiny Genre"]); // 80%, then 50%; too few stories: last
+    expect(tops()).toEqual([...tops()].sort((a, b) => a - b)); // drawn from the top in that order
+    await user.click(screen.getByRole("radio", { name: "A–Z" }));
+    await waitFor(() => expect(order()).toEqual(["All genres", "Fetish", "Romance", "Tiny Genre"]));
+    await user.click(screen.getByRole("radio", { name: "By share with any" }));
+    await waitFor(() => expect(order()).toEqual(["All genres", "Romance", "Fetish", "Tiny Genre"]));
+  });
+
+  it.skipIf(!real)("orders every real mostly-zero characteristic by its share with any, in every option", () => {
+    let charts = 0;
+    for (const s of real.subsets) {
+      const file = realFile(s.id);
+      for (const [id, entry] of Object.entries(file.c)) {
+        if (entry.k !== "zero") continue;
+        const [, ...rest] = orderRows(genreRows(real, file, id), "zero", undefined);
+        const shares = rest.map((r) => (r.stats ? r.stats.share : null));
+        const shown = shares.filter((x) => x != null);
+        expect(shown, `${s.id} ${id}`).toEqual([...shown].sort((a, b) => b - a));
+        expect(shares.slice(shown.length).every((x) => x == null), `${s.id} ${id}`).toBe(true); // too few: last
+        charts += 1;
+      }
+    }
+    expect(charts).toBeGreaterThan(100);
   });
 });
 

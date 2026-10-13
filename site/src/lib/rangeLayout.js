@@ -46,6 +46,9 @@ export function wrapLabel(text, maxW, size = 14) {
   return [`${text.slice(0, n)}-`, text.slice(n)];
 }
 
+// the room a label under the plot keeps from the chart's edges, over textWidth's estimate, for wider fonts
+export const REF_SLACK = 1.1;
+
 /** "Nice" ticks (1, 2, 2.5 or 5 times a power of ten) from lo to hi: at most `count` intervals. */
 export function niceTicks(lo, hi, count) {
   const span = hi - lo || 1;
@@ -363,8 +366,10 @@ export function rangeLayout({
   if (hasRef) {
     const rx = x(overall.median);
     const text = refText ? refText(printed ? printed(overall) : valueText(overall.median)) : `Median of all stories: ${valueText(overall.median)}`;
-    const w = textWidth(text, tickSize, 400);
-    const cx = Math.min(Math.max(rx, w / 2 + 2), width - w / 2 - 2);
+    // centered on the line, and kept inside the chart in a wider font too ('"DejaVu Sans", Verdana' draws it up to 8%
+    // wider than textWidth's estimate: "Median of all stories: 0.099" on a 320 px phone)
+    const room = textWidth(text, tickSize, 400) * REF_SLACK;
+    const cx = Math.min(Math.max(rx, room / 2 + 2), width - room / 2 - 2);
     ref = { x: rx, labelX: cx, labelY: height - 8, text, value: printed ? printed(overall) : valueText(overall.median) };
     ref.box = box(cx, height - 8, text, tickSize, 400, "middle");
   }

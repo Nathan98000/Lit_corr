@@ -45,8 +45,9 @@ describe("Explore's chart layout is unchanged by the Genres page's options", () 
     // in words on phones, the short labels' column as wide as its stories, a value the dashed line would run through
     // starting 6 px right of it (d845be43b0ab6e85 before L1). The owner's changes of 2026-10-13 named the dashed line
     // "Median of all stories: …" ("All stories shown: …" before, 7fb18ef1ff7cdf3c): only its label's text and box
-    // differ, and in 5 layouts its x, to keep the longer label inside the chart
-    expect(out).toEqual({ digest: "a75794f5095dbe4f", count: 192 });
+    // differ, and in 5 layouts its x, to keep the longer label inside the chart (a75794f5095dbe4f). Then the label keeps
+    // room for a wider font (REF_SLACK, 10%): in 7 layouts it sits up to 8.4 px further in
+    expect(out).toEqual({ digest: "e19305e83b7adc57", count: 192 });
   });
 
   it.skipIf(!real)("on the real data", () => {
@@ -62,6 +63,8 @@ describe("Explore's chart layout is unchanged by the Genres page's options", () 
     // moved the medians, counts and some groups' edges: b026d24a6ef5724a on the 20261008 handoff. Then the owner's
     // changes of 2026-10-13 named the dashed line "Median of all stories: …" (4c2d87eddc236323 before): only its label's
     // text and box differ (14,960 layouts), and in 1,807 of them its x, to keep the longer label inside the chart
-    expect(out).toEqual({ digest: "1ee8247423dfed55", count: 14960 });
+    // (1ee8247423dfed55). Then the label keeps room for a wider font (REF_SLACK, 10%): in 2,477 layouts it sits up to
+    // 8.4 px further in, and nothing else moves
+    expect(out).toEqual({ digest: "caf9ec7cbabc0775", count: 14960 });
   });
 });

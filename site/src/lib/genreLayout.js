@@ -4,7 +4,7 @@
 // screens or under the name on phones (below 250), rows 31 px tall on wider screens and at least 44 px on phones.
 
 import { formatCount, stepDecimals, formatFixed } from "./format.js";
-import { MARK_GAP, MARK_W, PHONE, niceTicks, stepTicks, textWidth, wrapLabel } from "./rangeLayout.js";
+import { MARK_GAP, MARK_W, PHONE, REF_SLACK, niceTicks, stepTicks, textWidth, wrapLabel } from "./rangeLayout.js";
 import { TEXT } from "./tokens.js";
 
 const ROW = 31;
@@ -269,9 +269,10 @@ export function anyLayout({ rows, width, domain, printed, shareText, tickFormat 
   if (all.above) {
     const rx = x(all.above.median);
     const text = `Median of all genres: ${printed(all.above.median)}`;
-    const w = textWidth(text, TEXT.tick);
     // under the line, kept over the plot where it fits; a label wider than the plot ("Median of all genres: 0.418" on a
-    // 320 px phone) runs under the names, the band under the rows being its own, as Popularity's label does
+    // 320 px phone) runs under the names, the band under the rows being its own, as Popularity's label does; with room
+    // for a wider font (REF_SLACK)
+    const w = textWidth(text, TEXT.tick) * REF_SLACK;
     const inPlot = w <= x1 - x0;
     const [from, to] = inPlot ? [x0 + w / 2, x1 - w / 2] : [w / 2 + 2, width - w / 2 - 2];
     const labelX = Math.min(Math.max(rx, from), Math.max(from, to));

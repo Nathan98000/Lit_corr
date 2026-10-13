@@ -1,13 +1,16 @@
 // The data update of 2026-10-13 (STAGE2_DATA_UPDATE_PROMPT.md): How it works words every exclusion reason in the data
-// and says the sample's size from the data (D5); the count shown before meta.json arrives is the data's own.
+// and says the sample's size from the data (D5); the count shown before meta.json arrives is the data's own; every
+// aggregates request carries the data build's stamp (D7).
 import { render, screen, waitFor, within } from "@testing-library/react";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "../App.jsx";
-import { clearCache } from "../lib/data.js";
+import { aggregatesUrl, clearCache, loadMeta, loadVariable } from "../lib/data.js";
+import { dataStamp } from "../lib/dataStamp.js";
 import { aboutCount, typicalSample } from "../lib/wording.js";
+import { dataBuild } from "../../vite.config.js";
 import { fixtureFetch, fixtureMeta, realMeta } from "./fixtures.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -113,5 +116,34 @@ describe("How it works says the sample's size from the data (D5)", () => {
     expect(inShort).toMatch(/^A random sample: about 420 stories in each of 30 genres, collected .+; 12,568 are used in the charts\.$/);
     expect(sample).toContain("in that order: about 420 stories per genre.");
     expect(limits).toMatch(/^A sample\. About 420 random stories per genre/);
+  });
+});
+
+describe("one build's aggregates stay together (D7)", () => {
+  it("stamps every aggregates address with the data build, and keys the cache by the plain path", async () => {
+    expect(dataStamp("2026-10-13T16:44:59Z")).toBe("20261013T164459Z");
+    const base = aggregatesUrl(""); // the site's base ("./" when built), then aggregates/
+    expect(base).toMatch(/aggregates\/$/);
+    expect(aggregatesUrl("meta.json")).toBe(`${base}meta.json`); // the tests run without a stamp
+    vi.stubGlobal("__DATA_BUILD__", "20261013T164459Z");
+    expect(aggregatesUrl("v/story_words/all.json")).toBe(`${base}v/story_words/all.json?v=20261013T164459Z`);
+    const asked = [];
+    const serve = fixtureFetch();
+    vi.stubGlobal("fetch", async (url) => {
+      asked.push(String(url));
+      return serve(String(url).split("?")[0]);
+    });
+    const [a, b] = await Promise.all([loadMeta(), loadMeta()]);
+    expect(a).toBe(b);
+    await loadVariable("dlg_word_share", "all");
+    await loadMeta();
+    expect(asked).toEqual([`${base}meta.json?v=20261013T164459Z`, `${base}v/dlg_word_share/all.json?v=20261013T164459Z`]);
+  });
+
+  it.skipIf(!real)("takes the stamp from meta.json's generated_at when it builds, and none in the tests", () => {
+    expect(real.generated_at).toMatch(/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ$/);
+    expect(dataBuild("production")).toBe(dataStamp(real.generated_at));
+    expect(dataBuild("development")).toBe(dataStamp(real.generated_at));
+    expect(dataBuild("test")).toBe("");
   });
 });

@@ -362,7 +362,7 @@ export function rangeLayout({
   let ref = null;
   if (hasRef) {
     const rx = x(overall.median);
-    const text = refText ? refText(printed ? printed(overall) : valueText(overall.median)) : `All stories shown: ${valueText(overall.median)}`;
+    const text = refText ? refText(printed ? printed(overall) : valueText(overall.median)) : `Median of all stories: ${valueText(overall.median)}`;
     const w = textWidth(text, tickSize, 400);
     const cx = Math.min(Math.max(rx, w / 2 + 2), width - w / 2 - 2);
     ref = { x: rx, labelX: cx, labelY: height - 8, text, value: printed ? printed(overall) : valueText(overall.median) };

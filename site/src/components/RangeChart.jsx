@@ -39,7 +39,8 @@ const sameTick = (a, b) => Math.abs(a.v - b.v) < 1e-9;
 /**
  * Popularity across the groups of one characteristic, in one genre (concept C2): one row per group, the
  * interquartile range as a capsule, the median as a dot with its value printed, and a dashed line for the median of
- * all stories shown.
+ * all stories shown, labeled under the plot ("Median of all stories: 4.42"; the key has no entry for it: the owner,
+ * 2026-10-13).
  *
  * The chart is one tab stop (F54): the arrow keys, Home and End move between rows, and the focused row shows its
  * details; Escape hides them. Hover shows them too, and a tap or click keeps them until the next tap. On wider
@@ -156,11 +157,6 @@ export default function RangeChart({
             <span className="key key-small" /> Fewer than {smallN} stories
           </li>
         )}
-        {layout.ref && (
-          <li>
-            <span className="key key-ref" /> Median of all stories shown
-          </li>
-        )}
       </ul>
       <GroupedBy variable={variable} />
       {axisTitle}
@@ -208,7 +204,7 @@ export default function RangeChart({
               <g className="ref">
                 <line x1={x(scale[4])} x2={x(scale[4])} y1={layout.top - 4} y2={layout.height - 22} />
                 <text className="reflab" x={layout.ref.labelX} y={layout.ref.labelY} textAnchor="middle">
-                  All stories shown: <tspan className="reflab-value">{layout.ref.value}</tspan>
+                  Median of all stories: <tspan className="reflab-value">{layout.ref.value}</tspan>
                 </text>
               </g>
             )}

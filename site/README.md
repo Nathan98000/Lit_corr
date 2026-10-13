@@ -6,7 +6,9 @@ genres], how does the [average rating] vary with [word count]?" (the default vie
 measure and leads the measure menu; "all genres" is lowercase inside every sentence, and the lists keep "All genres").
 For each group of stories the chart shows the median (with its value printed, starting clear of the dashed line of all
 stories) and the interquartile range, with the number of stories behind every figure ("3,701 stories" beside each row
-on phones); the mean is in each group's details. Above the chart a line of its own says what the rows are and in what
+on phones); the mean is in each group's details. The dashed line is labeled under the plot ("Median of all stories:
+4.42"); the key lists the median and the interquartile range (and hatched groups when there are any). Above the chart a
+line of its own says what the rows are and in what
 unit ("Stories grouped by word count"; yes/no characteristics, whose two rows name themselves, have none), and the
 measure's name sits over the plot, on its ticks, with the rating's scale ("Average rating (1 to 5 stars)"). Right under
 the chart one line leads to the same characteristic on the other pages: "By genre →" and "Over time →" (the way across;

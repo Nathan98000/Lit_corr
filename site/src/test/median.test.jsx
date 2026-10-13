@@ -70,8 +70,8 @@ describe("the chart's words", () => {
       "Median",
       "Interquartile range",
       "Fewer than 30 stories",
-      "Median of all stories shown",
-    ]);
+    ]); // the dashed line names itself under the plot ("Median of all stories: …"; the owner, 2026-10-13)
+    expect(container.querySelector(".reflab").textContent).toMatch(/^Median of all stories: /);
     fireEvent.click(screen.getAllByRole("img")[0]);
     expect([...container.querySelectorAll(".chart-tip dt")].map((dt) => dt.textContent)).toEqual([
       "Median",

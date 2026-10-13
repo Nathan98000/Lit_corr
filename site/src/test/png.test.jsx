@@ -223,8 +223,8 @@ describe("what the image says", () => {
     expect(plan.title).toEqual(["Stories with more dialogue tend to get more favorites per 1,000 views"]);
     expect(plan.subtitle).toEqual([document.querySelector(".chart-sub").textContent]);
     expect(plan.subtitle[0]).toMatch(/^All genres · [\d,]+ stories$/);
-    expect(plan.key.map((k) => k.text)).toEqual(["Median", "Interquartile range", "Median of all stories shown"]);
-    expect(plan.key.map((k) => k.swatches)).toEqual([["key-median"], ["key-iqr"], ["key-ref"]]);
+    expect(plan.key.map((k) => k.text)).toEqual(["Median", "Interquartile range"]); // the dashed line is labeled on the chart
+    expect(plan.key.map((k) => k.swatches)).toEqual([["key-median"], ["key-iqr"]]);
     expect(plan.above).toEqual(["Stories grouped by dialogue share", "Favorites per 1,000 views"]);
     expect(plan.below).toEqual([]);
     expect(plan.credit).toBe(CREDIT);

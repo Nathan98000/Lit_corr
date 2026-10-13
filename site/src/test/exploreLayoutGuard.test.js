@@ -40,14 +40,18 @@ function fingerprint(meta, read, genres, widths) {
 describe("Explore's chart layout is unchanged by the Genres page's options", () => {
   it("on the test data", () => {
     const out = fingerprint(fixtureMeta, (id) => fixtureFile(`v/${id}/all.json`), ["all", "romance", "tiny"], [288, 343, 600, 1000]);
-    expect(out).toEqual({ digest: "de8c0a718c21dc44", count: 192 });
+    // round 4's type scale (X1): the counts' estimated boxes at 13 px (12.5 before) and the value labels 8 px from a dot
+    // of radius 6 (7 before): with the layouts before it the digest is de8c0a718c21dc44
+    expect(out).toEqual({ digest: "d845be43b0ab6e85", count: 192 });
   });
 
   it.skipIf(!real)("on the real data", () => {
     const read = (id) => JSON.parse(readFileSync(path.join(REAL, "v", id, "all.json"), "utf8"));
     const out = fingerprint(real, read, ["all", "adult-romance"], [288, 343, 720, 1000]);
     // the owner's meta.json change (2026-10-12) renamed "Explicit description"'s groups ("Explicit blurb", "Non-explicit
-    // blurb"): with the meta.json before it the digest is still fa78f0dc311af78d, and only that characteristic's differ
-    expect(out).toEqual({ digest: "912c2d47bb675e32", count: 14960 });
+    // blurb"): with the meta.json before it the digest is still fa78f0dc311af78d, and only that characteristic's differ.
+    // Round 4's type scale (X1) changed only the estimated boxes of the 13 px counts and, in 31 of these layouts, a value
+    // label's x by 1 px (8 px from a dot of radius 6, 7 before): every row, tick and height is as before (912c2d47bb675e32)
+    expect(out).toEqual({ digest: "d940822bbc6c5207", count: 14960 });
   });
 });

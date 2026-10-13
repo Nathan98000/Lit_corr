@@ -3,6 +3,7 @@
 // median of all stories shown. Pure functions, so that the geometry can be tested without a browser.
 
 import { columnDecimals, formatCompact, formatCount, formatFixed, stepDecimals } from "./format.js";
+import { MARK, TEXT } from "./tokens.js";
 
 export const PHONE = 560; // below this width the labels move above the bars (or into a narrow column)
 // "One genre"'s rows only: below this chart width a row stacks, the label and the two numbers on one line and the plot
@@ -147,8 +148,9 @@ export function rangeLayout({
   const shown = rows.filter((r) => isShown(r.stats));
 
   // value axis and its labels: 4 ticks on phones (never more than 5), 6 wider; fewer if their labels would touch
-  const labelSize = 14;
-  const nSize = 12.5;
+  const labelSize = TEXT.secondary;
+  const nSize = TEXT.note;
+  const tickSize = TEXT.tick;
   const longestLabelW = Math.max(0, ...rows.map((r) => textWidth(r.label, labelSize)));
   const labelW =
     mode === "side" && phone
@@ -169,11 +171,11 @@ export function rangeLayout({
   const tops = heights.map((_, i) => heights.slice(0, i).reduce((a, b) => a + b, 0));
   const valueText = chartValueText(rows, overall, format);
   const shownValue = (r) => `${r.mark && !markColumn ? `${r.mark} ` : ""}${printed ? printed(r.stats) : valueText(r.stats.median)}`;
-  const valueW = Math.max(30, ...shown.map((r) => textWidth(shownValue(r), 13, 600)), valueHead ? textWidth(valueHead, 12) : 0);
+  const valueW = Math.max(30, ...shown.map((r) => textWidth(shownValue(r), TEXT.note, 600)), valueHead ? textWidth(valueHead, tickSize) : 0);
   // the stories column (wider screens): its heading and the longest count
   const storiesW =
     storiesColumn && !phone
-      ? Math.ceil(Math.max(textWidth("Stories", 12), ...shown.map((r) => textWidth(formatCount(r.stats.n), nSize))) + 18)
+      ? Math.ceil(Math.max(textWidth("Stories", tickSize), ...shown.map((r) => textWidth(formatCount(r.stats.n), nSize))) + 18)
       : 0;
   const right = Math.ceil(valueW + 16) + storiesW;
   let count = phone ? 4 : 6;
@@ -203,17 +205,17 @@ export function rangeLayout({
     const d = tickD;
     const st = step;
     tickText = tickFormat ? (v) => tickFormat(v, st) : (v) => (compact ? formatCompact(v, d) : formatFixed(v, d));
-    const firstTickW = textWidth(tickText(ticks[0] ?? lo), 12);
+    const firstTickW = textWidth(tickText(ticks[0] ?? lo), tickSize);
     left = mode === "stacked" ? Math.max(4, Math.ceil(firstTickW / 2) + 2) : labelW + (markColumn ? MARK_GAP + MARK_W + 6 : 14);
     plotW = Math.max(40, width - left - right);
     if (valueHead && ticks.length) {
       // the last tick's label keeps clear of the value column's heading, which shares its line
       const last = ticks[ticks.length - 1];
       const lastX = left + ((last - lo) / (hi - lo || 1)) * plotW;
-      const over = lastX + textWidth(tickText(last), 12) / 2 + 10 - (width - storiesW - textWidth(valueHead, 12));
+      const over = lastX + textWidth(tickText(last), tickSize) / 2 + 10 - (width - storiesW - textWidth(valueHead, tickSize));
       if (over > 0) plotW = Math.max(40, plotW - over);
     }
-    const widest = Math.max(...ticks.map((t) => textWidth(tickText(t), 12)));
+    const widest = Math.max(...ticks.map((t) => textWidth(tickText(t), tickSize)));
     const spacing = (plotW * step) / (hi - lo || 1);
     if (widest + 10 <= spacing || count <= 2) break;
     count -= 1;
@@ -277,12 +279,12 @@ export function rangeLayout({
     if (ok) {
       out.bar = capsule(x(s.p25), x(s.p75));
       out.dotX = x(s.median);
-      const vx = Math.max(out.bar.x + out.bar.width, out.dotX + 7) + 8;
+      const vx = Math.max(out.bar.x + out.bar.width, out.dotX + MARK.dot) + 8;
       out.value = { x: vx, y: cy + 4.5, text: valueText(s.median) };
-      out.boxes.push({ kind: "value", ...box(vx, cy + 4.5, out.value.text, 13, 600) });
+      out.boxes.push({ kind: "value", ...box(vx, cy + 4.5, out.value.text, TEXT.note, 600) });
     } else {
       out.none = { x: left + 2, y: cy + 4, text: "Too few stories to show" };
-      out.boxes.push({ kind: "none", ...box(left + 2, cy + 4, out.none.text, 12.5, 400) });
+      out.boxes.push({ kind: "none", ...box(left + 2, cy + 4, out.none.text, TEXT.note, 400) });
     }
     return out;
   });
@@ -319,20 +321,20 @@ export function rangeLayout({
     }
     out.nPos = nPos;
     out.nText = nT;
-    if (nPos) out.boxes.push({ kind: "n", ...box(nPos.x, nPos.y, nT, phone ? 12 : nSize, 400, "end") });
+    if (nPos) out.boxes.push({ kind: "n", ...box(nPos.x, nPos.y, nT, phone ? tickSize : nSize, 400, "end") });
     if (markColumn && ok && r.mark) {
       out.markPos = { x: labelW + MARK_GAP + MARK_W / 2, y: cy + 4.5 };
-      out.boxes.push({ kind: "mark", ...box(out.markPos.x, out.markPos.y, r.mark, 13, 700, "middle") });
+      out.boxes.push({ kind: "mark", ...box(out.markPos.x, out.markPos.y, r.mark, TEXT.note, 700, "middle") });
     }
     if (ok) {
       out.bar = capsule(x(s.p25), x(s.p75));
       out.dotX = x(s.median);
       const vx = width - storiesW;
       out.value = { x: vx, y: cy + 4.5, text: shownValue(r), anchor: "end" };
-      out.boxes.push({ kind: "value", ...box(vx, cy + 4.5, out.value.text, 13, 600, "end") });
+      out.boxes.push({ kind: "value", ...box(vx, cy + 4.5, out.value.text, TEXT.note, 600, "end") });
     } else {
       out.none = { x: left + 2, y: cy + 4, text: noneText };
-      out.boxes.push({ kind: "none", ...box(left + 2, cy + 4, noneText, 12.5, 400) });
+      out.boxes.push({ kind: "none", ...box(left + 2, cy + 4, noneText, TEXT.note, 400) });
     }
     return out;
   }
@@ -341,10 +343,10 @@ export function rangeLayout({
   if (hasRef) {
     const rx = x(overall.median);
     const text = refText ? refText(printed ? printed(overall) : valueText(overall.median)) : `All stories shown: ${valueText(overall.median)}`;
-    const w = textWidth(text, 12, 400) + textWidth(" ", 12) * 0;
+    const w = textWidth(text, tickSize, 400);
     const cx = Math.min(Math.max(rx, w / 2 + 2), width - w / 2 - 2);
     ref = { x: rx, labelX: cx, labelY: height - 8, text, value: printed ? printed(overall) : valueText(overall.median) };
-    ref.box = box(cx, height - 8, text, 12, 400, "middle");
+    ref.box = box(cx, height - 8, text, tickSize, 400, "middle");
   }
 
   const out = {
@@ -377,11 +379,11 @@ export function overlaps(layout, pad = 1) {
   layout.rows.forEach((r) => r.boxes.forEach((b) => boxes.push({ ...b, row: r.index })));
   if (layout.ref) boxes.push({ kind: "ref", row: -1, ...layout.ref.box });
   for (const h of [layout.valueHead, layout.storiesHead].filter(Boolean)) {
-    const w = textWidth(h.text, 12);
+    const w = textWidth(h.text, TEXT.tick);
     boxes.push({ kind: "head", row: -3, x0: h.x - w, x1: h.x, y0: h.y - 9.6, y1: h.y + 3 });
   }
   const tickBoxes = layout.ticks.map((t) => {
-    const w = textWidth(t.text, 12);
+    const w = textWidth(t.text, TEXT.tick);
     return { kind: "tick", row: -2, x0: t.x - w / 2, x1: t.x + w / 2, y0: layout.top - 20, y1: layout.top - 7 };
   });
   boxes.push(...tickBoxes);

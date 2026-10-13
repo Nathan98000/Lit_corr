@@ -3,9 +3,9 @@
 
 /* The Trends page (loaded with its code, like genres.css): its controls, its charts over time and its answer. The
    charts draw with the explorer's marks (.range-chart in styles.css: capsules, dots, hatching, hover and focus). */
-/* at least 16 px between the question's last line, with its dotted underlines (2 px under the line), and the controls */
+/* 16 px between the question's last line, with its dotted underlines (2 px under the line), and the controls */
 .trends-controls {
-  margin-top: 18px;
+  margin-top: calc(var(--space-16) + 2px);
 }
 
 /* the browser never anchors the scroll position on the question's words: another genre or characteristic re-wraps
@@ -19,10 +19,10 @@
 
 /* what the characteristic measures, under the heading (meta's description; on a desktop the rail's first line) */
 .trend-what {
-  margin: 4px 0 0;
+  margin: var(--space-4) 0 0;
   max-width: 62ch;
-  font-size: 14px;
-  line-height: 1.4;
+  font-size: var(--text-14);
+  line-height: var(--leading-14);
   color: var(--ink-3);
 }
 
@@ -31,17 +31,17 @@
 }
 
 .trend-takeaway p + p {
-  margin-top: 4px;
+  margin-top: var(--space-4);
 }
 
 .trend-too-few {
-  margin: 14px 0 4px;
+  margin: var(--space-16) 0 var(--space-4);
 }
 
 /* the picker's "Clearly changed in all genres": each chip's ▼ ▲ ≠ before its label (hidden from screen readers) */
 .pick-changed .chip-mark {
   margin-right: 6px;
-  font-size: 12px;
+  font-size: var(--text-12);
   color: var(--ink);
 }
 
@@ -51,7 +51,6 @@
   flex-wrap: wrap;
   align-content: center;
   gap: 0 6px;
-  line-height: 1.25;
 }
 
 .include-fixed .include-value {
@@ -59,23 +58,26 @@
 }
 
 .include-fixed .include-why {
-  font-size: 13px;
+  font-size: var(--text-13);
+  line-height: var(--leading-13);
   color: var(--ink-3);
 }
 
 /* a genre too few to compare: its stories per period (never a count under 10) */
 .trend-few-table {
-  margin: 14px 0 4px;
+  margin: var(--space-16) 0 var(--space-4);
   border-collapse: collapse;
-  font-size: 14px;
+  font-size: var(--text-14);
+  line-height: var(--leading-14);
   font-variant-numeric: tabular-nums;
 }
 
 .trend-few-table caption {
   caption-side: top;
-  margin-bottom: 4px;
+  margin-bottom: var(--space-4);
   text-align: left;
-  font-size: 13px;
+  font-size: var(--text-13);
+  line-height: var(--leading-13);
   font-weight: 600;
   color: var(--ink-2);
 }
@@ -88,7 +90,7 @@
 }
 
 .trend-few-table th {
-  font-size: 12.5px;
+  font-size: var(--text-13);
   font-weight: 400;
   color: var(--ink-2);
   border-bottom: 1px solid var(--rule-2);
@@ -114,7 +116,7 @@
     grid-template-columns: minmax(0, 760px) 240px;
     grid-template-rows: auto auto auto auto auto 1fr;
     grid-template-areas: "head head" "chart what" "chart takeaway" "chart key" "chart actions" "chart .";
-    column-gap: 32px;
+    column-gap: var(--space-32);
     align-items: start;
   }
 
@@ -126,20 +128,20 @@
     max-width: none;
   }
 
-  /* the rail's first line level with the chart's axis title (the chart's 4 px and the title's 14 px above it): what
+  /* the rail's first line level with the chart's axis title (the chart's 4 px and the title's 12 px above it): what
      the characteristic measures, then the takeaway */
   .trend-answer > .trend-what {
     grid-area: what;
-    margin-top: 18px;
+    margin-top: var(--space-16);
   }
 
   .trend-answer > .trend-takeaway {
     grid-area: takeaway;
-    margin-top: 18px;
+    margin-top: var(--space-16);
   }
 
   .trend-answer > .trend-what + .trend-takeaway {
-    margin-top: 12px;
+    margin-top: var(--space-12);
   }
 
   .trend-answer > .trend-legend {
@@ -162,8 +164,9 @@
   }
 }
 
+/* 12 px above it (14 in the tie between 12 and 16, toward the rail's 16: the chart's 4 and these 12) */
 .trend-chart .trend-axis-title {
-  margin: 14px 0 4px;
+  margin: var(--space-12) 0 var(--space-4);
   color: var(--ink);
 }
 
@@ -203,7 +206,7 @@
 
 .trend-chart .not-compared {
   fill: var(--ink-3);
-  font-size: 12px;
+  font-size: var(--text-12);
   font-style: italic;
 }
 
@@ -217,7 +220,7 @@
 /* the table under the plot: the periods, their medians (or shares) in bold, their stories muted */
 .trend-chart .period {
   fill: var(--ink-2);
-  font-size: 12.5px;
+  font-size: var(--text-13);
 }
 
 .trend-chart .col-head {
@@ -225,7 +228,7 @@
 }
 
 .trend-chart .gn {
-  font-size: 12px;
+  font-size: var(--text-12);
 }
 
 /* the two windows compared, bracketed under their periods, each with its window's number */
@@ -237,7 +240,7 @@
 
 .trend-chart .bracket text {
   fill: var(--ink-2);
-  font-size: 12px;
+  font-size: var(--text-12);
   font-weight: 600;
 }
 
@@ -356,7 +359,7 @@
 
 /* ---------------------------------------------------------- named groups and bands: 100% columns (§3.1) */
 .trend-mix .chart-frame {
-  margin-top: 12px;
+  margin-top: var(--space-12);
 }
 
 .trend-mix .segment {
@@ -365,7 +368,7 @@
 }
 
 .trend-mix .seglab {
-  font-size: 12px;
+  font-size: var(--text-12);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
@@ -388,18 +391,18 @@
 /* ---------------------------------------------------------- mostly zero: the split chart (§3.1) */
 .trend-chart.trend-split {
   max-width: 1032px;
-  margin-top: 14px;
+  margin-top: var(--space-16);
 }
 
 .trend-split .half-title {
   fill: var(--ink);
-  font-size: 14px;
+  font-size: var(--text-14);
   font-weight: 600;
 }
 
 .trend-split .half-axis-title {
   fill: var(--ink);
-  font-size: 12.5px;
+  font-size: var(--text-13);
   font-weight: 600;
 }
 
@@ -428,16 +431,16 @@
 
 .trend-changes .profile-values-head {
   grid-column: 2;
-  font-size: 12px;
+  font-size: var(--text-12);
   font-weight: 600;
-  line-height: 1.3;
+  line-height: var(--leading-12);
   color: var(--ink-2);
   white-space: nowrap;
 }
 
 .trend-changes .profile-values {
-  font-size: 13.5px;
-  line-height: 1.25;
+  font-size: var(--text-14);
+  line-height: var(--leading-14);
   color: var(--ink);
   font-variant-numeric: tabular-nums;
   white-space: nowrap; /* a value never breaks inside */
@@ -445,7 +448,8 @@
 
 .trend-changes .profile-values small {
   display: block;
-  font-size: 12px;
+  font-size: var(--text-12);
+  line-height: var(--leading-12);
   color: var(--ink-3);
 }
 
@@ -454,7 +458,7 @@
 }
 
 .trend-changes .p2-num {
-  font-size: 12px;
+  font-size: var(--text-12);
   font-weight: 400;
   fill: var(--ink-2);
 }

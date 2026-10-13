@@ -3,6 +3,7 @@ import { comparisonBar, noDifferenceZone, numberPlace } from "../lib/genres.js";
 import { mixColors } from "../lib/genreLayout.js";
 import { scrollBehavior } from "../lib/motion.js";
 import { PHONE, STACKED, textWidth } from "../lib/rangeLayout.js";
+import { MARK, TEXT } from "../lib/tokens.js";
 import DownloadPng from "./DownloadPng.jsx";
 import useMediaQuery from "./useMediaQuery.js";
 import useWidth from "./useWidth.js";
@@ -31,8 +32,8 @@ const PAD = 2;
 const UNIT_KEPT = 18; // a unit line up to this long never breaks inside; a longer one takes a line of its own
 const TICKS = [0, 25, 50, 75, 100];
 const FULL = { lo: 0, hi: 100, ticks: TICKS }; // the whole 0–100 scale ("One genre")
-const VALUES = { min: 120, max: 180, size: 13.5, room: 8 }; // the values' column: its widest value and some room
-const DOT = { out: 5, quiet: 3.5 }; // radii: a 10 px dot for a stand-out, 7 px for a row that doesn't stand out
+const VALUES = { min: 120, max: 180, size: TEXT.secondary, room: 8 }; // the values' column: its widest value and some room
+const DOT = { out: MARK.score, quiet: MARK.quiet }; // radii: a 10 px dot for a stand-out, 7 px for a row that doesn't stand out
 const HEADS_UNDER = 328; // a chart this narrow (a window under 360 px) puts a list's columns' heads under its title
 
 /**
@@ -92,7 +93,7 @@ function RowPlot({ item, zone, plotW, scale = FULL, thenAbove = false, plain = f
   const x = placeOn(scale);
   const quiet = item.f ? "" : " quiet";
   const dotR = item.f ? DOT.out : DOT.quiet;
-  const textW = item.f && !plain ? textWidth(String(b.times), 13, 600) : textWidth(String(b.times), 12);
+  const textW = item.f && !plain ? textWidth(String(b.times), TEXT.note, 600) : textWidth(String(b.times), TEXT.tick);
   const at = numberPlace(item.r, zone, { plotW, dotR, textW, scale: scale === FULL ? null : scale });
   return (
     <svg width="100%" height={22} className="profile-plot">

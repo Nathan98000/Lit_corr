@@ -123,7 +123,7 @@ describe("the masthead (D4, D9; with the Trends page, D7)", () => {
         .map((b) => b.split(/\n}\n/)[0])
         .join("\n");
     expect(block("max-width: 601px")).toMatch(/\.masthead nav a\.nav-how \{\s*display: none;/);
-    expect(block("max-width: 483px")).toMatch(/\.masthead nav \{\s*gap: 0;\s*font-size: 14\.5px;/);
+    expect(block("max-width: 483px")).toMatch(/\.masthead nav \{\s*gap: 0;\s*font-size: var\(--text-15\);/);
     expect(block("max-width: 413px")).toMatch(/\.masthead nav a\.nav-explore \{\s*display: none;/);
     expect(block("max-width: 351px")).toMatch(/\.masthead nav a\.nav-patterns \{\s*display: none;/);
     for (const old of ["559px", "419px", "359px"]) expect(block(`max-width: ${old}`)).not.toMatch(/\.masthead|\.brand/); // the old ones

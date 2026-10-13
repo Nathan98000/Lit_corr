@@ -2,6 +2,7 @@ import { useId, useRef } from "react";
 import useOrderGlide from "./GenreGlide.jsx";
 import { chartDomain, comparison, formatPercent, numberFormat, rowDetails, tickFormatFor } from "../lib/genres.js";
 import { anyLayout } from "../lib/genreLayout.js";
+import { MARK } from "../lib/tokens.js";
 import { GenreRowDetails, useGenreDetails } from "./GenreDetails.jsx";
 import useWidth from "./useWidth.js";
 
@@ -172,13 +173,17 @@ function AnyRow({ r, layout, hatch }) {
       )}
       {r.none && (
         <text className="gnone" x={r.none.x} y={r.none.y}>
-          {r.none.text}
+          {r.none.lines.map((t, k) => (
+            <tspan key={k} x={r.none.x} dy={k ? 14 : 0}>
+              {t}
+            </tspan>
+          ))}
         </text>
       )}
       {r.bar && (
         <>
-          <rect className="iqr" x={r.bar.x} y={r.cy - 5} width={r.bar.width} height={10} rx={5} style={hatch} />
-          <circle className="median" cx={r.dotX} cy={r.cy} r={6} />
+          <rect className="iqr" x={r.bar.x} y={r.cy - MARK.bar / 2} width={r.bar.width} height={MARK.bar} rx={MARK.bar / 2} style={hatch} />
+          <circle className="median" cx={r.dotX} cy={r.cy} r={MARK.dot} />
           <text className="gval" x={r.median.x} y={r.median.y} textAnchor="end">
             {r.median.text}
           </text>

@@ -2,6 +2,7 @@ import { useId, useRef } from "react";
 import useOrderGlide from "./GenreGlide.jsx";
 import { chartDomain, chartRows, numberFormat, printedFor, rowDetails, tickFormatFor } from "../lib/genres.js";
 import { PHONE, rangeLayout } from "../lib/rangeLayout.js";
+import { MARK } from "../lib/tokens.js";
 import { GenreRowDetails, useGenreDetails } from "./GenreDetails.jsx";
 import useWidth from "./useWidth.js";
 
@@ -174,16 +175,16 @@ function RowParts({ r, kind, x, width, hatchId }) {
             <rect
               className="share-bar"
               x={x(0)}
-              y={r.cy - 5}
+              y={r.cy - MARK.bar / 2}
               width={Math.max(1, r.dotX - x(0))}
-              height={10}
-              rx={5}
+              height={MARK.bar}
+              rx={MARK.bar / 2}
               style={hatch}
             />
           ) : (
-            <rect className="iqr" x={r.bar.x} y={r.cy - 5} width={r.bar.width} height={10} rx={5} style={hatch} />
+            <rect className="iqr" x={r.bar.x} y={r.cy - MARK.bar / 2} width={r.bar.width} height={MARK.bar} rx={MARK.bar / 2} style={hatch} />
           )}
-          <circle className="median" cx={r.dotX} cy={r.cy} r={6} />
+          <circle className="median" cx={r.dotX} cy={r.cy} r={MARK.dot} />
           <text className="gval" x={r.value.x} y={r.value.y} textAnchor="end">
             {r.value.text}
           </text>

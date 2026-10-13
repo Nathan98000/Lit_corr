@@ -401,7 +401,7 @@ describe("View 1's chart tells the same story as its verdict (phase 4)", () => {
     now: [2020, 2026],
     n: [901, 1657, 1522, 1564, 3343],
   };
-  const WORDS = { id: "story_words", label: "Word count", noun: "story length in words", unit: "words", bins: { type: "ranges" } };
+  const WORDS = { id: "story_words", label: "Word count", noun: "word count", unit: "words", bins: { type: "ranges" } };
   const CONT = { id: "end_to_be_continued", label: "Announces a continuation", noun: "announces a continuation", unit: "yes/no", yes_subject: "Stories that announce a continuation", bins: { type: "levels" } };
   // the real data's story length and continuation, All genres, All stories
   const length = { k: "num", fmt: "num", q: [[901, 1640, 2500, 4220], [1657, 1740, 3010, 5110], [1522, 1940, 3260, 6000], [1564, 2340, 4060, 7200], [3343, 2310, 4100, 7210]], t: [2558, 1680, 2810, 4760], r: 0.25, f: 1 };
@@ -556,7 +556,7 @@ describe("View 1's layout (phase 5)", () => {
     expect(answer.querySelector(".trend-what").textContent).toBe(fixtureMeta.variables.find((v) => v.id === "dlg_word_share").description);
     // an answer at least 960 px wide: the page at least 1,008 px (main's 24 px sides)
     const rail = trendsCss.slice(trendsCss.indexOf("@media (min-width: 1008px)"));
-    expect(rail).toMatch(/\.trend-answer\.with-chart \{[^}]*grid-template-columns: minmax\(0, 760px\) 240px;[^}]*grid-template-areas: "head head" "chart what" "chart takeaway" "chart key" "chart actions" "chart \.";[^}]*column-gap: 32px;/);
+    expect(rail).toMatch(/\.trend-answer\.with-chart \{[^}]*grid-template-columns: minmax\(0, 760px\) 240px;[^}]*grid-template-areas: "head head" "chart what" "chart takeaway" "chart key" "chart actions" "chart \.";[^}]*column-gap: var\(--space-32\);/);
     expect(rail).toMatch(/\.trend-answer > \.chart-head \.chart-title \{\s*max-width: none;/);
     // the too-few state has no chart and no rail
     window.location.hash = "#/trends?var=dlg_word_share&genre=tiny";
@@ -565,7 +565,7 @@ describe("View 1's layout (phase 5)", () => {
   });
 
   it("leaves 16 px between the question's underlines and the controls, and shortens the plot in a short window, never under 200 px", () => {
-    expect(trendsCss).toMatch(/\.trends-controls \{\s*margin-top: 18px;/); // 16 px under the 2 px dotted underline
+    expect(trendsCss).toMatch(/\.trends-controls \{\s*margin-top: calc\(var\(--space-16\) \+ 2px\);/); // 16 px under the 2 px dotted underline
     expect(plotHeight(false, 900)).toBe(250);
     expect(plotHeight(false, 720)).toBe(230); // 1280 × 720: the table and the brackets on the first screen
     expect(plotHeight(false, 600)).toBe(200);

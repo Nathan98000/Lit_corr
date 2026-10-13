@@ -3,19 +3,21 @@
 
 /* ------------------------------------------------------------------------ one genre (View 2) */
 :root {
-  --quiet-mark: #857f75; /* a row that doesn't stand out: its stem and dot, 3.80:1 on the page and 3.27:1 on the zone */
+  --quiet-mark: var(--control); /* a row that doesn't stand out: its stem and dot, in the one gray for marks (X1),
+                                   3.80:1 on the page and 3.27:1 on the zone */
 }
 
 .profile-none {
-  margin: 4px 0 8px;
+  margin: var(--space-4) 0 var(--space-8);
   max-width: 62ch;
   color: var(--ink-2);
 }
 
 /* "300 stories in Romance." under the heading (F93) */
 .profile-sample {
-  margin: 2px 0 0;
-  font-size: 15px;
+  margin: var(--space-4) 0 0;
+  font-size: var(--text-15);
+  line-height: var(--leading-15);
   color: var(--ink-2);
 }
 
@@ -28,7 +30,7 @@
 
 /* the takeaway (S1, F90): a line per list, its word in 650 */
 .profile-takeaway {
-  margin: 12px 0 6px;
+  margin: var(--space-12) 0 var(--space-8);
 }
 
 .profile-takeaway p {
@@ -36,7 +38,7 @@
 }
 
 .profile-takeaway p + p {
-  margin-top: 4px;
+  margin-top: var(--space-4);
 }
 
 .profile-takeaway b {
@@ -45,10 +47,10 @@
 
 /* the key in the lists (F86): the axis title over the first list's rows, the mix line over named groups' rows */
 .profile-caption {
-  margin: 8px 0 0;
-  font-size: 12.5px;
+  margin: var(--space-8) 0 0;
+  font-size: var(--text-13);
   font-weight: 600;
-  line-height: 1.35;
+  line-height: var(--leading-13);
   color: var(--ink-2);
   text-wrap: balance;
 }
@@ -66,9 +68,9 @@
 /* the note under the first list: its link's target is 44 px tall, invisibly (quick win 4) */
 .profile-note {
   max-width: 70ch;
-  margin: 8px 0 0;
-  font-size: 13px;
-  line-height: 1.45;
+  margin: var(--space-8) 0 0;
+  font-size: var(--text-13);
+  line-height: var(--leading-13);
   color: var(--ink-2);
 }
 
@@ -87,40 +89,43 @@
 }
 
 .profile-list {
-  margin-top: 22px;
+  margin-top: var(--space-24);
 }
 
 .profile-list-head {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  gap: 12px;
-  padding-bottom: 6px;
+  gap: var(--space-12);
+  padding-bottom: var(--space-8);
   border-bottom: 1px solid var(--rule-2);
 }
 
 .profile-list-head h3 {
   margin: 0;
-  font-size: 19px;
-  line-height: 1.3;
+  font-size: var(--serif-20);
+  line-height: var(--leading-heading);
 }
 
-/* every characteristic by topic (T1, F89): the section's heading over its items, the topics in the sans */
+/* every characteristic by topic (T1, F89): the section's heading over its items, the topics in the sans; the size of
+   the lists' titles, h3s as they are (23 → 20) */
 .profile-topics > h3 {
-  margin: 0 0 4px;
-  font-size: 23px;
-  line-height: 1.3;
+  margin: 0 0 var(--space-4);
+  font-size: var(--serif-20);
+  line-height: var(--leading-heading);
 }
 
 .profile-topics-line {
-  margin: 0 0 8px;
-  font-size: 14.5px;
+  margin: 0 0 var(--space-8);
+  font-size: var(--text-15);
+  line-height: var(--leading-15);
   color: var(--ink-2);
 }
 
 .list-count {
   flex: none;
-  font-size: 14px;
+  font-size: var(--text-14);
+  line-height: var(--leading-14);
   color: var(--ink-3);
 }
 
@@ -165,8 +170,8 @@ a.profile-row:hover .profile-label-text {
 
 .profile-label {
   min-width: 0;
-  font-size: 14.5px;
-  line-height: 1.3;
+  font-size: var(--text-15);
+  line-height: var(--leading-15);
 }
 
 /* a label (wide) and a long unit that wrap do so in even lines, never leaving one word alone ("of the way through the" ⏎
@@ -184,7 +189,8 @@ a.profile-row:hover .profile-label-text {
 }
 
 .profile-mark {
-  font-size: 12px;
+  font-size: var(--text-12);
+  line-height: var(--leading-12);
   color: var(--ink);
 }
 
@@ -192,8 +198,8 @@ a.profile-row:hover .profile-label-text {
    characters never breaks inside; a longer one takes a line of its own) */
 .profile-unit {
   display: block;
-  font-size: 12.5px;
-  line-height: 1.3;
+  font-size: var(--text-13);
+  line-height: var(--leading-13);
   color: var(--ink-3);
 }
 
@@ -224,9 +230,9 @@ a.profile-row:hover .profile-label-text {
   display: flex;
   flex-wrap: wrap;
   gap: 2px 12px;
-  margin-top: 4px;
-  font-size: 12px;
-  line-height: 1.3;
+  margin-top: var(--space-4);
+  font-size: var(--text-12);
+  line-height: var(--leading-12);
   color: var(--ink-2);
 }
 
@@ -242,8 +248,8 @@ a.profile-row:hover .profile-label-text {
 
 .profile-n {
   justify-self: end;
-  font-size: 13.5px;
-  line-height: 1.25;
+  font-size: var(--text-14);
+  line-height: var(--leading-14);
   color: var(--ink);
   font-variant-numeric: tabular-nums;
   text-align: right;
@@ -256,7 +262,8 @@ a.profile-row:hover .profile-label-text {
 /* a mostly-zero stand-out whose share goes the other way from its dot: the median among those with any */
 .profile-n small {
   display: block;
-  font-size: 12px;
+  font-size: var(--text-12);
+  line-height: var(--leading-12);
   color: var(--ink-3);
 }
 
@@ -266,14 +273,15 @@ a.profile-row:hover .profile-label-text {
 }
 
 .profile-few {
-  font-size: 12.5px;
+  font-size: var(--text-13);
+  line-height: var(--leading-13);
   font-style: italic;
   color: var(--ink-3);
 }
 
 .profile-chev {
-  font-size: 18px;
-  line-height: 1;
+  font-size: var(--text-18);
+  line-height: var(--leading-18);
   color: var(--ink-3);
   text-align: right;
 }
@@ -287,9 +295,9 @@ a.profile-row:hover .profile-label-text {
   fill: #ece9e2;
 }
 
-/* the zone's edges carry the rule's thresholds: 3.3:1 against the page */
+/* the zone's edges carry the rule's thresholds, in the one gray for marks: 3.8:1 against the page */
 .p2-edge {
-  stroke: #8f8a80;
+  stroke: var(--control);
   stroke-width: 1;
 }
 
@@ -321,7 +329,7 @@ a.profile-row:hover .profile-label-text {
 /* the dot's number, on a halo of the page's color, so no line runs through it (F83) */
 .p2-num {
   fill: var(--ink);
-  font-size: 13px;
+  font-size: var(--text-13);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   paint-order: stroke;
@@ -332,7 +340,7 @@ a.profile-row:hover .profile-label-text {
 
 .p2-num.quiet {
   fill: var(--ink-3);
-  font-size: 12px;
+  font-size: var(--text-12);
   font-weight: 400;
 }
 
@@ -354,9 +362,9 @@ a.profile-row:hover .profile-label-text {
 
 .profile-n-head,
 .profile-heads {
-  font-size: 12px;
+  font-size: var(--text-12);
   font-weight: 600;
-  line-height: 1.3;
+  line-height: var(--leading-12);
   color: var(--ink-2);
   text-align: right;
 }
@@ -376,34 +384,35 @@ a.profile-row:hover .profile-label-text {
 
 .profile-axis .zone-label {
   fill: var(--ink-2);
-  font-size: 11.5px;
+  font-size: var(--text-12);
 }
 
 .profile-axis .zone-bracket {
-  stroke: #8f8a80;
+  stroke: var(--control);
   stroke-width: 1;
 }
 
 .profile-axis .tick-label {
   fill: var(--ink-3);
-  font-size: 12px;
+  font-size: var(--text-12);
   font-variant-numeric: tabular-nums;
 }
 
 /* "Download PNG" of the lists, right after them (both pages) */
 .profile-png {
-  margin-top: 20px;
+  margin-top: var(--space-24);
 }
 
 .show-all {
   display: inline-flex;
   align-items: center;
   min-height: var(--target);
-  font-size: 15px;
+  font-size: var(--text-15);
+  line-height: var(--leading-15);
 }
 
 .profile-topics {
-  margin-top: 30px;
+  margin-top: var(--space-32);
 }
 
 .profile-topic {
@@ -429,15 +438,16 @@ a.profile-row:hover .profile-label-text {
 }
 
 .profile-topic-name {
-  font-size: 16px;
+  font-size: var(--text-16);
   font-weight: 600;
-  line-height: 1.3;
+  line-height: var(--leading-16);
 }
 
 /* "1 of 28 stand out", never broken inside, its count in the ink */
 .profile-topic-count {
   margin-left: auto;
-  font-size: 13.5px;
+  font-size: var(--text-14);
+  line-height: var(--leading-14);
   color: var(--ink-2);
   white-space: nowrap;
 }
@@ -449,8 +459,8 @@ a.profile-row:hover .profile-label-text {
 
 .profile-topic-head::after {
   content: "+" / "";
-  font-size: 20px;
-  line-height: 1;
+  font-size: var(--text-18);
+  line-height: var(--leading-18);
   color: var(--ink-3);
 }
 
@@ -459,7 +469,7 @@ a.profile-row:hover .profile-label-text {
 }
 
 .profile-topic .profile-block {
-  margin-bottom: 12px;
+  margin-bottom: var(--space-12);
 }
 
 /* stacked (a chart under 900 px): the label, the two numbers and "›" on one line, the plot across the row under them;
@@ -545,8 +555,10 @@ a.profile-row:hover .profile-label-text {
   justify-content: end;
 }
 
+/* a phone's list titles: 17 → 18, a sub-section's size */
 .genre-profile.phone .profile-list-head h3 {
-  font-size: 17px;
+  font-size: var(--text-18);
+  line-height: var(--leading-18);
 }
 
 @media (forced-colors: active) {

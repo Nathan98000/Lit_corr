@@ -34,6 +34,7 @@ const real = realMeta();
 const realFile = (sub = "all") =>
   JSON.parse(readFileSync(path.join(here, "..", "..", "public", "aggregates", "genres", `${sub}.json`), "utf8"));
 const css = readFileSync(path.join(here, "..", "comparison.css"), "utf8"); // "One genre"'s styles, shared with the Trends page
+const styles = readFileSync(path.join(here, "..", "styles.css"), "utf8"); // the site's tokens (:root)
 /** A fetch() that serves the site's real aggregates. */
 const realFetch = async (url) => {
   const body = readFileSync(path.join(here, "..", "..", "public", "aggregates", String(url).split("aggregates/")[1]), "utf8");
@@ -269,7 +270,9 @@ describe("the rows (concept R3)", () => {
     const quiet = [...document.querySelectorAll(".profile-topic .profile-row")].find((r) => r.querySelector(".p2-dot.quiet"));
     expect(quiet.querySelector(".p2-dot.quiet").getAttribute("r")).toBe("3.5");
     expect(quiet.querySelector(".p2-num").classList.contains("quiet")).toBe(true);
-    expect(css).toMatch(/--quiet-mark: #857f75;/);
+    // the one gray for marks and controls (round 4's X1): --control, #857f75
+    expect(css).toMatch(/--quiet-mark: var\(--control\);/);
+    expect(styles).toMatch(/--control: #857f75;/);
     expect(css).toMatch(/\.p2-dot\.quiet \{\s*fill: var\(--quiet-mark\);/);
     expect(css).toMatch(/\.p2-num \{[^}]*paint-order: stroke;[^}]*stroke: var\(--bg\);[^}]*stroke-width: 4px;[^}]*stroke-linejoin: round;/);
   });
@@ -743,8 +746,9 @@ describe("the topics (T1, F84, F89, F92)", () => {
     expect(summary.querySelector(".visually-hidden").textContent).toBe("Narration, 1 of 1 stand out");
     for (const el of summary.querySelectorAll(".profile-topic-name, .profile-topic-count")) expect(el.getAttribute("aria-hidden")).toBe("true");
     expect(summary.querySelector(".profile-topic-name").textContent).toBe("Narration");
-    expect(css).toMatch(/\.profile-topic-name \{\s*font-size: 16px;\s*font-weight: 600;/);
-    expect(css).toMatch(/\.profile-topics > h3 \{\s*margin: 0 0 4px;\s*font-size: 23px;/);
+    expect(css).toMatch(/\.profile-topic-name \{\s*font-size: var\(--text-16\);\s*font-weight: 600;/);
+    // the lists' titles' size, as the answer's other h3s (round 4's type scale: 23 → 20)
+    expect(css).toMatch(/\.profile-topics > h3 \{\s*margin: 0 0 var\(--space-4\);\s*font-size: var\(--serif-20\);/);
   });
 
   it("have a line under their heading, left out when nothing was compared", async () => {

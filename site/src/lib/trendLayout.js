@@ -5,6 +5,7 @@
 import { stepDecimals } from "./format.js";
 import { wrapText } from "./genreLayout.js";
 import { PHONE, niceTicks, textWidth } from "./rangeLayout.js";
+import { MARK, TEXT } from "./tokens.js";
 
 export const TREND_MAX_W = 760; // five columns don't need the page's width (§3.1)
 // The plot's height: 200 px on phones, 250 on wider screens, less in a short window (never under 200), so that at 1280
@@ -14,16 +15,18 @@ export const TREND_MAX_W = 760; // five columns don't need the page's width (§3
 const FOLD_ROOM = 490;
 export const plotHeight = (phone, viewportH = null) => (phone ? 200 : Math.max(200, Math.min(250, (viewportH ?? Infinity) - FOLD_ROOM)));
 export const TWO_LINES_UNDER = 58; // a column narrower than this puts its period on two lines ("2000" over "–04")
-const TICK_SIZE = 12;
-const HEAD_SIZE = 12;
-const PERIOD_SIZE = 12.5;
-const VALUE_SIZES = [13, 12, 11.5]; // smaller when long numbers would crowd each other on a phone ("−0.125"); 11.5 px is the site's smallest text
+const TICK_SIZE = TEXT.tick;
+const HEAD_SIZE = TEXT.tick;
+const PERIOD_SIZE = TEXT.note;
+// smaller when long numbers would crowd each other on a phone ("−0.125"): the scale's 12 px, its smallest; when even 12
+// doesn't fit, every other value drops a line
+const VALUE_SIZES = [TEXT.note, TEXT.tick];
 const VALUE_GAP = 3; // between two values, as textWidth estimates them (about 4 px on screen)
-const STORIES_SIZE = 12;
-const NONE_SIZE = 12.5;
-const SEGMENT_SIZE = 12;
-const BRACKET_SIZE = 12;
-const NOT_COMPARED_SIZE = 12;
+const STORIES_SIZE = TEXT.tick;
+const NONE_SIZE = TEXT.note;
+const SEGMENT_SIZE = TEXT.tick;
+const BRACKET_SIZE = TEXT.tick;
+const NOT_COMPARED_SIZE = TEXT.tick;
 const LABEL_GAP = 12; // between the two brackets' labels on one line
 const LABEL_SLACK = 1.1; // the brackets' labels in a wider font ('"DejaVu Sans", Verdana': 9% over textWidth at 600)
 
@@ -153,7 +156,7 @@ export function trendLayout({
   const plotH = plotHeight(phone, viewportH);
   const bottom = top + plotH;
   const y = (v) => bottom - ((v - axis.lo) / (axis.hi - axis.lo || 1)) * plotH;
-  const periodY = [bottom + 20, bottom + 34];
+  const periodY = [bottom + 20, bottom + 35]; // two lines of 13 px ("2000" over "–04"), 15 px apart
   const rowY = (two ? periodY[1] : periodY[0]) + 21;
   // the values' size: the largest that leaves every two neighbors apart; when even the smallest doesn't (a rare pair
   // like "0.00060" and "0.0032" at 320 px), every other value drops a line
@@ -196,7 +199,7 @@ export function trendLayout({
       col.dotY = y(c.share);
     } else {
       col.dotY = y(c.median);
-      col.capsule = { x: x - 6, y: y(c.p75), width: 12, height: Math.max(12, y(c.p25) - y(c.p75)) };
+      col.capsule = { x: x - MARK.bar / 2, y: y(c.p75), width: MARK.bar, height: Math.max(12, y(c.p25) - y(c.p75)) };
       if (col.capsule.height === 12) col.capsule.y = col.dotY - 6;
     }
     return col;
@@ -285,8 +288,8 @@ export const SPLIT_SIDE_FROM = 712;
 const SPLIT_MAX_W = 1032;
 const SPLIT_GAP = 32; // between the halves side by side
 const SPLIT_GAP_Y = 28; // between the halves stacked
-const HALF_TITLE_SIZE = 14;
-const AXIS_TITLE_SIZE = 12.5;
+const HALF_TITLE_SIZE = TEXT.secondary;
+const AXIS_TITLE_SIZE = TEXT.note;
 const HALF_TOP = 52; // a half's plot starts under its title (y 15) and its axis title (y 35)
 
 /**

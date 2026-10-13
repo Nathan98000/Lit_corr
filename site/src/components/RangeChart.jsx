@@ -1,6 +1,7 @@
 import { useId, useRef } from "react";
 import { formatCount, formatFixed, formatRange, columnDecimals } from "../lib/format.js";
 import { PHONE, capsule, rangeLayout, scaleX } from "../lib/rangeLayout.js";
+import { MARK } from "../lib/tokens.js";
 import { chartSummary, groupedBy } from "../lib/wording.js";
 import useGlide from "./useGlide.js";
 import useRowDetails from "./useRowDetails.js";
@@ -236,13 +237,13 @@ export default function RangeChart({
                     <rect
                       className="iqr"
                       x={bar.x}
-                      y={r.cy - 6}
+                      y={r.cy - MARK.bar / 2}
                       width={bar.width}
-                      height={12}
-                      rx={6}
+                      height={MARK.bar}
+                      rx={MARK.bar / 2}
                       style={r.small ? { fill: `url(#${hatchId})` } : undefined}
                     />
-                    <circle className="median" cx={x(m[2])} cy={r.cy} r={7} />
+                    <circle className="median" cx={x(m[2])} cy={r.cy} r={MARK.dot} />
                     <text className="gval" x={r.value.x} y={r.value.y}>
                       {r.value.text}
                     </text>

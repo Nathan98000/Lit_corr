@@ -20,7 +20,7 @@
   --ink-3: #6b6b75;
   --rule: #e7e4dd;
   --rule-2: #d2cec5;
-  --control: #8f8a80; /* borders of selects, buttons and pills: 3.3:1 on --bg */
+  --control: #857f75; /* one gray for marks and control borders (X1): 3.8:1 on --bg; the gray dots' gray too */
   --accent: #4a89f3;
   --accent-ink: #2b63c6;
   --accent-bar: #c9dcfb; /* middle-half bars */
@@ -38,6 +38,49 @@
   --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --radius: 6px;
   --target: 44px;
+  /* One visual system (design review 4, X1); lib/tokens.js holds the same numbers for the charts' code, and a test
+     reads both. The type scale, sans: 12 chart ticks and small labels · 13 notes, units and keys' small text · 14
+     secondary text and keys · 15 controls and Explore's body · 16 rows, lists and How it works' body · 18 the lede;
+     one line height for each size, whatever the family */
+  --text-12: 12px;
+  --text-13: 13px;
+  --text-14: 14px;
+  --text-15: 15px;
+  --text-16: 16px;
+  --text-18: 18px;
+  --leading-12: 1.3;
+  --leading-13: 1.4;
+  --leading-14: 1.45;
+  --leading-15: 1.45;
+  --leading-16: 1.5;
+  --leading-18: 1.4;
+  /* the serif, at its one weight (600): 18 the masthead and sub-sections (as above), 20 list headings, 20–26 the chart
+     headings (26 How it works' sections), and the page's question or title, 23–37 */
+  --serif-20: 20px;
+  --serif-26: 26px;
+  --serif-heading: clamp(20px, 2.6vw, 26px);
+  --serif-page: clamp(23px, 3.9vw, 37px);
+  --leading-heading: 1.25; /* every serif size from 20 to 26 */
+  --leading-page: 1.32;
+  --leading-page-phone: 1.45; /* phones: each word of the question owns its tap area (F38) */
+  /* the spacing between blocks */
+  --space-4: 4px;
+  --space-8: 8px;
+  --space-12: 12px;
+  --space-16: 16px;
+  --space-24: 24px;
+  --space-32: 32px;
+  --space-48: 48px;
+  /* the chart grammar: the median, a dot of radius 6 with a 2 px white ring, on every range chart; the interquartile
+     range, a 10 px capsule in --accent-bar with a 1 px --accent edge; "all stories", a dashed 1 px --ink-2 line; a
+     comparison's score, a dot of radius 5 on its line, blue when clear (a row that doesn't stand out keeps R3's small
+     gray dot); values printed beside marks, 13 px 600 in --ink */
+  --mark-dot: 6px;
+  --mark-ring: 2px;
+  --mark-bar: 10px;
+  --mark-edge: 1px;
+  --mark-ref: 1px;
+  --mark-score: 5px;
   color-scheme: light;
 }
 
@@ -55,7 +98,7 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--ink);
-  font: 16px/1.55 var(--sans);
+  font: var(--text-16) / var(--leading-16) var(--sans);
   -webkit-font-smoothing: antialiased;
 }
 
@@ -89,7 +132,8 @@ select {
 }
 
 .small {
-  font-size: 13px;
+  font-size: var(--text-13);
+  line-height: var(--leading-13);
 }
 
 .wrap {
@@ -124,13 +168,13 @@ main.wrap {
 .ph-title {
   height: 30px;
   width: min(30ch, 80%);
-  margin: 6px 0 10px;
+  margin: var(--space-8) 0 var(--space-12);
 }
 
 .ph-sub {
   height: 14px;
   width: 12em;
-  margin-bottom: 24px;
+  margin-bottom: var(--space-24);
 }
 
 .ph-chart {
@@ -148,7 +192,8 @@ main.wrap {
 }
 
 .search-placeholder {
-  font-size: 16px;
+  font-size: var(--text-16);
+  line-height: var(--leading-16);
   color: var(--ink-3);
 }
 
@@ -188,7 +233,8 @@ main.wrap {
   align-items: center;
   height: 52px;
   font-family: var(--serif);
-  font-size: 18px;
+  font-size: var(--text-18);
+  line-height: var(--leading-18);
   font-weight: 600;
   color: var(--ink);
   text-decoration: none;
@@ -198,8 +244,9 @@ main.wrap {
 
 .masthead nav {
   display: flex;
-  gap: 4px;
-  font-size: 15px;
+  gap: var(--space-4);
+  font-size: var(--text-15);
+  line-height: var(--leading-15);
 }
 
 .masthead nav a {
@@ -224,7 +271,7 @@ h3 {
   font-family: var(--serif);
   font-weight: 600;
   letter-spacing: -0.015em;
-  line-height: 1.15;
+  line-height: var(--leading-heading);
   text-wrap: balance;
 }
 
@@ -236,7 +283,8 @@ h3 {
   background: var(--paper);
   border-radius: 999px;
   padding: 6px 14px;
-  font-size: 14.5px;
+  font-size: var(--text-15);
+  line-height: var(--leading-15);
   color: var(--ink-2);
   cursor: pointer;
   text-align: left;
@@ -250,7 +298,7 @@ h3 {
 /* ---------------------------------------------------------------- controls */
 /* --------------------------------------------------------------- first screen (B) */
 .intro {
-  padding: 22px 0 6px;
+  padding: var(--space-24) 0 var(--space-8);
 }
 
 /* The kicker in pieces (App.jsx): the title, then the counts, which take a line of their own when the kicker wraps.
@@ -266,9 +314,9 @@ h3 {
   overflow: hidden;
   margin: 0;
   font-family: var(--sans);
-  font-size: 13px;
+  font-size: var(--text-13);
   font-weight: 600;
-  line-height: 1.45;
+  line-height: var(--leading-13);
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--ink-3);
@@ -306,7 +354,7 @@ h3 {
 }
 
 .explorer {
-  margin-bottom: 24px;
+  margin-bottom: var(--space-24);
 }
 
 .sentence-placeholder {
@@ -314,27 +362,28 @@ h3 {
 }
 
 .controls {
-  margin-bottom: 22px;
+  margin-bottom: var(--space-24);
 }
 
 
 
 /* ------------------------------------------------------------- chart panel */
 .chart-head {
-  margin-bottom: 6px;
+  margin-bottom: var(--space-8);
 }
 
 .chart-title {
-  font-size: clamp(20px, 2.6vw, 26px);
-  line-height: 1.22;
-  margin: 0 0 4px;
+  font-size: var(--serif-heading);
+  line-height: var(--leading-heading);
+  margin: 0 0 var(--space-4);
   max-width: 40ch;
 }
 
 .chart-sub {
   margin: 0;
   color: var(--ink-3);
-  font-size: 14px;
+  font-size: var(--text-14);
+  line-height: var(--leading-14);
 }
 
 .legend {
@@ -343,8 +392,9 @@ h3 {
   gap: 6px 18px;
   list-style: none;
   padding: 0;
-  margin: 18px 0 4px;
-  font-size: 13px;
+  margin: var(--space-16) 0 var(--space-4);
+  font-size: var(--text-13);
+  line-height: var(--leading-13);
   color: var(--ink-2);
 }
 
@@ -359,22 +409,24 @@ h3 {
 }
 
 .key-median {
-  width: 11px;
-  height: 11px;
+  width: calc(2 * var(--mark-dot));
+  height: calc(2 * var(--mark-dot));
   border-radius: 50%;
-  background: var(--accent);
+  background: var(--accent-ink);
 }
 
 .key-iqr {
-  width: 11px;
-  height: 18px;
-  border-radius: 3px;
-  background: var(--accent-soft);
+  width: 22px;
+  height: var(--mark-bar);
+  border-radius: calc(var(--mark-bar) / 2);
+  background: var(--accent-bar);
+  border: var(--mark-edge) solid var(--accent);
 }
 
 .key-ref {
-  width: 20px;
-  border-top: 1.5px dashed var(--ink-3);
+  width: 0;
+  height: 14px;
+  border-left: 1.5px dashed var(--ink-2);
 }
 
 .chart-frame {
@@ -391,7 +443,8 @@ h3 {
   border-radius: var(--radius);
   box-shadow: 0 8px 24px rgb(28 28 34 / 0.12);
   padding: 10px 12px;
-  font-size: 13px;
+  font-size: var(--text-13);
+  line-height: var(--leading-13);
   pointer-events: none;
 }
 
@@ -423,18 +476,20 @@ h3 {
 }
 
 .axis-caption {
-  margin: 4px 0 0;
-  font-size: 13px;
+  margin: var(--space-4) 0 0;
+  font-size: var(--text-13);
+  line-height: var(--leading-13);
   color: var(--ink-3);
 }
 
 /* ------------------------------------------------------------------ notes */
 .notes {
-  margin-top: 22px;
-  padding-top: 16px;
+  margin-top: var(--space-24);
+  padding-top: var(--space-16);
   border-top: 1px solid var(--rule);
   max-width: 74ch;
-  font-size: 15px;
+  font-size: var(--text-15);
+  line-height: var(--leading-15);
   color: var(--ink-2);
 }
 
@@ -446,8 +501,8 @@ h3 {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-start;
-  gap: 8px;
-  margin-top: 16px;
+  gap: var(--space-8);
+  margin-top: var(--space-16);
 }
 
 .link-button {
@@ -463,14 +518,15 @@ h3 {
 
 .png-download {
   min-height: var(--target);
-  font-size: 14px;
+  font-size: var(--text-14);
+  line-height: var(--leading-14);
 }
 
 /* ------------------------------------------------------------ methodology */
 .methodology-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: 40px;
+  gap: var(--space-48);
 }
 
 @media (min-width: 1000px) {
@@ -480,21 +536,23 @@ h3 {
 
   .contents {
     position: sticky;
-    top: 16px;
+    top: var(--space-16);
     align-self: start;
     max-height: calc(100vh - 32px);
     overflow: auto;
-    padding-top: 44px;
+    padding-top: var(--space-48); /* level with the page's title (.prose's padding) */
   }
 }
 
 .contents {
-  font-size: 14px;
+  font-size: var(--text-14);
+  line-height: var(--leading-14);
 }
 
 .contents-title {
-  margin: 0 0 6px;
-  font-size: 12px;
+  margin: 0 0 var(--space-8);
+  font-size: var(--text-12);
+  line-height: var(--leading-12);
   font-weight: 700;
   letter-spacing: 0.07em;
   text-transform: uppercase;
@@ -510,14 +568,13 @@ h3 {
 .contents a {
   display: block;
   padding: 6px 0; /* even spacing, also when an item wraps */
-  line-height: 1.35;
   color: var(--ink-2);
   text-decoration: none;
 }
 
 .contents li.sub a {
   padding-left: 14px;
-  font-size: 13.5px;
+  font-size: var(--text-14);
 }
 
 .contents a:hover,
@@ -532,7 +589,7 @@ h3 {
   }
 
   .methodology-layout > .prose {
-    padding-top: 16px;
+    padding-top: var(--space-16);
   }
 }
 
@@ -561,7 +618,8 @@ h3 {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 14px;
+  font-size: var(--text-14);
+  line-height: var(--leading-14);
   color: var(--ink-2);
 }
 
@@ -573,7 +631,8 @@ h3 {
 .section-bar-button {
   flex: none;
   min-height: var(--target);
-  font-size: 15px;
+  font-size: var(--text-15);
+  line-height: var(--leading-15);
 }
 
 .section-panel {
@@ -588,7 +647,8 @@ h3 {
   border-bottom: 1px solid var(--rule-2);
   background: var(--paper);
   box-shadow: 0 10px 24px rgb(28 28 34 / 0.12);
-  font-size: 15px;
+  font-size: var(--text-15);
+  line-height: var(--leading-15);
 }
 
 .section-panel[hidden] {
@@ -613,7 +673,7 @@ h3 {
 
 .section-panel li.sub a {
   padding-left: 16px;
-  font-size: 14.5px;
+  font-size: var(--text-15);
 }
 
 .section-panel a:hover,
@@ -638,13 +698,14 @@ h3 {
 
 .prose {
   max-width: 68ch;
-  padding: 44px 0 56px;
+  padding: var(--space-48) 0 var(--space-48);
 }
 
 .prose .lede {
-  font-size: 18px;
+  font-size: var(--text-18);
+  line-height: var(--leading-18);
   color: var(--ink-2);
-  margin: 0 0 22px;
+  margin: 0 0 var(--space-24);
 }
 
 .prose [tabindex="-1"]:focus {
@@ -658,7 +719,7 @@ h3 {
 }
 
 .in-short {
-  margin: 0 0 22px;
+  margin: 0 0 var(--space-24);
   padding: 14px 18px 6px;
   border: 1px solid var(--rule-2);
   border-radius: var(--radius);
@@ -666,8 +727,9 @@ h3 {
 }
 
 .in-short h2 {
-  margin: 0 0 6px !important;
-  font-size: 18px !important;
+  margin: 0 0 var(--space-8) !important;
+  font-size: var(--text-18) !important;
+  line-height: var(--leading-18);
 }
 
 .in-short ul {
@@ -678,8 +740,9 @@ h3 {
 .glossary-filter {
   display: grid;
   gap: 6px;
-  margin: 10px 0 14px;
-  font-size: 14px;
+  margin: var(--space-12) 0 var(--space-16);
+  font-size: var(--text-14);
+  line-height: var(--leading-14);
   font-weight: 600;
   color: var(--ink-2);
 }
@@ -691,31 +754,32 @@ h3 {
   border: 1px solid var(--control);
   border-radius: var(--radius);
   background: var(--paper);
-  font-size: 16px;
+  font-size: var(--text-16);
   font-weight: 400;
 }
 
 .glossary-blurb {
   display: block;
   flex-basis: 100%;
-  font-size: 13px;
+  font-size: var(--text-13);
+  line-height: var(--leading-13);
   font-weight: 400;
   color: var(--ink-3);
 }
 
 .prose h1 {
   font-size: clamp(32px, 5vw, 44px);
-  margin: 0 0 10px;
+  margin: 0 0 var(--space-12);
 }
 
 .prose h2 {
-  font-size: 25px;
-  margin: 38px 0 10px;
+  font-size: var(--serif-26);
+  margin: var(--space-32) 0 var(--space-12);
 }
 
 .prose h3 {
-  font-size: 19px;
-  margin: 24px 0 6px;
+  font-size: var(--serif-20);
+  margin: var(--space-24) 0 var(--space-8);
 }
 
 .prose p,
@@ -724,12 +788,12 @@ h3 {
 }
 
 .prose li {
-  margin-bottom: 6px;
+  margin-bottom: var(--space-8);
 }
 
 .glossary-group {
   border-top: 1px solid var(--rule);
-  padding: 10px 0;
+  padding: var(--space-12) 0;
 }
 
 .glossary-group summary {
@@ -743,36 +807,37 @@ h3 {
 }
 
 .glossary {
-  margin: 10px 0 0;
+  margin: var(--space-12) 0 0;
+  font-size: var(--text-15);
+  line-height: var(--leading-15);
 }
 
 .glossary div {
-  margin-bottom: 10px;
+  margin-bottom: var(--space-12);
 }
 
 .glossary dt {
   font-weight: 600;
-  font-size: 15px;
 }
 
 .glossary dd {
   margin: 0;
   color: var(--ink-2);
-  font-size: 15px;
 }
 
 /* ------------------------------------------------------------------ footer */
 .site-footer {
   border-top: 1px solid var(--rule);
   background: var(--paper);
-  padding: 26px 0 34px;
-  font-size: 14px;
+  padding: var(--space-24) 0 var(--space-32);
+  font-size: var(--text-14);
+  line-height: var(--leading-14);
   color: var(--ink-2);
 }
 
 .site-footer p {
   max-width: 78ch;
-  margin: 0 0 10px;
+  margin: 0 0 var(--space-12);
 }
 
 /* every page, in the masthead's order (D7), as the mock-up draws them: spaced links, each a 44 px target; when they
@@ -792,7 +857,7 @@ h3 {
   display: inline-flex;
   align-items: center;
   min-height: var(--target);
-  margin-right: 16px;
+  margin-right: var(--space-16);
 }
 
 .footer-pages li:last-child a {
@@ -840,8 +905,8 @@ h3 {
   border-radius: 999px;
   background: var(--paper);
   color: var(--ink);
-  font-size: 14.5px;
-  line-height: 1.2;
+  font-size: var(--text-15);
+  line-height: var(--leading-15);
   cursor: pointer;
   text-decoration: none;
 }
@@ -862,10 +927,10 @@ h3 {
   display: grid;
   place-content: center;
   justify-items: center;
-  gap: 12px;
+  gap: var(--space-12);
   color: var(--ink-2);
   text-align: center;
-  padding: 24px;
+  padding: var(--space-24);
 }
 
 .load-error p {
@@ -877,7 +942,7 @@ h3 {
   display: inline-flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px 12px;
+  gap: var(--space-8) var(--space-12);
 }
 
 /* "Download PNG"'s message when the image can't be made, beside the button */
@@ -888,22 +953,22 @@ h3 {
 
 /* ------------------------------------------------------------ range chart (C2) */
 .range-chart {
-  margin-top: 4px;
+  margin-top: var(--space-4);
 }
 
 /* above the rows: what they are and in what unit, on a line of its own; then the measure's axis title, from where
    the plot starts and close above its ticks (the ticks' band starts with 11 px of empty space) */
 .range-chart .axis-groups,
 .range-chart .axis-title {
-  margin: 12px 0 0;
-  font-size: 12.5px;
+  margin: var(--space-12) 0 0;
+  font-size: var(--text-13);
   font-weight: 600;
-  line-height: 1.35;
+  line-height: var(--leading-13);
   color: var(--ink-2);
 }
 
 .range-chart .axis-groups + .axis-title {
-  margin-top: 8px;
+  margin-top: var(--space-8);
 }
 
 .range-chart .axis-title {
@@ -926,19 +991,19 @@ h3 {
 
 .range-chart .tick {
   fill: var(--ink-3);
-  font-size: 12px;
+  font-size: var(--text-12);
   font-variant-numeric: tabular-nums;
 }
 
 .range-chart .ref line {
   stroke: var(--ink-2);
-  stroke-width: 1.2;
+  stroke-width: var(--mark-ref);
   stroke-dasharray: 4 3;
 }
 
 .range-chart .reflab {
   fill: var(--ink-2);
-  font-size: 12px;
+  font-size: var(--text-12);
   font-variant-numeric: tabular-nums;
 }
 
@@ -948,25 +1013,25 @@ h3 {
 
 .range-chart .glabel {
   fill: var(--ink);
-  font-size: 14px;
+  font-size: var(--text-14);
 }
 
 .range-chart .gn {
   fill: var(--ink-3);
-  font-size: 12.5px;
+  font-size: var(--text-13);
   font-variant-numeric: tabular-nums;
 }
 
 .range-chart .gval {
   fill: var(--ink);
-  font-size: 13px;
+  font-size: var(--text-13);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
 
 .range-chart .gnone {
   fill: var(--ink-3);
-  font-size: 12.5px;
+  font-size: var(--text-13);
   font-style: italic;
 }
 
@@ -986,13 +1051,13 @@ h3 {
 .range-chart .iqr {
   fill: var(--accent-bar);
   stroke: var(--accent);
-  stroke-width: 1;
+  stroke-width: var(--mark-edge);
 }
 
 .range-chart .median {
   fill: var(--accent-ink);
   stroke: #fff;
-  stroke-width: 2;
+  stroke-width: var(--mark-ring);
 }
 
 .range-chart .row.small .iqr {
@@ -1002,7 +1067,7 @@ h3 {
 .range-chart .row.small .median {
   fill: #fff;
   stroke: var(--accent-ink);
-  stroke-width: 2;
+  stroke-width: var(--mark-ring);
 }
 
 .range-chart .hatch-line {
@@ -1030,33 +1095,13 @@ h3 {
   stroke-width: 2px;
 }
 
+/* the key's marks are the chart's (the median, the interquartile range, the dashed line: :root's chart grammar) */
 .key-small {
   width: 22px;
-  height: 10px;
-  border-radius: 5px;
-  border: 1px dashed var(--accent);
+  height: var(--mark-bar);
+  border-radius: calc(var(--mark-bar) / 2);
+  border: var(--mark-edge) dashed var(--accent);
   background: repeating-linear-gradient(135deg, #fff 0 3px, #b9d0fa 3px 5px);
-}
-
-.range-chart .key-median {
-  background: var(--accent-ink);
-  width: 12px;
-  height: 12px;
-}
-
-.range-chart .key-iqr {
-  width: 22px;
-  height: 10px;
-  border-radius: 5px;
-  background: var(--accent-bar);
-  border: 1px solid var(--accent);
-}
-
-.range-chart .key-ref {
-  width: 0;
-  height: 14px;
-  border-top: 0;
-  border-left: 1.5px dashed var(--ink-2);
 }
 
 .range-chart .chart-tip {
@@ -1069,13 +1114,13 @@ h3 {
 
 /* a row's details in the phone layout: a line under the chart, so nothing covers the rows (concept K1) */
 .row-details {
-  margin: 6px 0 0;
+  margin: var(--space-8) 0 0;
   padding: 8px 12px;
   border: 1px solid var(--accent);
   border-radius: var(--radius);
   background: var(--paper);
-  font-size: 14px;
-  line-height: 1.45;
+  font-size: var(--text-14);
+  line-height: var(--leading-14);
   color: var(--ink-2);
 }
 
@@ -1094,9 +1139,10 @@ h3 {
 .takeaway {
   border-left: 3px solid var(--accent-ink);
   padding: 2px 0 2px 14px;
-  margin: 14px 0 6px;
+  margin: var(--space-16) 0 var(--space-8);
   max-width: 62ch;
-  font-size: 16px;
+  font-size: var(--text-16);
+  line-height: var(--leading-16);
   color: var(--ink);
 }
 
@@ -1116,8 +1162,8 @@ h3 {
 .inline-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 10px !important;
+  gap: var(--space-8);
+  margin-top: var(--space-12) !important;
 }
 
 /* ----------------------------------------------- answer layout: E1 (stacked) / E2 (margin notes) */
@@ -1125,7 +1171,7 @@ h3 {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   grid-template-areas: "main" "notes" "actions";
-  column-gap: 40px;
+  column-gap: var(--space-48);
 }
 
 .answer-grid.wide {
@@ -1147,32 +1193,35 @@ h3 {
 .answer-grid > .chart-actions {
   grid-area: actions;
   justify-content: flex-start;
-  margin-top: 16px;
+  margin-top: var(--space-16);
 }
 
 .notes.notes-stack,
 .notes.notes-margin {
-  margin-top: 20px;
+  margin-top: var(--space-24);
   padding-top: 0;
   border-top: 0;
   max-width: 62ch;
 }
 
 .notes.notes-margin {
-  margin-top: 14px;
+  margin-top: var(--space-16);
   padding-left: 22px;
   border-left: 1px solid var(--rule);
-  font-size: 14px;
+  font-size: var(--text-14);
+  line-height: var(--leading-14);
 }
 
 /* in the margin, the explanations are the phones' disclosures at 14 px (concept N1) */
 .notes-margin .disclosure summary {
   min-height: var(--target);
-  font-size: 14px;
+  font-size: var(--text-14);
+  line-height: var(--leading-14);
 }
 
 .notes-margin .disclosure p {
-  font-size: 14px;
+  font-size: var(--text-14);
+  line-height: var(--leading-14);
 }
 
 .agebox {
@@ -1180,9 +1229,10 @@ h3 {
   border: 1px solid var(--age-border);
   border-radius: var(--radius);
   padding: 10px 14px;
-  margin: 0 0 12px;
+  margin: 0 0 var(--space-12);
   color: var(--age-ink);
-  font-size: 14.5px;
+  font-size: var(--text-15);
+  line-height: var(--leading-15);
 }
 
 .agebox p {
@@ -1197,7 +1247,7 @@ h3 {
   display: inline-flex;
   align-items: center;
   min-height: var(--target);
-  font-size: 14.5px;
+  font-size: var(--text-15);
 }
 
 .disclosure {
@@ -1216,7 +1266,8 @@ h3 {
   gap: 12px;
   min-height: 48px;
   cursor: pointer;
-  font-size: 15px;
+  font-size: var(--text-15);
+  line-height: var(--leading-15);
   color: var(--ink);
 }
 
@@ -1226,8 +1277,8 @@ h3 {
 
 .disclosure summary::after {
   content: "+" / "";
-  font-size: 20px;
-  line-height: 1;
+  font-size: var(--text-18);
+  line-height: var(--leading-18);
   color: var(--ink-3);
 }
 
@@ -1236,28 +1287,30 @@ h3 {
 }
 
 .disclosure p {
-  margin: 0 0 14px;
-  font-size: 15px;
+  margin: 0 0 var(--space-16);
+  font-size: var(--text-15);
+  line-height: var(--leading-15);
   color: var(--ink-2);
 }
 
 .why {
-  font-size: 14px;
+  font-size: var(--text-14);
   white-space: nowrap;
 }
 
 /* ------------------------------------------------------- keep exploring (concept J2) */
 .keep-exploring {
-  margin: 32px 0 40px;
-  padding-top: 18px;
+  margin: var(--space-32) 0 var(--space-48);
+  padding-top: var(--space-16);
   border-top: 1px solid var(--rule);
   max-width: 62ch;
 }
 
 .keep-exploring h3 {
-  margin: 0 0 4px;
+  margin: 0 0 var(--space-4);
   font-family: var(--sans);
-  font-size: 13px;
+  font-size: var(--text-13);
+  line-height: var(--leading-13);
   font-weight: 650;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -1276,8 +1329,8 @@ h3 {
   min-height: var(--target);
   padding: 8px 0; /* two-line items keep their spacing */
   border-bottom: 1px solid var(--rule);
-  font-size: 15.5px;
-  line-height: 1.4;
+  font-size: var(--text-16);
+  line-height: var(--leading-16);
   text-decoration: none;
 }
 
@@ -1302,8 +1355,8 @@ h3 {
   max-width: 34ch;
   font-family: var(--serif);
   font-weight: 600;
-  font-size: clamp(23px, 3.9vw, 37px);
-  line-height: 1.32;
+  font-size: var(--serif-page);
+  line-height: var(--leading-page);
   letter-spacing: -0.012em;
   color: var(--ink);
   text-wrap: pretty;
@@ -1356,7 +1409,7 @@ h3 {
   cursor: pointer;
   padding: 0;
   border: 0;
-  font-size: 16px; /* no zoom on focus in iOS */
+  font-size: var(--text-16); /* no zoom on focus in iOS */
 }
 
 .inline-select:focus-within {
@@ -1369,9 +1422,10 @@ h3 {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px 16px;
-  margin-top: 12px;
-  font-size: 15px;
+  gap: var(--space-8) var(--space-16);
+  margin-top: var(--space-12);
+  font-size: var(--text-15);
+  line-height: var(--leading-15);
   color: var(--ink-2);
 }
 
@@ -1400,7 +1454,8 @@ h3 {
 
 .include-note {
   margin: 0;
-  font-size: 13px;
+  font-size: var(--text-13);
+  line-height: var(--leading-13);
   color: var(--ink-3);
 }
 
@@ -1420,7 +1475,7 @@ h3 {
   border-bottom: 1px solid var(--rule);
   background: var(--paper);
   color: var(--ink-2);
-  font: 14px/1.2 var(--sans);
+  font: var(--text-14) / var(--leading-14) var(--sans);
   text-align: left;
   cursor: pointer;
   opacity: 0;
@@ -1450,7 +1505,8 @@ h3 {
 
 .question-bar-up {
   flex: none;
-  font-size: 17px;
+  font-size: var(--text-18); /* 17 → 18: an arrow, the size of the bar's largest text */
+  line-height: var(--leading-18);
   color: var(--accent-ink);
 }
 
@@ -1536,7 +1592,8 @@ html[data-page="explore"] body {
 .overlay-title {
   margin: 0;
   font-family: var(--sans);
-  font-size: 16px;
+  font-size: var(--text-16);
+  line-height: var(--leading-16);
   font-weight: 650;
   letter-spacing: 0;
 }
@@ -1544,7 +1601,8 @@ html[data-page="explore"] body {
 .overlay-close {
   min-height: var(--target);
   padding: 0 4px;
-  font-size: 15px;
+  font-size: var(--text-15);
+  line-height: var(--leading-15);
 }
 
 .overlay-body {
@@ -1579,7 +1637,8 @@ html[data-page="explore"] body {
 .search-close {
   flex: none;
   min-height: var(--target);
-  font-size: 15px;
+  font-size: var(--text-15);
+  line-height: var(--leading-15);
 }
 
 /* the popover keeps Close in its title row */
@@ -1625,7 +1684,7 @@ html[data-page="explore"] body {
   border: 0;
   outline: 0;
   background: none;
-  font-size: 16px;
+  font-size: var(--text-16);
   color: var(--ink);
 }
 
@@ -1639,11 +1698,12 @@ html[data-page="explore"] body {
 
 /* a measure typed into the characteristic search (F45) */
 .pick-measure {
-  margin: 12px 0 0;
+  margin: var(--space-12) 0 0;
   padding: 8px 12px 0;
   border-radius: var(--radius);
   background: var(--accent-wash);
-  font-size: 14.5px;
+  font-size: var(--text-15);
+  line-height: var(--leading-15);
   color: var(--ink-2);
 }
 
@@ -1660,8 +1720,9 @@ html[data-page="explore"] body {
 }
 
 .pick-section {
-  margin: 18px 0 8px;
-  font-size: 12px;
+  margin: var(--space-16) 0 var(--space-8);
+  font-size: var(--text-12);
+  line-height: var(--leading-12);
   font-weight: 700;
   letter-spacing: 0.07em;
   text-transform: uppercase;
@@ -1671,7 +1732,7 @@ html[data-page="explore"] body {
 .chips-wrap {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: var(--space-8);
 }
 
 .chips-wrap .pick-section {
@@ -1682,7 +1743,7 @@ html[data-page="explore"] body {
 .pick-list .chip {
   display: inline-flex;
   align-items: center;
-  font-size: 14.5px;
+  font-size: var(--text-15);
   color: var(--ink-2);
   cursor: pointer;
 }
@@ -1721,30 +1782,34 @@ html[data-page="explore"] body {
 
 .topic-name {
   display: block;
-  font-size: 16px;
+  font-size: var(--text-16);
+  line-height: var(--leading-16);
   color: var(--ink);
 }
 
 .topic-blurb {
   display: block;
-  font-size: 13px;
+  font-size: var(--text-13);
+  line-height: var(--leading-13);
   color: var(--ink-3);
 }
 
 .topic-count {
   flex: none;
-  font-size: 14px;
+  font-size: var(--text-14);
+  line-height: var(--leading-14);
   color: var(--ink-3);
 }
 
 .topic-heading {
-  margin: 4px 0 4px;
+  margin: var(--space-4) 0 var(--space-4);
 }
 
 .topic-heading .topic-name {
   font-family: var(--serif);
   font-weight: 600;
-  font-size: 21px;
+  font-size: var(--serif-20);
+  line-height: var(--leading-heading);
 }
 
 .pick {
@@ -1757,7 +1822,8 @@ html[data-page="explore"] body {
 
 .pick-topic {
   display: block;
-  font-size: 12px;
+  font-size: var(--text-12);
+  line-height: var(--leading-12);
   font-weight: 600;
   letter-spacing: 0.02em;
   color: var(--accent-ink);
@@ -1765,7 +1831,8 @@ html[data-page="explore"] body {
 
 .pick-label {
   display: block;
-  font-size: 16px;
+  font-size: var(--text-16);
+  line-height: var(--leading-16);
   color: var(--ink);
 }
 
@@ -1776,14 +1843,15 @@ html[data-page="explore"] body {
 }
 
 .pick-current {
-  font-size: 13px;
+  font-size: var(--text-13);
+  line-height: var(--leading-13);
   color: var(--accent-ink);
 }
 
 .pick-desc {
   display: block;
-  font-size: 13.5px;
-  line-height: 1.4;
+  font-size: var(--text-14);
+  line-height: var(--leading-14);
   color: var(--ink-3);
 }
 
@@ -1798,54 +1866,54 @@ html[data-page="explore"] body {
 }
 
 .menu-note {
-  margin: 0 0 4px;
-  font-size: 13.5px;
+  margin: 0 0 var(--space-4);
+  font-size: var(--text-14);
+  line-height: var(--leading-14);
   color: var(--ink-2);
 }
 
 /* ----------------------------------------------------------- narrow phones */
 @media (max-width: 559px) {
   .intro {
-    padding-top: 14px;
+    padding-top: var(--space-16);
   }
 
   /* lines far enough apart that each word owns its own tap area (F38) */
   .sentence {
-    line-height: 1.45;
+    line-height: var(--leading-page-phone);
   }
 
   .question-after {
-    margin-top: 6px;
+    margin-top: var(--space-8);
   }
 
   .controls {
-    margin-bottom: 14px;
+    margin-bottom: var(--space-16);
   }
 
   .takeaway {
-    margin-top: 10px;
-    font-size: 15.5px;
+    margin-top: var(--space-12);
   }
 
   .range-chart .legend {
-    margin-top: 10px;
+    margin-top: var(--space-12);
     gap: 2px 14px;
-    font-size: 12.5px;
   }
 
   .range-chart .axis-groups,
   .range-chart .axis-title {
-    margin-top: 8px;
+    margin-top: var(--space-8);
   }
 
   .range-chart .axis-groups + .axis-title {
-    margin-top: 6px;
+    margin-top: var(--space-8);
   }
 }
 
 /* Phones (D4, D7): How it works leaves the masthead first, then the links tighten, then Explore leaves (the name links
    to the explorer too), then Patterns; Genres and Trends always show, and the footer lists every page. Each
-   breakpoint is the narrowest width that keeps 8 px to spare, measured on this Mac (masthead.mjs). */
+   breakpoint is the narrowest width that keeps 8 px to spare, measured on this Mac (masthead.mjs); with the type
+   scale's sizes (the name 18 px, the links 15) the tightened links have 4 px at each side, so every breakpoint holds. */
 @media (max-width: 601px) {
   .masthead nav a.nav-how {
     display: none;
@@ -1853,17 +1921,13 @@ html[data-page="explore"] body {
 }
 
 @media (max-width: 483px) {
-  .brand {
-    font-size: 17px;
-  }
-
   .masthead nav {
     gap: 0;
-    font-size: 14.5px;
+    font-size: var(--text-15);
   }
 
   .masthead nav a {
-    padding: 0 6px;
+    padding: 0 4px;
   }
 }
 
@@ -1884,9 +1948,10 @@ html[data-page="explore"] body {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px 18px;
-  margin-top: 12px;
-  font-size: 15px;
+  gap: var(--space-8) var(--space-16);
+  margin-top: var(--space-12);
+  font-size: var(--text-15);
+  line-height: var(--leading-15);
   color: var(--ink-2);
 }
 
@@ -1906,8 +1971,8 @@ html[data-page="explore"] body {
   align-items: center;
   min-height: var(--target);
   padding: 0 14px;
-  font-size: 14.5px;
-  line-height: 1.2;
+  font-size: var(--text-15);
+  line-height: var(--leading-15);
   color: var(--ink-2);
   white-space: nowrap;
   cursor: pointer;
@@ -1949,8 +2014,8 @@ html[data-page="genres"] body {
 
 @media (max-width: 559px) {
   .genres-controls {
-    gap: 6px 16px;
-    margin-top: 8px;
+    gap: var(--space-8) var(--space-16);
+    margin-top: var(--space-8);
   }
 
   /* "Only include" on a line of its own: a longer option ("Published 2020 or later") never re-wraps the controls
@@ -1963,35 +2028,37 @@ html[data-page="genres"] body {
 /* ------------------------------------------------------------- patterns (I4) */
 .patterns-page {
   max-width: 72ch;
-  padding: 28px 0 56px;
+  padding: var(--space-32) 0 var(--space-48);
 }
 
 .patterns-page h1 {
-  margin: 0 0 6px;
+  margin: 0 0 var(--space-8);
   font-size: clamp(28px, 4vw, 38px);
 }
 
 .patterns-question {
   font-size: clamp(21px, 3vw, 28px);
-  margin-bottom: 16px;
+  margin-bottom: var(--space-16);
 }
 
 .pattern-count {
-  margin: 0 0 16px;
-  font-size: 17px;
+  margin: 0 0 var(--space-16);
+  font-size: var(--text-16); /* 17 → 16: the takeaway's size (it becomes the takeaway in phase 5) */
+  line-height: var(--leading-16);
 }
 
 .pattern-buttons {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin: 0 0 14px;
+  gap: var(--space-8);
+  margin: 0 0 var(--space-16);
 }
 
 .pattern-key {
-  margin: 0 0 12px;
+  margin: 0 0 var(--space-12);
   max-width: 760px;
-  font-size: 14px;
+  font-size: var(--text-14);
+  line-height: var(--leading-14);
   color: var(--ink-2);
 }
 
@@ -2029,8 +2096,8 @@ summary.pattern-topic-head::-webkit-details-marker {
 summary.pattern-topic-head::after {
   content: "+" / "";
   margin-left: auto;
-  font-size: 20px;
-  line-height: 1;
+  font-size: var(--text-18);
+  line-height: var(--leading-18);
   color: var(--ink-3);
 }
 
@@ -2040,12 +2107,13 @@ summary.pattern-topic-head::after {
 
 .pattern-topic-name {
   margin: 0;
-  font-size: 19px;
-  line-height: 1.3;
+  font-size: var(--serif-20);
+  line-height: var(--leading-heading);
 }
 
 .pattern-topic-count {
-  font-size: 14px;
+  font-size: var(--text-14);
+  line-height: var(--leading-14);
   color: var(--ink-3);
   white-space: nowrap;
 }
@@ -2053,7 +2121,7 @@ summary.pattern-topic-head::after {
 /* one compact row per characteristic: name, direction, strength */
 .pattern-rows {
   list-style: none;
-  margin: 0 0 14px;
+  margin: 0 0 var(--space-16);
   padding: 0;
 }
 
@@ -2064,7 +2132,8 @@ summary.pattern-topic-head::after {
   column-gap: 14px;
   min-height: var(--target);
   border-top: 1px solid var(--rule);
-  font-size: 15.5px;
+  font-size: var(--text-16);
+  line-height: var(--leading-16);
 }
 
 .pattern-row a {
@@ -2078,7 +2147,8 @@ summary.pattern-topic-head::after {
 }
 
 .pattern-dir {
-  font-size: 14px;
+  font-size: var(--text-14);
+  line-height: var(--leading-14);
   white-space: nowrap;
 }
 
@@ -2091,7 +2161,8 @@ summary.pattern-topic-head::after {
 }
 
 .pattern-strength {
-  font-size: 13px;
+  font-size: var(--text-13);
+  line-height: var(--leading-13);
   color: var(--ink-3);
 }
 
@@ -2101,7 +2172,8 @@ summary.pattern-topic-head::after {
 
 .pattern-verdict {
   grid-column: 2 / -1;
-  font-size: 13px;
+  font-size: var(--text-13);
+  line-height: var(--leading-13);
   color: var(--ink-3);
 }
 
@@ -2173,10 +2245,10 @@ summary.pattern-topic-head::after {
   display: grid;
   place-content: center;
   justify-items: center;
-  gap: 4px;
+  gap: var(--space-4);
   color: var(--ink-3);
   text-align: center;
-  padding: 24px;
+  padding: var(--space-24);
 }
 
 .chart-empty p {
@@ -2184,7 +2256,7 @@ summary.pattern-topic-head::after {
 }
 
 .notes p {
-  margin: 0 0 10px;
+  margin: 0 0 var(--space-12);
 }
 
 /* --------------------------------------------- forced colors (Windows high contrast, F48) */
@@ -2250,12 +2322,12 @@ summary.pattern-topic-head::after {
 
   .range-chart .key-iqr {
     background: Canvas;
-    border: 1px solid CanvasText;
+    border: var(--mark-edge) solid CanvasText;
   }
 
   .range-chart .key-small {
     background: Canvas;
-    border: 1px dashed CanvasText;
+    border: var(--mark-edge) dashed CanvasText;
   }
 
   .range-chart .key-ref {

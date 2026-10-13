@@ -6,6 +6,8 @@
 // for them, read from their computed styles. Always 2× pixels. Loaded when the button is first hovered, focused or
 // pressed (DownloadPng.jsx).
 
+import { LEADING, MARK, TEXT } from "./tokens.js";
+
 export const CREDIT = "Chart by Nathan Nguyen, @NathanDNguyen";
 export const SCALE = 2;
 export const PAD = 24; // CSS px around everything
@@ -565,8 +567,9 @@ export async function downloadChartImage(spec) {
 // titles canvas text in the page's own fonts, drawn through the same pipeline as the charts' images.
 export const LISTS_W = 760;
 const LIST = { label: 220, n: 70, gap: 12, pad: 4, row: 44, values: [110, 180] };
-const ZONE_FILL = "#ece9e2"; // comparison.css's zone and edges
-const ZONE_EDGE = "#8f8a80";
+const ZONE_FILL = "#ece9e2"; // comparison.css's zone; its edges are the one gray for marks (--control)
+/** A line of text at one of the scale's sizes, as the page sets it (px). */
+const line = (size) => size * LEADING[size];
 
 const xmlText = (t) =>
   String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/\u200b/g, "");
@@ -620,11 +623,12 @@ function listsSvg(plan, { width, panel, sans, styles, ctx }) {
   const ink = cssVar("--ink", "#1c1c22");
   const ink2 = cssVar("--ink-2", "#45454f");
   const ink3 = cssVar("--ink-3", "#6b6b75");
-  const rule = cssVar("--rule", "#e7e4dd");
+  const rule1 = cssVar("--rule", "#e7e4dd");
   const rule2 = cssVar("--rule-2", "#d2cec5");
   const accent = cssVar("--accent-ink", "#2b63c6");
   const quiet = cssVar("--quiet-mark", "#857f75");
-  const control = cssVar("--control", "#8f8a80");
+  const control = cssVar("--control", "#857f75");
+  const zoneEdge = control;
   const white = paper();
   const font = (size, weight = 400) => `${weight} ${size}px ${sans}`;
   const measure = (text, size, weight = 400) => {
@@ -643,7 +647,7 @@ function listsSvg(plan, { width, panel, sans, styles, ctx }) {
         ` text-anchor="${anchor}"${italic ? ' font-style="italic"' : ""}${nums ? ' style="font-variant-numeric:tabular-nums"' : ""}` +
         `${halo ? ` stroke="${white}" stroke-width="4" stroke-linejoin="round" paint-order="stroke"` : ""}>${xmlText(t)}</text>`,
     );
-  const line = (x1, y1, x2, y2, stroke, w = 1) =>
+  const rule = (x1, y1, x2, y2, stroke, w = 1) =>
     parts.push(`<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="${stroke}" stroke-width="${w}"/>`);
   const rect = (x, y, w, h, fill, stroke = null) =>
     parts.push(
@@ -659,7 +663,7 @@ function listsSvg(plan, { width, panel, sans, styles, ctx }) {
   const rows = plan.lists.flatMap((l) => l.rows);
   const vf = plan.valuesFirst;
   const valuesW = vf
-    ? Math.min(LIST.values[1], Math.max(LIST.values[0], Math.ceil(Math.max(...rows.map((r) => measure(r.values.text, 13.5)))) + 8))
+    ? Math.min(LIST.values[1], Math.max(LIST.values[0], Math.ceil(Math.max(...rows.map((r) => measure(r.values.text, TEXT.secondary)))) + 8))
     : 0;
   const plotX = vf ? LIST.label + LIST.gap + valuesW + LIST.gap : LIST.label + LIST.gap;
   const plotW = vf ? width - plotX : width - plotX - 2 * (LIST.gap + LIST.n);
@@ -674,7 +678,7 @@ function listsSvg(plan, { width, panel, sans, styles, ctx }) {
   const heads = vf
     ? null
     : plan.heads.map((h) => {
-        const ls = wrapped(h.replace(/\u200b/g, " "), 12, LIST.n, 600);
+        const ls = wrapped(h.replace(/\u200b/g, " "), TEXT.tick, LIST.n, 600);
         return ls.length <= 2 ? ls : ["Genre"];
       });
 
@@ -686,13 +690,13 @@ function listsSvg(plan, { width, panel, sans, styles, ctx }) {
     texts.push({ text: l.title, x: 0, y, style: styles.listTitle });
     texts.push({ text: l.count, x: width, y: y + (styles.listTitle.lineHeight - styles.count.lineHeight) * 0.7, style: styles.count, align: "right" });
     y += styles.listTitle.lineHeight + 6;
-    line(0, y, width, y, rule2);
+    rule(0, y, width, y, rule2);
     y += 1;
     if (l.caption) {
       y += 8;
-      for (const t of wrapped(l.caption, 12.5, width, 600)) {
-        text(t, 0, y + 12.5, { size: 12.5, weight: 600, fill: ink2 });
-        y += 17;
+      for (const t of wrapped(l.caption, TEXT.note, width, 600)) {
+        text(t, 0, y + TEXT.note, { size: TEXT.note, weight: 600, fill: ink2 });
+        y += line(TEXT.note);
       }
     }
     // the head row: the zone's bracket over the ticks, and the columns' heads
@@ -705,34 +709,34 @@ function listsSvg(plan, { width, panel, sans, styles, ctx }) {
     const headH = Math.max(30 + drop, headLines > 1 ? 16 * headLines + 4 : 30);
     const base = y + headH - 2;
     if (dots) {
-      text(`${zone[0]}–${zone[1]}: ${plan.zoneWords}`, X(50), base - 17 - drop, { size: 11.5, fill: ink2, anchor: "middle" });
+      text(`${zone[0]}–${zone[1]}: ${plan.zoneWords}`, X(50), base - 17 - drop, { size: TEXT.tick, fill: ink2, anchor: "middle" });
       const by = base - 14 - drop;
-      line(X(zone[0]), by, X(zone[1]), by, ZONE_EDGE);
-      line(X(zone[0]), by, X(zone[0]), by + 5, ZONE_EDGE);
-      line(X(zone[1]), by, X(zone[1]), by + 5, ZONE_EDGE);
+      rule(X(zone[0]), by, X(zone[1]), by, zoneEdge);
+      rule(X(zone[0]), by, X(zone[0]), by + 5, zoneEdge);
+      rule(X(zone[1]), by, X(zone[1]), by + 5, zoneEdge);
       for (const t of scale.ticks) {
         const at = pct(t);
-        text(String(t), X(t), base, { size: 12, fill: ink3, anchor: at <= 0.01 ? "start" : at >= 99.99 ? "end" : "middle", nums: true });
+        text(String(t), X(t), base, { size: TEXT.tick, fill: ink3, anchor: at <= 0.01 ? "start" : at >= 99.99 ? "end" : "middle", nums: true });
       }
     }
-    if (vf) valuesHead.forEach((t, j) => text(t, LIST.label + LIST.gap, base - 16 * (valuesHead.length - 1 - j), { size: 12, weight: 600, fill: ink2 }));
+    if (vf) valuesHead.forEach((t, j) => text(t, LIST.label + LIST.gap, base - 16 * (valuesHead.length - 1 - j), { size: TEXT.tick, weight: 600, fill: ink2 }));
     else {
       heads.forEach((h, c) => {
-        h.forEach((t, j) => text(t, c ? n2 : n1, base - 16 * (h.length - 1 - j), { size: 12, weight: 600, fill: ink2, anchor: "end" }));
+        h.forEach((t, j) => text(t, c ? n2 : n1, base - 16 * (h.length - 1 - j), { size: TEXT.tick, weight: 600, fill: ink2, anchor: "end" }));
       });
     }
     y += headH + 2;
     // the rows
     for (const r of l.rows) {
-      const label = wrapped(r.label, 14.5, LIST.label);
-      const units = [r.unit, r.of].filter(Boolean).flatMap((u, j) => wrapped(u, 12.5, LIST.label - (j === 0 && r.swatch ? 15 : 0)));
+      const label = wrapped(r.label, TEXT.control, LIST.label);
+      const units = [r.unit, r.of].filter(Boolean).flatMap((u, j) => wrapped(u, TEXT.note, LIST.label - (j === 0 && r.swatch ? 15 : 0)));
       // a named group's key under its bars: every group's swatch and name, an item never broken
       const keyLines = [];
       if (r.bars) {
         let current = [];
         let x = 0;
         for (const [b, name] of r.key.entries()) {
-          const w = 15 + measure(name, 12);
+          const w = 15 + measure(name, TEXT.tick);
           if (x && x + w > plotW) {
             keyLines.push(current);
             current = [];
@@ -743,40 +747,40 @@ function listsSvg(plan, { width, panel, sans, styles, ctx }) {
         }
         keyLines.push(current);
       }
-      const textH = label.length * 19 + units.length * 16;
+      const textH = label.length * line(TEXT.control) + units.length * line(TEXT.note);
       const plotH = r.bars ? 20 + 4 + keyLines.length * 16 : 22;
       const h = Math.max(LIST.row, textH + 12, plotH + 12);
       const mid = y + h / 2;
       let ty = mid - textH / 2;
       for (const t of label) {
-        text(t, 0, ty + 14, { size: 14.5, fill: ink });
-        ty += 19;
+        text(t, 0, ty + 15, { size: TEXT.control, fill: ink });
+        ty += line(TEXT.control);
       }
       units.forEach((t, j) => {
         let x = 0;
         if (j === 0 && r.swatch) {
-          rect(0.5, ty + 3.5, 9, 9, colorOf(r.swatch), control);
+          rect(0.5, ty + 4.5, 9, 9, colorOf(r.swatch), control);
           x = 15;
         }
-        text(t, x, ty + 12, { size: 12.5, fill: ink3 });
-        ty += 16;
+        text(t, x, ty + 13, { size: TEXT.note, fill: ink3 });
+        ty += line(TEXT.note);
       });
       // the values (values first) or the two numbers
       if (vf) {
         const two = Boolean(r.values.second);
-        text(r.values.text, LIST.label + LIST.gap, mid + (two ? -2 : 5), { size: 13.5, fill: r.few ? ink3 : ink, nums: true });
-        if (two) text(r.values.second, LIST.label + LIST.gap, mid + 13, { size: 12, fill: ink3, nums: true });
+        text(r.values.text, LIST.label + LIST.gap, mid + (two ? -2 : 5), { size: TEXT.secondary, fill: r.few ? ink3 : ink, nums: true });
+        if (two) text(r.values.second, LIST.label + LIST.gap, mid + 13, { size: TEXT.tick, fill: ink3, nums: true });
       } else {
         r.numbers.forEach((col, c) => {
           const x = c ? n2 : n1;
           const two = Boolean(col?.[1]);
-          text(col ? col[0] : "–", x, mid + (two ? -2 : 5), { size: 13.5, fill: r.few ? ink3 : c ? ink2 : ink, anchor: "end", nums: true });
-          if (two) text(col[1], x, mid + 13, { size: 12, fill: ink3, anchor: "end", nums: true });
+          text(col ? col[0] : "–", x, mid + (two ? -2 : 5), { size: TEXT.secondary, fill: r.few ? ink3 : c ? ink2 : ink, anchor: "end", nums: true });
+          if (two) text(col[1], x, mid + 13, { size: TEXT.tick, fill: ink3, anchor: "end", nums: true });
         });
       }
       // the plot
       if (r.few) {
-        text("Too few stories to compare", plotX, mid + 4, { size: 12.5, fill: ink3, italic: true });
+        text("Too few stories to compare", plotX, mid + 4, { size: TEXT.note, fill: ink3, italic: true });
       } else if (r.bars) {
         const top = mid - plotH / 2;
         r.bars.forEach((shares, j) => {
@@ -791,21 +795,21 @@ function listsSvg(plan, { width, panel, sans, styles, ctx }) {
           const ky = top + 24 + j * 16;
           for (const it of items) {
             rect(plotX + it.x + 0.5, ky + 1.5, 9, 9, colorOf(r.colors[it.b]), control);
-            text(it.name, plotX + it.x + 15, ky + 10, { size: 12, fill: ink2 });
+            text(it.name, plotX + it.x + 15, ky + 10, { size: TEXT.tick, fill: ink2 });
           }
         });
       } else if (r.dot) {
         const d = r.dot;
         rect(X(zone[0]), mid - 9, X(zone[1]) - X(zone[0]), 18, ZONE_FILL);
-        line(X(zone[0]), mid - 9, X(zone[0]), mid + 9, ZONE_EDGE);
-        line(X(zone[1]), mid - 9, X(zone[1]), mid + 9, ZONE_EDGE);
-        line(X(50), mid - 11, X(50), mid + 11, ink3);
+        rule(X(zone[0]), mid - 9, X(zone[0]), mid + 9, zoneEdge);
+        rule(X(zone[1]), mid - 9, X(zone[1]), mid + 9, zoneEdge);
+        rule(X(50), mid - 11, X(50), mid + 11, ink3);
         const color = d.flagged ? accent : quiet;
-        if (d.to > d.from) line(X(d.from), mid, X(d.to), mid, color, d.flagged ? 2 : 1.5);
-        const dotR = d.flagged ? 5 : 3.5;
+        if (d.to > d.from) rule(X(d.from), mid, X(d.to), mid, color, d.flagged ? 2 : 1.5);
+        const dotR = d.flagged ? MARK.score : MARK.quiet;
         parts.push(`<circle cx="${X(d.end).toFixed(1)}" cy="${mid.toFixed(1)}" r="${dotR}" fill="${color}"/>`);
         const loud = d.flagged && !vf;
-        const size = loud ? 13 : 12;
+        const size = loud ? TEXT.note : TEXT.tick;
         const weight = loud ? 600 : 400;
         // the page's own placement (numberPlace, in the plan: this module imports nothing the pages load)
         const at = plan.place(d.r, { plotW: inner.w, dotR, textW: measure(String(d.times), size, weight) });
@@ -819,7 +823,7 @@ function listsSvg(plan, { width, panel, sans, styles, ctx }) {
         });
       }
       y += h;
-      line(0, y, width, y, rule);
+      rule(0, y, width, y, rule1);
     }
   });
   const height = Math.ceil(y + 1);
@@ -837,11 +841,12 @@ export async function drawListsImage(spec) {
   if (document.fonts?.ready) await document.fonts.ready;
   const W = LISTS_W;
   const width = W - 2 * PAD;
-  const titleStyle = fixedStyle(panel, null, "h2", "chart-title", 24, 29);
-  const subStyle = fixedStyle(panel, null, "p", "chart-sub", 14, 20);
+  // the page's sizes at a desktop's: the heading's 20–26 at 24 px, the lists' titles 20, the line under them 14
+  const titleStyle = fixedStyle(panel, null, "h2", "chart-title", 24, 24 * LEADING[26]);
+  const subStyle = fixedStyle(panel, null, "p", "chart-sub", TEXT.secondary, line(TEXT.secondary));
   const styles = {
-    listTitle: fixedStyle(panel, panel.querySelector(".profile-list-head h3"), "h3", "", 19, 25),
-    count: fixedStyle(panel, null, "span", "list-count", 14, 20),
+    listTitle: fixedStyle(panel, panel.querySelector(".profile-list-head h3"), "h3", "", 20, 20 * LEADING[20]),
+    count: fixedStyle(panel, null, "span", "list-count", TEXT.secondary, line(TEXT.secondary)),
   };
   const creditStyle = styleOf(panel, null, "p", "axis-caption");
   const ctx = document.createElement("canvas").getContext("2d");

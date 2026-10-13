@@ -1,5 +1,6 @@
 import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { PHONE } from "../lib/rangeLayout.js";
+import { MARK, TEXT } from "../lib/tokens.js";
 import { splitLayout, trendLayout } from "../lib/trendLayout.js";
 import { periodName, periodWords, trendAxisTitle, trendCells, trendChartInput, trendFormat, trendSplitInputs } from "../lib/trends.js";
 import useGlide from "./useGlide.js";
@@ -58,7 +59,7 @@ export function Ticks({ layout, ticks, y }) {
  * lines where they don't fit), and "not compared" between them, under the periods outside both windows.
  */
 export function Table({ layout }) {
-  const valueStyle = layout.valueSize !== 13 ? { fontSize: `${layout.valueSize}px` } : undefined;
+  const valueStyle = layout.valueSize !== TEXT.note ? { fontSize: `${layout.valueSize}px` } : undefined;
   return (
     <g aria-hidden="true" className="trend-table">
       {layout.columns.map((c) => (
@@ -188,15 +189,15 @@ function ColumnMarks({ kind, col, m, y, hatchId, dx = 0, dy = 0 }) {
       {m && kind !== "bin" && (
         <rect
           className="iqr"
-          x={x - 6}
+          x={x - MARK.bar / 2}
           y={dy + Math.min(y(m[2]), y(m[1]) - 6)}
-          width={12}
+          width={MARK.bar}
           height={Math.max(12, y(m[0]) - y(m[2]))}
-          rx={6}
+          rx={MARK.bar / 2}
           style={hatch}
         />
       )}
-      {m && <circle className="median" cx={x} cy={dy + y(kind === "bin" ? m[0] : m[1])} r={6} />}
+      {m && <circle className="median" cx={x} cy={dy + y(kind === "bin" ? m[0] : m[1])} r={MARK.dot} />}
       {col.none?.map((l) => (
         <text key={l.text} className="gnone" x={l.x + dx} y={l.y + dy} textAnchor="middle">
           {l.text}

@@ -88,7 +88,7 @@ const FILE = {
   then: [2000, 2009],
   now: [2020, 2026],
 };
-const WORDS = { id: "story_words", label: "Word count", noun: "story length in words", unit: "words", bins: { type: "ranges" } };
+const WORDS = { id: "story_words", label: "Word count", noun: "word count", unit: "words", bins: { type: "ranges" } };
 const NOTE = { id: "story_has_author_note", label: "Has an author’s note", noun: "has an author’s note", unit: "yes/no", bins: { type: "levels" }, yes_subject: "Stories with an author’s note" };
 const ALL = { id: "all", name: "All genres" };
 const ROMANCE = { id: "adult-romance", name: "Romance" };
@@ -146,7 +146,7 @@ describe("the chart's geometry (trendLayout)", () => {
     }
   });
 
-  it("prints long values smaller on a phone, and drops every other one a line when even 11.5 px would crowd them", () => {
+  it("prints long values smaller on a phone (12 px, the type scale's smallest), and drops every other one a line when even 12 px would crowd them", () => {
     const input = (values) => ({
       ...trendChartInput(fixtureMeta, WORDS, num(FILE.periods.map(() => [100, -1, 0, 1]), [100, -1, 0, 1], 0, 0), FILE),
       texts: values.map((value) => ({ value, stories: "100" })),
@@ -154,9 +154,14 @@ describe("the chart's geometry (trendLayout)", () => {
     const hedge = input(["−0.125", "−0.154", "−0.176", "−0.138", "−0.163"]);
     expect(trendLayout({ width: 736, ...hedge }).valueSize).toBe(13);
     expect(trendLayout({ width: 343, ...hedge }).valueSize).toBe(13);
-    const phone = trendLayout({ width: 288, ...hedge });
-    expect([phone.valueSize, phone.stagger]).toEqual([11.5, false]);
+    // five digits fit a 288 px chart's columns at 12 px, not at 13
+    const phone = trendLayout({ width: 288, ...input(["10000", "20000", "30000", "40000", "50000"]) });
+    expect([phone.valueSize, phone.stagger]).toEqual([12, false]);
     expect(new Set(phone.columns.map((c) => c.value.y)).size).toBe(1);
+    // "−0.125" was printed at 11.5 px before the type scale (round 4); at 12 px every other value drops a line
+    const crowded = trendLayout({ width: 288, ...hedge });
+    expect([crowded.valueSize, crowded.stagger]).toEqual([12, true]);
+    expect(trendOverlaps(crowded)).toEqual([]);
     const tiny = trendLayout({ width: 288, ...input(["0.78", "0.00060", "0.0032", "3.04", "0.00"]) });
     expect(tiny.stagger).toBe(true);
     expect(tiny.columns.map((c) => c.value.y - tiny.columns[0].value.y)).toEqual([0, 15, 0, 15, 0]);
@@ -287,9 +292,9 @@ describe("the heading and the numbers line", () => {
   const heading = (variable, entry, genre = ALL, subset = null) => trendHeading({ variable, entry, genre, subset, file: { ...FILE, g: genre.id } });
 
   it("says rose, fell, moved later or earlier, changed, or no clear change, from the windows of the file", () => {
-    expect(heading(WORDS, num([], [2558], 0.25, 1))).toBe("Story length in words clearly rose from 2000–2009 to 2020 or later");
-    expect(heading(WORDS, num([], [2558], -0.32, -1))).toBe("Story length in words clearly fell from 2000–2009 to 2020 or later");
-    expect(heading(WORDS, num([], [2558], 0.1, 0))).toBe("No clear change in story length in words from 2000–2009 to 2020 or later");
+    expect(heading(WORDS, num([], [2558], 0.25, 1))).toBe("Word count clearly rose from 2000–2009 to 2020 or later");
+    expect(heading(WORDS, num([], [2558], -0.32, -1))).toBe("Word count clearly fell from 2000–2009 to 2020 or later");
+    expect(heading(WORDS, num([], [2558], 0.1, 0))).toBe("No clear change in word count from 2000–2009 to 2020 or later");
     expect(heading(NOTE, { k: "bin", r: 0.25, f: 1, t: [99] })).toBe(
       "The share of stories with an author’s note clearly rose from 2000–2009 to 2020 or later",
     );
@@ -304,7 +309,7 @@ describe("the heading and the numbers line", () => {
     );
     // other windows in the file: other words
     expect(trendHeading({ variable: WORDS, entry: num([], [9], 0.3, 1), genre: ALL, file: { ...FILE, then: [2001, 2008], now: [2019, 2030] } })).toBe(
-      "Story length in words clearly rose from 2001–2008 to 2019 or later",
+      "Word count clearly rose from 2001–2008 to 2019 or later",
     );
   });
 

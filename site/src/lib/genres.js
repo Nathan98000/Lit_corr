@@ -4,6 +4,7 @@
 
 import { formatCount, formatFixed, stepDecimals } from "./format.js";
 import { textWidth } from "./rangeLayout.js";
+import { TEXT } from "./tokens.js";
 import { chartQuestion, chartQuestionText, lowerFirst, standsOutQuestion } from "./wording.js";
 
 export { chartQuestion, chartQuestionText, standsOutQuestion };
@@ -727,7 +728,7 @@ export function profileNote(genre, { inTopic = false, tap = false } = {}) {
  * name on one line of `width` px and "All"; "Genre" when the name doesn't fit.
  */
 export function profileHeads(genre, stacked, width) {
-  const fits = (t) => textWidth(t, 12, 600) <= width;
+  const fits = (t) => textWidth(t, TEXT.tick, 600) <= width;
   if (stacked) return [fits(genre.name) ? genre.name : "Genre", "All"];
   let lines = 0;
   let line = "";

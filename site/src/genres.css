@@ -7,17 +7,18 @@
 
 /* ------------------------------------------------------------------ takeaway and notes */
 .genre-takeaway p {
-  margin: 0 0 3px;
+  margin: 0 0 var(--space-4);
 }
 
 .genre-takeaway .all-line {
-  margin: 6px 0 0;
+  margin: var(--space-8) 0 0;
 }
 
 /* the genres left out of the comparison, after the All genres line (F63) */
 .genre-takeaway .too-few {
-  margin: 4px 0 0;
-  font-size: 14.5px;
+  margin: var(--space-4) 0 0;
+  font-size: var(--text-15);
+  line-height: var(--leading-15);
 }
 
 .genre-takeaway b {
@@ -30,16 +31,16 @@
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 4px 12px;
-  margin: 12px 0 0;
+  gap: var(--space-4) var(--space-12);
+  margin: var(--space-12) 0 0;
 }
 
 .order-words {
   flex: 1 1 9em;
   margin: 0;
-  font-size: 12.5px;
+  font-size: var(--text-13);
   font-weight: 600;
-  line-height: 1.35;
+  line-height: var(--leading-13);
   color: var(--ink-2);
 }
 
@@ -51,7 +52,8 @@
 .segmented.compact label {
   min-height: 36px;
   padding: 0 12px;
-  font-size: 13.5px;
+  font-size: var(--text-14);
+  line-height: var(--leading-14);
 }
 
 .segmented.compact label:first-child {
@@ -77,9 +79,7 @@
 @media (max-width: 559px) {
   .genre-answer .genre-legend {
     display: block;
-    margin: 10px 0 0;
-    font-size: 12.5px;
-    line-height: 1.45;
+    margin: var(--space-12) 0 0;
   }
 
   /* a key stays whole (the lines break between keys); the long items, sentences really, wrap as text */
@@ -109,27 +109,8 @@
   }
 }
 
-.genre-legend .key-median {
-  width: 12px;
-  height: 12px;
-  background: var(--accent-ink);
-}
-
-.genre-legend .key-iqr {
-  width: 22px;
-  height: 10px;
-  border-radius: 5px;
-  background: var(--accent-bar);
-  border: 1px solid var(--accent);
-}
-
-.genre-legend .key-ref {
-  width: 0;
-  height: 14px;
-  border-top: 0;
-  border-left: 1.5px dashed var(--ink-2);
-}
-
+/* the median's, the interquartile range's and the dashed line's keys are the site's (styles.css), as the chart draws
+   them */
 /* a bar from 0 with a dot at its end: the share of stories */
 .genre-legend .key-share {
   width: 24px;
@@ -142,7 +123,7 @@
 
 /* ---------------------------------------------------------------- one characteristic, every genre */
 .genre-chart {
-  margin-top: 8px;
+  margin-top: var(--space-8);
 }
 
 .genre-chart .band-all {
@@ -167,11 +148,11 @@
 }
 
 .genre-chart .gn {
-  font-size: 12.5px;
+  font-size: var(--text-13);
 }
 
 .genre-chart.mode-side .row .gn {
-  font-size: 12px;
+  font-size: var(--text-12);
 }
 
 /* the labels' halo is the row's own background on All genres' shaded row */
@@ -182,7 +163,7 @@
 }
 
 .genre-chart .stories-head {
-  font-size: 12px;
+  font-size: var(--text-12);
 }
 
 /* the details card holds a link: once a tap keeps it, it takes the pointer. Compact (F70): its width follows its
@@ -217,8 +198,8 @@
   margin-top: 6px;
   padding-top: 4px;
   border-top: 1px solid var(--rule);
-  font-size: 13.5px;
-  line-height: 1.35;
+  font-size: var(--text-14);
+  line-height: var(--leading-14);
 }
 
 .row-details.genre-line.empty {
@@ -320,7 +301,7 @@
 /* each group's name over All genres' bar, where its segment has room */
 .genre-mix .group-name {
   fill: var(--ink-2);
-  font-size: 12px;
+  font-size: var(--text-12);
 }
 
 /* ------------------------------------------------------------------ named groups and bands: 100% bars */
@@ -332,19 +313,19 @@
 
 .genre-mix .glabel {
   fill: var(--ink);
-  font-size: 14px;
+  font-size: var(--text-14);
 }
 
 .genre-mix .gn,
 .genre-mix .stories-head {
   fill: var(--ink-3);
-  font-size: 12px;
+  font-size: var(--text-12);
   font-variant-numeric: tabular-nums;
 }
 
 .genre-mix .gnone {
   fill: var(--ink-3);
-  font-size: 12.5px;
+  font-size: var(--text-13);
   font-style: italic;
 }
 
@@ -352,7 +333,7 @@
 .genre-mix .gmark,
 .genre-chart .gmark {
   fill: var(--ink);
-  font-size: 13px;
+  font-size: var(--text-13);
   font-weight: 700;
 }
 
@@ -377,7 +358,7 @@
 }
 
 .genre-mix .seglab {
-  font-size: 12px;
+  font-size: var(--text-12);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
@@ -430,12 +411,12 @@
 /* ------------------------------------------------------------------ mostly zero: one chart (M1) */
 /* the plot's heading, in the axis-title style, from where the plot starts (phones: the chart's left edge) */
 .genre-any .any-head {
-  margin: 12px 0 -6px;
+  margin: var(--space-12) 0 -6px;
 }
 
 .genre-any .col-head,
 .genre-chart .col-head {
-  font-size: 12px;
+  font-size: var(--text-12);
 }
 
 /* "With any": a 40 px bar on wider charts */
@@ -454,7 +435,7 @@
 
 /* phones: the share under the median, muted */
 .genre-any .any-share {
-  font-size: 12px;
+  font-size: var(--text-12);
   font-weight: 400;
   fill: var(--ink-3);
 }

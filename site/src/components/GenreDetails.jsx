@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef } from "react";
 import { rowDetails, standsOutQuestion } from "../lib/genres.js";
 import { textWidth } from "../lib/rangeLayout.js";
+import { TEXT } from "../lib/tokens.js";
 import { toHash } from "../lib/urlState.js";
 import useRowDetails from "./useRowDetails.js";
 
@@ -117,23 +118,23 @@ const LINK = (genre) => `${standsOutQuestion(genre)} →`;
 export function cardWidth(row, details) {
   const pairs = [[], [], [], []];
   details.items.forEach(([k, v], j) => {
-    pairs[(j % 2) * 2].push(textWidth(k, 13));
-    pairs[(j % 2) * 2 + 1].push(textWidth(v, 13));
+    pairs[(j % 2) * 2].push(textWidth(k, TEXT.note));
+    pairs[(j % 2) * 2 + 1].push(textWidth(v, TEXT.note));
   });
   const grid = pairs.reduce((sum, col) => sum + (col.length ? Math.max(...col) : 0), 0) + 3 * 10 + (details.items.length > 1 ? 12 : 0);
   const lines = [
     grid,
-    textWidth(row.genre.name, 13, 700),
-    details.comparison ? textWidth(`Compared with all genres: ${details.comparison.short}`, 13, 600) : 0,
-    row.all ? 0 : textWidth(LINK(row.genre), 13.5),
-    details.items.length ? 0 : Math.min(CARD_MAX, textWidth(details.line, 13)),
+    textWidth(row.genre.name, TEXT.note, 700),
+    details.comparison ? textWidth(`Compared with all genres: ${details.comparison.short}`, TEXT.note, 600) : 0,
+    row.all ? 0 : textWidth(LINK(row.genre), TEXT.secondary),
+    details.items.length ? 0 : Math.min(CARD_MAX, textWidth(details.line, TEXT.note)),
   ];
   return Math.min(CARD_MAX, Math.ceil(Math.max(...lines)) + 26);
 }
 
 /** About how tall a details card is: its title, a line per pair of numbers, the comparison and the link. */
 export function cardHeight(row, details) {
-  const linkLines = row.all ? 0 : textWidth(LINK(row.genre), 13.5) > CARD_MAX - 26 ? 2 : 1;
+  const linkLines = row.all ? 0 : textWidth(LINK(row.genre), TEXT.secondary) > CARD_MAX - 26 ? 2 : 1;
   return 38 + 19 * Math.ceil(details.items.length / 2) + (details.comparison ? 22 : 0) + (linkLines ? 10 + 19 * linkLines : 0);
 }
 

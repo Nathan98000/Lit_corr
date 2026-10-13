@@ -65,7 +65,7 @@
   padding-left: 0;
 }
 
-/* the note under the first list: its link's target is 44 px tall, invisibly (quick win 4) */
+/* the note above the first list: its link's target is 44 px tall, invisibly (quick win 4) */
 .profile-note {
   max-width: 70ch;
   margin: var(--space-8) 0 0;
@@ -174,8 +174,8 @@ a.profile-row:hover .profile-label-text {
   line-height: var(--leading-15);
 }
 
-/* a label (wide) and a long unit that wrap do so in even lines, never leaving one word alone ("of the way through the" ⏎
-   "story"); stacked, a label keeps its lines and a short unit follows it whole */
+/* a label (wide) and a unit that wrap do so in even lines, never leaving one word alone ("of the way through the" ⏎
+   "story"); stacked, a label keeps its lines */
 .genre-profile:not(.stacked) .profile-name,
 .profile-unit {
   text-wrap: balance;
@@ -194,8 +194,7 @@ a.profile-row:hover .profile-label-text {
   color: var(--ink);
 }
 
-/* the unit: under the label on wider charts; stacked, after it, on its last line when it fits (a unit up to about 18
-   characters never breaks inside; a longer one takes a line of its own) */
+/* the unit: on a line of its own under the label, on every chart (round 4's W1) */
 .profile-unit {
   display: block;
   font-size: var(--text-13);
@@ -217,12 +216,6 @@ a.profile-row:hover .profile-label-text {
   border: 1px solid var(--control);
   border-radius: 2px;
   vertical-align: -1px;
-}
-
-/* a named group's "% of stories", on a line of its own under the group's name */
-.profile-unit.profile-of,
-.genre-profile.stacked .profile-unit.profile-of {
-  display: block;
 }
 
 /* a named group's key under its bars, as View 1's legend is: each group's swatch and name, an item never broken */
@@ -499,16 +492,6 @@ a.profile-row:hover .profile-label-text {
 
 .genre-profile.stacked .profile-plot-cell {
   grid-area: plot;
-}
-
-.genre-profile.stacked .profile-unit {
-  display: inline;
-  white-space: nowrap;
-}
-
-.genre-profile.stacked .profile-unit.long {
-  display: block;
-  white-space: normal;
 }
 
 .genre-profile.stacked .profile-head {

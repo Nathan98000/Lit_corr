@@ -376,9 +376,11 @@ describe("one genre on the real data", () => {
     expect(genreProfile(real, file, at("reviews-and-essays")).flagged).toHaveLength(115);
     expect(genreProfile(real, file, at("erotic-couplings")).flagged).toHaveLength(10);
     expect(genreProfile(real, file, at("anal-sex-stories")).flagged).toHaveLength(28);
+    // where a thing starts is "Later", not "Higher" (round 4's W1): its own line, after Higher's
     expect(profileAnnouncement(real, file, { genre: "adult-romance", sub: "all" })).toBe(
       "28 characteristics clearly set Romance apart from all genres. Lower: sexual language, sentences with sexual " +
-        "language, anatomical terms. Higher: romance language, where the first sex scene starts, words before first explicit term.",
+        "language, anatomical terms. Higher: romance language, everyday vocabulary, affection & love. Later: where the " +
+        "first sex scene starts, words before first explicit term.",
     );
   });
 
@@ -407,6 +409,7 @@ describe("one genre on the real data", () => {
     expect(profileTakeaway(chain).map(takeawayLine)).toEqual([
       "Lower: publication year, sexual language, sexual language in the last fifth.",
       "Higher: italics, author’s story count, vocabulary variety (moving average).", // the next one is taken
+      "Later: where the first sex scene starts, words before first explicit term.",
       "A different mix: narrative perspective.",
     ]);
     // "5,000 words or more": Fetish's only lower item is story age, so that line goes

@@ -657,7 +657,7 @@ export function changesTakeaway(p) {
  * with the dot's side second).
  */
 export function changesColumns(item) {
-  const cols = profileColumns(item);
+  const cols = profileColumns(item, { pair: false });
   return { ...cols, genre: cols.all, all: cols.genre };
 }
 
@@ -740,7 +740,8 @@ export function changesWords(file) {
     // "comes out higher", not "scores higher", which on a site about ratings read as a rating (the fresh eyes' third round)
     axisTitle: `How often a story from ${w.now} comes out higher than a story from ${w.then}, out\u00a0of\u00a0100`,
     zone: "no clear change",
-    note: () => `Each dot compares a story from ${w.now} with a story from ${w.then} (50 is a tie)`,
+    // what a dot compares and what a row opens (round 4's W1: "Click" on a device that can hover), in open topics too
+    note: ({ tap = false } = {}) => `Each dot compares a story from ${w.now} with a story from ${w.then} (50 is a tie). ${tap ? "Tap" : "Click"} a row for its chart over time.`,
     // the bars in time's order, 2000–2009 above (item 4)
     mixLine: ({ inTopic = false } = {}) => `${inTopic ? "" : "A different mix: "}${w.then} above, ${w.now} below`,
     topicsLine: "How many characteristics in each topic changed. Open a topic to see them all: blue dots changed, gray dots show no clear change.",

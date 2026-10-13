@@ -152,7 +152,6 @@ export default function TrendChanges({ meta, state, file, busy, onSwitch, onNavi
       png={png}
       valuesFirst
       scale={changesScale(p)}
-      noteFirst
       thenAbove
     />
   );

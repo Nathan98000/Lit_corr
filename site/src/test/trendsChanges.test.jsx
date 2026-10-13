@@ -104,9 +104,16 @@ describe("the windows and the words", () => {
     expect(w.showAll(21, "higher")).toBe("Show all 21 that rose");
     expect(w.showAll(5, "lower")).toBe("Show all 5 that fell");
     expect(w.zone).toBe("no clear change");
-    // the note in the owner's words (2026-10-12): one sentence, no link, the same in a topic and on a touch screen
-    expect(w.note({ tap: false })).toBe("Each dot compares a story from 2020 or later with a story from 2000–2009 (50 is a tie)");
-    expect(w.note({ inTopic: true, tap: true })).toBe(w.note({}));
+    // the note in the owner's words (2026-10-12) and where a row leads (round 4's W1): no link, the same in a topic,
+    // "Tap" on a device that can't hover, as "One genre"'s
+    expect(w.note({ tap: false })).toBe(
+      "Each dot compares a story from 2020 or later with a story from 2000–2009 (50 is a tie). Click a row for its chart over time.",
+    );
+    expect(w.note({ tap: true })).toBe(
+      "Each dot compares a story from 2020 or later with a story from 2000–2009 (50 is a tie). Tap a row for its chart over time.",
+    );
+    expect(w.note({ inTopic: true, tap: true })).toBe(w.note({ tap: true }));
+    expect(w.note({})).toBe(w.note({ tap: false }));
     // the bars in time's order (the trends review)
     expect(w.mixLine({})).toBe("A different mix: 2000–2009 above, 2020 or later below");
     expect(w.mixLine({ inTopic: true })).toBe("2000–2009 above, 2020 or later below");
@@ -194,7 +201,9 @@ describe("View 2 on the page", () => {
     expect(row.getAttribute("href")).toBe("#/trends?var=dlg_word_share&genre=all&include=all");
     expect(row.querySelector(".visually-hidden").textContent).toMatch(/^Dialogue share: \d+ in 100; 2000–2009 \d+%, 2020 or later \d+%; clearly rose\. Opens its chart over time\.$/);
     const note = answer.querySelector(".profile-note");
-    expect(note.textContent).toBe("Each dot compares a story from 2020 or later with a story from 2000–2009 (50 is a tie)");
+    expect(note.textContent).toBe(
+      "Each dot compares a story from 2020 or later with a story from 2000–2009 (50 is a tie). Click a row for its chart over time.",
+    );
     expect(note.querySelector("a")).toBeNull();
     expect([...answer.querySelectorAll(".profile-topic-count")].map((c) => c.textContent)).toEqual(["0 of 1 changed", "2 of 2 changed", "0 of 1 changed"]);
     expect(answer.querySelector(".profile-topics-line").textContent).toBe(

@@ -13,9 +13,9 @@ import useWidth from "./useWidth.js";
 // 2000–2009). The rows (concept R3), the lists, the topics, the notes, the way back and "Download image" of the lists are
 // here; each page gives its words (the two sides' names and short heads, the list titles, the axis title, the zone's
 // words, the note, the topics' line) and its row (the columns' numbers, the row's name and where it leads). "What
-// changed" opts in to its own row and lists (`changes`: values first, a zoomed scale, the note above the lists, marked
-// titles, the bars in time's order); without it, "One genre" draws as it always has. The styles
-// are in comparison.css, which genres.css and trends.css import (the opt-ins' in trends.css).
+// changed" opts in to its own row and lists (`changes`: values first, a zoomed scale, marked titles, the bars in time's
+// order); without it, "One genre" draws as it always has. Both put the note above the first list (round 4's W1). The
+// styles are in comparison.css, which genres.css and trends.css import (the opt-ins' in trends.css).
 
 const SHOWN = 7; // rows of a list before "Show all"
 
@@ -29,7 +29,6 @@ const characteristics = (n) => `${n} characteristic${n === 1 ? "" : "s"}`;
 const WIDE = { label: 250, n: 76, chev: 14, gap: 12 };
 const NARROW = { n: 58, chev: 12, gap: 12 };
 const PAD = 2;
-const UNIT_KEPT = 18; // a unit line up to this long never breaks inside; a longer one takes a line of its own
 const TICKS = [0, 25, 50, 75, 100];
 const FULL = { lo: 0, hi: 100, ticks: TICKS }; // the whole 0–100 scale ("One genre")
 const VALUES = { min: 120, max: 180, size: TEXT.secondary, room: 8 }; // the values' column: its widest value and some room
@@ -191,13 +190,11 @@ function ProfileRow({ item, row, zone, layout, marks }) {
             {item.variable.label}
           </span>
           <span className="visually-hidden">{row.name(item)}</span>
+          {/* the unit on a line of its own under the name, on every chart (round 4's W1) */}
           {cols.unit && (
-            <>
-              {" "}
-              <span className={`profile-unit${cols.unit.length > UNIT_KEPT ? " long" : ""}`} aria-hidden="true">
-                {colors ? <GroupName name={cols.unit} cls={colors[cols.group].cls} /> : cols.unit}
-              </span>
-            </>
+            <span className="profile-unit" aria-hidden="true">
+              {colors ? <GroupName name={cols.unit} cls={colors[cols.group].cls} /> : cols.unit}
+            </span>
           )}
           {cols.of && (
             <span className="profile-unit profile-of" aria-hidden="true">
@@ -342,13 +339,12 @@ function ProfileBlock({ id, items, marks = false, headRow = false, mixLines = fa
 /**
  * "Lower in Romance than in all genres": the first seven, then "Show all 18" / "Show fewer" (`open`, `onOpen`: kept by
  * the page, F88). Wide, its title line ends with the count; stacked, with the two columns' heads, the count left to
- * screen readers ("Show all 18" keeps it). The first list carries the key (F86): the axis title over its rows
- * (`caption`) and the note after its "Show all" (`note`); "A different mix" says which bar is which over its rows
- * (`caption`). "Show fewer" is the one control on the page that moves it, on purpose: when the rows it hides take the
- * button off the screen, the list's heading is brought into view (smoothly, or at once under reduced motion), and focus
- * stays on the button.
+ * screen readers ("Show all 18" keeps it). The first list carries the axis title over its rows (`caption`, F86; the
+ * note is above it, round 4's W1); "A different mix" says which bar is which over its rows (`caption`). "Show fewer"
+ * is the one control on the page that moves it, on purpose: when the rows it hides take the button off the screen,
+ * the list's heading is brought into view (smoothly, or at once under reduced motion), and focus stays on the button.
  */
-function ProfileList({ title, items, all = false, open = false, onOpen, caption = null, note = null, more = null, layout, rowProps }) {
+function ProfileList({ title, items, all = false, open = false, onOpen, caption = null, more = null, layout, rowProps }) {
   const id = useId();
   const heading = useRef(null);
   const button = useRef(null);
@@ -416,7 +412,6 @@ function ProfileList({ title, items, all = false, open = false, onOpen, caption 
           {open ? "Show fewer" : more ? more(items.length) : `Show all ${items.length}`}
         </button>
       )}
-      {note}
     </section>
   );
 }
@@ -435,10 +430,10 @@ const HeadLines = ({ head }) =>
 const AxisTitle = ({ words }) => <p className="profile-caption profile-axis-title">{words.axisTitle}</p>;
 
 /**
- * The note under the first list (F84, F86, F87): what a dot compares, with the link to how a difference is decided
- * (a 44 px target, never broken inside its parentheses), what the gray dots in the topics say, and where a row leads
- * ("Tap" on a device that can't hover, else "Click"). In an open topic, when no list is shown, the gray dots are right
- * there (`inTopic`). A page's note can be one sentence without a link (a string: "What changed"'s).
+ * The note above the first list (F84, F86, F87; round 4's W1, on both pages): what a dot compares, with the link to how
+ * a difference is decided ("One genre": a 44 px target, never broken inside its parentheses), and where a row leads
+ * ("Tap" on a device that can't hover, else "Click"). In an open topic, when no list is shown, the same words
+ * (`inTopic`). A page's note can be a string without a link ("What changed"'s).
  */
 function Note({ words, inTopic = false }) {
   const tap = useMediaQuery("(hover: none)");
@@ -623,9 +618,9 @@ function useWayBack(ref, key) {
  * - `png`: { label, image(panel, lists) }: "Download image" of the lists as shown, right after them (both pages);
  *   `image` gets the panel and the lists' plan (listsPlan) and gives what the image draws.
  * - "What changed"'s opt-ins (each off for "One genre"): `valuesFirst` (the values right after the label, its head
- *   `words.valuesHead`, every dot's number alike), `scale` (a zoomed { lo, hi, ticks }), `noteFirst` (the note above
- *   the first list, under the takeaway), `thenAbove` (a named group's second side's bar above the first's); list
- *   titles given as { mark, word, full } ("▼ Fell", named "Fell from 2000–2009 to 2020 or later").
+ *   `words.valuesHead`, every dot's number alike), `scale` (a zoomed { lo, hi, ticks }), `thenAbove` (a named group's
+ *   second side's bar above the first's); list titles given as { mark, word, full } ("▼ Fell", named "Fell from
+ *   2000–2009 to 2020 or later").
  */
 export default function ComparisonProfile({
   className,
@@ -645,7 +640,6 @@ export default function ComparisonProfile({
   png = null,
   valuesFirst = false,
   scale = FULL,
-  noteFirst = false,
   thenAbove = false,
 }) {
   const [ref, width] = useWidth(720, widthKey);
@@ -669,8 +663,8 @@ export default function ComparisonProfile({
 
   const p = profile;
   const zone = noDifferenceZone(rule);
-  // the first list with dots carries the axis title and the note; with none (nothing stands out), every open topic
-  // with dots carries them
+  // the note goes above the first list with dots, which carries the axis title; with none (nothing stands out), every
+  // open topic with dots carries them
   const lead = p.lower.length ? "lower" : p.higher.length ? "higher" : null;
   // the values' column fits the widest value on the page, so every list and topic has the same grid
   const valuesW = valuesFirst ? valuesWidth(p.items.map((x) => row.values(x).text)) : null;
@@ -702,13 +696,12 @@ export default function ComparisonProfile({
       ) : (
         <Fragment key={answerKey}>
           {top}
-          {noteFirst && lead && <Note words={words} />}
+          {lead && <Note words={words} />}
           {p.lower.length > 0 && (
             <ProfileList
               title={words.lists.lower}
               items={p.lower}
               caption={lead === "lower" && <AxisTitle words={words} />}
-              note={lead === "lower" && !noteFirst && <Note words={words} />}
               {...listProps("lower")}
             />
           )}
@@ -717,7 +710,6 @@ export default function ComparisonProfile({
               title={words.lists.higher}
               items={p.higher}
               caption={lead === "higher" && <AxisTitle words={words} />}
-              note={lead === "higher" && !noteFirst && <Note words={words} />}
               {...listProps("higher")}
             />
           )}

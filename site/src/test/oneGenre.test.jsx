@@ -113,10 +113,11 @@ describe("the columns (profileColumns, F85, decision 6)", () => {
     ]);
   });
 
-  it("gives the medians of a number, trimmed, with the unit for the line under the label", () => {
+  it("gives the medians of a number with the same decimals (round 4's W1), with the unit for the line under the label", () => {
     const item = itemOf({ g: { n: 300, median: 1.72 }, a: { n: 9000, median: 10 } });
     item.nf = { ...item.nf, value: (v) => v.toFixed(3) }; // a chart with three decimals: "1.720", "10.000"
-    expect(profileColumns(item)).toEqual({ genre: ["1.72"], all: ["10"], unit: "per 1,000 words" });
+    // three significant digits for the larger, "10.0", and the smaller with that decimal, "1.7"
+    expect(profileColumns(item)).toEqual({ genre: ["1.7"], all: ["10.0"], unit: "per 1,000 words" });
   });
 
   it("gives yes/no shares with no unit line, and mostly-zero shares with any", () => {
@@ -398,8 +399,9 @@ describe("the row names (profileRowName, F92)", () => {
   it("put a comma before a scale's text that starts with a number", () => {
     const item = itemOf({ label: "Emotional tone", unit: "−1 (all negative) to +1 (all positive)", g: { n: 300, median: 0.5 }, a: { n: 9000, median: 0.468 }, r: 0.06, f: 0 });
     item.nf = { ...item.nf, value: (v) => String(v) };
+    // the same decimals as all genres' "0.468" (round 4's W1)
     expect(profileRowName(item, romance, 10)).toBe(
-      "Emotional tone: 53 in 100; Romance 0.5, all genres 0.468, −1 (all negative) to +1 (all positive); no clear difference. Opens every genre’s numbers.",
+      "Emotional tone: 53 in 100; Romance 0.500, all genres 0.468, −1 (all negative) to +1 (all positive); no clear difference. Opens every genre’s numbers.",
     );
   });
 });
@@ -530,7 +532,7 @@ describe("the key, in the lists (F86)", () => {
     expect(document.querySelector(".profile-legend, .genre-profile .legend")).toBeNull();
     const titles = [...document.querySelectorAll(".profile-axis-title")];
     expect(titles).toHaveLength(1);
-    expect(titles[0].textContent).toBe("How often a story in Romance is the higher one, out of 100");
+    expect(titles[0].textContent).toBe("How often a story in Romance comes out higher than a story from all genres, out\u00a0of\u00a0100");
     const first = document.querySelector(".profile-list");
     expect(first.contains(titles[0])).toBe(true);
     expect(titles[0].nextElementSibling.classList.contains("profile-block")).toBe(true);
@@ -558,17 +560,18 @@ describe("the key, in the lists (F86)", () => {
     expect(document.querySelector(".profile-row .p2-zone").getAttribute("x")).toBe("35%");
   });
 
-  it("ends the first list with the note, after its “Show all”, with its link", async () => {
+  it("puts the note above the first list, as the Trends page does, in its words, with its link (round 4's W1)", async () => {
     serveWith(...nineMore);
     await openGenre("#/genres?view=genre&genre=romance&include=all");
     const list = document.querySelector(".profile-list");
-    const note = list.lastElementChild;
+    const note = list.previousElementSibling;
     expect(note.className).toBe("profile-note");
-    expect(note.previousElementSibling.textContent).toBe("Show all 10");
+    expect(list.lastElementChild.textContent).toBe("Show all 10"); // the list ends with its "Show all"
     expect(note.textContent).toBe(
-      "Each dot compares the story in Romance with a story from all genres; every story counts, not only the medians " +
-        "(how this is decided). Gray dots, in the topics below, show no clear difference. Click a row for every genre’s numbers.",
+      "Each dot compares a story in Romance with a story from all genres, counting every story, not only the medians " +
+        "(50 is a tie; how\u00a0this\u00a0is\u00a0decided). Click a row for every genre’s numbers.",
     );
+    expect(note.textContent).not.toMatch(/Gray dots/); // the topics' line says it, over the topics
     expect(note.querySelector("a").getAttribute("href")).toBe("#/methodology/genres");
     expect(document.querySelectorAll(".profile-note")).toHaveLength(1);
     expect(css).toMatch(/\.profile-note a::after \{[^}]*height: max\(100%, var\(--target\)\);/);
@@ -580,15 +583,20 @@ describe("the key, in the lists (F86)", () => {
     expect(document.querySelector(".profile-note").textContent).toMatch(/ Tap a row for every genre’s numbers\.$/);
   });
 
-  it("goes with every open topic that has dots when no list is shown, without “in the topics below”", async () => {
+  it("goes with every open topic that has dots when no list is shown, in the same words", async () => {
     const user = await openGenre("#/genres?view=genre&genre=fetish&include=all");
     expect(document.querySelector(".profile-list, .profile-axis-title, .profile-note")).toBeNull();
     await openAllTopics(user);
     const topics = [...document.querySelectorAll(".profile-topic")].filter((t) => t.querySelector(".p2-dot"));
     expect(topics.length).toBeGreaterThan(1);
     for (const t of topics) {
-      expect(t.querySelector(".profile-axis-title").textContent).toBe("How often a story in Fetish is the higher one, out of 100");
-      expect(t.querySelector(".profile-note").textContent).toMatch(/\)\. Gray dots show no clear difference\. Click a row/);
+      expect(t.querySelector(".profile-axis-title").textContent).toBe(
+        "How often a story in Fetish comes out higher than a story from all genres, out\u00a0of\u00a0100",
+      );
+      expect(t.querySelector(".profile-note").textContent).toBe(
+        "Each dot compares a story in Fetish with a story from all genres, counting every story, not only the medians " +
+          "(50 is a tie; how\u00a0this\u00a0is\u00a0decided). Click a row for every genre’s numbers.",
+      );
     }
   });
 
@@ -698,7 +706,9 @@ describe("the key, in the lists (F86)", () => {
     }
     expect(document.querySelectorAll(".profile-key")).toHaveLength(4);
     expect(document.querySelectorAll(".profile-of")).toHaveLength(4); // named groups only
-    expect(css).toMatch(/\.profile-unit\.profile-of,\n\.genre-profile\.stacked \.profile-unit\.profile-of \{\s*display: block;/);
+    // every unit is on a line of its own (round 4's W1), on every chart
+    expect(css).toMatch(/\.profile-unit \{\s*display: block;/);
+    expect(css).not.toMatch(/\.profile-unit[^{]*\{[^}]*display: inline/);
     expect(css).toMatch(/\.profile-key-item \{\s*white-space: nowrap;/);
   });
 

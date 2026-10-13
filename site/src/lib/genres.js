@@ -472,19 +472,37 @@ export function standOutWord(item) {
   return (item.f > 0 ? more : less).toLowerCase();
 }
 
+/** The direction words that name a position, not an amount (where something starts or peaks: D10's "Later" …). */
+export const POSITION_WORDS = ["Later", "Earlier", "Sooner"];
+
+/** A stand-out's position word ("Later", "Earlier", "Sooner"), or null when its words are Higher / Lower and the like. */
+export function positionWord(item) {
+  if (item.kind === "grp" || !item.f) return null;
+  const [more, less] = directionWords(item.variable, item.kind);
+  const word = item.f > 0 ? more : less;
+  return POSITION_WORDS.includes(word) ? word : null;
+}
+
 /**
  * The takeaway (concept S1, F90): a line per list that has items, in the lists' order, each naming its first three as
  * the list words them (`lowerFirst(label)`): [{ mark: "▼", word: "Lower", items: ["sexual language", …] }, { mark: "▲",
- * word: "Higher", … }, { mark: "≠", word: "A different mix", … }]. Story age is the publication year again, so it is
- * left out when publication year is among the items shown, and the next one is taken (F78); a line left with nothing
- * goes. Empty when nothing stands out.
+ * word: "Higher", … }, { mark: "≠", word: "A different mix", … }]. A characteristic whose words name a position is
+ * listed under its own word (round 4's W1): "▲ Later: where the first sex scene starts.", "▼ Earlier: …", "▼ Sooner:
+ * …", after the line of its own direction; the lists below keep their titles. Story age is the publication year again,
+ * so it is left out when publication year is among the items shown, and the next one is taken (F78); a line left with
+ * nothing goes. Empty when nothing stands out.
  */
 export function profileTakeaway(p) {
   const year = [p.lower, p.higher, p.mix].some((list) => list.slice(0, 3).some((x) => x.id === "pub_year"));
   const named = (list) => list.filter((x) => !(year && x.id === "age_years")).slice(0, 3).map((x) => lowerFirst(x.variable.label));
+  const amounts = (list) => list.filter((x) => !positionWord(x));
+  const at = (list, word) => list.filter((x) => positionWord(x) === word);
   return [
-    { mark: "▼", word: "Lower", items: named(p.lower) },
-    { mark: "▲", word: "Higher", items: named(p.higher) },
+    { mark: "▼", word: "Lower", items: named(amounts(p.lower)) },
+    { mark: "▼", word: "Earlier", items: named(at(p.lower, "Earlier")) },
+    { mark: "▼", word: "Sooner", items: named(at(p.lower, "Sooner")) },
+    { mark: "▲", word: "Higher", items: named(amounts(p.higher)) },
+    { mark: "▲", word: "Later", items: named(at(p.higher, "Later")) },
     { mark: "≠", word: "A different mix", items: named(p.mix) },
   ].filter((line) => line.items.length);
 }
@@ -538,11 +556,35 @@ export function profileUnit(item) {
 const otherWay = (item) =>
   item.kind === "zero" && Boolean(item.f) && Math.sign(item.stats.share - item.all.share) !== Math.sign(item.r);
 
+const atDecimals = (v, d) => formatFixed(v, d);
+const significant = (text) => text.replace(/[^0-9]/g, "").replace(/^0+/, "").length;
+
+/**
+ * Two numbers side by side in a row of "One genre" (round 4's W1), with the same decimals: as many as give the larger
+ * of the two three significant digits, and more while the smaller (above 0) would show fewer than two, both taking the
+ * extra decimal; then a last decimal that both end on a 0 is dropped, so a trailing zero stays only where the other
+ * value needs that decimal: "7.8 vs 19.3", "10.0 vs 3.8", "2.32 vs 5.75", "309 vs 137". [genre's, all genres'], "–" for
+ * a missing one.
+ */
+export function pairText(g, a) {
+  const vals = [g, a].filter((v) => v != null && Number.isFinite(v));
+  if (!vals.length) return ["–", "–"];
+  const big = Math.max(...vals.map(Math.abs));
+  const small = Math.min(...vals.map(Math.abs));
+  let d = big > 0 ? Math.max(0, 2 - Math.floor(Math.log10(big))) : 0;
+  while (small > 0 && significant(atDecimals(small, d)) < 2 && d < 6) d += 1;
+  const ends0 = (v) => v == null || !Number.isFinite(v) || atDecimals(v, d).endsWith("0");
+  while (d > 0 && ends0(g) && ends0(a)) d -= 1;
+  const text = (v) => (v == null || !Number.isFinite(v) ? "–" : atDecimals(v, d));
+  return [text(g), text(a)];
+}
+
 /**
  * The two number columns of a row in "One genre" (concept R3, F85): { genre, all, unit }, `genre` and `all` each [main,
  * second?] (null without the genre's numbers: fewer than meta.min_n stories with it), and the unit line under the
  * label.
- * - Numbers: the medians, each trimmed of trailing zeros on its own ("7.8", "19.3"), with profileUnit().
+ * - Numbers: the medians, with the same decimals (pairText: "7.8" and "19.3"; percentages and years as the chart
+ *   prints them), with profileUnit(). "What changed" (`pair: false`) keeps each trimmed of trailing zeros on its own.
  * - Yes/no: the shares, no unit line.
  * - Mostly zero: the shares with any, "stories with any"; a stand-out whose share goes the other way from its dot
  *   adds the medians among those ("–" for none), "with any · median among those" with its plain unit.
@@ -550,19 +592,25 @@ const otherWay = (item) =>
  *   (`group`: its index, for the swatch of its color before the name), then "% of stories" (`of`): each story counts
  *   once, in one group.
  */
-export function profileColumns(item) {
+export function profileColumns(item, { pair = true } = {}) {
   const { kind, stats: g, all: a, variable, nf } = item;
   const num = (v) => (v == null ? "–" : trimZeros(nf.value(v)));
-  if (kind === "num") return { genre: g && [num(g.median)], all: a && [num(a.median)], unit: profileUnit(item) };
+  // the genre's and all genres' medians, with the same decimals where they are plain numbers (not percentages or years)
+  const both = (gv, av) => (pair && nf.fmt === "num" ? pairText(gv, av) : [num(gv), num(av)]);
+  if (kind === "num") {
+    const [gm, am] = both(g?.median, a?.median);
+    return { genre: g && [gm], all: a && [am], unit: profileUnit(item) };
+  }
   // the two shares, both with one decimal where they would print the same but differ (sharePair)
   const [gs, as] = g && a && g.share != null ? sharePair(g.share, a.share) : [g && formatPercent(g.share), a && formatPercent(a.share)];
   if (kind === "bin") return { genre: g && [gs], all: a && [as], unit: "" };
   if (kind === "zero") {
     if (g && a && otherWay(item)) {
       const unit = profileUnit(item);
+      const [gm, am] = both(g.median, a.median);
       return {
-        genre: [gs, num(g.median)],
-        all: [as, num(a.median)],
+        genre: [gs, gm],
+        all: [as, am],
         unit: `with any\u00a0·\u00a0median among those${unit ? `, ${unit}` : ""}`, // never a line that starts or ends with "·"
       };
     }
@@ -696,8 +744,12 @@ export const sampleLine = (n, genre, subset) =>
  */
 export const breakable = (name) => name.replace(/\//g, "/\u200b");
 
-/** The axis title over the first list's rows (F86): what a dot's number is, with "out of 100" kept on one line. */
-export const axisTitle = (genre) => `How often a story in ${genre.name} is the higher one, out\u00a0of\u00a0100`;
+/**
+ * The axis title over the first list's rows (F86): what a dot's number is, in the Trends page's words (round 4's W1),
+ * with "out of 100" kept on one line.
+ */
+export const axisTitle = (genre) =>
+  `How often a story in ${genre.name} comes out higher than a story from all genres, out\u00a0of\u00a0100`;
 
 /**
  * Which of a named group's two bars is the genre's (quick win 5): "A different mix: Romance above, all genres below" over
@@ -708,17 +760,17 @@ export const mixLine = (genre, { inTopic = false } = {}) =>
   `${inTopic ? "" : "A different mix: "}${genre.name} above, all genres below`;
 
 /**
- * The note under the first list (F84, F86, F87), in three parts, the middle one the link to how a difference is decided
- * (never broken inside): "Each dot compares the story in Romance with a story from all genres; every story counts, not
- * only the medians (" · "how this is decided" · "). Gray dots, in the topics below, show no clear difference. Tap a row
- * for every genre’s numbers." In an open topic, when no list is shown, the gray dots are right there (`inTopic`);
- * "Click" on a device that can hover (`tap` false).
+ * The note above the first list (round 4's W1, where the Trends page's note is, in its words), in three parts, the
+ * middle one the link to how a difference is decided (never broken inside): "Each dot compares a story in Romance with
+ * a story from all genres, counting every story, not only the medians (50 is a tie; " · "how this is decided" · ").
+ * Tap a row for every genre’s numbers." ("Click" on a device that can hover, `tap` false). The gray dots are the
+ * topics' line's to explain, over the topics. In an open topic, when no list is shown, the same words (`inTopic`).
  */
-export function profileNote(genre, { inTopic = false, tap = false } = {}) {
+export function profileNote(genre, { tap = false } = {}) {
   return [
-    `Each dot compares the story in ${genre.name} with a story from all genres; every story counts, not only the medians (`,
+    `Each dot compares a story in ${genre.name} with a story from all genres, counting every story, not only the medians (50 is a tie; `,
     "how\u00a0this\u00a0is\u00a0decided",
-    `). Gray dots${inTopic ? "" : ", in the topics below,"} show no clear difference. ${tap ? "Tap" : "Click"} a row for every genre’s numbers.`,
+    `). ${tap ? "Tap" : "Click"} a row for every genre’s numbers.`,
   ];
 }
 

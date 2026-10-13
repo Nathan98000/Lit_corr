@@ -833,8 +833,8 @@ def test_real_too_few_genres():
     if not REAL_META.exists():
         pytest.skip("site aggregates not generated")
     too_few = json.loads(REAL_META.read_text())["trend"]["too_few"]
-    assert too_few["all"] == ["chain-stories", "transgender"]
-    assert {sid: len(ids) for sid, ids in too_few.items()} == {"all": 2, "short": 24, "medium": 16, "long": 29}
+    assert too_few["all"] == ["chain-stories"]  # and transgender until the data update 20261013
+    assert {sid: len(ids) for sid, ids in too_few.items()} == {"all": 1, "short": 16, "medium": 9, "long": 25}
 
 
 def _rezip(src, dst, stories):

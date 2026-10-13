@@ -375,8 +375,10 @@ describe("the heading and the numbers line", () => {
         for (const [id, e] of Object.entries(file.c)) expect(Object.keys(e).filter((k) => !["k", "fmt", "q", "t", "r", "f"].includes(k)), `${sub}/${g.id} ${id}`).toEqual([]);
       }
     }
-    const touch = realTrends("all", "all").c.sense_touch_per_1k;
-    expect([touch.r, touch.f]).toEqual([-0.213, -1]);
+    // physical action verbs fell by exactly the rule's 0.2 and clearly changed: r and f decide alone (touch words, r
+    // −0.213, until the data update 20261013)
+    const verbs = realTrends("all", "all").c.style_action_verbs_per_1k;
+    expect([verbs.r, verbs.f]).toEqual([-0.2, -1]);
   });
 });
 

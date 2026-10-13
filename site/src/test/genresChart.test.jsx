@@ -318,7 +318,7 @@ describe("the chart", () => {
     expect(rowNames()[0]).toMatch(/^All genres: median \d+%, interquartile range/);
     expect(rowNames()[3]).toBe("Tiny Genre: fewer than 10 stories");
     expect(within(chart).getByText("Fewer than 10 stories")).toBeTruthy();
-    expect(chart.querySelector(".reflab").textContent).toMatch(/^All genres: \d+%$/);
+    expect(chart.querySelector(".reflab").textContent).toMatch(/^Median of all genres: \d+%$/); // the dashed line names itself
 
     window.location.hash = "#/genres?var=dlg_has_dialogue";
     await waitFor(() => expect(document.querySelector(".genre-chart.kind-bin")).toBeTruthy());
@@ -327,6 +327,9 @@ describe("the chart", () => {
     expect(heading()).toBe("1 of 2 genres clearly differs from all genres");
     expect(document.querySelector(".genre-list").textContent).toBe("▲ More common: Romance.");
     expect(document.querySelector(".all-line").textContent).toMatch(/^All genres: stories with dialogue make up \d+% of stories\./);
+    // a yes/no chart's dashed line is all genres' share, and says so; the key has no entry for it
+    expect(document.querySelector(".genre-chart .reflab").textContent).toMatch(/^Share of all genres: \d+%$/);
+    expect([...document.querySelectorAll(".genre-legend li")].map((li) => li.textContent.trim())).not.toContain("All genres");
   });
 
   it("marks and names the genres that clearly differ", async () => {

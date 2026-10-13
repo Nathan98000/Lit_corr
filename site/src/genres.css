@@ -112,14 +112,9 @@
   .genre-answer .genre-legend .key + .key {
     margin-left: 4px;
   }
-
-  .genre-answer .genre-legend .legend-ref {
-    display: none;
-  }
 }
 
-/* the median's, the interquartile range's and the dashed line's keys are the site's (styles.css), as the chart draws
-   them */
+/* the median's and the interquartile range's keys are the site's (styles.css), as the chart draws them */
 /* a bar from 0 with a dot at its end: the share of stories */
 .genre-legend .key-share {
   width: 24px;
@@ -277,10 +272,6 @@
   .genre-legend .key-iqr {
     background: Canvas;
     border-color: CanvasText;
-  }
-
-  .genre-legend .key-ref {
-    border-left-color: CanvasText;
   }
 
   .genre-legend .key-share {

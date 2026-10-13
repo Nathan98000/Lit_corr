@@ -43,7 +43,8 @@ export default function GenreChart({ meta, variable, entry, rows, sub, title, on
     valueHead: kind === "bin" ? "Share" : "Median",
     phoneLabelW: 116,
     rowHeight: 31,
-    refText: (v) => `All genres: ${v}`,
+    // the dashed line names itself, so the key has no entry for it (the owner, 2026-10-13); yes/no charts' line is a share
+    refText: (v) => `${kind === "bin" ? "Share" : "Median"} of all genres: ${v}`,
     noneText: `Fewer than ${minN} stories`,
   });
   const phone = layout.width < PHONE;

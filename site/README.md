@@ -46,8 +46,9 @@ The **Genres** page compares the stories themselves, not their popularity, genre
 [word count]?" (the page's h1) draws one characteristic in every genre (All genres first), in one of four forms: range
 rows for numbers, share bars for yes/no characteristics, 100% bars for named groups and ordered bands (the groups' names
 over All genres' bar), and, for characteristics where most stories score 0, one row per genre with the range and
-median among its stories with any, then that median and how many have any. ▲ ▼ ≠ mark a genre that clearly differs, in
-a column beside its name; the line above the chart says the order ("Genres in alphabetical order", or by median or
+median among its stories with any, then that median and how many have any. All genres' dashed line names itself under
+the plot ("Median of all genres: 3,630"; "Share of all genres: 57%" for yes/no characteristics), so the key doesn't list
+it. ▲ ▼ ≠ mark a genre that clearly differs, in a column beside its name; the line above the chart says the order ("Genres in alphabetical order", or by median or
 share with its A–Z / By … switch); under the chart, the way across ("Over time →", "With popularity →") and "Download
 image". Under its heading the page says what the characteristic measures, from `meta.json`'s description, as the
 Trends page does. "What stands out about stories in [Romance]?" gives the genre's number of stories and a line for each

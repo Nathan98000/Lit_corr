@@ -268,9 +268,13 @@ export function anyLayout({ rows, width, domain, printed, shareText, tickFormat 
   out.ref = null;
   if (all.above) {
     const rx = x(all.above.median);
-    const text = `All genres: ${printed(all.above.median)}`;
+    const text = `Median of all genres: ${printed(all.above.median)}`;
     const w = textWidth(text, TEXT.tick);
-    const labelX = Math.min(Math.max(rx, x0 + w / 2), Math.max(x0 + w / 2, x1 - w / 2));
+    // under the line, kept over the plot where it fits; a label wider than the plot ("Median of all genres: 0.418" on a
+    // 320 px phone) runs under the names, the band under the rows being its own, as Popularity's label does
+    const inPlot = w <= x1 - x0;
+    const [from, to] = inPlot ? [x0 + w / 2, x1 - w / 2] : [w / 2 + 2, width - w / 2 - 2];
+    const labelX = Math.min(Math.max(rx, from), Math.max(from, to));
     out.ref = { x: rx, labelX, labelY: out.height - 8, text, box: box(labelX, out.height - 8, text, TEXT.tick, 400, "middle") };
   }
   out.heads = heads.map((h) => ({ ...h, box: box(h.x, h.y, h.text, TEXT.tick, 400, "end") }));

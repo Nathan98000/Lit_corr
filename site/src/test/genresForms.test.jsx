@@ -240,7 +240,7 @@ describe("mostly zero: one chart (D6, concept M1)", () => {
       /^Romance: \d+% with any, among those, median [\d.]+ per 1,000 words, interquartile range [\d.]+–[\d.]+, 120 stories, clearly higher than all genres$/,
     );
     expect(rows[3].querySelector(".gnone").textContent).toBe("Fewer than 10 stories");
-    expect(chart.querySelector(".reflab").textContent).toMatch(/^All genres: [\d.]+$/);
+    expect(chart.querySelector(".reflab").textContent).toMatch(/^Median of all genres: [\d.]+$/);
     // the words: "with any" everywhere (F79)
     expect(document.querySelector(".genre-list").textContent).toBe("▲ Higher: Romance.");
     expect(document.querySelector(".all-line").textContent).toMatch(

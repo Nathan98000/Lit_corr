@@ -453,12 +453,6 @@ h3 {
   border: var(--mark-edge) solid var(--accent);
 }
 
-.key-ref {
-  width: 0;
-  height: 14px;
-  border-left: 1.5px dashed var(--ink-2);
-}
-
 .chart-frame {
   position: relative;
 }
@@ -2421,10 +2415,6 @@ summary.pattern-topic-head::after {
   .range-chart .key-small {
     background: Canvas;
     border: var(--mark-edge) dashed CanvasText;
-  }
-
-  .range-chart .key-ref {
-    border-left-color: CanvasText;
   }
 
   .segmented label.on {

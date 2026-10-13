@@ -86,9 +86,6 @@ export function GenreLegend({ kind, anySmall, smallN, groups = null }) {
         <li>
           <span className="key key-share" aria-hidden="true" /> Share of stories
         </li>
-        <li>
-          <span className="key key-ref" aria-hidden="true" /> All genres
-        </li>
         <li className="legend-text">
           <span>
             <span aria-hidden="true">▲▼</span> Clearly more or less common than in all genres{decided}
@@ -105,9 +102,6 @@ export function GenreLegend({ kind, anySmall, smallN, groups = null }) {
       </li>
       <li>
         <span className="key key-iqr" aria-hidden="true" /> Interquartile range
-      </li>
-      <li className="legend-ref">
-        <span className="key key-ref" aria-hidden="true" /> Median of all genres
       </li>
       <li className="legend-text">
         <span>

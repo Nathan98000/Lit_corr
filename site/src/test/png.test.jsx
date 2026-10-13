@@ -261,14 +261,14 @@ describe("what the image says", () => {
       "numbers",
       "dlg_word_share",
       "How do genres differ in dialogue share?",
-      ["Median", "Interquartile range", "Median of all genres", "▲▼ Clearly higher or lower than all genres"],
+      ["Median", "Interquartile range", "▲▼ Clearly higher or lower than all genres"], // the dashed line is labeled on the chart
       [],
     ],
     [
       "yes/no",
       "dlg_has_dialogue",
       "How common are stories with dialogue in each genre?",
-      ["Share of stories", "All genres", "▲▼ Clearly more or less common than in all genres"],
+      ["Share of stories", "▲▼ Clearly more or less common than in all genres"],
       [],
     ],
     [
@@ -305,6 +305,6 @@ describe("what the image says", () => {
     const plan = imagePlan(await press(user));
     expect(plan.subtitle[1]).toBe("Published 2020 or later · Genres by median, highest first");
     const swatches = (await import("../lib/chartImage.js")).keyItems(document.querySelector(".genre-legend")).map((k) => k.swatches.length);
-    expect(swatches).toEqual([1, 1, 1, 0]);
+    expect(swatches).toEqual([1, 1, 0]); // median, interquartile range, then the marks' words
   });
 });

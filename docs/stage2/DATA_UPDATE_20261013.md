@@ -153,7 +153,7 @@ was deleted and no rule loosened. The fixture digests (`7fb18ef1ff7cdf3c` and th
 | `93a9364` | **The duplicate's words** (approved 2026-10-13): How it works keyed "had the same text as another story" by `duplicate_text`, a quality flag; Stage 1's exclusion reason is `duplicate_of_another_story`, so the page would have said "1 left out (duplicate of another story)". Two new tests. |
 | `93dd36c` | **D5.** "Where the stories come from" and "In short" as approved, with `typicalSample(meta)` (the genres' median to the nearest 10: 420). One more literal from the old data, made to come from the data: Limitations' "300 random stories per genre" → "About {typicalSample} random stories per genre". The kicker's placeholder and `index.html`'s description and og:description say "about 13,000"; a test fails when any of them differs from `aboutCount(meta.counts.included)` of the real `meta.json` (checked: it fails with "about 9,000" in either place). |
 | `df03cd7` | **D7.** `vite.config.js` reads `meta.json`'s `generated_at` at build time (`dataStamp`, `src/lib/dataStamp.js`: `20261013T164459Z`) and defines `__DATA_BUILD__`; `aggregatesUrl()` adds `?v=<stamp>` to every aggregates address. Paths, the in-memory cache's keys and the bytes of the first load are unchanged. The tests run without a stamp (vitest's mode), and a new test sets one. `npm run dev` and `npm run preview` checked in a browser: every aggregates request carries the stamp. |
-| (last) | This write-up, the after screenshots, `site/README.md`. |
+| `5b923a4` | This write-up, the after screenshots, `site/README.md`. |
 
 Literals from the old data left as they are: examples in code comments (`trends.js`'s "2,810 → 4,100", `wording.js`'s
 "about 9,000", `genres.js`'s "300 stories in Romance."), which nobody visiting sees. `site/README.md`'s numbers are
@@ -289,9 +289,12 @@ visits that start on the Trends or Genres page +0.3 and +0.2 KiB. Checked in the
 **Screenshots.** `f01-trends-constant.png` (How To's pages, Non-Erotic's sex scenes, Letters & Transcripts' title
 words, before above, after below) and `f02-genres-constant.png` (the Genres page, "Under 2,000 words", pages on site).
 
-**Seen on the way, not changed.** Six Trends axis titles repeat their unit ("Sex scenes per 10,000 words, per 10,000
-words", "Scene breaks per 1,000 words, per 1,000 words" …): `trendAxisTitle` adds the unit to a label that already
-ends with it. It is offered as a separate task.
+**Seen on the way, fixed separately.** `trendAxisTitle` added a rate's unit to a label that already names it ("Sex
+scenes per 10,000 words, per 10,000 words"). Fixed in `5c9e0a1`, on `main` while this branch was open: four
+characteristics' charts showed it (sex scenes per 10,000 words, dialogue segments, name mentions and questions per
+1,000 words); scene breaks and exclamations draw the split chart, whose half among stories with any is titled by the
+unit alone. This branch was merged into `main` with it in `4486768` (no conflicts; 636 Vitest and 221 pytest pass on
+the merged tree).
 
 ## 10. Appendix: the comparison script's output
 

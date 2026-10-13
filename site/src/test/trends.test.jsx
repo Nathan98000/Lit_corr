@@ -12,7 +12,7 @@ import { TrendLegend, trendsImage } from "../components/TrendAnswer.jsx";
 import TrendChart from "../components/TrendChart.jsx";
 import TrendMix from "../components/TrendMix.jsx";
 import useRowDetails from "../components/useRowDetails.js";
-import { keyItems } from "../lib/chartImage.js";
+import { imagePlan, keyItems } from "../lib/chartImage.js";
 import { clearCache } from "../lib/data.js";
 import {
   SPLIT_SIDE_FROM,
@@ -276,6 +276,26 @@ describe("the chart's numbers (one format per chart)", () => {
     expect(trendAxisTitle(WORDS, { k: "num" })).toBe("Word count");
     expect(trendAxisTitle({ label: "Sexual language", unit: "per 1,000 words" }, { k: "num", fmt: "num" })).toBe("Sexual language, per 1,000 words");
     expect(trendAxisTitle(NOTE, { k: "bin" })).toBe("Stories with an author’s note, share of stories");
+  });
+
+  it("names a rate's unit once: not again after a label that names it (a made-up characteristic)", () => {
+    const SIGHS = { id: "sighs_per_1k", label: "Sighs per 1,000 words", noun: "sighs per 1,000 words", unit: "per 1,000 words", bins: { type: "ranges" } };
+    const numbers = { k: "num", fmt: "num" };
+    expect(trendAxisTitle(SIGHS, numbers)).toBe("Sighs per 1,000 words");
+    expect(trendAxisTitle({ ...SIGHS, label: "Sighs per 10,000 words", unit: "per 10,000 words" }, numbers)).toBe("Sighs per 10,000 words");
+    expect(trendAxisTitle({ ...SIGHS, label: "Sighs per 1,000 words of dialogue" }, numbers)).toBe("Sighs per 1,000 words of dialogue");
+    // a label that doesn't name its unit keeps it after a comma
+    expect(trendAxisTitle({ ...SIGHS, label: "Sighs" }, numbers)).toBe("Sighs, per 1,000 words");
+    expect(trendAxisTitle({ ...SIGHS, label: "Sighs in narration", unit: "per 1,000 narration words" }, numbers)).toBe(
+      "Sighs in narration, per 1,000 narration words",
+    );
+    // the split chart's half among stories with any: the plain unit alone, else this title (bins that aren't ranges)
+    const zero = { k: "zero", fmt: "num", q: FILE.periods.map(() => [100, 60, 0.6, 1, 2, 3]), t: [200, 120, 0.6, 1, 2, 3], r: 0.1, f: 0 };
+    expect(trendSplitInputs(fixtureMeta, SIGHS, zero, FILE).map((h) => h.axisTitle)).toEqual(["Share of stories", "per 1,000 words"]);
+    expect(trendSplitInputs(fixtureMeta, { ...SIGHS, bins: { type: "levels" } }, zero, FILE).map((h) => h.axisTitle)).toEqual([
+      "Share of stories",
+      "Sighs per 1,000 words",
+    ]);
   });
 
   it("names each period with its numbers", () => {
@@ -767,6 +787,31 @@ describe("the PNG", () => {
     expect(spec.chart.classList.contains("trend-chart")).toBe(true);
     expect(keyItems(spec.legend).map((k) => k.text)).toContain("The periods compared, the oldest and the newest");
     expect(trendsFileName({ v: "Story_Words", genre: "All", sub: "All" })).toBe("trends-story_words-all-all.png");
+  });
+
+  it("titles the axis as the page does: a rate's unit once when the label names it (a made-up characteristic)", async () => {
+    const serve = fixtureFetch();
+    vi.stubGlobal("fetch", async (url) => {
+      const res = await serve(url);
+      if (!res.ok || !/meta\.json|trends\//.test(String(url))) return res;
+      const body = await res.json();
+      if (body.variables) Object.assign(body.variables.find((v) => v.id === "dlg_word_share"), { label: "Sighs per 1,000 words", unit: "per 1,000 words" });
+      else if (body.c?.dlg_word_share) body.c.dlg_word_share.fmt = "num";
+      return { ok: true, status: 200, json: async () => body };
+    });
+    await openTrends("#/trends?var=dlg_word_share");
+    expect(document.querySelector(".trend-chart .trend-axis-title").textContent).toBe("Sighs per 1,000 words");
+    const spec = trendsImage(
+      {
+        variable: fixtureMeta.variables.find((v) => v.id === "dlg_word_share"),
+        genre: fixtureMeta.genres.find((g) => g.id === "all"),
+        heading: "Heading",
+        subset: fixtureMeta.subsets.find((s) => s.id === "all"),
+        state: { v: "dlg_word_share", genre: "all", sub: "all" },
+      },
+      document.querySelector(".trend-answer"),
+    );
+    expect(imagePlan(spec).above).toEqual(["Sighs per 1,000 words"]);
   });
 
   it("puts a period's card beside its column, not centered over it as the explorer's are", () => {

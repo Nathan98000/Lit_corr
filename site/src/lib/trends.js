@@ -145,11 +145,16 @@ export function yesPhrase(variable) {
   return /^Stories /.test(s) ? s.slice("Stories ".length) : lowerFirst(s).replace(/ stories$/, "");
 }
 
-/** The chart's axis title: the label, with its unit when it is a rate; yes/no characteristics, "…, share of stories". */
+/**
+ * The chart's axis title: the label, with its unit when it is a rate the label doesn't name already ("Sexual language,
+ * per 1,000 words", but "Sex scenes per 10,000 words" alone, as profileUnit leaves out a unit the label names); yes/no
+ * characteristics, "…, share of stories".
+ */
 export function trendAxisTitle(variable, entry) {
   if (entry.k === "bin") return `${variable.yes_subject}, share of stories`;
   const unit = variable.unit || "";
-  return /^per /.test(unit) && entry.fmt !== "percent" ? `${variable.label}, ${unit}` : variable.label;
+  const named = variable.label.toLowerCase().includes(unit.toLowerCase());
+  return /^per /.test(unit) && entry.fmt !== "percent" && !named ? `${variable.label}, ${unit}` : variable.label;
 }
 
 // --------------------------------------------------------------------------------------------------------- headings

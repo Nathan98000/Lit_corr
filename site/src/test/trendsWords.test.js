@@ -1,7 +1,7 @@
 // Every sentence the Trends page builds, for every characteristic, genre and option of the real data: no causal
 // language, US spelling, no gaps, no notes about chance; "clearly" only through the file's flags, and never "borderline",
-// "just past" or a length band (the owner took the fixed-mix check and the band line off the page); and no year written
-// into the page's code (the years come from the files and meta.trend).
+// "just past" or a length band (the owner took the fixed-mix check and the band line off the page); every axis title
+// names a rate's unit once; and no year written into the page's code (the years come from the files and meta.trend).
 import { readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -132,6 +132,49 @@ describe("the Trends page's sentences on the real data", () => {
       }
     }
     expect(count).toBeGreaterThan(100000);
+  });
+});
+
+describe("the Trends page's axis titles on the real data", () => {
+  it.skipIf(!real)("name a rate's unit once, never “per 1,000 words” twice (“Sex scenes per 10,000 words”)", () => {
+    const byId = new Map(real.variables.map((v) => [v.id, v]));
+    const PER_WORDS = /\bper [\d,]+(?: [a-z]+)? words\b/gi;
+    const times = (text, part) => text.toLowerCase().split(part.toLowerCase()).length - 1;
+    // every characteristic as a chart of numbers, whatever its files draw (scene breaks and exclamations, whose labels end
+    // with their unit, draw the split chart), then every title the page draws in every file: the chart's, or the split
+    // chart's halves'
+    const titles = real.variables.map((variable) => ({
+      at: `${variable.id} as numbers`,
+      variable,
+      rate: true,
+      text: trendAxisTitle(variable, { k: "num", fmt: "num" }),
+    }));
+    for (const sub of real.trend.subsets) {
+      const dir = path.join(src, "..", "public", "aggregates", "trends", sub);
+      for (const name of readdirSync(dir)) {
+        const file = JSON.parse(readFileSync(path.join(dir, name), "utf8"));
+        for (const [id, entry] of Object.entries(file.c)) {
+          const variable = byId.get(id);
+          const at = `${sub}/${file.g} ${id}`;
+          if (entry.k === "num" || entry.k === "bin") {
+            titles.push({ at, variable, rate: entry.k === "num" && entry.fmt !== "percent", text: trendAxisTitle(variable, entry) });
+          }
+          if (entry.k === "zero") {
+            for (const h of trendSplitInputs(real, variable, entry, file)) {
+              titles.push({ at: `${at} (${h.title})`, variable, rate: false, text: h.axisTitle });
+            }
+          }
+        }
+      }
+    }
+    for (const t of titles) {
+      expect((t.text.match(PER_WORDS) ?? []).length, `${t.at}: ${t.text}`).toBeLessThan(2);
+      if (t.rate && /^per /.test(t.variable.unit ?? "")) expect(times(t.text, t.variable.unit), `${t.at}: ${t.text}`).toBe(1);
+    }
+    // the scan meets labels that end with their unit ("Sex scenes per 10,000 words" …)
+    const named = titles.filter((t) => t.rate && /^per /.test(t.variable.unit ?? "") && t.variable.label.endsWith(t.variable.unit));
+    expect(named.length).toBeGreaterThan(0);
+    expect(titles.length).toBeGreaterThan(10000);
   });
 });
 

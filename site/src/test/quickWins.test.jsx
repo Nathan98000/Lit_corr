@@ -173,7 +173,7 @@ describe("F59: polish", () => {
     const html = readFileSync(path.join(here, "..", "..", "index.html"), "utf8");
     const meta = (attr, name) => html.match(new RegExp(`<meta\\s+${attr}="${name}"\\s+content="([^"]*)"`))?.[1];
     const description =
-      "What do popular Literotica stories have in common? Explore how the popularity of about 9,000 stories varies " +
+      "What do popular Literotica stories have in common? Explore how the popularity of about 13,000 stories varies " +
       "with their characteristics, overall and within each genre.";
     expect(html.replace(/\s+/g, " ")).toContain(`name="description" content="${description}"`);
     expect(meta("property", "og:title")).toBe("What do popular Literotica stories have in common?");

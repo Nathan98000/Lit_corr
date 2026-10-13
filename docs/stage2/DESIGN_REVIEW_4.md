@@ -755,7 +755,8 @@ None of these encourages fishing for patterns: each shows the same characteristi
 ## 10. Files
 
 - This review: `docs/stage2/DESIGN_REVIEW_4.md`; screenshots in `docs/stage2/design-review-4/` (b01–b16 today,
-  m01–m05 mock-ups, a01–a18 after the round (section 11); palette-compressed).
+  m01–m05 mock-ups, a01–a18 after the round (section 11), f01–f06 after the owner's follow-up (section 12);
+  palette-compressed).
 - Fresh eyes: `Claude outputs/design-review-4/fresh-eyes/` (`questions/`, `base/` and `scores.md`, `mock/` and
   `scores.md`, `x/` and `scores.md`).
 - Mock-ups: `Claude outputs/design-review-4-mockups/` (`mocks.js`, the screenshot jobs, `shot.mjs`, `fresh.mjs`).
@@ -763,7 +764,7 @@ None of these encourages fishing for patterns: each shows the same characteristi
   `Claude outputs/design-review-4/measurements/`.
 - The round's implementation (section 11): `Claude outputs/design-review-4/implementation/` (`tools/` with its
   `README.txt`, `measurements/before/` and `measurements/after/`, the decimals audit) and the fresh eyes after it in
-  `Claude outputs/design-review-4/fresh-eyes/after/`.
+  `Claude outputs/design-review-4/fresh-eyes/after/`; the owner's follow-up (section 12) in its `follow-up/`.
 
 ---
 
@@ -1100,3 +1101,133 @@ Details the prompt left open, with one line of reasoning each.
   against the "?", the view switches, "Download image" on its own.
 - **The decimals rule** gives 471 values more than one trailing zero and 10 values fewer than two significant digits
   (11.6), as written.
+
+## 12. The owner's follow-up, October 13
+
+*Implemented on October 13, 2026, on branch `design-review-4`: `be5b4f9` (the site, its tests and the README) and
+this write-up; not pushed.* The three checks pass at `be5b4f9`: `npm test` (616 tests in 46 files; 605 in 45 before),
+`npm run build`, and `.venv/bin/python -m pytest` (220 tests).
+
+After section 11 the owner asked for seven changes: the "?" never on a line of its own; somewhere on the Genres page's
+one characteristic that defines it; a footer with only "An independent project, not affiliated with or endorsed by
+Literotica."; "Popularity" for Explore in the masthead; Patterns out of the masthead, with a link to it on the
+Popularity page; One genre's higher characteristics before its lower ones; and How it works' "Every characteristic"
+with the definitions. Asked how a phone's masthead should hold the pages, they chose an expandable menu ("hamburger")
+in the masthead; asked whether the Trends page's Rose should come first too, yes.
+
+**How it was measured.** As in 11, with the same scripts and a few new ones (12.6). **Before** is `5ec2111`'s build
+(the same code as `bf6c405`, the "after" of 11.4); **after** is the follow-up's build, measured before its last
+change (the glossary count's line height, which moves no box: checked on every topic's heading at 375 and 1440 px),
+with the inventory, the first load and the visits measured again on `be5b4f9`'s build.
+
+### 12.1 What changed
+
+| Request | What changed | Before → after |
+|---|---|---|
+| The "?" never alone on a line | The name's last word and the "?" share a box that doesn't wrap (`nameEnd` and `.profile-name-end` in `ComparisonProfile`): the word is drawn in a copy of the row's link, out of the tab order and hidden from screen readers, so the row's name is still read once and a tap on the word still opens the row; the name's other words wrap as before. Where the word and the "?" are wider than the name's column (at 320 px) they run into the 12 px gap beside it, on some rows past it | "?" off its last word's line (`qcheck`, 74,526 rows at six widths): site font 98 → 0, Verdana 430 → 0 |
+| A definition on the Genres page's one characteristic | What the characteristic measures, from `meta.json`'s `description` as on the Trends page, right under the answer's heading (14 px, `--ink-3`, at most 62ch); left out where the description would only repeat the label | a definition under the heading: 0 → 185 of 185 characteristics |
+| The footer | Its list of the five pages removed; the sentence stays | the footer 154 → 110 px tall at 375 px, 133 → 89 at 1440 |
+| "Popularity" | The masthead's and the menu's name for the page, and the picker's note for a measure named in its search ("See it on the Popularity page →"); the addresses stay `#/explore…` and the code keeps "Explore" | "Explore" on screen (the census): 7 pages → 0 |
+| Patterns out of the masthead; the menu | Four pages in the masthead: Popularity, Genres, Trends, How it works. "All clear patterns →" ends Popularity's "Only include" row, named for the genre and the measure on screen ("All clear patterns with the average rating across all genres"), at the row's end, or at the end of a line of its own where the row is full; Keep exploring keeps its item; on Patterns the masthead marks Popularity (`aria-current="true"`). Below 548 px the pages are a menu (`SiteNav.jsx`): a button names the page being read beside a menu icon ("Popularity, menu") and opens every page in a panel over the page, 48 px rows, the page being read marked by a bar at its start; it closes on a link, Escape (focus back on the button), a tap outside or focus leaving it | pages a phone's masthead reaches: 2 to 4 of 5, by width → 4 of 4; sideways scroll in Verdana from the old masthead's links (`qcheck`): 126 of 366 page loads → 0 |
+| Higher first | One genre's takeaway (▲ Higher, ▲ Later, ▼ Lower, ▼ Earlier, ▼ Sooner, ≠ A different mix) and its lists (Higher, Lower, A different mix); the note sits above whichever list comes first. The Trends page the same way (the owner's answer): ▲ Rose, ▼ Fell, ≠ in the takeaway, the lists and what screen readers hear | Romance's takeaway: "▼ Lower, ▲ Higher, ▲ Later" → "▲ Higher, ▲ Later, ▼ Lower"; all genres' changes: "▼ Fell, ▲ Rose" → "▲ Rose, ▼ Fell" |
+| Every characteristic with its definition | How it works' "Every characteristic": every topic open, as a section with its name and count as an h3 ("Length & structure (28)") and its blurb, then each characteristic, what it measures and "See the chart"; the finder box stays above them | definitions on screen without a click: 0 → 187 |
+
+### 12.2 Measurements
+
+| Measure | Before (`5ec2111`) | After | Target |
+|---|---|---|---|
+| First load (gzip bodies) | 150.5 KiB in 6 requests | **150.7 KiB in 6** (JS 85.4, CSS 6.8); idle prefetch 5.0 KiB | ≤ 155 |
+| A visit starting on Trends / One genre / How it works | 176.9 / 210.3 / 142.3 KiB | 177.2 / 210.6 / 142.5 KiB | — |
+| Layout shift, a visit to each page (slow 4G, 375 and 1440) | 0.000 (14 visits) | 0.000 (14 visits) | < 0.1 |
+| Layout shift after every switch, counting shifts more than 500 ms after it | 0.000 (30 switches) | 0.000 (30 switches) | < 0.1 |
+| The same with the shifts within 500 ms of the switch | worst 0.325 (One genre: another genre); Popularity's "Only include" at 375 px 0.008 | worst 0.325 (the same); Popularity's "Only include" → "Published 2020 or later" at 375 px **0.094** (the Patterns link takes a line of its own); a page from the masthead 0.004 → 0.001 | — |
+| "Loading" frames | 0 | 0 | 0 |
+| axe, WCAG 2.0–2.2 A/AA and best practice (375, 1440, 200% and 400%) | 108 runs, 0 violations; 15 more on I15 and I16, 0 | 116 runs (with the menu open on Popularity and How it works), 0 violations; the 15 more, 0 | 0 |
+| Label in name (`labelinname2`) | 0 violations | 0 violations | 0 |
+| The masthead's fit (`navfit`: seven pages, 300–800 px in 2 px steps) | — | the four links in a row keep 8 px to spare beside the name from 502 px (site font) and 548 (Verdana); the phone's button beside the name: at least 11 px to spare (site font; How it works at 300 px), 0 in Verdana there, where the page's name ends in "…" if it must | 8 px |
+| The menu (`menuprobe`: seven pages at 300, 320, 360, 375, 414, 480, 547, 548 and 768 px, per font) | — | 63 pages per font: the button at least 44 px tall, the menu's links 48, the panel inside the screen and over the page, the page being read marked, the row from 548 px; 0 problems | 0 |
+| Sideways scroll (`qcheck`: 366 page loads per font) | Verdana: 126 (the masthead's links) | 0 | 0 |
+| The "?" (`qcheck`: One genre for 30 genres and All changes for all genres and each genre, lists and topics open, at 320, 360, 375, 414, 768 and 1280 px: 74,526 rows) | off its last word's line: site font 98, Verdana 430 | **0 and 0**; past the name's column: site font 99 rows (46 past the 12 px gap, at most 29 px), Verdana 459 (135, at most 54 px), all at 320 px but one at 360; on another text of its row: site font 0, Verdana 1 (Non-Human's "Shame & embarrassment", on the genre's value, at 320 px) | never alone on a line |
+| Words of a name broken inside (`qcheck`) | site font 36, Verdana 169 | site font 35, Verdana 105: names wider than their column ("Dialogue/narration" in 124 px) | — |
+| The "?" areas (`defhits`) | 4,388 rows: every area at least 44 × 44 px (64 tall on phones), inside its row and never on the name's text; 10 rows at 320 px with the "?" on the next line | the same 4,388 rows: every area at least 44 × 44 px (64 tall on phones), inside its row and never on the name's text, the rest of the row the links' (the last word's copy included); opening a definition moved nothing on 20 pages; at 320 px the same 10 rows now put the "?" past the name's cell, on its last word's line, instead of on the next line | ≥ 44 px, never on the name |
+| Glyph boxes, One genre (450 pages, 95,410 rows) and All changes (620 pages, 49,650 rows) | 0 / 0 per font | 0 / 0 per font | 0 |
+| Units (`breaks3`, every genre and option of One genre and All changes) | site font 8, Verdana 91 ending on one word | the same, row for row | none where two words fit |
+| Tap areas at 320 and 375 px (`taps.mjs`) | 1,425 controls | 1,222 (the masthead's links are one button on phones, the footer's are gone), every kind as before; 10 rows' links under 44 px through their name's center, as before, where the line crosses the "?" or, now, the last word's copy, which opens the same row | 44, except the question's words |
+| Tab stops to the first answer, 1440 / 375 | Explore 14/12, Patterns 13/11, Genres 13/11, One genre 12/10, Trends All changes 11/9, Trends one characteristic 13/11, How it works 8/>40 | Popularity 14/11 (with the Patterns link), Patterns 12/9, Genres 12/9, One genre 11/8, Trends All changes 10/7, Trends one characteristic 12/9, How it works 7/>40 (now the definitions' "See the chart") | — |
+| Popularity's first chart row, 375 × 667 / 320 × 568 | ends at 655 / 679 | 655 (on the first screen) / 731 (below, as before: the Patterns link takes a line of its own) | on the first screen at 375 × 667 |
+| Trends' table at 1280 × 720 | ends at 704 | 704 | above 720 |
+| Inventory: page font sizes / chart sizes / text styles / size and line-height pairs | 10 / 3 / 30 / 11 | 10 / 3 / 30 / 11 (31 and 12 before the glossary count's line height) | ≤ 11 / ≤ 3 / < 66 |
+| Addresses (the review prompt's rule 6) | 36, every one opens its view | the same | all |
+| Back and Forward (`backcheck2`) | as in 11.4 | the same, run for run | — |
+
+### 12.3 Side by side
+
+| View | Image |
+|---|---|
+| The masthead: the phone's links before, the page's name and the menu after, the menu open on Popularity and on How it works; the row at 1440 px before and after, Popularity marked on Patterns; the footer | [f01](design-review-4/f01-menu.png) |
+| Popularity's way to the Patterns page at 375 and 1440 px | [f02](design-review-4/f02-patterns-link.png) |
+| The Genres page's one characteristic before and after at 375 px, and at 1440 | [f03](design-review-4/f03-genres-definition.png) |
+| One genre (Romance) and All changes, before and after: the increases first | [f04](design-review-4/f04-order.png) |
+| How it works' "Every characteristic" before and after at 1440 px, and at 375 | [f05](design-review-4/f05-glossary.png) |
+| "Shame & embarrassment" and "Passive constructions" at 320 px before and after, in the site font and in Verdana | [f06](design-review-4/f06-question-mark.png) |
+
+![The masthead after the follow-up](design-review-4/f01-menu.png)
+
+![The "?" at 320 px, before and after](design-review-4/f06-question-mark.png)
+
+### 12.4 Judgment calls
+
+1. **The "?", with the whole last word.** With only the word's last three letters in the box, the "?" kept its line
+   but words broke inside ("embarrassm|ent"); with the whole word the box runs past the column instead, at 320 px
+   (once at 360 in Verdana), by at most 29 px in the site font and 54 in Verdana.
+2. **The word's copy.** The last word is drawn in a second link to the same chart, out of the tab order and hidden from
+   screen readers, so a tap on it opens the row as one on the rest of the name does.
+3. **The menu is a disclosure:** a button with `aria-expanded` and `aria-controls` over a list of links, not an ARIA
+   menu (whose arrow keys a list of four links doesn't need). Its panel lies over the page, so opening it moves
+   nothing.
+4. **The button names the page being read** ("Popularity, menu"), as U1 had the phones' links do; its accessible name
+   starts with what it shows.
+5. **548 px.** The narrowest width at which the four links keep 8 px to spare beside the name on every page in
+   Verdana; in the site's font they would fit from 502.
+6. **300 px in Verdana:** How it works' button has no space to spare there, so the page's name ends in "…" rather than
+   push the page sideways.
+7. **The Patterns link's place.** At the end of Popularity's "Only include" row, under the question whose genre and
+   measure it carries, set to the right as a way on rather than one more control; Keep exploring's item stays.
+8. **On Patterns** the masthead marks Popularity as the section it is in (`aria-current="true"`; the page itself is
+   `"page"`), and the phone's button reads "Patterns, menu".
+9. **The definition on the Genres page** sits where the Trends page puts it, under the answer's heading and before the
+   takeaway; `whatItMeasures` moved to `lib/genres.js`, and the Trends page uses the same one.
+10. **The glossary, open.** Each topic is a section with an h3, its blurb, then its list; nothing is folded, and the
+    finder box stays above them.
+11. **Higher first, with its position words.** ▲ Later stays with Higher and ▼ Earlier and ▼ Sooner with Lower, as
+    W1 placed them; the note above the first list goes with whichever list comes first.
+12. **Rose first** wherever the Trends page lists the changes; the takeaway's word count line still leads it.
+13. **The glossary count's line height** is the 15 px size's (1.45), after the inventory found a 12th pair; no box
+    moved.
+14. **One genre's fingerprints** (16 files) were updated for the new order and the "?"'s box; `git status` showed no
+    other snapshot changed.
+
+### 12.5 Still open
+
+- **The "?" past its column at 320 px.** 99 rows in the site font and 459 in Verdana run into the 12 px gap beside the
+  name, some beyond it (at most 29 and 54 px); once, in Verdana, the "?" touches the genre's value (Non-Human, "Shame
+  & embarrassment"). This replaces 11.8's "The "?" at 320 px": the "?" no longer takes the next line.
+- **The Patterns link on narrow phones** takes a line of its own below 354 px (site font, with "All stories"; 386 in
+  Verdana) and below 446 px (488) with a longer option such as "Published 2020 or later": the chart then starts 52 px
+  lower, and choosing such an option at 375 px moves the chart down by 52 px as it redraws (0.094 within 500 ms of the
+  choice, which a visitor's own choice makes "recent input"). Set under the chart instead, it would never move the
+  chart, but it would sit apart from the question it carries.
+- **No real phone, Safari, Firefox or screen reader** for the menu either: it was checked in headless Chromium and
+  jsdom.
+- **The `a` images (11.3)** show the site before the follow-up (five pages in the masthead, "Explore", folded topics,
+  Lower first); `f01`–`f06` show what changed.
+- **The fresh eyes** weren't run again.
+- **How it works at 375 px** is still more than 40 tab stops from its first section's text: the open topics' "See the
+  chart" links now, the topics' toggles before.
+
+### 12.6 Files
+
+- Images: `docs/stage2/design-review-4/f01-menu.png` … `f06-question-mark.png` (palette-compressed).
+- Scripts and measurements: `Claude outputs/design-review-4/implementation/follow-up/` (`tools/` with its
+  `README.txt`, and `measurements/after/`, with the runs on `be5b4f9`'s build in `be5b4f9/`); the "before" is the
+  round's `measurements/after/`, with `qcheck` on `5ec2111`'s build in `measurements/before/`.

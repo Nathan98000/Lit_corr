@@ -10,8 +10,7 @@
 
 /* the browser never anchors the scroll position on the question's words: another genre or characteristic re-wraps
    them (a slot moving up a line), and following them would move the answer on the screen. Nor inside "Only include",
-   which changes form with word count (a select, or plain words, the same height): the row itself, which stays, is
-   the anchor there (anchored on words that went away, the page moved 8 px on a phone) */
+   whose words change with the option: the row itself, which stays, is the anchor there */
 .trends-page .question,
 .trends-page .trends-controls .include-row > * {
   overflow-anchor: none;
@@ -43,24 +42,6 @@
   margin-right: 6px;
   font-size: var(--text-12);
   color: var(--ink);
-}
-
-/* "Only include" with nothing to choose (word count: the Length options don't apply): plain text and a short note;
-   wrapped on a phone, its two lines fit the select's 44 px, so going to or from word count never moves the answer */
-.include-fixed {
-  flex-wrap: wrap;
-  align-content: center;
-  gap: 0 6px;
-}
-
-.include-fixed .include-value {
-  color: var(--ink);
-}
-
-.include-fixed .include-why {
-  font-size: var(--text-13);
-  line-height: var(--leading-13);
-  color: var(--ink-3);
 }
 
 /* a genre too few to compare: its stories per period (never a count under 10) */

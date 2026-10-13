@@ -113,7 +113,7 @@ describe("the masthead (D4, D9; with the Trends page, D7)", () => {
     expect(screen.queryByRole("button", { name: "Menu" })).toBeNull(); // no Menu button (D4)
   });
 
-  it("drops How it works below 602 px, tightens below 484, drops Explore below 414 and Patterns below 352 (measured)", () => {
+  it("keeps four links below 602 px, tightens below 484, three below 414 and two below 352 (measured)", () => {
     const css = readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "styles.css"), "utf8");
     // every block of a media query, joined
     const block = (q) =>
@@ -122,10 +122,11 @@ describe("the masthead (D4, D9; with the Trends page, D7)", () => {
         .slice(1)
         .map((b) => b.split(/\n}\n/)[0])
         .join("\n");
-    expect(block("max-width: 601px")).toMatch(/\.masthead nav a\.nav-how \{\s*display: none;/);
+    expect(block("max-width: 601px")).toMatch(/\.masthead nav a\.drop-602 \{\s*display: none;/);
     expect(block("max-width: 483px")).toMatch(/\.masthead nav \{\s*gap: 0;\s*font-size: var\(--text-15\);/);
-    expect(block("max-width: 413px")).toMatch(/\.masthead nav a\.nav-explore \{\s*display: none;/);
-    expect(block("max-width: 351px")).toMatch(/\.masthead nav a\.nav-patterns \{\s*display: none;/);
+    expect(block("max-width: 483px")).toMatch(/\.masthead nav a \{\s*padding: 0 4px;/);
+    expect(block("max-width: 413px")).toMatch(/\.masthead nav a\.drop-414 \{\s*display: none;/);
+    expect(block("max-width: 351px")).toMatch(/\.masthead nav a\.drop-352 \{\s*display: none;/);
     for (const old of ["559px", "419px", "359px"]) expect(block(`max-width: ${old}`)).not.toMatch(/\.masthead|\.brand/); // the old ones
   });
 
@@ -161,9 +162,11 @@ describe("the page shell", () => {
     // then the question on screen
     await waitFor(() => expect(document.title).toBe("How do genres differ in dialogue share?"));
     expect(document.documentElement.dataset.page).toBe("genres");
-    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe(
-      `How do the genres’ stories differ? · ${fixtureMeta.counts.included} stories · 3 genres`,
-    );
+    // the question is the page's h1, named by its words; the kicker names the page and the source (round 4's U1)
+    expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
+    expect(screen.getByRole("heading", { level: 1, name: "How do genres differ in dialogue share?" })).toBeTruthy();
+    expect(document.querySelector(".kicker").tagName).toBe("P");
+    expect(document.querySelector(".kicker").textContent).toBe(`Genres · ${fixtureMeta.counts.included} Literotica stories · 3 genres`);
     await user.click(screen.getByRole("link", { name: "Skip to content" }));
     expect(document.activeElement).toBe(document.getElementById("question"));
   });

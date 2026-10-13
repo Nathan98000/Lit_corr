@@ -185,12 +185,13 @@ describe("the kicker and the footer, site-wide (phase 2)", () => {
   it("leads each piece of the kicker with its separator, so one at a line's start can be clipped", async () => {
     await open("#/trends?var=dlg_word_share", { ready: ".trends-page .chart-panel[aria-busy='false']" });
     const kicker = document.querySelector(".kicker");
-    expect(kicker.textContent).toBe("How have the stories changed? · 278 stories · 2000–2026");
+    // the page and the source (round 4's U1)
+    expect(kicker.textContent).toBe("Trends · 278 Literotica stories · 2000–2026");
     expect([...kicker.children].map((el) => el.className)).toEqual(["kicker-title", "kicker-counts"]);
     const counts = kicker.querySelector(".kicker-counts");
     expect(counts.firstElementChild.className).toBe("kicker-sep");
     const pieces = [...counts.querySelectorAll(".kicker-piece")];
-    expect(pieces.map((p) => p.textContent)).toEqual(["278 stories", " · 2000–2026"]);
+    expect(pieces.map((p) => p.textContent)).toEqual(["278 Literotica stories", " · 2000–2026"]);
     expect(pieces[1].firstElementChild.className).toBe("kicker-sep");
     // the clipping: a separator is pulled back by its own width, and the boxes that hold the pieces clip
     expect(styles).toMatch(/\.kicker \{[^}]*overflow: hidden;/);
@@ -908,22 +909,25 @@ describe("finding what changed, and no dead ends (phase 7)", () => {
     expect(overTimeCharacteristic(meta, { sub: "medium" })).toBe("story_paragraphs");
   });
 
-  it("leaves out the options that don't apply, and with only All stories left says so as plain text (the Trends page only)", () => {
+  it("is always a menu: with word count, “All stories ▾” and its Length options turned off inside it (round 4's U1)", () => {
     const subsets = fixtureMeta.subsets.filter((x) => fixtureMeta.trend.subsets.includes(x.id));
-    const words = { id: "story_words", label: "Word count", bins: { type: "ranges" } };
-    const { unmount } = render(<IncludeSelect subsets={subsets} value="all" variable={words} onChange={() => {}} omitConflicts />);
-    const fixed = document.querySelector(".include-fixed");
-    expect(fixed.textContent).toBe("Only include: All stories Length options don’t apply to word count");
-    expect(document.querySelector("select")).toBeNull();
-    unmount();
-    const dialogue = fixtureMeta.variables.find((v) => v.id === "dlg_word_share");
-    const two = render(<IncludeSelect subsets={subsets} value="all" variable={dialogue} onChange={() => {}} omitConflicts />);
-    expect([...document.querySelector("select").options].map((o) => o.textContent)).toEqual(subsets.map((x) => x.label));
-    two.unmount();
-    // the Genres page keeps its turned-off options
-    render(<IncludeSelect subsets={subsets} value="all" variable={words} onChange={() => {}} />);
+    const words = { id: "story_words", label: "Word count", noun: "word count", bins: { type: "ranges" } };
+    const { unmount } = render(<IncludeSelect subsets={subsets} value="all" variable={words} onChange={() => {}} />);
+    expect(document.querySelector(".include-fixed")).toBeNull();
+    expect(document.body.textContent).not.toMatch(/options don’t apply/);
     const off = [...document.querySelector("select").options].filter((o) => o.disabled).map((o) => o.textContent);
     expect(off).toEqual(subsets.filter((x) => x.group === "Length").map((x) => `${x.label} (not with word count)`));
+    expect(document.querySelector(".slot-text").textContent).toBe("All stories");
+    // the turned-off options are explained to screen readers, as on Explore
+    const select = document.querySelector("select");
+    expect(document.getElementById(select.getAttribute("aria-describedby")).textContent).toBe(
+      "Options that would leave only one group of word count are turned off.",
+    );
+    unmount();
+    const dialogue = fixtureMeta.variables.find((v) => v.id === "dlg_word_share");
+    render(<IncludeSelect subsets={subsets} value="all" variable={dialogue} onChange={() => {}} />);
+    expect([...document.querySelector("select").options].map((o) => o.textContent)).toEqual(subsets.map((x) => x.label));
+    expect([...document.querySelector("select").options].some((o) => o.disabled)).toBe(false);
   });
 });
 

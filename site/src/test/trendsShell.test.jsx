@@ -146,7 +146,7 @@ describe("the page shell", () => {
     expect(document.documentElement.dataset.page).toBe("trends");
     // the kicker, a paragraph here: the question is the page's h1 (the trends review, phase 5)
     expect(document.querySelector(".kicker").textContent).toBe(
-      "How have the stories changed? · 278 stories · 2000–2026", // the years from meta.trend
+      "Trends · 278 Literotica stories · 2000–2026", // the page and the source (round 4's U1); the years from meta.trend
     );
     expect(document.querySelector(".kicker").tagName).toBe("P");
     expect(screen.getByRole("heading", { level: 1, name: "What has changed in stories across all genres?" })).toBeTruthy();

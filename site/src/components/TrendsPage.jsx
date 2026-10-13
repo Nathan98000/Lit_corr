@@ -222,7 +222,6 @@ export default function TrendsPage({ meta, state, onChange, onNavigate, onHoldSc
             value={state.sub}
             variable={changes ? undefined : variable}
             onChange={(s) => keepPlace({ ...state, sub: s })}
-            omitConflicts
           />
         </div>
       </div>

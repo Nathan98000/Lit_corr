@@ -1910,12 +1910,14 @@ html[data-page="explore"] body {
   }
 }
 
-/* Phones (D4, D7): How it works leaves the masthead first, then the links tighten, then Explore leaves (the name links
-   to the explorer too), then Patterns; Genres and Trends always show, and the footer lists every page. Each
-   breakpoint is the narrowest width that keeps 8 px to spare, measured on this Mac (masthead.mjs); with the type
-   scale's sizes (the name 18 px, the links 15) the tightened links have 4 px at each side, so every breakpoint holds. */
+/* Phones (D4, D7; round 4's U1): four links below 602 px, three below 414 and two below 352, the links tightening below
+   484, and the page being read always one of them: a link leaves from the width its class names (drop-602 …,
+   App.jsx's navDrop: How it works first, then Explore, then Patterns, unless one of them is the page being read, when
+   the set's last other link leaves instead). The footer lists every page. Each breakpoint is the narrowest width that
+   keeps 8 px to spare, measured on this Mac (masthead.mjs, mastfit5.mjs: every page's set); with the type scale's sizes
+   (the name 18 px, the links 15) the tightened links have 4 px at each side, so every breakpoint holds. */
 @media (max-width: 601px) {
-  .masthead nav a.nav-how {
+  .masthead nav a.drop-602 {
     display: none;
   }
 }
@@ -1932,13 +1934,13 @@ html[data-page="explore"] body {
 }
 
 @media (max-width: 413px) {
-  .masthead nav a.nav-explore {
+  .masthead nav a.drop-414 {
     display: none;
   }
 }
 
 @media (max-width: 351px) {
-  .masthead nav a.nav-patterns {
+  .masthead nav a.drop-352 {
     display: none;
   }
 }

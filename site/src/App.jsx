@@ -23,6 +23,35 @@ const PAGE_TITLES = {
 };
 const DEFAULT_QUESTION = "In all genres, how does the average rating vary with word count?";
 
+// The masthead's pages, in its order (D7), and the links a phone shows below each width (D4; styles.css hides a link
+// from its width down): four below 602 px, three below 414, two below 352.
+export const NAV = ["explore", "genres", "trends", "patterns", "methodology"];
+export const NAV_TIERS = [
+  { below: 602, links: ["explore", "genres", "trends", "patterns"] },
+  { below: 414, links: ["genres", "trends", "patterns"] },
+  { below: 352, links: ["genres", "trends"] },
+];
+// pages whose masthead keeps the sets above as they are: How it works's own link is too long to take another's place
+// with 8 px to spare at 300–326, 352–380, 414–439 and 484–513 px (the owner decides; its section bar names the page)
+const NAV_AS_BEFORE = new Set(["methodology"]);
+
+/**
+ * The links a phone's masthead shows on `page` from a set of today's (round 4's U1): the same number, the page being
+ * read always one of them; where it isn't in the set, the set's last link (in the masthead's order) that isn't it
+ * makes room for it ("Explore Genres Trends" at 375 px on Explore).
+ */
+export function navSet(links, page) {
+  if (NAV_AS_BEFORE.has(page) || !NAV.includes(page) || links.includes(page)) return links;
+  const last = [...links].reverse().find((l) => l !== page);
+  return NAV.filter((l) => (links.includes(l) && l !== last) || l === page);
+}
+
+/** The class that hides a masthead link on this page from the width where it leaves ("drop-414"), or "". */
+export function navDrop(link, page) {
+  const tier = NAV_TIERS.find(({ links }) => !navSet(links, page).includes(link));
+  return tier ? `drop-${tier.below}` : "";
+}
+
 /**
  * A new address in place (a control's change; an old link's setting dropped): no new history entry, and the entry's
  * state stays, with what "One genre" keeps there (its open topics and lists, GenreProfile.jsx); a new entry
@@ -31,24 +60,25 @@ const DEFAULT_QUESTION = "In all genres, how does the average rating vary with w
 const replaceHash = (hash) => window.history.replaceState(window.history.state, "", hash);
 
 /**
- * The headline as a kicker, with the story and genre counts (filled in when the data arrives; the placeholder says
- * the same). The story count is rounded, so it never contradicts a chart's exact count (F55). The Genres page asks
- * its own question; the Trends page too, with the years it covers instead of the genres (meta.trend; until the data
- * arrives, figure spaces hold their place). When it wraps, the counts take a line of their own, and a "·" never starts
- * or ends a line: each separator leads its piece, and one at a line's start is clipped (styles.css); the pieces
- * ("about 9,000 stories", "2000–2026") never break inside. It is the page's h1, but on the Trends page, whose question
- * is (`as="p"`).
+ * The kicker, with the story and genre counts (filled in when the data arrives; the placeholder says the same). The
+ * story count is rounded, so it never contradicts a chart's exact count (F55). On Explore it is the site's headline,
+ * the page's h1; on the other pages (round 4's U1) it names the page and the source, a paragraph over the question,
+ * which is the h1 there: "Genres · about 9,000 Literotica stories · 30 genres", and the Trends page's years instead of
+ * the genres (meta.trend; until the data arrives, figure spaces hold their place). When it wraps, the counts take a
+ * line of their own, and a "·" never starts or ends a line: each separator leads its piece, and one at a line's start
+ * is clipped (styles.css); the pieces ("about 9,000 Literotica stories", "2000–2026") never break inside.
  */
-function Kicker({ meta, title = TITLE, years = false, as: Tag = "h1" }) {
+function Kicker({ meta, page = null, years = false }) {
   const stories = meta ? aboutCount(meta.counts.included) : "about 9,000";
   const span = meta?.trend ? `${meta.trend.periods[0][0]}–${meta.trend.now[1]}` : "\u2007\u2007\u2007\u2007–\u2007\u2007\u2007\u2007";
+  const Tag = page ? "p" : "h1";
   return (
     <Tag className="kicker">
-      <span className="kicker-title">{title}</span>
+      <span className="kicker-title">{page || TITLE}</span>
       <span className="kicker-counts">
         <span className="kicker-sep"> · </span>
         <span className="kicker-pieces">
-          <span className="kicker-piece">{stories} stories</span>
+          <span className="kicker-piece">{page ? `${stories} Literotica stories` : `${stories} stories`}</span>
           <span className="kicker-piece">
             <span className="kicker-sep"> · </span>
             {years ? span : `${meta ? meta.genres.length - 1 : 30} genres`}
@@ -251,15 +281,17 @@ export default function App() {
           <a className="brand" href={toHash("explore", lastExplore.current)}>
             {SITE_NAME}
           </a>
+          {/* on phones the links that leave keep the page being read (navDrop, U1) */}
           <nav aria-label="Pages">
             <a
-              className="nav-explore"
+              className={`nav-explore ${navDrop("explore", route.page)}`.trim()}
               href={toHash("explore", lastExplore.current)}
               aria-current={route.page === "explore" ? "page" : undefined}
             >
               Explore
             </a>
             <a
+              className={`nav-genres ${navDrop("genres", route.page)}`.trim()}
               href={genresLink}
               aria-current={route.page === "genres" ? "page" : undefined}
               onPointerEnter={preloadGenres}
@@ -268,7 +300,7 @@ export default function App() {
               Genres
             </a>
             <a
-              className="nav-trends"
+              className={`nav-trends ${navDrop("trends", route.page)}`.trim()}
               href={trendsLink}
               aria-current={route.page === "trends" ? "page" : undefined}
               onPointerEnter={preloadTrends}
@@ -277,7 +309,7 @@ export default function App() {
               Trends
             </a>
             <a
-              className="nav-patterns"
+              className={`nav-patterns ${navDrop("patterns", route.page)}`.trim()}
               href={patternsLink}
               aria-current={route.page === "patterns" ? "page" : undefined}
               onPointerEnter={PatternBrowser.preload}
@@ -286,7 +318,7 @@ export default function App() {
               Patterns
             </a>
             <a
-              className="nav-how"
+              className={`nav-how ${navDrop("methodology", route.page)}`.trim()}
               href="#/methodology"
               aria-current={route.page === "methodology" ? "page" : undefined}
               onPointerEnter={Methodology.preload}
@@ -317,7 +349,7 @@ export default function App() {
         ) : route.page === "genres" ? (
           <>
             <div className="intro">
-              <Kicker meta={meta} title={GENRES_TITLE} />
+              <Kicker meta={meta} page="Genres" />
             </div>
             {meta ? (
               <PartBoundary fallback={<GenresPlaceholder />}>
@@ -339,7 +371,7 @@ export default function App() {
         ) : route.page === "trends" ? (
           <>
             <div className="intro">
-              <Kicker meta={meta} title={TRENDS_TITLE} years as="p" />
+              <Kicker meta={meta} page="Trends" years />
             </div>
             {meta ? (
               <PartBoundary fallback={<GenresPlaceholder className="trends-page" />}>

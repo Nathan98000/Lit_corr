@@ -154,11 +154,15 @@ export default function GenresPage({ meta, state, onChange, onNavigate, onHoldSc
     />
   );
 
+  // the question is the page's h1 (round 4's U1, as on the Trends page; the kicker isn't); its name is the question as
+  // words, so a screen reader that lists headings says it plainly rather than with its controls' labels
+  const named = { className: "sentence", "aria-labelledby": `${ids}-question` };
+  const asked = profile ? standsOutQuestion(genre) : chartQuestionText(variable); // the words the h1 shows
   let sentence;
   let controls;
   if (profile) {
     sentence = (
-      <p className="sentence">
+      <h1 {...named}>
         What stands out about stories in{" "}
         <InlineSelect
           id={`${ids}-genre`}
@@ -174,7 +178,7 @@ export default function GenresPage({ meta, state, onChange, onNavigate, onHoldSc
           ))}
         </InlineSelect>
         {"⁠?"}
-      </p>
+      </h1>
     );
     controls = (
       <>
@@ -185,7 +189,7 @@ export default function GenresPage({ meta, state, onChange, onNavigate, onHoldSc
   } else {
     const q = chartQuestion(variable);
     sentence = (
-      <p className="sentence">
+      <h1 {...named}>
         {q.before}
         <SlotButton ref={varBtn} expanded={menu} onPress={() => setMenu((m) => !m)} onHint={CharacteristicPicker.preload}>
           <span className="visually-hidden">Story characteristic: </span>
@@ -193,7 +197,7 @@ export default function GenresPage({ meta, state, onChange, onNavigate, onHoldSc
         </SlotButton>
         {q.after}
         {"⁠?"}
-      </p>
+      </h1>
     );
     controls = (
       <>
@@ -213,6 +217,9 @@ export default function GenresPage({ meta, state, onChange, onNavigate, onHoldSc
       <div className="controls">
         <fieldset className="question" id="question" tabIndex={-1}>
           <legend className="visually-hidden">Choose what to compare</legend>
+          <span id={`${ids}-question`} hidden>
+            {asked}
+          </span>
           {sentence}
         </fieldset>
         <div className="genres-controls">{controls}</div>

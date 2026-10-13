@@ -49,7 +49,7 @@ describe("U1: the phone masthead keeps the page being read", () => {
     }
   });
 
-  it("keeps How it works's masthead as before for now: its own link doesn't fit in another's place (the owner decides)", () => {
+  it("keeps How it works's masthead as before: its own link doesn't fit in another's place, and its bar names the page (the owner, 2026-10-13)", () => {
     expect([602, 414, 352].map((t) => shownAt(t, "methodology"))).toEqual([
       "Explore Genres Trends Patterns",
       "Genres Trends Patterns",

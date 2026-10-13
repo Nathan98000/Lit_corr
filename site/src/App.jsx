@@ -32,7 +32,8 @@ export const NAV_TIERS = [
   { below: 352, links: ["genres", "trends"] },
 ];
 // pages whose masthead keeps the sets above as they are: How it works's own link is too long to take another's place
-// with 8 px to spare at 300–326, 352–380, 414–439 and 484–513 px (the owner decides; its section bar names the page)
+// with 8 px to spare at 300–326, 352–380, 414–439 and 484–513 px, and its section bar names the page (the owner's
+// choice, 2026-10-13)
 const NAV_AS_BEFORE = new Set(["methodology"]);
 
 /**

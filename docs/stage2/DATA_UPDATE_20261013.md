@@ -56,7 +56,7 @@ file but `meta.json`'s `generated_at`), before and after the change.
 
 ## 2. What visitors will see differently
 
-Biggest first. Section 9 has every number.
+Biggest first. Section 10 has every number.
 
 1. **The size of the sample.** About 13,000 stories instead of about 9,000 in every kicker ("Genres · about 13,000
    Literotica stories · 30 genres") and in link previews; "about 420 stories" per genre in How it works, which now says
@@ -148,7 +148,7 @@ was deleted and no rule loosened. The fixture digests (`7fb18ef1ff7cdf3c` and th
 |---|---|
 | `82c9efd` | The prompt and the before screenshots. |
 | `ef9e4a5` | **D3.** `site_data.py` drops the rows of stories still waiting to be collected (`status_queued`, `status_partial`) as the handoff is loaded, and logs how many. New pytest: a synthetic handoff with queued and partial rows gives the same aggregates as without them, and a story that could not be collected still counts. |
-| `6c041d2` | **D8.** `scripts/compare_aggregates.py BEFORE AFTER` (standard library, the two folders' JSON only): the Markdown in section 9. |
+| `6c041d2` | **D8.** `scripts/compare_aggregates.py BEFORE AFTER` (standard library, the two folders' JSON only): the Markdown in section 10. |
 | `a4ccfeb` | **The aggregates** from the new zip, the snapshot and fingerprint updates of section 3, nothing else. |
 | `93a9364` | **The duplicate's words** (approved 2026-10-13): How it works keyed "had the same text as another story" by `duplicate_text`, a quality flag; Stage 1's exclusion reason is `duplicate_of_another_story`, so the page would have said "1 left out (duplicate of another story)". Two new tests. |
 | `93dd36c` | **D5.** "Where the stories come from" and "In short" as approved, with `typicalSample(meta)` (the genres' median to the nearest 10: 420). One more literal from the old data, made to come from the data: Limitations' "300 random stories per genre" → "About {typicalSample} random stories per genre". The kicker's placeholder and `index.html`'s description and og:description say "about 13,000"; a test fails when any of them differs from `aboutCount(meta.counts.included)` of the real `meta.json` (checked: it fails with "about 9,000" in either place). |
@@ -193,9 +193,9 @@ Verdana on this Mac, as in round 4):
 The 10 "in passing" are Chain Stories' pages on site, caught 30 ms after the script switched to it from How To: the
 axis is still gliding from How To's ticks (0.96–1.04) to its own (0–3). With 600 ms to settle, How To and Chain
 Stories give 0 problems on every option and width. The old data never showed it because Chain Stories' charts there
-were all "too few to compare". Not changed: How To's and 40 other constant charts (every period's quartiles the
-same, as with pages on site in short stories) draw an axis of 0.96–1.04 pages; the old data had 41 such charts too
-(section 7).
+were all "too few to compare". How To's and 40 other constant charts (every period's quartiles the same, as with
+pages on site in short stories) drew an axis of 0.96–1.04 pages; the old data had 41 such charts too. The follow-up
+in section 9 draws them against 0.
 
 **Layout shift** on slow 4G (round 4's `clsall.mjs`: every page and switch, visits that start on each page, the way
 across, 375 and 1440 px, 44 runs): worst 0.000 more than 500 ms after an action, before and after (the same 0.325
@@ -226,9 +226,8 @@ to compare before.
 * **Real cases the tests had pinned and the data lost** are listed in section 3. Only one has no real instance left (a
   takeaway line holding only story age); it stays covered by `oneGenre.test.jsx`'s made-up rows.
 * **Constant charts' axes** (not new): where every period's quartiles are equal, the Trends page's one-characteristic
-  chart draws ticks 0.96–1.04 (How To's pages on site: "1.00" between "0.98" and "1.02" pages). 41 charts before and
-  after, mostly pages on site with "Under 2,000 words". Worth a look in a design round; not changed here (D4 and the
-  checkpoints: it is not a data change).
+  chart drew ticks 0.96–1.04 (How To's pages on site: "1.00" between "0.98" and "1.02" pages). 41 charts before and
+  after, mostly pages on site with "Under 2,000 words". Handled in the follow-up, section 9.
 * **Not checked here:** real phones and Safari, as in earlier rounds; the "?" past its column at 320 px in Verdana
   (design review 4's open item) was not looked at again.
 
@@ -251,7 +250,50 @@ status`), set the kicker's placeholder and `index.html`'s two descriptions to `a
 test in `dataUpdate.test.jsx` names the value), and update `site/README.md`'s measured numbers. With a finished
 collection D3 drops nothing, and the D7 stamp follows the new `meta.json` by itself.
 
-## 9. Appendix: the comparison script's output
+## 9. Follow-up: charts whose values don't vary
+
+You asked for an appropriate way to handle the constant charts (section 7). Commit `1fd7d6d`.
+
+**The problem.** A number axis runs over the quartiles' range, with 4% to spare. When every quartile the chart draws
+is the same number, there is no range, and the 4% was taken of the value itself: How To's pages on site (1 page,
+interquartile range 1–1, in every period) got ticks of 0.96, 0.98, 1.00, 1.02 and 1.04 pages, with the line in the
+middle of a scale that suggested variation where there is none. A value of 0 (Non-Erotic's sex scenes) got ticks of
+0.25 scenes, and the one period with stories in Letters & Transcripts' title words (5,000 words or more) an axis of
+5.8 to 6.2 words. 41 Trends charts drew so, with the old data as with the new, and one Genres chart: "Under 2,000
+words", where every genre's pages on site are 1 (the axis showed a lone "1.00").
+
+**The rule.** Such values are drawn against 0: the axis runs from 0 to twice the value, with three ticks, at 0, at
+the value and at twice the value. The line sits halfway up, on a labeled value (0, 1 and 2 pages; 0, 6 and 12 words).
+A value of 0 gets 0, 1 and 2, its line on the baseline; a value under 0 is mirrored. Percentages keep a share's axis,
+as yes/no charts have (from 0 to the smallest of 25%, 50%, 75% and 100% that holds the value), and years a year either
+side; neither occurs in the data. Why this rather than other ways:
+
+* the chart stays: five dots on a flat line are the answer ("No clear change …", "Median 1 page in 2000–2009, 1 in
+  2020 or later"), and the table, the brackets, the way across and "Download image" work as on every chart;
+* an axis from 0 gives the value its size, as the site's other count axes do when their lowest quartile is near 0;
+  zooming to a value ± 1 would invent a scale;
+* the value is on a gridline, so the reader reads "1" off the axis as in the table, and no tick is a fraction of a
+  page;
+* one rule, `flatDomain` in `genres.js`, serves both pages, as their axes already shared the 4% rule; charts whose
+  values vary are untouched (Explore's layout guard and One genre's fingerprints unchanged).
+
+**Checks.** 633 Vitest tests (10 new in `flatCharts.test.jsx`: the rule, both pages' layouts on made-up data and on the
+page, every constant chart in the real data, How To's pages and the Genres page's "Under 2,000 words"; each fails with
+the rule turned off), 221 pytest, the build. The real-data test that keeps the data on at least 80% of an axis's height
+now names the exception. Glyph boxes on the 41 Trends charts at 320, 375 and 1440 px: 0 problems in the site font and
+in Verdana (123 charts each); the Genres page with "Under 2,000 words" at the same widths: 0 in the site font, and in
+Verdana the one problem it already had with the old data and before this change ("Fewer than 10 stories" 4 px past
+the chart at 320 px, where the first sex scene starts). The first load stays 151.2 KiB (the main script +0.1 KiB);
+visits that start on the Trends or Genres page +0.3 and +0.2 KiB. Checked in the browser on the dev server.
+
+**Screenshots.** `f01-trends-constant.png` (How To's pages, Non-Erotic's sex scenes, Letters & Transcripts' title
+words, before above, after below) and `f02-genres-constant.png` (the Genres page, "Under 2,000 words", pages on site).
+
+**Seen on the way, not changed.** Six Trends axis titles repeat their unit ("Sex scenes per 10,000 words, per 10,000
+words", "Scene breaks per 1,000 words, per 1,000 words" …): `trendAxisTitle` adds the unit to a label that already
+ends with it. It is offered as a separate task.
+
+## 10. Appendix: the comparison script's output
 
 `python scripts/compare_aggregates.py <aggregates from the 20261008 handoff> site/public/aggregates`
 

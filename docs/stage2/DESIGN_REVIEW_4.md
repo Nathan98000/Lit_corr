@@ -1306,3 +1306,87 @@ How it works' "Every characteristic" with its topics folded by default. They rep
 
 - Images: `docs/stage2/design-review-4/f07-way-back.png`, `f08-glossary-folded.png`.
 - Scripts and measurements: `Claude outputs/design-review-4/implementation/follow-up-2/` (`tools/`, `measurements/`).
+
+## 14. The owner's third follow-up, October 13
+
+*Implemented on October 13, 2026, on branch `site-changes-20261013`, made from `main` at `b4fd621` (the data of
+`litcorr_stage2_handoff_20261013.zip`): eight commits, `971323d` to `7ff97c7`, and this write-up; not pushed.* The
+three checks pass at every commit; at `7ff97c7`: `npm test` (641 tests in 48 files), `npm run build`, and
+`.venv/bin/python -m pytest` (221 tests).
+
+The owner asked for nine changes. For three of them they chose between readings (2026-10-13): How it works keeps the
+three subsections' paragraphs and loses only their headings and Contents entries; "By share with any" keeps sorting by
+the share with any; yes/no charts' dashed line reads "Share of all genres". **Before** is `main` at `b4fd621`;
+**after** is `7ff97c7`'s build, measured with the same scripts.
+
+### 14.1 What changed
+
+| Request | What changed | Commit |
+|---|---|---|
+| 1. Popularity: no "Totals grow with time online." box | The story-age box of totals (views, favorites, comments, number of ratings) and its "Switch to …" are gone, with `totalsNote`, `RATE_FOR`, their styles and colors. The notes beside or under the chart are its three explanations. Keep exploring no longer leaves out the view the switch led to (the per-month view of the same chart is a question like any other). The measure menu's note on totals and How it works' "Story age" stay | `971323d` |
+| 2. Popularity: no "Median of all stories shown" in the key | The key lists the median and the interquartile range (and hatched groups when there are any); the image's key follows (it is read from the page) | `62c3404` |
+| 3. Popularity: "All stories shown:" → "Median of all stories:" | The dashed line's label under the plot: "Median of all stories: 24,700". How to read this chart still says the line is the median of all stories shown | `62c3404` |
+| 4. Genres: no "Median of all genres" in the key | Number charts' key drops it; so do yes/no charts' ("All genres", the owner's answer) | `626270f` |
+| 5. Genres: "All genres:" → "Median of all genres:" | The dashed line's label: "Median of all genres: 3,630" on number charts and under a mostly-zero chart's plot, "Share of all genres: 57%" on yes/no charts (their line is a share). The takeaway's line ("All genres: median 3,630 words, …") is unchanged | `626270f` |
+| 6. Genres: "By median" the default | A chart of one characteristic opens in order of its values: by median, by share (yes/no), by share with any (mostly zero); highest first, All genres first, too-few genres last. A–Z is the switch's other side (`&sort=az`); named groups and bands stay A–Z; an old `sort=value` link opens in the default order and settles to the plain address | `a138ca2` |
+| 7. Genres: "By share with any" sorts correctly | It did: all 405 mostly-zero charts (45 characteristics, 9 options) end in order of the "With any" column, at 1440 and 375 px in Chromium. What could leave rows out of order was the glide to the new order, driven by animation frames, which a tab not on screen doesn't get: the rows stayed at their old places until the tab was shown again (seen in the app's browser pane). Now a hidden tab jumps, a timer puts the rows in place just after the glide's 300 ms if the frames stop, and a new order or layout first stops a glide under way | `7ca6353` |
+| 8. One genre's note | "Each dot compares a story in Romance with a story from all genres (50 is a tie; how this is decided). Click a row for every genre's numbers." ("Tap" on touch screens), above the first list and in open topics | `6352dcc` |
+| 9. How it works: no subsections under "How the story characteristics were measured" | The headings "First person or third person?", "Explicitness" and "Emotion and psychological language" and their Contents entries are gone (12 sections listed, 15 before); their paragraphs stay, in order, in that section. Every "How was this measured?" leads there; `#/methodology/point-of-view`, `/explicitness` and `/emotion` open it and settle to `#/methodology/measures` | `95ea21c` |
+| (follow-on) The labels inside the chart in a wider font | The longer labels ran 1–4 px past the chart's edge on phones in Verdana; they now keep their width plus 10% clear of the edges (`REF_SLACK`), as the Trends page's labels do | `7ff97c7` |
+
+### 14.2 Measurements
+
+| Measure | Before (`b4fd621`) | After (`7ff97c7`) |
+|---|---|---|
+| First load (gzip bodies) | 151.2 KiB in 6 requests | 150.8 KiB in 6 (the box's code and styles gone) |
+| A visit starting on Trends / One genre / How it works | 177.7 / 212.0 / 142.7 KiB | 177.2 / 211.5 / 142.2 KiB |
+| Layout shift on slow 4G, every page and switch at 375 and 1440 (44 runs) | worst 0.000 beyond 500 ms of the action | worst 0.000; within 500 ms 0.325 at worst (One genre: another genre), as before; no "Loading" frames |
+| Glyph boxes, Popularity (every characteristic × measure, three genres, 320 and 375 px; 11,220 charts) | site font 0; Verdana 978 (the old label past the chart's edge) | 0 and 0 |
+| Glyph boxes, the Genres page (every characteristic, All stories, 2020 or later and Under 2,000 words, 320, 375 and 1440 px; 1,656 charts) | site font 0; Verdana 1 | site font 0; Verdana the same 1 ("Fewer than 10 stories" at 320 px, where the first sex scene starts, Under 2,000 words) |
+| "By share with any" on every mostly-zero chart (405, 9 options) at 1440 and 375 px | in order | in order |
+| Tests | 636 Vitest, 221 pytest | 641 Vitest, 221 pytest (6 new, 1 gone with `totalsNote`) |
+
+Fingerprints changed on purpose: `exploreLayoutGuard`'s two digests (the label's text, then its room: only the
+label's text, box and x differ, layout by layout), and One genre's 14 fingerprints with a note (only the note's line).
+
+### 14.3 Side by side
+
+| View | Image |
+|---|---|
+| Popularity with views (a total) at 375 and 1440 px: the box, the key, the label | [f09](design-review-4/f09-popularity-key-totals.png) |
+| The Genres page's word count at 1440 and 375 px: by median, the key, the label | [f10](design-review-4/f10-genres-default-order.png) |
+| A yes/no chart (first-person stories) and a mostly-zero one (romance language) at 1440 px | [f11](design-review-4/f11-genres-share-and-any.png) |
+| One genre, Romance: the note at 375 and 1440 px | [f12](design-review-4/f12-one-genre-note.png) |
+| How it works, "How the story characteristics were measured", at 1440 and 375 px | [f13](design-review-4/f13-how-it-works-measured.png) |
+
+![The Genres page in order of the medians](design-review-4/f10-genres-default-order.png)
+
+### 14.4 Judgment calls
+
+1. **Keep exploring and the per-month view.** It left out the view the box's "Switch to …" opened, so as not to
+   offer it twice. With the box gone that exclusion had no reason, so Popularity's chart of a total can now suggest the
+   same characteristic per month, when an example question asks it.
+2. **"Median of all stories"** is the stories of the chart shown (the genre and option chosen), as "All stories shown"
+   said; How to read this chart still says so.
+3. **The order's default for every form that has one.** "By median" for numbers, and the same order for yes/no
+   (by share) and mostly-zero characteristics (by share with any), so the page has one default. The site's rule that
+   genres are never ranked unless the reader asks for it now has this exception, the owner's (`site/README.md`'s
+   design notes say so).
+4. **What made "By share with any" look wrong.** The rows are in order of the "With any" column; the dots and the bold
+   Median column are the median among stories with any, so they jump about. The owner kept the share as the key.
+5. **The subsections' paragraphs** follow the section's first paragraph without headings; each starts with its topic
+   ("Point of view is estimated …", "Sexual language is counted …", "Emotion measures count …"), so they read on.
+
+### 14.5 Still open
+
+- **No real phone, Safari, Firefox or screen reader**, as before; the fresh eyes weren't run on these changes.
+- **"Fewer than 10 stories" past the chart** in Verdana at 320 px on one Genres chart (as before these changes).
+- The rest of 13.5 stands.
+
+### 14.6 Files
+
+- Images: `docs/stage2/design-review-4/f09-popularity-key-totals.png`, `f10-genres-default-order.png`,
+  `f11-genres-share-and-any.png`, `f12-one-genre-note.png`, `f13-how-it-works-measured.png`.
+- Scripts and measurements: the session's scratchpad copies of `Claude outputs/design-review-4/implementation/tools/`
+  and the Trends review's (`labels3`, `labelsgenres` with a wide-font option, `clsall`, `firstbodies`,
+  `visitbytes`), and `sortprobe`/`sortall`/`sortflip` for item 7.

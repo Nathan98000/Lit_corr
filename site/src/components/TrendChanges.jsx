@@ -2,6 +2,7 @@ import {
   changesColumns,
   changesFileName,
   changesHeading,
+  changesLineWords,
   changesQuestion,
   changesRowName,
   changesSampleLine,
@@ -15,7 +16,7 @@ import {
   trendProfile,
   windowsCompared,
 } from "../lib/trends.js";
-import { periodLabel } from "../lib/trendLayout.js";
+import { periodLines } from "../lib/trendLayout.js";
 import { formatCount } from "../lib/format.js";
 import { subsetConflict } from "../lib/urlState.js";
 import ComparisonProfile from "./ComparisonProfile.jsx";
@@ -23,7 +24,8 @@ import { ChartLink } from "./TrendAnswer.jsx";
 
 /**
  * The stories per period of a genre too few to compare (View 2's too-few state): a compact table, "fewer than 10" under
- * MIN_N (no smaller count is shown anywhere on the site).
+ * MIN_N (no smaller count is shown anywhere on the site). A period's label may take two lines, "2000" over "–04", as
+ * the chart's do, so the table fits a 320 px screen at 400% zoom (round 4's F112).
  */
 function PeriodStories({ file, minN }) {
   return (
@@ -31,11 +33,20 @@ function PeriodStories({ file, minN }) {
       <caption>Stories per period</caption>
       <thead>
         <tr>
-          {file.periods.map((p) => (
-            <th key={p[0]} scope="col">
-              {periodLabel(p)}
-            </th>
-          ))}
+          {file.periods.map((p) => {
+            const [start, end] = periodLines(p);
+            return (
+              <th key={p[0]} scope="col">
+                {start}
+                {end && (
+                  <>
+                    <wbr />
+                    <span className="period-end">{end}</span>
+                  </>
+                )}
+              </th>
+            );
+          })}
         </tr>
       </thead>
       <tbody>
@@ -110,7 +121,7 @@ export default function TrendChanges({ meta, state, file, busy, onSwitch, onNavi
       {takeaway.map((line) => (
         <p key={line.word}>
           <span aria-hidden="true">{line.mark} </span>
-          <b>{line.word}:</b> {line.items.join(", ")}.
+          <b>{line.word}:</b> {changesLineWords(line)}
         </p>
       ))}
     </div>

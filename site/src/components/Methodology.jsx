@@ -270,7 +270,8 @@ function ContentsList({ current, onPick }) {
 
 /**
  * How it works on narrow screens (concept H3 of the second review): a 44 px bar under the masthead that sticks to the
- * top of the screen, naming the section being read, with a "Contents" button that opens the sections under it.
+ * top of the screen, naming the section being read ("How it works › Explicitness"; at the page's top, before any
+ * section, "How it works" alone: round 4's F109), with a "Contents" button that opens the sections under it.
  * Escape, the button again or a tap outside close the panel and give focus back to the button.
  */
 function SectionBar({ current }) {
@@ -278,7 +279,7 @@ function SectionBar({ current }) {
   const bar = useRef(null);
   const button = useRef(null);
   const panelId = useId();
-  const title = SECTIONS.find(([id]) => id === current)?.[1] ?? "Contents";
+  const title = SECTIONS.find(([id]) => id === current)?.[1];
   useEffect(() => {
     if (!open) return undefined;
     const close = () => {
@@ -308,7 +309,13 @@ function SectionBar({ current }) {
     <div className="section-bar" ref={bar}>
       <div className="section-bar-row">
         <p className="section-bar-where">
-          How it works › <b>{title}</b>
+          How it works
+          {title && (
+            <>
+              {" › "}
+              <b>{title}</b>
+            </>
+          )}
         </p>
         <button
           ref={button}

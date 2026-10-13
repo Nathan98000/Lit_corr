@@ -642,15 +642,22 @@ export function overTimeCharacteristic(meta, state) {
   return ruledOut ? "story_paragraphs" : v;
 }
 
-/** The takeaway (S1): "▼ Fell: …", "▲ Rose: …", "≠ A different mix: …", each up to three labels, as the lists word them. */
+/**
+ * The takeaway (S1): "▼ Fell: …", "▲ Rose: …", "≠ A different mix: …", each up to three labels, as the lists word them,
+ * and how many more its list holds (`more`, round 4's F118).
+ */
 export function changesTakeaway(p) {
-  const named = (list) => list.slice(0, 3).map((x) => lowerFirst(x.variable.label));
-  return [
-    { mark: "▼", word: "Fell", items: named(p.lower) },
-    { mark: "▲", word: "Rose", items: named(p.higher) },
-    { mark: "≠", word: "A different mix", items: named(p.mix) },
-  ].filter((line) => line.items.length);
+  const line = (mark, word, list) => ({
+    mark,
+    word,
+    items: list.slice(0, 3).map((x) => lowerFirst(x.variable.label)),
+    more: Math.max(0, list.length - 3),
+  });
+  return [line("▼", "Fell", p.lower), line("▲", "Rose", p.higher), line("≠", "A different mix", p.mix)].filter((l) => l.items.length);
 }
+
+/** A takeaway line's words after its word: "average paragraph length, median paragraph length, very long paragraphs and 2 more." */
+export const changesLineWords = (line) => `${line.items.join(", ")}${line.more ? ` and ${line.more} more` : ""}.`;
 
 /**
  * A row's two columns in chronological order, 2000–2009 then 2020 or later ("One genre"'s columns, profileColumns,
@@ -763,6 +770,6 @@ export function changesAnnouncement(meta, file, state) {
   const question = changesQuestion(genre);
   if (!windowsCompared(file)) return `${question} ${changesTooFewHeading(file, genre, subset)}.`;
   const p = trendProfile(meta, file);
-  const lines = changesTakeaway(p).map((line) => `${line.word}: ${line.items.join(", ")}.`);
+  const lines = changesTakeaway(p).map((line) => `${line.word}: ${changesLineWords(line)}`);
   return [question, `${changesHeading(p.flagged.length, p.compared, file)}.`, lengthLine(p, file), ...lines].filter(Boolean).join(" ");
 }

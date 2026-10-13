@@ -75,6 +75,10 @@
   font-weight: 400;
   color: var(--ink-2);
   border-bottom: 1px solid var(--rule-2);
+}
+
+/* "–04" never parts from itself: a label breaks only before its dash */
+.trend-few-table .period-end {
   white-space: nowrap;
 }
 
@@ -253,10 +257,23 @@
   box-shadow: 0 -6px 18px rgb(28 28 34 / 0.12);
 }
 
-/* the key of the brackets: ⎵ */
+/* the key's marks as the chart draws them, so that none looks like a form control (round 4's F104), each centered on
+   the first line of its words (--key-h: the mark's height) */
+.trend-legend li {
+  align-items: flex-start;
+}
+
+.trend-legend .key {
+  flex: none;
+  height: var(--key-h);
+  margin-top: calc((1lh - var(--key-h)) / 2);
+}
+
+/* the key of the brackets: a 16 px line with 4 px ticks, as the chart's ⎵ */
 .trend-legend .key-bracket {
-  width: 20px;
-  height: 7px;
+  --key-h: 4px;
+  box-sizing: border-box;
+  width: 16px;
   border: 1px solid var(--ink-3);
   border-top: 0;
 }
@@ -284,25 +301,24 @@
 
 /* the key of a share: a dot on a short line, as the chart draws it */
 .trend-legend .key-share {
+  --key-h: 12px;
   width: 20px;
-  height: 12px;
   background:
     radial-gradient(circle at 50% 50%, var(--accent-ink) 0 5px, transparent 5.5px),
     linear-gradient(var(--quiet-mark), var(--quiet-mark)) 0 50% / 100% 1.5px no-repeat;
 }
 
-/* the key of a median and its interquartile range: a dot inside an upright capsule, as the chart draws them */
+/* the key of a median and its interquartile range: a dot inside an upright 10 × 18 px capsule, as the chart draws them,
+   without the outline that made it a pill button */
 .trend-legend .key-range {
-  width: 12px;
-  height: 22px;
-  border: 1px solid var(--accent);
-  border-radius: 6px;
+  --key-h: 18px;
+  width: 10px;
+  border-radius: 5px;
   background: radial-gradient(circle at 50% 50%, var(--accent-ink) 0 4px, transparent 4.5px), var(--accent-bar);
 }
 
 /* the periods between the two compared, as the chart draws them: gray, the capsule a light neutral */
 .trend-legend .key-mid.key-range {
-  border-color: var(--quiet-mark);
   background: radial-gradient(circle at 50% 50%, var(--quiet-mark) 0 4px, transparent 4.5px), #ece9e2;
 }
 
@@ -312,19 +328,21 @@
     linear-gradient(var(--quiet-mark), var(--quiet-mark)) 0 50% / 100% 1.5px no-repeat;
 }
 
-/* fewer than 30 stories: a hollow dot (a share, or a median), an upright hatched capsule (numbers) */
+/* fewer than 30 stories: a hollow dot (a share, or a median), an upright hatched capsule (numbers), as the chart's */
 .trend-legend .key-small-dot {
-  width: 12px;
-  height: 12px;
+  --key-h: 14px;
+  box-sizing: border-box;
+  width: 14px;
   border: 2px solid var(--accent-ink);
   border-radius: 50%;
   background: #fff;
 }
 
 .trend-legend .key-small {
-  width: 12px;
-  height: 22px;
-  border-radius: 6px;
+  --key-h: 18px;
+  box-sizing: border-box;
+  width: 10px;
+  border-radius: 5px;
 }
 
 .trend-legend li .key + .key {
@@ -333,8 +351,9 @@
 
 /* the groups' swatches of the 100% columns (their colors are in palettes.css) */
 .trend-legend .key-swatch {
-  width: 14px;
-  height: 14px;
+  --key-h: 16px;
+  box-sizing: border-box;
+  width: 16px;
   border-radius: 2px;
   border: 1px solid var(--control);
 }
@@ -553,9 +572,10 @@
       linear-gradient(GrayText, GrayText) 0 50% / 100% 1.5px no-repeat;
   }
 
+  /* the capsules outlined, as the chart's are in forced colors */
   .trend-legend .key-range {
     background: radial-gradient(circle at 50% 50%, Highlight 0 4px, transparent 4.5px), Canvas;
-    border-color: CanvasText;
+    border: 1px solid CanvasText;
   }
 
   .trend-legend .key-small-dot {
@@ -565,7 +585,7 @@
 
   .trend-legend .key-mid.key-range {
     background: radial-gradient(circle at 50% 50%, GrayText 0 4px, transparent 4.5px), Canvas;
-    border-color: GrayText;
+    border: 1px solid GrayText;
   }
 
   .trend-legend .key-mid.key-share {

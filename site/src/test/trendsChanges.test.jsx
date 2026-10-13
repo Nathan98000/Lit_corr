@@ -140,7 +140,7 @@ describe("the rows", () => {
     const cols = changesColumns(yes);
     expect(cols.genre).toEqual([`${Math.round(yes.all.share * 100)}%`]); // 2000–2009 first
     expect(cols.all).toEqual([`${Math.round(yes.stats.share * 100)}%`]);
-    expect(changesTakeaway(p)).toEqual([{ mark: "▲", word: "Rose", items: ["dialogue share", "has dialogue"] }]);
+    expect(changesTakeaway(p)).toEqual([{ mark: "▲", word: "Rose", items: ["dialogue share", "has dialogue"], more: 0 }]);
   });
 
   it.skipIf(!real)("are named by their content, then numbers in reading order: “Paragraph count: 68 in 100; 2000–2009 56, 2020 or later 102 paragraphs; clearly rose”", () => {

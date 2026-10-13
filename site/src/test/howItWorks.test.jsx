@@ -70,7 +70,8 @@ describe("the section bar below 1,000 px", () => {
     screenWidth(375);
     await openPage();
     readSection(null);
-    expect(where()).toBe("How it works › Contents");
+    expect(where()).toBe("How it works"); // the page's top: no "› Contents" beside the Contents button (round 4's F109)
+    expect(screen.getByRole("button", { name: "Contents" })).toBeTruthy();
     readSection("explicitness");
     expect(where()).toBe("How it works › Explicitness");
     readSection("tend-to");

@@ -1472,11 +1472,12 @@ h3 {
   border-bottom-width: 1.5px;
 }
 
-/* "Only include" has no line above or below it, so its select keeps a 44 px tall tap area */
+/* "Only include" has no line above or below it, so its select keeps a tap area over 44 px tall, centered on its words
+   (at 15 px, round 4's type scale, a fixed 10 px left it 43) */
 .include .inline-select select {
-  inset: -10px -4px;
-  width: calc(100% + 8px);
-  height: calc(100% + 20px);
+  inset: min(0px, calc((100% - var(--target)) / 2 - 1px)) -4px;
+  width: auto;
+  height: auto;
 }
 
 /* a slot's last word and its caret never part (F59) */
@@ -2073,6 +2074,19 @@ html[data-page="genres"] body {
   margin-bottom: var(--space-16);
 }
 
+/* the question's two selects answer taps over 44 px (round 4's F110), as "Only include" does: the transparent select
+   reaches past its words, the genre's upward and the measure's downward, so that on two lines neither takes the
+   other's words */
+.patterns-question .inline-select select {
+  inset: min(0px, calc(100% - var(--target) - 1px)) -4px 0;
+  width: auto;
+  height: auto;
+}
+
+.patterns-question .inline-select ~ .inline-select select {
+  inset: 0 -4px min(0px, calc(100% - var(--target) - 1px));
+}
+
 .takeaway.pattern-count {
   margin: 0 0 var(--space-16);
 }
@@ -2166,7 +2180,11 @@ summary.pattern-topic-head::after {
   line-height: var(--leading-16);
 }
 
+/* the characteristic's link is a 44 px target, its name centered in it (round 4's F110) */
 .pattern-row a {
+  display: flex;
+  align-items: center;
+  min-height: var(--target);
   padding: 10px 0;
   text-decoration: none;
 }

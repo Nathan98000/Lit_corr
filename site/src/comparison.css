@@ -184,10 +184,12 @@
   outline-offset: -2px;
 }
 
-/* the name lies over the "?"'s area, so that a tap on the name always opens the row */
+/* the name lies over the "?"'s area, so that a tap on the name always opens the row, between its lines too (its
+   lines' boxes meet) */
 .profile-label-text {
   position: relative;
   z-index: 2;
+  padding-block: 2px;
 }
 
 /* the definition's button (I16): an 18 px circle just after the name, its area 44 px wide and the row's height,

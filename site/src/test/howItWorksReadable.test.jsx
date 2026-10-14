@@ -219,6 +219,57 @@ describe("the pictures' numbers come from the data", () => {
   });
 });
 
+describe("When a title says “tend to”: what the significance test says (the owner's question, 2026-10-14)", () => {
+  const siteData = path.join(REPO, "litcorr", "stage2", "site_data.py");
+
+  it("says how rare such a correlation would be without a relationship, not that chance is unlikely", async () => {
+    const article = await openPage();
+    const [intro, conditions, note, otherwise] = section(article, "tend-to");
+    expect(intro).toBe(
+      "Titles describe a pattern (“Longer stories tend to get more favorites per 1,000 views”) only when it is clear in the data. All three must hold:",
+    );
+    expect(conditions).toEqual([
+      "The rank correlation between the characteristic and popularity (explained below) is at least 0.1 in either " +
+        "direction: higher values go with more popularity, or with less.",
+      "It would be rare by chance alone: if popularity and the characteristic were unrelated among all the stories the " +
+        "sample was drawn from, a random sample of the same size would show a rank correlation this far from zero less " +
+        "than 1 time in 100 (the 99% level).",
+      "The medians of the lowest and highest groups differ by at least 10% (or 0.1 stars for ratings).",
+    ]);
+    // the 99% level is the only allowance for the number of charts, and it lets about 1 in 100 unrelated ones through
+    expect(note).toBe(
+      "The 99% level is stricter than the more common 95%: counting every genre, measure and “Only include” choice, the " +
+        "site has hundreds of thousands of charts. It does not rule chance out, though. Where popularity and a " +
+        "characteristic are unrelated, about 1 chart in 100 would still pass the second condition (the other two screen " +
+        "out some of those).",
+    );
+    expect(otherwise).toMatch(/^When any condition fails, the chart says “No clear pattern”/);
+    // the misreadings: a chance that chance made the pattern, and a test that allows for every chart
+    expect(words(article)).not.toMatch(/chance is an unlikely explanation|unlikely to be (a fluke|chance)|allowing for the many charts/);
+  });
+
+  it.skipIf(!existsSync(siteData))("words the thresholds litcorr/stage2/site_data.py applies", async () => {
+    const py = readFileSync(siteData, "utf8");
+    const constant = (name) => Number(py.match(new RegExp(`^${name} = ([\\d.]+)`, "m"))[1]);
+    // PATTERN_Z's two-sided level: twice the normal curve's area from 0 to z (Simpson's rule), in percent
+    const z = constant("PATTERN_Z");
+    const density = (t) => Math.exp((-t * t) / 2) / Math.sqrt(2 * Math.PI);
+    const steps = 2000;
+    let sum = density(0) + density(z);
+    for (let i = 1; i < steps; i += 1) sum += (i % 2 ? 4 : 2) * density((i * z) / steps);
+    const level = Math.round(((2 * sum * z) / steps / 3) * 1000) / 10;
+    expect(level).toBe(99);
+    const article = await openPage();
+    const [, conditions, note] = section(article, "tend-to");
+    expect(conditions[0]).toContain(`is at least ${constant("PATTERN_MIN_EFFECT")} in either direction`);
+    expect(conditions[1]).toContain(`less than 1 time in ${Math.round(100 / (100 - level))} (the ${level}% level)`);
+    expect(conditions[2]).toContain(
+      `at least ${Math.round(constant("PATTERN_MIN_GAP") * 100)}% (or ${constant("RATING_MIN_GAP")} stars for ratings)`,
+    );
+    expect(note).toMatch(new RegExp(`^The ${level}% level is stricter`));
+  });
+});
+
 describe("the made-up passage", () => {
   const featuresPy = path.join(REPO, "litcorr", "text", "features.py");
   const positive = path.join(REPO, "lexicons", "emotion_positive.txt");

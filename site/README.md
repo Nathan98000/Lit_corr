@@ -189,7 +189,7 @@ the 20261008 handoff's, measured the same day, and 150.7 when measured after the
 150.5 after the review, 150.0 before it, 149.7 before the owner's changes to the Trends review, 148.5 before the Trends
 page). The Genres and Trends pages' own code, styles and files load only when they are opened. A visit that starts on
 the Genres page is 211.8 KiB in 9 requests (210.7 with the 20261008 handoff's data; 204.4 in 8 before the Trends page: the code the two pages share is now a
-chunk of its own). One that starts on the Trends page is 177.4 KiB in 9, on either view; one on How it works 147.3 KiB
+chunk of its own). One that starts on the Trends page is 177.4 KiB in 9, on either view; one on How it works 147.5 KiB
 in 8 since its pictures (October 14, 2026; 142.2 in 7 before them, measured the same day).
 Layout shift is 0 on a visit to any page, and after any change once 500 ms have passed (what moves at once is the
 question or the lists reflowing with the visitor's own choice). The budget is **155 KiB of

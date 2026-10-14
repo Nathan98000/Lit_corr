@@ -585,20 +585,34 @@ export default function Methodology({ meta, section }) {
           Titles describe a pattern (“Longer stories tend to get more favorites per 1,000 views”) only when it is clear
           in the data. All three must hold:
         </p>
+        {/* the rule of litcorr/stage2/site_data.py (_pattern): PATTERN_MIN_EFFECT, PATTERN_Z (2.576: a 99% interval
+            clear of zero, or p below 0.01), PATTERN_MIN_GAP and RATING_MIN_GAP. The second condition says what a
+            significance test can say, not that chance is unlikely, and the 99% level is the only allowance for the
+            number of charts (the owner's question, 2026-10-14) */}
         <ol>
-          <li>Stories with higher values of the characteristic rank consistently higher (or lower) on popularity.</li>
           <li>
-            The pattern is clear enough that chance is an unlikely explanation, even allowing for the many charts on
-            this site.
+            The rank correlation between the characteristic and popularity (explained below) is at least 0.1 in either
+            direction: higher values go with more popularity, or with less.
+          </li>
+          <li>
+            It would be rare by chance alone: if popularity and the characteristic were unrelated among all the stories
+            the sample was drawn from, a random sample of the same size would show a rank correlation this far from
+            zero less than 1 time in 100 (the 99% level).
           </li>
           <li>
             The medians of the lowest and highest groups differ by at least 10% (or 0.1 stars for ratings).
           </li>
         </ol>
         <p>
-          Otherwise the chart says “No clear pattern” (or “Too few stories to judge a pattern” when either end has fewer
-          than {meta.small_n} stories). “No clear pattern” is an answer too: the groups differ only a little, or not
-          consistently. Even a clear pattern describes the medians; individual stories vary widely.
+          The 99% level is stricter than the more common 95%: counting every genre, measure and “Only include” choice,
+          the site has hundreds of thousands of charts. It does not rule chance out, though. Where popularity and a
+          characteristic are unrelated, about 1 chart in 100 would still pass the second condition (the other two screen
+          out some of those).
+        </p>
+        <p>
+          When any condition fails, the chart says “No clear pattern” (or “Too few stories to judge a pattern” when
+          either end has fewer than {meta.small_n} stories). “No clear pattern” is an answer too: the groups differ only
+          a little, or not consistently. Even a clear pattern describes the medians; individual stories vary widely.
         </p>
         <p>
           Weak, moderate and strong describe how consistently popularity rises or falls across the groups, on a rank

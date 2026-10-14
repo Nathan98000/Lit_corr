@@ -2,7 +2,7 @@
 
 Network commands (talk to Literotica, slowly):  probe, collect
 Offline commands (never touch the network):     status, categories, build-raw, analyze, report, refresh,
-                                                docs, export-handoff, process, demo, site-data
+                                                docs, word-lists, export-handoff, process, demo, site-data
 """
 
 from __future__ import annotations
@@ -128,6 +128,17 @@ def cmd_docs(args):
         print(f"wrote {p}")
 
 
+def cmd_word_lists(args):
+    from .word_lists import write_word_lists
+
+    p = write_word_lists(config=args.config)
+    print(f"wrote {p}")
+    if args.open:
+        import webbrowser
+
+        webbrowser.open(p.as_uri())
+
+
 def cmd_export(args):
     from .export import export_handoff
 
@@ -189,7 +200,10 @@ def main(argv: list[str] | None = None) -> int:
     r = sub.add_parser("refresh", help="build-raw + analyze (incremental) + report + profile comparison; no export")
     r.add_argument("--workers", type=int, default=0)
     r.add_argument("--full", action="store_true", help="redo every story (no caches)")
-    sub.add_parser("docs", help="regenerate docs/DATA_DICTIONARY.md and docs/METHODOLOGY.md tables")
+    sub.add_parser("docs", help="regenerate docs/DATA_DICTIONARY.md, the docs/METHODOLOGY.md tables and "
+                                "docs/word_lists.html")
+    w = sub.add_parser("word-lists", help="write docs/word_lists.html, a page for reading the word lists (offline)")
+    w.add_argument("--open", action="store_true", help="open the page in your browser")
     sub.add_parser("export-handoff", help="zip the processed data for Stage 2 (no text, no identifiers)")
     p = sub.add_parser("process", help="build-raw + analyze + report + docs + export-handoff (offline)")
     p.add_argument("--workers", type=int, default=0)
@@ -203,7 +217,7 @@ def main(argv: list[str] | None = None) -> int:
     args = ap.parse_args(argv)
     handlers = {"probe": cmd_probe, "collect": cmd_collect, "status": cmd_status, "categories": cmd_categories,
                 "build-raw": cmd_build_raw, "analyze": cmd_analyze, "report": cmd_report, "refresh": cmd_refresh,
-                "docs": cmd_docs,
+                "docs": cmd_docs, "word-lists": cmd_word_lists,
                 "export-handoff": cmd_export, "process": cmd_process, "site-data": cmd_site_data, "demo": cmd_demo}
     from .collect.session import AlreadyRunning
     from .net.fetcher import StopCollection

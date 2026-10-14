@@ -190,7 +190,7 @@ This runs, in order (each step can also be run on its own):
 | parse cached pages | `build-raw` | `data/raw/*.parquet` (includes story text) |
 | text + popularity measures | `analyze` | `data/processed/stories_features.parquet` / `.csv` |
 | quality report | `report` | `data/processed/quality_report.md` / `.json` |
-| documentation | `docs` | `docs/METHODOLOGY.md`, `docs/DATA_DICTIONARY.md` |
+| documentation | `docs` | `docs/METHODOLOGY.md`, `docs/DATA_DICTIONARY.md`, `docs/word_lists.html` |
 | handoff zip | `export-handoff` | `data/handoff/litcorr_stage2_handoff_YYYYMMDD.zip` |
 
 None of these touch the network. If you edit a lexicon or I fix a parser,
@@ -321,6 +321,10 @@ data/
 * [docs/QUALITY_REPORT_EXAMPLE.md](docs/QUALITY_REPORT_EXAMPLE.md): what the
   quality report looks like (from the synthetic demo, not real data).
 * [lexicons/README.md](lexicons/README.md): the editable word lists.
+* [docs/word_lists.html](docs/word_lists.html): a page for reading the word
+  lists. Open it in a browser, tick the lists you want, or search for a word to
+  see which lists count it. `python -m litcorr word-lists --open` rebuilds and
+  opens it.
 
 ## If the site blocks the collector
 
@@ -356,10 +360,11 @@ litcorr/
   refresh.py           incremental build-raw + analyze + report + profile comparison
   dev/                 developer tools for checking the text measures (masked views, hand-checks, audits)
   schema.py            the variable registry (source of the data dictionary)
+  word_lists.py        docs/word_lists.html, the page for reading the word lists
   export.py            Stage 2 handoff
   demo.py              local synthetic site used by `demo` and the tests
 lexicons/              editable word lists
-docs/                  methodology, data dictionary, site rules
+docs/                  methodology, data dictionary, word-list page, site rules
 scripts/validate_narration.py   reproduces the narration-classifier check
 tests/                 pytest suite (runs offline against the local mock site)
 ```

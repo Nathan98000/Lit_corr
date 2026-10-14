@@ -4,6 +4,13 @@ Every word-list measure in this project is computed from the plain-text files in
 this folder. Open them, check them, and improve them. Re-running
 `python -m litcorr analyze` picks up any edit; nothing needs to be re-collected.
 
+To read the lists, open [docs/word_lists.html](../docs/word_lists.html) in a
+browser: tick the lists you want (one by one or a whole group), read them one
+after another or side by side, and search for a word or a sentence to see which
+lists count it, with the same rules as the analysis. After editing a list,
+`python -m litcorr word-lists` refreshes the page (`python -m litcorr docs` and
+`process` refresh it too).
+
 ## Format
 
 ```

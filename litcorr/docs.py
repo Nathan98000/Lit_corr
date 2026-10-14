@@ -1,9 +1,10 @@
-"""Generate docs/DATA_DICTIONARY.md, docs/data_dictionary.json and docs/METHODOLOGY.md.
+"""Generate docs/DATA_DICTIONARY.md, docs/data_dictionary.json, docs/METHODOLOGY.md and docs/word_lists.html.
 
 METHODOLOGY.md is built from docs/methodology_template.md: every
 ``{{table:<group>}}`` placeholder is replaced by the plain-English table of the
 variables in that group from litcorr/schema.py, so the explanations and the
-variable list can never drift apart.
+variable list can never drift apart. word_lists.html is the page for reading the
+word lists (litcorr/word_lists.py).
 """
 
 from __future__ import annotations
@@ -47,4 +48,7 @@ def write_docs(docs_dir: Path = DOCS) -> list[Path]:
         p = docs_dir / "METHODOLOGY.md"
         p.write_text(header + rendered, encoding="utf-8")
         out.append(p)
+    from .word_lists import write_word_lists
+
+    out.append(write_word_lists(docs_dir / "word_lists.html"))
     return out

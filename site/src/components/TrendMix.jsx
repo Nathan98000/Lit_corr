@@ -3,7 +3,7 @@ import { bandPalette } from "../lib/genreLayout.js";
 import { formatPercent } from "../lib/genres.js";
 import { PHONE } from "../lib/rangeLayout.js";
 import { mixSegments, trendLayout } from "../lib/trendLayout.js";
-import { groupShares, periodName, periodWords, trendChartInput, trendMixGroups } from "../lib/trends.js";
+import { groupShares, periodDetails, periodName, periodWords, trendChartInput, trendMixGroups } from "../lib/trends.js";
 import { Table, Ticks, usePeriodDetails, useViewportHeight } from "./TrendChart.jsx";
 import useGlide from "./useGlide.js";
 import useWidth from "./useWidth.js";
@@ -36,12 +36,14 @@ export default function TrendMix({ meta, variable, entry, file, title }) {
     input.cells.map((c) => (c ? c.shares : null)),
     `${variable.id}|${kind}|${layout.width}|${file.periods.length}`,
   );
-  const words = layout.columns.map((c) => periodWords({ variable, entry, cell: input.cells[c.i], fmt: input.fmt, minN: meta.min_n }));
+  const periods = layout.columns.map((c) => ({ variable, entry, cell: input.cells[c.i], fmt: input.fmt, minN: meta.min_n }));
+  const words = periods.map(periodWords);
   const d = usePeriodDetails({
     ids: layout.columns.map((c) => c.i),
     frame,
     phone,
     words,
+    cards: periods.map(periodDetails),
     labels: layout.columns.map((c) => c.period),
     width: layout.width,
     place: (i) => ({ ...layout.columns[i], top: layout.top }),

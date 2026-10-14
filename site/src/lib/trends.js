@@ -5,6 +5,7 @@
 import { formatCount, formatFixed } from "./format.js";
 import { mixColors } from "./genreLayout.js";
 import {
+  anyHeadingParts,
   comparisonBar,
   fileDecimals,
   formatPercent,
@@ -412,10 +413,10 @@ export const groupShares = (groups, shares) => groups.map((g) => g.members.reduc
 
 // ---------------------------------------------------------------------------------------------- periods' details
 /**
- * A period's numbers in words, for its details and its name: "median 4,060 words · interquartile range 2,340–7,200 ·
- * 1,564 stories"; yes/no "32% with an author’s note · 1,564 stories"; mostly zero, as the Genres page says a genre's
- * "11% with any · among those, median 0.229 per 1,000 words · interquartile range 0.144–0.388 · 2,561 stories"; named
- * groups and bands every group's share; fewer than MIN_N "fewer than 10 stories".
+ * A period's numbers in words, for its line on phones and its name: "median 4,060 words · interquartile range
+ * 2,340–7,200 · 1,564 stories"; yes/no "32% with an author’s note · 1,564 stories"; mostly zero, as the Genres page
+ * says a genre's "11% with any · among those, median 0.229 per 1,000 words · interquartile range 0.144–0.388 · 2,561
+ * stories"; named groups and bands every group's share; fewer than MIN_N "fewer than 10 stories".
  */
 export function periodWords({ variable, entry, cell, fmt, minN }) {
   if (!cell) return [`fewer than ${minN} stories`];
@@ -432,6 +433,35 @@ export function periodWords({ variable, entry, cell, fmt, minN }) {
 
 /** A period's accessible name: "2015–19: median 4,060 words, interquartile range 2,340–7,200, 1,564 stories". */
 export const periodName = (label, words) => `${label}: ${words.join(", ")}`;
+
+/**
+ * The same numbers for a period's card on wider charts, as the Genres page's card has them (rowDetails, TipBody):
+ * `stories` ("1,564 stories", beside the period), `blocks` ({ caption, items }: [label, value] pairs, under a caption
+ * in parts a line breaks only between) and `line` (a period with too few stories). The card says once what its
+ * numbers are of: a mostly-zero characteristic's median and interquartile range are under "Among stories with any (per
+ * 1,000 words)", as the chart's second half is titled, and a rate's unit is the caption over a median and interquartile
+ * range ("Per 1,000 words") instead of following the median. A count's unit still follows it ("4,060 words").
+ */
+export function periodDetails({ variable, entry, cell, fmt, minN }) {
+  if (!cell) return { stories: null, blocks: [], line: `fewer than ${minN} stories.` };
+  const stories = `${formatCount(cell.n)} stories`;
+  const card = (...blocks) => ({ stories, blocks });
+  if (entry.k === "bin") return card({ caption: null, items: [["Share", fmt.share(cell.share)]] });
+  if (entry.k !== "num" && entry.k !== "zero") {
+    return card({ caption: null, items: variable.bins.labels.map((label, b) => [label, formatPercent(cell.shares[b])]) });
+  }
+  const rate = fmt.unit.startsWith("per ");
+  const spread = (caption) => ({
+    caption,
+    items: [
+      ["Median", rate ? fmt.value(cell.median) : fmt.withUnit(cell.median)],
+      ["Interquartile range", fmt.span(cell.p25, cell.p75)],
+    ],
+  });
+  if (entry.k === "num") return card(spread(rate ? [upperFirst(fmt.unit)] : null));
+  const any = { caption: null, items: [["With any", fmt.share(cell.share)]] };
+  return card(any, cell.median != null ? spread(anyHeadingParts(fmt)) : { caption: [`Fewer than ${minN} stories with any`], items: [] });
+}
 
 // --------------------------------------------------------------------------------------------------------- the PNG
 /** "Download image"'s file name: the characteristic's, the genre's and the option's ids, in lower case. */

@@ -231,14 +231,17 @@
 }
 
 /* a period's details on wider charts: a card beside its column, at the plot's top (not centered over a point, as the
-   explorer's cards are) */
+   explorer's cards are), as wide as its content up to 280 px and the room beside the column (TrendChart's cardPlace).
+   Its title and numbers are TipBody's (tips.css), here one pair to a line */
 .range-chart .chart-tip.trend-tip {
   transform: none;
+  width: max-content;
   max-width: 280px;
 }
 
-.trend-tip p {
-  color: var(--ink-2);
+.trend-tip .tip-numbers {
+  grid-template-columns: auto auto;
+  gap: 2px 10px;
 }
 
 /* phones: the period's line under the chart sticks to the screen's bottom while the chart is on screen (as the Genres

@@ -1,8 +1,18 @@
 import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
-import { PHONE } from "../lib/rangeLayout.js";
+import { PHONE, textWidth } from "../lib/rangeLayout.js";
 import { MARK, TEXT } from "../lib/tokens.js";
 import { splitLayout, trendLayout } from "../lib/trendLayout.js";
-import { periodName, periodWords, trendAxisTitle, trendCells, trendChartInput, trendFormat, trendSplitInputs } from "../lib/trends.js";
+import {
+  periodDetails,
+  periodName,
+  periodWords,
+  trendAxisTitle,
+  trendCells,
+  trendChartInput,
+  trendFormat,
+  trendSplitInputs,
+} from "../lib/trends.js";
+import TipBody from "./TipBody.jsx";
 import useGlide from "./useGlide.js";
 import useRowDetails from "./useRowDetails.js";
 import useWidth from "./useWidth.js";
@@ -123,10 +133,11 @@ export const Hatch = ({ id }) => (
 /**
  * The periods as one tab stop with their details (useRowDetails, with ← → for columns): a card beside the column on
  * wider charts, the line under the chart on phones, which sticks to the bottom of the screen and never covers a column
- * focused from the keyboard. `words` and `labels` per period; `place(i)` puts the card ({ x0, x1, x, top } in the
- * frame's coordinates). Returns { rowProps, active, details } (`details` to render after the svg).
+ * focused from the keyboard. `words` (the line's), `cards` (periodDetails, the card's) and `labels` per period;
+ * `place(i)` puts the card ({ x0, x1, x, top } in the frame's coordinates). Returns { rowProps, active, details }
+ * (`details` to render after the svg).
  */
-export function usePeriodDetails({ ids, frame, phone, words, labels, place, width }) {
+export function usePeriodDetails({ ids, frame, phone, words, cards, labels, place, width }) {
   const detailsRef = useRef(null);
   const { shown, setShown, rowProps } = useRowDetails({ ids, frame, phone, within: detailsRef, columns: true });
   const active = shown?.i ?? null;
@@ -152,7 +163,7 @@ export function usePeriodDetails({ ids, frame, phone, words, labels, place, widt
     </div>
   ) : (
     active != null && (
-      <Card label={labels[active]} words={words[active]} at={place(active)} width={width} cardRef={detailsRef} pinned={shown.by === "tap"} />
+      <Card label={labels[active]} details={cards[active]} at={place(active)} width={width} cardRef={detailsRef} pinned={shown.by === "tap"} />
     )
   );
   return { rowProps, active, details };
@@ -164,14 +175,45 @@ const Line = ({ label, words }) => (
   </>
 );
 
-/** A period's details on wider charts: a card beside its column, at the plot's top, on the side with more room. */
-function Card({ label, words, at, width, cardRef, pinned }) {
+export const CARD_MAX = 280; // trends.css: the card is as wide as its content, up to this width
+
+/**
+ * About how wide a period's card is (TipBody, one pair to a line, 10 px apart): its first line, its numbers, its
+ * captions' parts (each may take a line) or its line, with its padding and border.
+ */
+export function periodCardWidth(label, details) {
+  const items = details.blocks.flatMap((b) => b.items);
+  const widest = (texts) => (texts.length ? Math.max(...texts.map((t) => textWidth(t, TEXT.note))) : 0);
+  const numbers = items.length ? widest(items.map(([k]) => k)) + 10 + widest(items.map(([, v]) => v)) : 0;
+  const parts = details.blocks.flatMap((b) => b.caption ?? []).map((part) => textWidth(part, TEXT.tick));
+  const head = textWidth(label, TEXT.note, 700) + (details.stories ? 16 + textWidth(details.stories, TEXT.note) : 0);
+  const line = details.blocks.length ? 0 : textWidth(details.line, TEXT.note);
+  return Math.ceil(Math.max(numbers, head, line, ...parts)) + 26;
+}
+
+/**
+ * Where a period's card goes: beside its column on the side with more room, at the plot's top, over the column's
+ * edge by 4 px; a card wider than that room covers more of its own column, up to 8 px from its marks (a dot and its
+ * ring, or a 100% column's bar), and is never wider than the room it then has. `at`: the column ({ x0, x, x1, top,
+ * bar }); `need`: periodCardWidth. Returns the card's style.
+ */
+export function cardPlace({ at, width, need }) {
   const right = at.x < width / 2;
-  const style = right ? { left: at.x1 - 4, top: at.top } : { right: width - at.x0 - 4, top: at.top };
+  const room = right ? width - at.x1 + 4 : at.x0 + 4;
+  const marks = at.bar ? at.bar.width / 2 : MARK.dot + MARK.ring;
+  const free = (right ? at.x1 - at.x : at.x - at.x0) - marks - 12;
+  const over = Math.max(0, Math.min(Math.min(CARD_MAX, need) - room, free));
+  const style = right ? { left: at.x1 - 4 - over, top: at.top } : { right: width - at.x0 - 4 - over, top: at.top };
+  if (room + over < CARD_MAX) style.maxWidth = room + over;
+  return style;
+}
+
+/** A period's details on wider charts: the period and its stories, then its numbers one pair to a line (TipBody). */
+function Card({ label, details, at, width, cardRef, pinned }) {
+  const style = cardPlace({ at, width, need: periodCardWidth(label, details) });
   return (
     <div ref={cardRef} className={`chart-tip trend-tip${pinned ? " pinned" : ""}`} style={style} aria-hidden="true">
-      <strong>{label}</strong>
-      <p>{words.join(" · ")}</p>
+      <TipBody title={label} details={details} />
     </div>
   );
 }
@@ -251,12 +293,14 @@ export default function TrendChart({ meta, variable, entry, file, title }) {
   const layout = trendLayout({ width, ...input, viewportH });
   const phone = layout.width < PHONE;
   const g = useAxisGlide(layout, input.cells.map(markValues(kind)), `${variable.id}|${kind}|${layout.width}|${file.periods.length}`);
-  const words = layout.columns.map((c) => periodWords({ variable, entry, cell: input.cells[c.i], fmt: input.fmt, minN: meta.min_n }));
+  const periods = layout.columns.map((c) => ({ variable, entry, cell: input.cells[c.i], fmt: input.fmt, minN: meta.min_n }));
+  const words = periods.map(periodWords);
   const d = usePeriodDetails({
     ids: layout.columns.map((c) => c.i),
     frame,
     phone,
     words,
+    cards: periods.map(periodDetails),
     labels: layout.columns.map((c) => c.period),
     width: layout.width,
     place: (i) => ({ ...layout.columns[i], top: layout.top }),
@@ -329,13 +373,15 @@ export function TrendSplit({ meta, variable, entry, file, title }) {
   const kinds = ["bin", "num"];
   const fmt = trendFormat(variable, entry, file.g === "all", meta.small_n);
   const cells = trendCells(entry, file.g === "all", meta.small_n);
-  const words = A.layout.columns.map((c) => periodWords({ variable, entry, cell: cells[c.i], fmt, minN: meta.min_n }));
+  const periods = A.layout.columns.map((c) => ({ variable, entry, cell: cells[c.i], fmt, minN: meta.min_n }));
+  const words = periods.map(periodWords);
   const [half, setHalf] = useState(0); // the half the pointer is on, where the card goes
   const d = usePeriodDetails({
     ids: A.layout.columns.map((c) => c.i),
     frame,
     phone,
     words,
+    cards: periods.map(periodDetails),
     labels: A.layout.columns.map((c) => c.period),
     width: split.width,
     place: (i) => {

@@ -9,7 +9,7 @@ import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "../App.jsx";
 import { TrendLegend, trendsImage } from "../components/TrendAnswer.jsx";
-import TrendChart from "../components/TrendChart.jsx";
+import TrendChart, { cardPlace } from "../components/TrendChart.jsx";
 import TrendMix from "../components/TrendMix.jsx";
 import useRowDetails from "../components/useRowDetails.js";
 import { imagePlan, keyItems } from "../lib/chartImage.js";
@@ -31,6 +31,7 @@ import {
 import { formatPercent } from "../lib/genres.js";
 import {
   numbersLine,
+  periodDetails,
   periodWords,
   trendAxisTitle,
   trendChartInput,
@@ -317,6 +318,50 @@ describe("the chart's numbers (one format per chart)", () => {
     ]);
     expect(periodWords({ variable: NOTE, entry: yes, cell: null, fmt: null, minN: 10 })).toEqual(["fewer than 10 stories"]);
   });
+
+  it("gives a period's card the same numbers, saying once what they are of, as the Genres page's card does", () => {
+    const entry = num([[1564, 2340, 4060, 7200]], [10, 1, 2, 3], 0.25, 1);
+    const cell = { n: 1564, p25: 2340, median: 4060, p75: 7200 };
+    // the stories beside the period; a count's unit after the median
+    expect(periodDetails({ variable: WORDS, entry, cell, fmt: trendFormat(WORDS, entry, true), minN: 10 })).toEqual({
+      stories: "1,564 stories",
+      blocks: [{ caption: null, items: [["Median", "4,060 words"], ["Interquartile range", "2,340–7,200"]] }],
+    });
+    // a rate: its unit is the caption over the median and the interquartile range
+    const SIGHS = { id: "sighs_per_1k", label: "Sighs", noun: "sighs", unit: "per 1,000 words", bins: { type: "ranges" } };
+    const rate = num([[1564, 1.2, 2.5, 4.1]], [10, 1, 2, 3], 0.25, 1);
+    const rateCell = { n: 1564, p25: 1.2, median: 2.5, p75: 4.1 };
+    expect(periodDetails({ variable: SIGHS, entry: rate, cell: rateCell, fmt: trendFormat(SIGHS, rate, true), minN: 10 }).blocks).toEqual([
+      { caption: ["Per 1,000 words"], items: [["Median", "2.5"], ["Interquartile range", "1.2–4.1"]] },
+    ]);
+    // mostly zero: the share with any, then the median and the interquartile range under the second half's title
+    const zero = { k: "zero", fmt: "num", q: [[2209, 175, 0.079, 0.147, 0.243, 0.428]], t: [200, 12, 0.06, 0.1, 0.2, 0.3], r: 0.1, f: 0 };
+    const zfmt = trendFormat(SIGHS, zero, true);
+    expect(periodDetails({ variable: SIGHS, entry: zero, cell: trendCells(zero, true, 30)[0], fmt: zfmt, minN: 10 })).toEqual({
+      stories: "2,209 stories",
+      blocks: [
+        { caption: null, items: [["With any", "7.9%"]] },
+        { caption: ["Among stories with any", "(per 1,000 words)"], items: [["Median", "0.243"], ["Interquartile range", "0.147–0.428"]] },
+      ],
+    });
+    // too few stories with any for a median: the chart's words
+    const few = trendCells({ ...zero, q: [[92, 3, 0.033]] }, true, 30)[0];
+    expect(periodDetails({ variable: SIGHS, entry: zero, cell: few, fmt: zfmt, minN: 10 }).blocks).toEqual([
+      { caption: null, items: [["With any", "3.3%"]] },
+      { caption: ["Fewer than 10 stories with any"], items: [] },
+    ]);
+    // yes/no: the share, as the table's head says; named groups and bands: every group's share
+    const yes = { k: "bin", q: [[1564, 0.32]], t: [10, 0.2] };
+    expect(periodDetails({ variable: NOTE, entry: yes, cell: { n: 1564, share: 0.32 }, fmt: trendFormat(NOTE, yes, true), minN: 10 }).blocks).toEqual([
+      { caption: null, items: [["Share", "32%"]] },
+    ]);
+    const TENSE = { id: "narr_tense_class", label: "Tense", bins: { type: "levels", labels: ["Past tense", "Present tense", "Mixed"] } };
+    expect(periodDetails({ variable: TENSE, entry: { k: "grp" }, cell: { n: 418, shares: [0.8, 0.17, 0.03] }, fmt: null, minN: 10 }).blocks).toEqual([
+      { caption: null, items: [["Past tense", "80%"], ["Present tense", "17%"], ["Mixed", "3%"]] },
+    ]);
+    // fewer than MIN_N stories: a line instead
+    expect(periodDetails({ variable: NOTE, entry: yes, cell: null, fmt: null, minN: 10 })).toEqual({ stories: null, blocks: [], line: "fewer than 10 stories." });
+  });
 });
 
 describe("the heading and the numbers line", () => {
@@ -489,6 +534,43 @@ describe("View 1 on the page", () => {
     expect(document.activeElement).toBe(rows[0]);
     fireEvent.keyDown(rows[0], { key: "ArrowDown" });
     expect(document.activeElement).toBe(rows[1]);
+  });
+
+  it("shows a period's card: the period and its stories, then its numbers one pair to a line, never a running line", async () => {
+    await openTrends("#/trends?var=dlg_word_share", { width: 720 });
+    act(() => document.querySelectorAll(".trend-chart g.col")[4].focus());
+    let card = document.querySelector(".trend-tip");
+    expect(card.querySelector(".tip-head strong").textContent).toBe("2020–26");
+    expect(card.querySelector(".tip-head span").textContent).toBe("87 stories");
+    expect([...card.querySelectorAll("dt")].map((d) => d.textContent)).toEqual(["Median", "Interquartile range"]);
+    expect(card.textContent).not.toContain("·");
+    expect(css).toMatch(/\.trend-tip \.tip-numbers \{\s*grid-template-columns: auto auto;\s*gap: 2px 10px;/); // periodCardWidth's 10 px
+    // mostly zero: the share with any, then "Among stories with any (per 1,000 words)" over the median and the range
+    vi.restoreAllMocks();
+    clearCache();
+    document.body.innerHTML = "";
+    await openTrends("#/trends?var=emo_anger_per_1k", { width: 720 });
+    act(() => document.querySelectorAll(".trend-chart g.col")[4].focus());
+    card = document.querySelector(".trend-tip");
+    expect(card.querySelector(".tip-head span").textContent).toBe("87 stories");
+    expect([...card.querySelectorAll("dt")].map((d) => d.textContent)).toEqual(["With any", "Median", "Interquartile range"]);
+    expect([...card.querySelectorAll(".tip-caption span")].map((x) => x.textContent)).toEqual(["Among stories with any", "(per 1,000 words)"]);
+    expect([...card.querySelectorAll("dd")].map((d) => d.textContent)).toEqual(["44%", "1.74", "1.37–2.48"]);
+  });
+
+  it("puts a card beside its column, over more of the column only when the room beside it is too narrow, never over its marks", () => {
+    const at = { x0: 261, x: 312, x1: 363, top: 40 }; // the middle column of a 568 px chart: the card goes on its left
+    expect(cardPlace({ at, width: 568, need: 200 })).toEqual({ right: 303, top: 40, maxWidth: 265 });
+    // 10 px too wide: 10 px more over the column
+    expect(cardPlace({ at, width: 568, need: 275 })).toEqual({ right: 293, top: 40, maxWidth: 275 });
+    // never wider than CARD_MAX (280): 15 px more over the column at most here
+    expect(cardPlace({ at, width: 568, need: 400 })).toEqual({ right: 288, top: 40 });
+    // up to 8 px from the dot and its ring: a 40 px column has no more to give
+    expect(cardPlace({ at: { x0: 240, x: 260, x1: 280, top: 40 }, width: 500, need: 400 })).toEqual({ right: 256, top: 40, maxWidth: 244 });
+    // a 100% column: up to 8 px from its bar (60 px wide: 9 px more over the column)
+    expect(cardPlace({ at: { ...at, bar: { x: 282, width: 60 } }, width: 568, need: 400 })).toEqual({ right: 294, top: 40, maxWidth: 274 });
+    // a column left of the middle: the card on its right
+    expect(cardPlace({ at: { x0: 56, x: 107, x1: 158, top: 40 }, width: 568, need: 200 })).toEqual({ left: 154, top: 40 });
   });
 
   it("shows a period's details as a line under the chart on phones", async () => {

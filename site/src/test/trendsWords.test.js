@@ -6,7 +6,9 @@ import { readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { periodLabel } from "../lib/trendLayout.js";
+import { CARD_MAX, cardPlace, periodCardWidth } from "../components/TrendChart.jsx";
+import { PHONE } from "../lib/rangeLayout.js";
+import { periodLabel, splitLayout, trendLayout } from "../lib/trendLayout.js";
 import {
   changesAnnouncement,
   changesHeading,
@@ -20,11 +22,13 @@ import {
   nothingToDraw,
   numbersLine,
   pathLine,
+  periodDetails,
   periodName,
   periodWords,
   trendAnnouncement,
   trendAxisTitle,
   trendCells,
+  trendChartInput,
   trendFormat,
   trendHeading,
   trendQuestionText,
@@ -80,6 +84,13 @@ function* sentences(meta, file) {
     for (const [i, p] of file.periods.entries()) {
       const words = periodWords({ variable, entry, cell: cells[i], fmt, minN: meta.min_n });
       yield { at, text: periodName(periodLabel(p), words), clearly: false };
+      // the period's card on wider charts
+      const d = periodDetails({ variable, entry, cell: cells[i], fmt, minN: meta.min_n });
+      yield { at, text: d.stories ?? d.line, clearly: false };
+      for (const b of d.blocks) {
+        if (b.caption) yield { at, text: b.caption.join(" "), clearly: false };
+        for (const [k, v] of b.items) yield { at, text: `${k} ${v}`, clearly: false };
+      }
     }
   }
 }
@@ -132,6 +143,58 @@ describe("the Trends page's sentences on the real data", () => {
       }
     }
     expect(count).toBeGreaterThan(100000);
+  });
+});
+
+describe("the periods' cards on the real data", () => {
+  // a card is as wide as its content, up to CARD_MAX and the room cardPlace leaves it beside its column; a label, a
+  // value, a part of a caption or the first line too wide for it would wrap. The narrowest room is on the narrowest
+  // chart that draws cards (PHONE), where the split chart's halves are stacked. The tightest there, a balance's
+  // "Interquartile range  −0.333 to −0.032" beside 2010–14, covers 8 px more of its own column.
+  it.skipIf(!real)("are never too narrow for their numbers, captions or first lines, nor leave the chart, in any characteristic, genre or option", { timeout: 60000 }, () => {
+    const byId = new Map(real.variables.map((v) => [v.id, v]));
+    const problems = [];
+    let cards = 0;
+    for (const sub of real.trend.subsets) {
+      const dir = path.join(src, "..", "public", "aggregates", "trends", sub);
+      for (const name of readdirSync(dir)) {
+        const file = JSON.parse(readFileSync(path.join(dir, name), "utf8"));
+        const all = file.g === "all";
+        for (const [id, entry] of Object.entries(file.c)) {
+          const variable = byId.get(id);
+          if (!variable || nothingToDraw(entry)) continue;
+          const fmt = trendFormat(variable, entry, all, real.small_n);
+          const cells = trendCells(entry, all, real.small_n);
+          // the chart's width and each period's columns (both halves of a split chart)
+          let width;
+          let columns;
+          if (entry.k === "zero") {
+            const split = splitLayout({ width: PHONE, halves: trendSplitInputs(real, variable, entry, file) });
+            width = split.width;
+            columns = (i) => split.halves.map((h) => ({ ...h.layout.columns[i], x: h.layout.columns[i].x + h.dx, x0: h.layout.columns[i].x0 + h.dx, x1: h.layout.columns[i].x1 + h.dx }));
+          } else {
+            const layout = trendLayout({ width: PHONE, ...trendChartInput(real, variable, entry, file) });
+            width = layout.width;
+            columns = (i) => [layout.columns[i]];
+          }
+          for (const [i, p] of file.periods.entries()) {
+            const d = periodDetails({ variable, entry, cell: cells[i], fmt, minN: real.min_n });
+            const need = periodCardWidth(periodLabel(p), d);
+            for (const at of columns(i)) {
+              cards += 1;
+              const style = cardPlace({ at: { ...at, top: 0 }, width, need });
+              const w = Math.min(need, style.maxWidth ?? CARD_MAX);
+              const left = style.left ?? width - style.right - w;
+              const where = `${sub}/${file.g} ${id} ${periodLabel(p)}`;
+              if (need > (style.maxWidth ?? CARD_MAX)) problems.push(`${where}: ${need} px in ${Math.round(style.maxWidth)}`);
+              if (left < -0.5 || left + w > width + 0.5) problems.push(`${where}: outside the chart (${Math.round(left)}–${Math.round(left + w)} of ${width})`);
+            }
+          }
+        }
+      }
+    }
+    expect(problems).toEqual([]);
+    expect(cards).toBeGreaterThan(100000);
   });
 });
 

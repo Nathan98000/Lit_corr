@@ -1,8 +1,9 @@
 import { useLayoutEffect, useRef } from "react";
 import { rowDetails, standsOutQuestion } from "../lib/genres.js";
-import { textWidth } from "../lib/rangeLayout.js";
+import { REF_SLACK, textWidth } from "../lib/rangeLayout.js";
 import { TEXT } from "../lib/tokens.js";
 import { toHash } from "../lib/urlState.js";
+import TipBody from "./TipBody.jsx";
 import useRowDetails from "./useRowDetails.js";
 
 const plainClick = (e) => !(e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey);
@@ -36,8 +37,9 @@ export function StandsOutLink({ genre, sub, onNavigate }) {
 
 /**
  * A genre's details on wider charts: a card under its row with the numbers (hidden from screen readers, as the row's
- * name says them) and the link to the genre's own view. A tap keeps it, and it can then be clicked; from the keyboard,
- * Tab moves from the row to the link, and Escape goes back to the row.
+ * name says them) and the link to the genre's own view: the genre and its stories, then its numbers (TipBody, two
+ * pairs to a line), the comparison and the link. A tap keeps it, and it can then be clicked; from the keyboard, Tab
+ * moves from the row to the link, and Escape goes back to the row.
  */
 export function DetailsCard({ row, details, pinned, above, style, cardRef, onLeave, onEscape, sub, onNavigate }) {
   return (
@@ -51,19 +53,7 @@ export function DetailsCard({ row, details, pinned, above, style, cardRef, onLea
       }}
     >
       <div aria-hidden="true">
-        <strong>{row.genre.name}</strong>
-        {details.items.length ? (
-          <dl>
-            {details.items.map(([k, v]) => (
-              <div key={k} className="tip-item">
-                <dt>{k}</dt>
-                <dd>{v}</dd>
-              </div>
-            ))}
-          </dl>
-        ) : (
-          <p>{details.line[0].toUpperCase() + details.line.slice(1)}</p>
-        )}
+        <TipBody title={row.genre.name} details={details} order={gridOrder} />
         {details.comparison && (
           <p className="tip-compare">
             Compared with all genres: <b>{details.comparison.short}</b>
@@ -108,34 +98,64 @@ export function DetailsLine({ row, details, by, lineRef, onLeave, onEscape, sub,
   );
 }
 
-const CARD_MAX = 420; // the card follows its content, up to this width (F70)
+export const CARD_MAX = 420; // the card follows its content, up to this width (F70)
 const LINK = (genre) => `${standsOutQuestion(genre)} →`;
 
 /**
- * About how wide a details card is: its numbers in two pairs of columns (label, value, label, value), its title, the
+ * A block's pairs in the order the card's grid places them, two to a line: a block of shares reads down the columns,
+ * in the bars' order ("1 story", "2–5", "6–20" down the first column, then "51–100", "101–200" …).
+ */
+export function gridOrder(block) {
+  if (!block.columns) return block.items;
+  const down = Math.ceil(block.items.length / 2);
+  return block.items.slice(0, down).flatMap((item, j) => (block.items[down + j] ? [item, block.items[down + j]] : [item]));
+}
+
+/**
+ * About how wide a details card's numbers are: two pairs of columns (label, value, label, value), each block's pairs
+ * from its first column, with the gaps and the space after the first pair's value.
+ */
+export function numbersWidth(details) {
+  const cols = [[], [], [], []];
+  for (const b of details.blocks) {
+    gridOrder(b).forEach(([k, v], j) => {
+      cols[(j % 2) * 2].push(textWidth(k, TEXT.note));
+      cols[(j % 2) * 2 + 1].push(textWidth(v, TEXT.note));
+    });
+  }
+  const widest = (col) => (col.length ? Math.max(...col) : 0);
+  return cols.reduce((sum, col) => sum + widest(col), 0) + 3 * 10 + (cols[1].length ? 12 : 0);
+}
+
+/**
+ * About how wide a details card is: its first line (the genre and its stories), its numbers and their captions, the
  * comparison and the link, up to CARD_MAX, with its padding and border.
  */
 export function cardWidth(row, details) {
-  const pairs = [[], [], [], []];
-  details.items.forEach(([k, v], j) => {
-    pairs[(j % 2) * 2].push(textWidth(k, TEXT.note));
-    pairs[(j % 2) * 2 + 1].push(textWidth(v, TEXT.note));
-  });
-  const grid = pairs.reduce((sum, col) => sum + (col.length ? Math.max(...col) : 0), 0) + 3 * 10 + (details.items.length > 1 ? 12 : 0);
   const lines = [
-    grid,
-    textWidth(row.genre.name, TEXT.note, 700),
+    numbersWidth(details),
+    textWidth(row.genre.name, TEXT.note, 700) + (details.stories ? 16 + textWidth(details.stories, TEXT.note) : 0),
+    ...details.blocks.map((b) => (b.caption ? textWidth(b.caption.join(" "), TEXT.tick) : 0)),
     details.comparison ? textWidth(`Compared with all genres: ${details.comparison.short}`, TEXT.note, 600) : 0,
     row.all ? 0 : textWidth(LINK(row.genre), TEXT.secondary),
-    details.items.length ? 0 : Math.min(CARD_MAX, textWidth(details.line, TEXT.note)),
+    details.blocks.length ? 0 : Math.min(CARD_MAX, textWidth(details.line, TEXT.note)),
   ];
   return Math.min(CARD_MAX, Math.ceil(Math.max(...lines)) + 26);
 }
 
-/** About how tall a details card is: its title, a line per pair of numbers, the comparison and the link. */
+/**
+ * About how tall a details card is (genres.css): its padding and first line, 20 px a line of numbers (or the line of a
+ * genre with too few stories) and 22 a caption, 2 apart, 4 more over a block without a caption after another block,
+ * then the comparison and the link (two lines when a wider font could wrap it).
+ */
 export function cardHeight(row, details) {
-  const linkLines = row.all ? 0 : textWidth(LINK(row.genre), TEXT.secondary) > CARD_MAX - 26 ? 2 : 1;
-  return 38 + 19 * Math.ceil(details.items.length / 2) + (details.comparison ? 22 : 0) + (linkLines ? 10 + 19 * linkLines : 0);
+  const linkLines = row.all ? 0 : textWidth(LINK(row.genre), TEXT.secondary) * REF_SLACK > CARD_MAX - 26 ? 2 : 1;
+  const { blocks } = details;
+  const numberLines = blocks.length ? blocks.reduce((sum, b) => sum + Math.ceil(b.items.length / 2), 0) : 1;
+  const captions = blocks.filter((b) => b.caption).length;
+  const spaced = blocks.filter((b, i) => i > 0 && !b.caption && b.items.length && blocks[i - 1].items.length).length;
+  const numbers = 20 * numberLines + 22 * captions + 4 * spaced - 2; // no space after the last line
+  return 40 + numbers + (details.comparison ? 22 : 0) + (linkLines ? 11 + 20 * linkLines : 0);
 }
 
 /**
@@ -197,8 +217,9 @@ export function GenreRowDetails({ d, phone, geom, x, height, width, sub, onNavig
     );
   }
   if (!d.row || !geom) return null;
-  const above = geom.y1 + cardHeight(d.row, d.details) > height;
-  const half = cardWidth(d.row, d.details) / 2;
+  const above = geom.y1 + 2 + cardHeight(d.row, d.details) > height;
+  // kept inside the chart in a wider font too, as its labels are (REF_SLACK)
+  const half = Math.min(CARD_MAX, cardWidth(d.row, d.details) * REF_SLACK) / 2;
   return (
     <DetailsCard
       row={d.row}

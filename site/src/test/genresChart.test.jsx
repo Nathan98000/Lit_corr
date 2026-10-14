@@ -7,6 +7,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "../App.jsx";
+import { CARD_MAX, gridOrder, numbersWidth } from "../components/GenreDetails.jsx";
 import { ORDER_GLIDE_MS } from "../components/GenreGlide.jsx";
 import { clearCache } from "../lib/data.js";
 import {
@@ -26,6 +27,8 @@ import {
   tooFewLine,
   withUnit,
 } from "../lib/genres.js";
+import { textWidth } from "../lib/rangeLayout.js";
+import { TEXT } from "../lib/tokens.js";
 import { fixtureFetch, fixtureFile, fixtureMeta, realMeta } from "./fixtures.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -276,7 +279,7 @@ describe("units and formats", () => {
     expect(say("lex_rare_word_share")).toBe("All genres: median 2.5%, interquartile range 1.7%–3.4%. Genre medians run from 1.6% to 3.7%.");
     // a median of exactly 1 takes the singular, as the rows' names do
     expect(say("story_pages")).toBe("All genres: median 1 page, interquartile range 1–2. Genre medians run from 1 to 2.");
-    expect(details("lex_rare_word_share", "adult-how-to").items[0]).toEqual(["Median", "1.8%"]);
+    expect(details("lex_rare_word_share", "adult-how-to").blocks[0].items[0]).toEqual(["Median", "1.8%"]);
     // paragraph length: one number of decimals
     expect(say("story_mean_paragraph_words")).toBe(
       "All genres: median 43.1 words, interquartile range 31.7–62.2. Genre medians run from 36.4 to 65.3.",
@@ -548,7 +551,8 @@ describe("details and the keyboard", () => {
     expect(document.activeElement).toBe(rows[1]);
     const card = document.querySelector(".genre-tip");
     expect(card.querySelector("strong").textContent).toBe("Fetish");
-    expect([...card.querySelectorAll("dt")].map((d) => d.textContent)).toEqual(["Median", "Interquartile range", "Stories"]);
+    expect([...card.querySelectorAll("dt")].map((d) => d.textContent)).toEqual(["Median", "Interquartile range"]);
+    expect(card.querySelector(".tip-head span").textContent).toMatch(/^\d[\d,]* stories$/); // the stories beside the name
     expect(card.querySelector(".tip-compare").textContent).toBe("Compared with all genres: Clearly more dialogue");
     const link = within(card).getByRole("link", { name: "What stands out about stories in Fetish? →" });
     expect(link.getAttribute("href")).toBe("#/genres?view=genre&genre=fetish&include=all");
@@ -626,17 +630,77 @@ describe("details wording", () => {
     const d = rowDetails(row, words, entry, 10);
     expect(d.name).toBe("Romance: median 4,390 words, interquartile range 2,250–8,150, 300 stories, no clear difference from all genres");
     expect(d.line).toBe("median 4,390 words · interquartile range 2,250–8,150 · 300 stories · no clear difference from all genres.");
-    expect(d.items).toEqual([
-      ["Median", "4,390 words"],
-      ["Interquartile range", "2,250–8,150"],
-      ["Stories", "300"],
-    ]);
+    expect(d.stories).toBe("300 stories");
+    expect(d.blocks).toEqual([{ caption: null, items: [["Median", "4,390 words"], ["Interquartile range", "2,250–8,150"]] }]);
     expect(rowDetails({ ...row, f: -1 }, words, entry, 10).name).toMatch(/clearly shorter than all genres$/);
     expect(rowDetails({ ...row, stats: null }, words, entry, 10).name).toBe("Romance: fewer than 10 stories");
     const yes = { id: "pov_is_first_person", yes_subject: "First-person stories", bins: { type: "levels" } };
     expect(rowDetails({ ...row, stats: { n: 283, share: 0.72 } }, yes, { k: "bin", q: [[8447, 0.571]] }, 10).name).toBe(
       "Romance: 72% first-person stories, 283 stories, no clear difference from all genres",
     );
+  });
+
+  it("says once what a card's numbers are of: under the plot's heading, or under a rate's unit", () => {
+    const row = { i: 5, genre: { id: "adult-romance", name: "Romance" }, all: false, small: false, f: 0 };
+    // a rate: its unit is the caption over the median and the interquartile range, not after the median
+    const rate = { id: "sex_terms_per_1k", unit: "per 1,000 words", bins: { type: "ranges" } };
+    const rateEntry = { k: "num", fmt: "num", q: [[8987, 10.2, 24.1, 33.6, 44.8, 60.3]] };
+    const r = rowDetails({ ...row, stats: { n: 300, p25: 24.1, median: 33.6, p75: 44.8 } }, rate, rateEntry, 10);
+    expect(r.blocks).toEqual([{ caption: ["Per 1,000 words"], items: [["Median", "33.6"], ["Interquartile range", "24.1–44.8"]] }]);
+    expect(r.name).toBe("Romance: median 33.6 per 1,000 words, interquartile range 24.1–44.8, 300 stories, no clear difference from all genres");
+    // mostly zero: the share with any, then the median and the interquartile range under the plot's heading
+    const zero = { id: "reader_address_per_1k", unit: "per 1,000 narration words", bins: { type: "ranges" } };
+    const zeroEntry = { k: "zero", fmt: "num", q: [[12550]], z: [[1000, 0.08, 0.176, 0.305, 0.516]] };
+    const z = rowDetails({ ...row, stats: { n: 419, above: 100, share: 0.24, p25: 0.435, median: 0.751, p75: 1.13 } }, zero, zeroEntry, 10);
+    expect(z.stories).toBe("419 stories");
+    expect(z.blocks).toEqual([
+      { caption: null, items: [["With any", "24%"]] },
+      { caption: ["Among stories with any", "(per 1,000 narration words)"], items: [["Median", "0.751"], ["Interquartile range", "0.435–1.130"]] },
+    ]);
+    // the row's name and the phone's line keep the unit with the median
+    expect(z.line).toBe(
+      "24% with any · among those, median 0.751 per 1,000 narration words · interquartile range 0.435–1.130 · 419 stories · no clear difference from all genres.",
+    );
+    // too few stories with any for a median: the row's words instead
+    const few = rowDetails({ ...row, stats: { n: 92, above: 3, share: 0.033 } }, zero, zeroEntry, 10);
+    expect(few.blocks).toEqual([{ caption: null, items: [["With any", "3%"]] }, { caption: ["Fewer than 10 stories with any"], items: [] }]);
+    // bands: the median band on a line of its own, then every band
+    const band = { id: "author_stories_count", unit: "stories", bins: { type: "ranges", labels: ["1 story", "2–5", "6–20"] } };
+    const b = rowDetails({ ...row, stats: { n: 120, shares: [0.1, 0.5, 0.4] } }, band, { k: "band", q: [[900, 0.2, 0.5, 0.3]] }, 10);
+    expect(b.blocks).toEqual([
+      { caption: null, items: [["Median", "2–5"]] },
+      { caption: null, columns: true, items: [["1 story", "10%"], ["2–5", "50%"], ["6–20", "40%"]] },
+    ]);
+    // the bands read down the card's columns: "1 story" over "2–5", then "6–20"
+    expect(gridOrder(b.blocks[1]).map(([k]) => k)).toEqual(["1 story", "6–20", "2–5"]);
+    const seven = { columns: true, items: ["a", "b", "c", "d", "e", "f", "g"].map((k) => [k, "1%"]) };
+    expect(gridOrder(seven).map(([k]) => k).join("")).toBe("aebfcgd");
+    expect(gridOrder({ items: seven.items }).map(([k]) => k).join("")).toBe("abcdefg");
+  });
+
+  // the card is as wide as its content up to CARD_MAX, and a label, a value or a caption too wide for it wraps (the
+  // mostly-zero characteristics' "Interquartile range among those" and "0.751 per 1,000 narration words" did). In the
+  // browser the widest numbers, commas per sentence's, measure 369 px, and 393 px in Verdana.
+  it.skipIf(!real)("never has numbers, a caption or a first line too wide for the card, in any characteristic, genre or option", { timeout: 30000 }, () => {
+    const room = CARD_MAX - 26; // inside its padding and border
+    const tooWide = [];
+    for (const s of real.subsets) {
+      const file = realFile(s.id);
+      for (const [id, entry] of Object.entries(file.c)) {
+        const variable = v(real, id);
+        if (!variable) continue;
+        for (const row of genreRows(real, file, id)) {
+          const d = rowDetails(row, variable, entry, real.min_n);
+          const widths = [
+            numbersWidth(d),
+            textWidth(row.genre.name, TEXT.note, 700) + (d.stories ? 16 + textWidth(d.stories, TEXT.note) : 0),
+            ...d.blocks.map((b) => (b.caption ? textWidth(b.caption.join(" "), TEXT.tick) : 0)),
+          ];
+          if (Math.max(...widths) > room) tooWide.push(`${s.id} ${id} ${row.genre.name}: ${Math.round(Math.max(...widths))} px`);
+        }
+      }
+    }
+    expect(tooWide).toEqual([]);
   });
 });
 

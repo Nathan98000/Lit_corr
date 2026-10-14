@@ -6,11 +6,23 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "../App.jsx";
-import { anyHeading, anyRows } from "../components/GenreAny.jsx";
+import { anyRows } from "../components/GenreAny.jsx";
 import { mixRows } from "../components/GenreMix.jsx";
 import { clearCache } from "../lib/data.js";
 import { BAND_INKS, GROUP_INKS, anyLayout, bandPalette, layoutProblems, mixColors, mixLayout } from "../lib/genreLayout.js";
-import { allGenresLine, bandQuartiles, chartDomain, comparison, formatPercent, genreRows, numberFormat, rowDetails, takeawayLists, tickFormatFor } from "../lib/genres.js";
+import {
+  allGenresLine,
+  anyHeading,
+  bandQuartiles,
+  chartDomain,
+  comparison,
+  formatPercent,
+  genreRows,
+  numberFormat,
+  rowDetails,
+  takeawayLists,
+  tickFormatFor,
+} from "../lib/genres.js";
 import { fixtureFetch, fixtureFile, fixtureMeta, realMeta } from "./fixtures.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -250,13 +262,16 @@ describe("mostly zero: one chart (D6, concept M1)", () => {
     expect(document.querySelector(".genre-legend").textContent).not.toMatch(/Share of stories/);
     expect(screen.getByRole("radio", { name: "By share with any" })).toBeTruthy();
     fireEvent.click(romance);
+    // the card: the share with any, then the median and interquartile range under the plot's heading, the unit once
     const card = document.querySelector(".genre-tip");
-    expect([...card.querySelectorAll("dt")].map((d) => d.textContent)).toEqual([
-      "With any",
-      "Median among those",
-      "Interquartile range among those",
-      "Stories",
+    expect([...card.querySelectorAll("dt")].map((d) => d.textContent)).toEqual(["With any", "Median", "Interquartile range"]);
+    expect(card.querySelector(".tip-caption").textContent).toBe("Among stories with any (per 1,000 words)");
+    expect([...card.querySelectorAll("dd")].map((d) => d.textContent)).toEqual([
+      expect.stringMatching(/^\d+%$/),
+      expect.stringMatching(/^[\d.]+$/),
+      expect.stringMatching(/^[\d.]+–[\d.]+$/),
     ]);
+    expect(card.querySelector(".tip-head span").textContent).toBe("120 stories");
   });
 
   it("puts the median over the share on phones, under “Median” over “with any”", async () => {
@@ -316,7 +331,7 @@ describe("no median age in a genre's details, in any form (decision 4)", () => {
     expect(card.querySelector("strong").textContent).toBe("Romance");
     expect([...card.querySelectorAll("dt")].map((d) => d.textContent)).not.toContain("Median age");
     expect(card.textContent).not.toMatch(/median age|years/i);
-    expect([...card.querySelectorAll("dt")].pop().textContent).toBe("Stories");
+    expect(card.querySelector(".tip-head span").textContent).toMatch(/^\d[\d,]* stories$/);
 
     vi.restoreAllMocks();
     clearCache();

@@ -42,7 +42,11 @@ function sentences(meta, file) {
       const d = rowDetails(row, variable, entry, meta.min_n);
       add(d.name);
       add(d.line);
-      for (const [k, v] of d.items) add(`${k} ${v}`);
+      add(d.stories);
+      for (const b of d.blocks) {
+        add(b.caption?.join(" "));
+        for (const [k, v] of b.items) add(`${k} ${v}`);
+      }
       if (d.comparison) add(d.comparison.short);
     }
   }

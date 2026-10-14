@@ -5,7 +5,7 @@
 import { formatCount, formatFixed, stepDecimals } from "./format.js";
 import { textWidth } from "./rangeLayout.js";
 import { TEXT } from "./tokens.js";
-import { chartQuestion, chartQuestionText, lowerFirst, standsOutQuestion } from "./wording.js";
+import { chartQuestion, chartQuestionText, lowerFirst, standsOutQuestion, upperFirst } from "./wording.js";
 
 export { chartQuestion, chartQuestionText, standsOutQuestion };
 
@@ -369,48 +369,72 @@ export function allGenresLine(rows, variable, entry) {
 
 // ----------------------------------------------------------------------------------------------------- details
 /**
- * A genre's numbers for its details card, details line and row name: `items` ([label, value] pairs: the
- * numbers, then Stories), `comparison` (see comparison(); the card says "Compared with all genres:" and its `short`
- * words), `name` (the row's accessible name) and `line` (the phone's details line, without the genre's name).
+ * The heading over a mostly-zero plot, in its parts: "Among stories with any" and "(per 1,000 words)", the unit only
+ * when it is plain; a card's caption breaks a line only between them (anyHeading: the heading in one).
+ */
+export const anyHeadingParts = (nf) => ["Among stories with any", ...(nf.unit ? [`(${nf.unit})`] : [])];
+export const anyHeading = (nf) => anyHeadingParts(nf).join(" ");
+
+/**
+ * A genre's numbers for its details card, details line and row name: `stories` ("419 stories", on the card's first
+ * line with the genre's name), `blocks` (the card's numbers: { caption, items, columns }, each block starting a line,
+ * its caption the line over its [label, value] pairs, in parts a line breaks only between; `columns`: a block of
+ * shares, read down the card's columns), `comparison` (see comparison(); the card says "Compared with all genres:"
+ * and its `short` words), `name` (the row's accessible name) and `line` (the phone's details line, without the
+ * genre's name).
+ * The card says once what its numbers are of, as the chart does, so that no label or value is too wide for its
+ * column: a mostly-zero characteristic's median and interquartile range are under the plot's heading ("Among stories
+ * with any (per 1,000 words)"), and a rate's unit is the caption over a median and interquartile range ("Per 1,000
+ * words") instead of following the median. A count's unit still follows it ("4,390 words").
  */
 export function rowDetails(row, variable, entry, minN) {
   const kind = entry.k;
   const s = row.stats;
   const name = row.genre.name;
-  if (!s) return { items: [], comparison: null, name: `${name}: fewer than ${minN} stories`, line: `fewer than ${minN} stories.` };
+  if (!s) {
+    const line = `fewer than ${minN} stories.`;
+    return { stories: null, blocks: [], comparison: null, name: `${name}: fewer than ${minN} stories`, line };
+  }
   const nf = numberFormat(variable, entry);
-  const numbers = [];
+  const blocks = [];
   const said = [];
+  const rate = nf.unit.startsWith("per ");
+  const spread = (caption) => ({
+    caption,
+    items: [
+      ["Median", rate ? nf.value(s.median) : nf.withUnit(s.median)],
+      ["Interquartile range", nf.span(s.p25, s.p75)],
+    ],
+  });
   if (kind === "num") {
-    const med = nf.withUnit(s.median);
-    numbers.push(["Median", med], ["Interquartile range", nf.span(s.p25, s.p75)]);
-    said.push(`median ${med}`, `interquartile range ${nf.span(s.p25, s.p75)}`);
+    blocks.push(spread(rate ? [upperFirst(nf.unit)] : null));
+    said.push(`median ${nf.withUnit(s.median)}`, `interquartile range ${nf.span(s.p25, s.p75)}`);
   } else if (kind === "zero") {
-    numbers.push(["With any", formatPercent(s.share)]);
+    blocks.push({ caption: null, items: [["With any", formatPercent(s.share)]] });
     said.push(`${formatPercent(s.share)} with any`);
     if (s.median != null) {
-      const med = nf.withUnit(s.median);
-      numbers.push(["Median among those", med], ["Interquartile range among those", nf.span(s.p25, s.p75)]);
-      said.push(`among those, median ${med}`, `interquartile range ${nf.span(s.p25, s.p75)}`);
+      blocks.push(spread(anyHeadingParts(nf)));
+      said.push(`among those, median ${nf.withUnit(s.median)}`, `interquartile range ${nf.span(s.p25, s.p75)}`);
+    } else {
+      blocks.push({ caption: [`Fewer than ${minN} stories with any`], items: [] }); // the row's words
     }
   } else if (kind === "bin") {
-    numbers.push(["Share", formatPercent(s.share)]);
+    blocks.push({ caption: null, items: [["Share", formatPercent(s.share)]] });
     said.push(`${formatPercent(s.share)} ${lowerFirst(variable.yes_subject)}`);
   } else {
     if (kind === "band") {
+      // the median band on a line of its own, then the bands
       const median = variable.bins.labels[bandQuartiles(s.shares).median];
-      numbers.push(["Median", median]);
+      blocks.push({ caption: null, items: [["Median", median]] });
       said.push(`median ${median}`);
     }
-    variable.bins.labels.forEach((label, b) => {
-      numbers.push([label, formatPercent(s.shares[b])]);
-      said.push(`${label} ${formatPercent(s.shares[b])}`);
-    });
+    blocks.push({ caption: null, columns: true, items: variable.bins.labels.map((label, b) => [label, formatPercent(s.shares[b])]) });
+    variable.bins.labels.forEach((label, b) => said.push(`${label} ${formatPercent(s.shares[b])}`));
   }
-  const items = [...numbers, ["Stories", formatCount(s.n)]];
   const cmp = comparison(row, variable, kind, minN);
-  const parts = [...said, `${formatCount(s.n)} stories`, ...(cmp ? [cmp.long] : [])];
-  return { items, comparison: cmp, name: `${name}: ${parts.join(", ")}`, line: `${parts.join(" · ")}.` };
+  const stories = `${formatCount(s.n)} stories`;
+  const parts = [...said, stories, ...(cmp ? [cmp.long] : [])];
+  return { stories, blocks, comparison: cmp, name: `${name}: ${parts.join(", ")}`, line: `${parts.join(" · ")}.` };
 }
 
 // ------------------------------------------------------------------------------------------------- one genre

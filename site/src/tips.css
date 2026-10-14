@@ -1,0 +1,56 @@
+/* A chart card's title and numbers (TipBody.jsx), on the Genres page's and the Trends page's cards: the title with its
+   stories at the right, then the numbers in a grid whose columns each page sets (genres.css: two pairs to a line;
+   trends.css: one), each block from the first column, under its caption when it has one. A label, a value or a part
+   of a caption never wraps. */
+.chart-tip .tip-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 4px;
+}
+
+.chart-tip .tip-head strong {
+  margin: 0;
+  color: var(--ink);
+}
+
+.chart-tip .tip-head span {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-3);
+}
+
+.chart-tip .tip-numbers {
+  display: grid;
+}
+
+.chart-tip .tip-numbers dl,
+.chart-tip .tip-item {
+  display: contents;
+}
+
+.chart-tip .tip-item:first-child dt {
+  grid-column-start: 1;
+}
+
+/* a block without a caption keeps a caption's space from the one before it (a band's median, then the bands) */
+.chart-tip .tip-numbers dl + dl > .tip-item:nth-child(-n + 2) > * {
+  margin-top: 4px;
+}
+
+/* a label keeps its whole width in the grid, so that a long caption spanning it (which may take two lines) never
+   narrows its column */
+.chart-tip .tip-numbers dt,
+.chart-tip .tip-numbers dd,
+.chart-tip .tip-caption span {
+  white-space: nowrap;
+}
+
+.chart-tip .tip-caption {
+  grid-column: 1 / -1;
+  margin-top: 4px;
+  font-size: var(--text-12);
+  line-height: var(--leading-12);
+  color: var(--ink-3);
+}

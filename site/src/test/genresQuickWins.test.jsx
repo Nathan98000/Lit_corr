@@ -121,19 +121,19 @@ describe("a visit that starts on the Genres page (F68)", () => {
 describe("the desktop card (F70)", () => {
   const row = { genre: { id: "adult-romance", name: "Romance" }, all: false };
   const numbers = {
-    items: [
-      ["Median", "4,390 words"],
-      ["Interquartile range", "2,250–8,150"],
-      ["Stories", "300"],
-    ],
+    stories: "300 stories",
+    blocks: [{ caption: null, items: [["Median", "4,390 words"], ["Interquartile range", "2,250–8,150"]] }],
     comparison: { short: "No clear difference" },
     line: "",
   };
 
   it("puts its numbers two pairs to a line, about 140 px tall", () => {
     expect(cardHeight(row, numbers)).toBeLessThanOrEqual(140);
-    const groups = { ...numbers, items: [...numbers.items, ["A", "1%"], ["B", "2%"], ["C", "3%"], ["D", "4%"], ["E", "90%"]] };
-    expect(cardHeight(row, groups) - cardHeight(row, numbers)).toBe(2 * 19); // eight numbers: four lines
+    const groups = { ...numbers, blocks: [{ caption: null, items: [["A", "1%"], ["B", "2%"], ["C", "3%"], ["D", "4%"], ["E", "90%"]] }] };
+    expect(cardHeight(row, groups) - cardHeight(row, numbers)).toBe(2 * 20); // five numbers: three lines
+    // a caption is a line of its own, and every block starts a line
+    const any = { ...numbers, blocks: [{ caption: null, items: [["With any", "24%"]] }, { caption: ["Among stories with any"], items: numbers.blocks[0].items }] };
+    expect(cardHeight(row, any) - cardHeight(row, numbers)).toBe(20 + 22);
   });
 
   it("is as wide as its content, up to 420 px", () => {
@@ -141,10 +141,18 @@ describe("the desktop card (F70)", () => {
     expect(w).toBeGreaterThan(200);
     expect(w).toBeLessThanOrEqual(420);
     const long = { genre: { id: "x", name: "Reluctance/NonConsent" }, all: false };
-    expect(cardWidth(long, { ...numbers, items: [...numbers.items, ["First person plural (we)", "0.1%"]] })).toBeLessThanOrEqual(420);
+    const groups = { ...numbers, blocks: [{ caption: null, items: [...numbers.blocks[0].items, ["First person plural (we)", "0.1%"]] }] };
+    expect(cardWidth(long, groups)).toBeLessThanOrEqual(420);
     const css = readFileSync(path.join(here, "..", "genres.css"), "utf8");
-    expect(css).toMatch(/\.genre-tip dl \{\s*grid-template-columns: repeat\(4, auto\);/);
+    expect(css).toMatch(/\.genre-tip \.tip-numbers \{[^}]*grid-template-columns: repeat\(4, auto\);/);
     expect(css).toMatch(/\.genre-tip \{[^}]*max-width: 420px;/);
+  });
+
+  it("opens above its row near the end of every chart, the named groups' and bands' too", () => {
+    // the rule once matched .range-chart only, so on .genre-mix the card covered its own row and hung below the chart
+    const css = readFileSync(path.join(here, "..", "genres.css"), "utf8");
+    expect(css).toMatch(/\n\.chart-frame \.genre-tip\.above \{\s*transform: translate\(-50%, -100%\);/);
+    expect(css).not.toMatch(/\.range-chart \.genre-tip\.above/);
   });
 });
 

@@ -1,6 +1,6 @@
 import { useId, useRef } from "react";
 import useOrderGlide from "./GenreGlide.jsx";
-import { chartDomain, comparison, formatPercent, numberFormat, rowDetails, tickFormatFor } from "../lib/genres.js";
+import { anyHeading, chartDomain, comparison, formatPercent, numberFormat, rowDetails, tickFormatFor } from "../lib/genres.js";
 import { anyLayout } from "../lib/genreLayout.js";
 import { MARK } from "../lib/tokens.js";
 import { GenreRowDetails, useGenreDetails } from "./GenreDetails.jsx";
@@ -23,9 +23,6 @@ export function anyRows(rows, variable, minN) {
     };
   });
 }
-
-/** The heading over the plot: "Among stories with any (per 1,000 words)", the unit only when it is a plain one. */
-export const anyHeading = (nf) => `Among stories with any${nf.unit ? ` (${nf.unit})` : ""}`;
 
 /**
  * A mostly-zero characteristic in every genre (D6, concept M1): where most stories score 0, a plain median would read

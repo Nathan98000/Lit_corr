@@ -104,7 +104,9 @@ describe("How it works", () => {
       "For each group the charts show the median, the interquartile range and the number of stories. The mean " +
         "(which a few very popular stories can pull up) is in each group’s details.",
     );
-    expect(text).toContain("and the medians of the lowest and highest groups must differ by at least 10% (or 0.1 stars for ratings)");
+    // "tend to"'s three conditions are a numbered list (the owner's readable page, 2026-10-14)
+    expect(text).toContain("All three must hold:");
+    expect(text).toContain("The medians of the lowest and highest groups differ by at least 10% (or 0.1 stars for ratings).");
     expect(text).toContain("Even a clear pattern describes the medians; individual stories vary widely.");
     expect(text).toContain("are not typical readers"); // other uses of “typical” stay
   });

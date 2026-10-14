@@ -1,0 +1,485 @@
+/* How it works' pictures and lists (HowFigures.jsx, the owner's request of 2026-10-14 for a more readable page). The
+   page's layout, contents, section bar, In short box and glossary are in styles.css; this sheet loads with the page's
+   code. The type scale, the one gray for marks and the charts' marks as everywhere (X1). */
+
+/* a run-in label over a list in a section ("What was collected"): not a heading, as the sections have no
+   subsections (the owner, 2026-10-13) */
+.prose .how-label {
+  margin: var(--space-24) 0 var(--space-8);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.prose .how-label + ul,
+.prose .how-label + ol {
+  margin-top: 0;
+}
+
+.prose li > ul {
+  margin: var(--space-8) 0;
+}
+
+/* ------------------------------------------------------------------ a picture's panel */
+.how-figure {
+  margin: var(--space-16) 0 var(--space-24);
+  padding: var(--space-16);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: var(--paper);
+}
+
+.how-figure .figure-title {
+  margin: 0 0 var(--space-12);
+  font-size: var(--text-14);
+  line-height: var(--leading-14);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.prose .figure-note {
+  margin: var(--space-12) 0 0;
+  font-size: var(--text-13);
+  line-height: var(--leading-13);
+  color: var(--ink-3);
+}
+
+.how-figure svg {
+  display: block;
+  overflow: visible;
+  font-family: var(--sans);
+}
+
+/* words in a drawing, on a halo of the panel's color, so that no line runs through them */
+.how-figure svg text {
+  paint-order: stroke;
+  stroke: var(--paper);
+  stroke-width: 4px;
+  stroke-linejoin: round;
+}
+
+.fig-label {
+  fill: var(--ink-2);
+  font-size: var(--text-13);
+}
+
+.fig-label.window {
+  fill: var(--ink);
+  font-weight: 600;
+}
+
+.fig-label.aside {
+  fill: var(--ink-3);
+  font-size: var(--text-12);
+  font-style: italic;
+}
+
+.fig-tick {
+  fill: var(--ink-3);
+  font-size: var(--text-12);
+  font-variant-numeric: tabular-nums;
+}
+
+/* a key: a mark or a marked word, then what it is */
+.figure-key {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--text-14);
+  line-height: var(--leading-14);
+}
+
+.prose .figure-key li {
+  margin: 0 0 var(--space-8);
+}
+
+.prose .figure-key li:last-child {
+  margin-bottom: 0;
+}
+
+/* ------------------------------------------------------------------ the random sample in four steps */
+.sample-steps {
+  display: grid;
+  gap: var(--space-24);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (min-width: 560px) {
+  .sample-steps {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.prose .sample-steps li {
+  margin: 0;
+}
+
+.prose .step-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  margin: 0;
+  font-size: var(--text-15);
+  line-height: var(--leading-15);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.step-num {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--accent-ink);
+  color: #fff;
+  font-size: var(--text-12);
+  line-height: var(--leading-12);
+  font-weight: 700;
+}
+
+.step-pic {
+  display: block;
+  width: 100%;
+  max-width: 200px;
+  height: auto;
+  margin: var(--space-8) 0;
+}
+
+.prose .step-text {
+  margin: 0;
+  font-size: var(--text-14);
+  line-height: var(--leading-14);
+}
+
+.step-pic .pg {
+  fill: var(--paper);
+  stroke: var(--control);
+  stroke-width: 1;
+}
+
+.step-pic .pg.passed {
+  stroke: var(--rule-2);
+}
+
+.step-pic .pg.read {
+  fill: var(--accent);
+  stroke: var(--accent-ink);
+}
+
+.step-pic .shuffle-line {
+  stroke: var(--rule-2);
+  stroke-width: 1;
+}
+
+.step-pic .story-under {
+  fill: var(--paper);
+}
+
+.step-pic .story {
+  fill: var(--accent-ink);
+}
+
+.step-pic .story-left {
+  fill: var(--paper);
+  stroke: var(--rule-2);
+  stroke-width: 1;
+}
+
+.step-pic .lost line {
+  stroke: var(--warm-ink);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+}
+
+.step-pic .cut {
+  stroke: var(--ink-3);
+  stroke-width: 1;
+  stroke-dasharray: 3 2;
+}
+
+/* ------------------------------------------------------------------ the made-up passage */
+.prose .example-text {
+  margin: 0 0 var(--space-16);
+  font-size: var(--text-18);
+  line-height: var(--leading-18);
+  color: var(--ink);
+}
+
+/* the marks' padding reaches into the space around a word, so the words keep their places ("happy." stays together) */
+.ex-dialogue,
+.ex-word {
+  margin: 0 -2px;
+  padding: 1px 2px;
+  border-radius: 3px;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+
+.ex-dialogue {
+  background: var(--accent-soft);
+}
+
+.ex-word {
+  background: var(--mark);
+}
+
+.ex-pron {
+  font-weight: 600;
+  text-decoration: underline 2px var(--accent-ink);
+  text-underline-offset: 3px;
+}
+
+/* the key: the marked words in a column of their own where there is room, else in the line */
+@media (min-width: 480px) {
+  .example-key li {
+    display: grid;
+    grid-template-columns: 8.5em minmax(0, 1fr);
+    gap: var(--space-12);
+  }
+}
+
+/* ------------------------------------------------------------------ the chart's marks */
+.chart-key li {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-12);
+}
+
+.key-dot {
+  fill: var(--accent-ink);
+  stroke: #fff;
+  stroke-width: var(--mark-ring);
+}
+
+.key-bar {
+  fill: var(--accent-bar);
+  stroke: var(--accent);
+  stroke-width: var(--mark-edge);
+}
+
+.key-small-bar {
+  stroke: var(--accent);
+  stroke-width: var(--mark-edge);
+  stroke-dasharray: 3 2;
+}
+
+.key-small-dot {
+  fill: #fff;
+  stroke: var(--accent-ink);
+  stroke-width: var(--mark-ring);
+}
+
+.key-hatch-line {
+  stroke: #b9d0fa;
+  stroke-width: 2.4;
+}
+
+.key-ref {
+  stroke: var(--ink-2);
+  stroke-width: var(--mark-ref);
+  stroke-dasharray: 4 3;
+}
+
+/* ------------------------------------------------------------------ genres' shares */
+.sizes-row + .sizes-row {
+  margin-top: var(--space-16);
+}
+
+.prose .sizes-label {
+  margin: 0 0 var(--space-4);
+  font-size: var(--text-14);
+  line-height: var(--leading-14);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.prose .sizes-note {
+  margin: var(--space-4) 0 0;
+  font-size: var(--text-13);
+  line-height: var(--leading-13);
+  color: var(--ink-2);
+}
+
+/* the segments apart by a white line, as the named groups' bars elsewhere */
+.share-bar .seg {
+  fill: var(--accent-soft);
+  stroke: #fff;
+  stroke-width: 1;
+}
+
+.share-bar .seg.odd {
+  fill: var(--accent-bar);
+}
+
+.share-bar .seg.top {
+  fill: var(--accent-ink);
+}
+
+/* ------------------------------------------------------------------ weak, moderate, strong */
+.band {
+  stroke: var(--accent);
+  stroke-width: 1;
+}
+
+.band-0 {
+  fill: var(--accent-wash);
+}
+
+.band-1 {
+  fill: var(--accent-bar);
+}
+
+.band-2 {
+  fill: var(--accent);
+}
+
+/* ------------------------------------------------------------------ the One genre view's row (comparison.css's p2-*) */
+.cmp-zone {
+  fill: #ece9e2;
+}
+
+.cmp-edge,
+.cmp-bracket {
+  stroke: var(--control);
+  stroke-width: 1;
+}
+
+.cmp-mid {
+  stroke: var(--ink-3);
+  stroke-width: 1;
+}
+
+.cmp-stem {
+  stroke: var(--accent-ink);
+  stroke-width: 2;
+}
+
+.cmp-stem.quiet {
+  stroke: var(--control);
+  stroke-width: 1.5;
+}
+
+.cmp-dot {
+  fill: var(--accent-ink);
+}
+
+.cmp-dot.quiet {
+  fill: var(--control);
+}
+
+.cmp-num {
+  fill: var(--ink);
+  font-size: var(--text-13);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.cmp-num.quiet {
+  fill: var(--ink-3);
+  font-size: var(--text-12);
+  font-weight: 400;
+}
+
+.cmp-row-label {
+  fill: var(--ink);
+  font-size: var(--text-14);
+}
+
+/* ------------------------------------------------------------------ the Trends page's windows */
+.period {
+  fill: var(--band);
+  stroke: var(--rule-2);
+  stroke-width: 1;
+}
+
+.period.compared {
+  fill: var(--accent-bar);
+  stroke: var(--accent);
+}
+
+.window-bracket {
+  stroke: var(--control);
+  stroke-width: 1;
+}
+
+@media (max-width: 559px) {
+  .how-figure {
+    padding: var(--space-12);
+  }
+}
+
+/* --------------------------------------------- forced colors (Windows high contrast, as the charts: F48) */
+@media (forced-colors: active) {
+  .how-figure svg {
+    forced-color-adjust: none;
+  }
+
+  .how-figure svg text,
+  .cmp-row-label,
+  .cmp-num,
+  .cmp-num.quiet {
+    fill: CanvasText;
+    stroke: Canvas;
+  }
+
+  .step-pic .pg,
+  .step-pic .story-under,
+  .step-pic .story-left,
+  .share-bar .seg,
+  .share-bar .seg.odd,
+  .band,
+  .band-0,
+  .band-1,
+  .period,
+  .cmp-zone,
+  .key-bar,
+  .key-small-dot {
+    fill: Canvas;
+    stroke: CanvasText;
+  }
+
+  .step-pic .pg.read,
+  .step-pic .story,
+  .share-bar .seg.top,
+  .band-2,
+  .period.compared,
+  .cmp-dot,
+  .key-dot {
+    fill: Highlight;
+    stroke: Canvas;
+  }
+
+  .key-small-bar {
+    fill: Canvas !important; /* not the hatch, which is a style on the bar */
+    stroke: CanvasText;
+  }
+
+  .step-pic .shuffle-line,
+  .step-pic .cut,
+  .step-pic .lost line,
+  .cmp-edge,
+  .cmp-bracket,
+  .cmp-mid,
+  .cmp-stem,
+  .cmp-stem.quiet,
+  .window-bracket,
+  .key-ref {
+    stroke: CanvasText;
+  }
+
+  .cmp-dot.quiet {
+    fill: CanvasText;
+  }
+
+  .ex-dialogue {
+    border: 1px solid CanvasText;
+  }
+
+  .ex-word {
+    outline: 1px dashed CanvasText;
+  }
+}

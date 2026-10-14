@@ -16,10 +16,13 @@ export function upperFirst(s) {
   return s ? s[0].toUpperCase() + s.slice(1) : s;
 }
 
+/** Where the strength words start on the rank correlation: weak below 0.2, moderate from 0.2, strong from 0.4. */
+export const STRENGTH = { moderate: 0.2, strong: 0.4 };
+
 export function strengthWord(effect) {
   const a = Math.abs(effect ?? 0);
-  if (a < 0.2) return "weak";
-  if (a < 0.4) return "moderate";
+  if (a < STRENGTH.moderate) return "weak";
+  if (a < STRENGTH.strong) return "moderate";
   return "strong";
 }
 

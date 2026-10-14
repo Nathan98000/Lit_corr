@@ -74,6 +74,20 @@ describe("Explore's “Over time →” (round 4's I15)", () => {
   });
 });
 
+/**
+ * "Changes over time", block by block: each paragraph, each list item and "figure" for the picture, from its heading
+ * to the next, without the word joiners that keep a range of years on one line.
+ */
+function sectionText(heading) {
+  const out = [];
+  const words = (node) => node.textContent.replace(/\u2060/g, "").replace(/\s+/g, " ").trim();
+  for (let el = heading.nextElementSibling; el && el.tagName !== "H2"; el = el.nextElementSibling) {
+    if (el.tagName === "UL") out.push(...[...el.children].map(words));
+    else out.push(el.tagName === "FIGURE" ? "figure" : words(el));
+  }
+  return out;
+}
+
 describe("How it works' “Changes over time”", () => {
   it("comes after “Comparing genres” in the contents", () => {
     const ids = SECTIONS.map(([id]) => id);
@@ -84,18 +98,27 @@ describe("How it works' “Changes over time”", () => {
   it("says the periods, the rule and the windows from meta.trend, and the collection's end from meta.source", async () => {
     await open("#/methodology/trends");
     const heading = await screen.findByRole("heading", { level: 2, name: "Changes over time" });
-    const text = [];
     // a word joiner keeps each range of years on one line
-    for (let el = heading.nextElementSibling; el && el.tagName === "P"; el = el.nextElementSibling) text.push(el.textContent.replace(/\u2060/g, ""));
     expect(heading.nextElementSibling.textContent).toContain("2010–\u206014");
-    expect(text).toEqual([
-      "The Trends page groups stories by the year they were published: 2000–04, 2005–09, 2010–14, 2015–19, and 2020 to the end of the collection (October 2026). For each period it shows the median and the interquartile range, or the share of stories, with All genres counting each genre by its size on Literotica, as everywhere on this site.",
+    expect(sectionText(heading)).toEqual([
+      "The Trends page groups stories by the year they were published: 2000–04, 2005–09, 2010–14, 2015–19, and 2020 to the end of the collection (October 2026).",
+      "figure",
+      "For each period it shows the median and the interquartile range, or the share of stories, with All genres counting each genre by its size on Literotica, as everywhere on this site.",
       // why only the two windows count (the trends review's fresh eyes asked, 6/6)
       "It compares two windows, the stories published 2000–2009 and those published 2020 or later: the oldest and the newest, each pooling several years, so that no thin year can swing the verdict. The periods between are drawn but not compared, so a characteristic that dipped and came back reads “No clear change”; the chart shows the whole shape.",
       "A characteristic clearly changed when, picking one story published in 2020 or later and one published 2000–2009 at random, the newer story would be the higher one at least 60 times in 100, or the lower one at least 60 times in 100 (ties count as half), clear at the 99.9% level, with at least 30 stories on each side. That is the Genres page’s rule. For yes/no characteristics it means a change of at least 20 percentage points; for characteristics with named groups, at least 20% of the newer stories would have to change group to match the mix of 2000–2009.",
+      "Keep in mind",
       // no fixed-mix check and no length bands: the owner took both off the page (2026-10-12)
-      "The stories are the ones still on Literotica when they were collected, in today’s categories: stories removed from the site are not in the sample. Two characteristics are not on this page: the number of tags, which jumps between stories published before 2005 (a median of 10) and after (4), and the author’s number of stories, which was counted when the stories were collected, not when they were published.",
+      "The stories are the ones still on Literotica when they were collected, in today’s categories: stories removed from the site are not in the sample.",
+      "Two characteristics are not on this page: the number of tags, which jumps between stories published before 2005 (a median of 10) and after (4), and the author’s number of stories, which was counted when the stories were collected, not when they were published.",
     ]);
+    // the picture: the periods, the two windows it compares named above them, the periods between in gray
+    const figure = heading.parentElement.querySelector(".trends-figure");
+    expect(figure.querySelector("figcaption").textContent).toBe("The Trends page’s periods, and the two windows it compares");
+    const drawn = [...figure.querySelectorAll("svg text")].map((t) => t.textContent);
+    expect(drawn.slice(0, 2)).toEqual(["2000–2009", "2020 or later"]);
+    expect(drawn).toEqual(expect.arrayContaining(["2000–04", "2005–09", "2010–14", "2015–19", "2020–26"]));
+    expect([...figure.querySelectorAll("rect.period")].map((r) => r.classList.contains("compared"))).toEqual([true, true, false, false, true]);
   });
 
   it("writes none of those numbers itself", async () => {
@@ -112,14 +135,17 @@ describe("How it works' “Changes over time”", () => {
     }));
     await open("#/methodology/trends");
     const heading = await screen.findByRole("heading", { level: 2, name: "Changes over time" });
-    const text = [];
-    for (let el = heading.nextElementSibling; el && el.tagName === "P"; el = el.nextElementSibling) text.push(el.textContent.replace(/\u2060/g, ""));
-    const [first, windows, second] = text;
+    const [first, , , windows, second] = sectionText(heading);
     expect(first).toMatch(/: 2001–05, 2006–10, and 2021 to the end of the collection \(March 2027\)\./);
     expect(windows).toMatch(/^It compares two windows, the stories published 2001–2010 and those published 2021 or later:/);
     expect(second).toMatch(/published in 2021 or later and one published 2001–2010 at random/);
     expect(second).toMatch(/at least 63 times in 100, or the lower one at least 63 times in 100/);
     expect(second).toMatch(/clear at the 99% level, with at least 40 stories on each side/);
     expect(second).toMatch(/at least 25 percentage points; for characteristics with named groups, at least 30% of the newer stories .* the mix of 2001–2010\.$/);
+    // and the picture's windows and periods
+    const drawn = [...heading.parentElement.querySelectorAll(".trends-figure svg text")].map((t) => t.textContent);
+    expect(drawn.slice(0, 2)).toEqual(["2001–2010", "2021 or later"]);
+    expect(drawn).toEqual(expect.arrayContaining(["2001–05", "2006–10", "2021–27"]));
+    expect([...heading.parentElement.querySelectorAll(".trends-figure rect.period")].map((r) => r.classList.contains("compared"))).toEqual([true, true, true]);
   });
 });

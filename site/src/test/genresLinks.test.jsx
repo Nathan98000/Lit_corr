@@ -69,33 +69,68 @@ describe("How it works", () => {
     await waitFor(() => expect(document.activeElement).toBe(heading));
     const order = [...document.querySelectorAll(".methodology h2")].map((h) => h.id);
     expect(order.indexOf("genres")).toBe(order.indexOf("tend-to") + 1);
-    const section = [];
-    for (let el = heading.nextElementSibling; el && el.tagName === "P"; el = el.nextElementSibling) section.push(el.textContent);
-    expect(section).toHaveLength(3);
-    // the largest genre's share of all genres comes from the genres' sizes (F74): in the test data Fetish, 4,000 of 5,050
-    expect(section[0].replace(/\s+/g, " ")).toBe(
-      "The Genres page compares each genre’s stories with the stories of all genres. All genres counts each genre by " +
-        `its size on Literotica, as everywhere on this site. Each genre is a random sample of about ${typicalSample(fixtureMeta)} stories. ` +
-        "All genres includes each genre’s own stories; the largest genre, Fetish, is about 79% of it.",
-    );
-    expect(section[1].replace(/\s+/g, " ")).toBe(
-      "A genre clearly differs on a characteristic when, picking one of its stories and one story from all genres at " +
-        "random, its story is the higher one at least 60 times in 100, or the lower one at least 60 times in 100 (ties " +
-        "count as half; this is a rank-biserial correlation of at least 0.2). For yes/no characteristics this means a " +
-        "gap of at least 20 percentage points. For characteristics with named groups, such as narrative perspective, at " +
-        "least 20% of the genre’s stories would have to change group to match the mix of all genres. The page makes " +
-        "thousands of such comparisons, so a difference must also be clear at the 99.9% level, stricter than the 99% " +
-        "used for “tend to”, and the genre needs at least 30 stories with the characteristic. The comparison uses every " +
-        "story, not only the medians, so a genre can clearly differ while its median is close to that of all genres, or " +
-        "the reverse. The lists above a chart name the genres in order of the size of their difference, largest first.",
-    );
-    expect(section[2]).toBe(
-      "When most stories score 0 on a characteristic, the page shows how many stories have any, and the median and " +
-        "interquartile range among them. Publication month and weekday are left out: their twelve and seven groups " +
-        "can’t be compared genre by genre in one chart.",
-    );
+    // the section, block by block: its paragraphs and lists (an item's text), and its picture (the owner's readable
+    // page, 2026-10-14: a bullet for each part of the rule)
+    const blocks = [];
+    for (let el = heading.nextElementSibling; el && el.tagName !== "H2"; el = el.nextElementSibling) {
+      const words = (node) => node.textContent.replace(/\s+/g, " ").trim();
+      if (el.tagName === "UL") blocks.push([...el.children].map(words));
+      else if (el.tagName === "FIGURE") blocks.push("figure");
+      else blocks.push(words(el));
+    }
+    expect(blocks).toEqual([
+      "The Genres page compares each genre’s stories with the stories of all genres.",
+      [
+        // the largest genre's share of all genres comes from the genres' sizes (F74): in the test data Fetish, 4,000 of 5,050
+        "All genres counts each genre by its size on Literotica, as everywhere on this site. It includes each genre’s own " +
+          "stories; the largest genre, Fetish, is about 79% of it.",
+        `Each genre is a random sample of about ${typicalSample(fixtureMeta)} stories.`,
+      ],
+      "A genre clearly differs on a characteristic when:",
+      [
+        "for a characteristic measured in numbers, such as word count: picking one of its stories and one story from all " +
+          "genres at random, its story is the higher one at least 60 times in 100, or the lower one at least 60 times in " +
+          "100 (ties count as half; this is a rank-biserial correlation of at least 0.2);",
+        "for a yes/no characteristic: a gap of at least 20 percentage points;",
+        "for named groups, such as narrative perspective: at least 20% of the genre’s stories would have to change group " +
+          "to match the mix of all genres;",
+        "and in every case, the difference is clear at the 99.9% level (stricter than the 99% used for “tend to”: the " +
+          "page makes thousands of such comparisons), and the genre has at least 30 stories with the characteristic.",
+      ],
+      "figure",
+      [
+        "The comparison uses every story, not only the medians, so a genre can clearly differ while its median is close " +
+          "to that of all genres, or the reverse.",
+        "The lists above a chart name the genres in order of the size of their difference, largest first.",
+        "When most stories score 0 on a characteristic, the page shows how many stories have any, and the median and " +
+          "interquartile range among them.",
+        "Publication month and weekday are left out: their twelve and seven groups can’t be compared genre by genre in " +
+          "one chart.",
+      ],
+    ]);
+    // the picture: the One genre view's rows on the 0–100 scale, the zone of no clear difference from the rule
+    const figure = heading.parentElement.querySelector(".compare-figure");
+    expect(figure.querySelector("figcaption").textContent).toBe("How the One genre view draws it, out of 100");
+    expect(figure.querySelector("svg").getAttribute("aria-hidden")).toBe("true");
+    const drawn = [...figure.querySelectorAll("svg text")].map((t) => t.textContent);
+    expect(drawn).toEqual(expect.arrayContaining(["40–60: no clear difference", "Higher in the genre", "64", "No clear difference", "55", "Lower in the genre", "37"]));
     // the "In short" list is unchanged
     expect(within(screen.getByRole("complementary", { name: "In short" })).getAllByRole("listitem")).toHaveLength(4);
+  });
+
+  it("draws the picture's zone and its examples from the rule", async () => {
+    vi.stubGlobal("fetch", async (url) =>
+      String(url).endsWith("meta.json")
+        ? { ok: true, status: 200, json: async () => ({ ...fixtureMeta, genre_rule: { min_r: 0.3, level: 0.999, min_tvd: 0.25, min_n: 40 } }) }
+        : fixtureFetch()(url),
+    );
+    window.history.replaceState(null, "", "/#/methodology/genres");
+    render(<App />);
+    const heading = await screen.findByRole("heading", { level: 2, name: "Comparing genres" });
+    const drawn = [...heading.parentElement.querySelectorAll(".compare-figure svg text")].map((t) => t.textContent);
+    // 50 × (1 ± 0.3): 35 to 65; the examples 4 past the upper edge, halfway between 50 and it, and 3 past the lower one
+    expect(drawn).toEqual(expect.arrayContaining(["35–65: no clear difference", "69", "58", "32"]));
+    expect(heading.parentElement.textContent).toMatch(/at least 65 times in 100/);
   });
 
   it.skipIf(!real)("names the largest genre and its share of all genres on the real data", async () => {
@@ -103,7 +138,8 @@ describe("How it works", () => {
     window.history.replaceState(null, "", "/#/methodology/genres");
     render(<App />);
     const heading = await screen.findByRole("heading", { level: 2, name: "Comparing genres" });
-    expect(heading.nextElementSibling.textContent).toMatch(/All genres includes each genre’s own stories; the largest genre, Erotic Couplings, is about 12% of it\.$/);
+    const first = heading.nextElementSibling.nextElementSibling.querySelector("li").textContent.replace(/\s+/g, " ");
+    expect(first).toMatch(/It includes each genre’s own stories; the largest genre, Erotic Couplings, is about 12% of it\.$/);
   });
 
   it("says “about 420 stories” from the data, never from a literal", () => {

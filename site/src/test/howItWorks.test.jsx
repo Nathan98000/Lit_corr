@@ -130,6 +130,32 @@ describe("the section bar below 1,000 px", () => {
   });
 });
 
+describe("a long smooth jump that stops short (Chrome, more than about 10,000 px on a phone)", () => {
+  async function jump(landed) {
+    screenWidth(375);
+    window.onscrollend = null; // a browser with the scrollend event
+    const scroll = vi.spyOn(Element.prototype, "scrollIntoView");
+    await openPage("#/methodology/missing-data");
+    const heading = screen.getByRole("heading", { level: 2, name: "Missing data and excluded stories" });
+    await waitFor(() => expect(scroll.mock.contexts).toContain(heading));
+    expect(scroll.mock.calls[scroll.mock.contexts.indexOf(heading)][0]).toEqual({ behavior: "smooth", block: "start" });
+    heading.__top = landed; // where the smooth scroll left it (the test's scroll margin is 0)
+    act(() => window.dispatchEvent(new Event("scrollend")));
+    return scroll.mock.calls.filter((_, i) => scroll.mock.contexts[i] === heading).map(([opts]) => opts);
+  }
+  afterEach(() => {
+    delete window.onscrollend;
+  });
+
+  it("puts a heading left a little short in its place once the scroll ends", async () => {
+    expect(await jump(14)).toEqual([{ behavior: "smooth", block: "start" }, { block: "start" }]);
+  });
+
+  it("leaves a heading the visitor scrolled away from where they left it", async () => {
+    expect(await jump(300)).toEqual([{ behavior: "smooth", block: "start" }]);
+  });
+});
+
 describe("the contents at 1,000 px and wider", () => {
   it("are one sidebar that marks the section being read; there is no bar", async () => {
     screenWidth(1440);

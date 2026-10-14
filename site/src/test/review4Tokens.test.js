@@ -7,7 +7,7 @@ import { describe, expect, it } from "vitest";
 import { LEADING, MARK, TEXT } from "../lib/tokens.js";
 
 const SRC = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
-const FILES = ["styles.css", "comparison.css", "genres.css", "trends.css", "palettes.css"];
+const FILES = ["styles.css", "comparison.css", "genres.css", "trends.css", "palettes.css", "methodology.css"];
 const css = Object.fromEntries(FILES.map((f) => [f, readFileSync(path.join(SRC, f), "utf8").replace(/\/\*[\s\S]*?\*\//g, "")]));
 
 const SANS = [12, 13, 14, 15, 16, 18];

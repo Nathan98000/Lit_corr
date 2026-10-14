@@ -189,8 +189,8 @@ the 20261008 handoff's, measured the same day, and 150.7 when measured after the
 150.5 after the review, 150.0 before it, 149.7 before the owner's changes to the Trends review, 148.5 before the Trends
 page). The Genres and Trends pages' own code, styles and files load only when they are opened. A visit that starts on
 the Genres page is 211.8 KiB in 9 requests (210.7 with the 20261008 handoff's data; 204.4 in 8 before the Trends page: the code the two pages share is now a
-chunk of its own). One that starts on the Trends page is 177.4 KiB in 9, on either view; one on How it works 142.6 KiB
-in 7.
+chunk of its own). One that starts on the Trends page is 177.4 KiB in 9, on either view; one on How it works 147.3 KiB
+in 8 since its pictures (October 14, 2026; 142.2 in 7 before them, measured the same day).
 Layout shift is 0 on a visit to any page, and after any change once 500 ms have passed (what moves at once is the
 question or the lists reflowing with the visitor's own choice). The budget is **155 KiB of
 gzip response bodies** for that set, measured on the built site served with gzip (the design review's `firstload.mjs`
@@ -207,7 +207,7 @@ Parts that the first chart does not need load their code when first used (`React
 | Patterns page | `PatternBrowser-*.js` | when a link to it is hovered or focused |
 | Genres page (its components, helpers and styles) | `GenresPage-*.js`, `GenresPage-*.css`, and `IncludeSelect-*.js`, which it shares with the Trends page ("Only include", the comparison of "One genre" and "What changed", the Genres page's helpers) | when a link to it is hovered or focused (the masthead's link and the way across's "By genre →" also fetch its file); a visit that starts on it fetches both while the app starts |
 | Trends page (its components, helpers and styles) | `TrendsPage-*.js`, `TrendsPage-*.css`, and the shared `IncludeSelect-*.js` | when a link to it is hovered or focused (the masthead's link and the way across's "Over time →" also fetch its file); a visit that starts on it fetches both while the app starts |
-| How it works | `Methodology-*.js` (shares `search-*.js`) | when a link to it is hovered or focused |
+| How it works (its text, pictures and styles) | `Methodology-*.js`, `Methodology-*.css` (shares `search-*.js`) | when a link to it is hovered or focused |
 
 The sheet or popover of the picker and the menu (title, Close) opens at once and keeps its size while its body
 arrives; the pages hold one screen with a placeholder. If a part's code cannot be loaded, it shows the usual "We
@@ -269,6 +269,8 @@ src/
                           and "What changed" keep their open topics)
   genres.css              the Genres page's styles, loaded with its code
   trends.css              the Trends page's styles, loaded with its code
+  methodology.css         How it works' pictures, keys and labeled lists, loaded with its code (its layout, contents
+                          and glossary are in styles.css)
   comparison.css          "One genre"'s and "What changed"'s styles; genres.css and trends.css import it
   palettes.css            the 100% bars' and columns' palettes; genres.css and trends.css import it
   components/
@@ -357,7 +359,14 @@ src/
                           ("How it works" beside its
                           Contents button at the top, "How it works › {section}" once a section is reached); "How the
                           story characteristics were measured" has no subsections (the owner, 2026-10-13): their old
-                          addresses (#/methodology/point-of-view, …/explicitness, …/emotion) open it
+                          addresses (#/methodology/point-of-view, …/explicitness, …/emotion) open it. Short paragraphs
+                          and lists (the owner, 2026-10-14); "Where the stories come from" says when the stories were
+                          collected, what was and wasn't, and how they were picked at random, not how the collector
+                          worked
+    HowFigures.jsx        (lazy, with How it works) its seven pictures, each from the data's own numbers: the random
+                          sample in four steps, a made-up passage as the rules see it, a chart's marks, each genre's
+                          share on Literotica and in the sample, weak/moderate/strong on the rank correlation, the One
+                          genre view's row out of 100, and the Trends page's periods and windows
     lazyPart.jsx          lazy parts with preload, their error boundary, and whenIdle
     pages.js              the lazy pages, shared by App and Explorer
     useScrollFloor.js     keeps the scroll position when a new question makes the page shorter

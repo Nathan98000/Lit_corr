@@ -33,25 +33,43 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
+/** The section's opening line and its list of reasons, one bullet each (the owner's readable page, 2026-10-14). */
 async function missingData(meta) {
   vi.stubGlobal("fetch", withMeta(meta));
   window.history.replaceState(null, "", "/#/methodology/missing-data");
   render(<App />);
   const heading = await screen.findByRole("heading", { level: 2, name: "Missing data and excluded stories" });
-  return heading.nextElementSibling.textContent;
+  const lead = heading.nextElementSibling;
+  return { lead: lead.textContent.replace(/\s+/g, " ").trim(), reasons: [...lead.nextElementSibling.querySelectorAll("li")].map((li) => li.textContent) };
 }
 
 describe("Missing data and excluded stories", () => {
   it("words a story left out as a duplicate as the copy does, not by its code", async () => {
     const counts = { sampled: 12, with_text: 11, included: 9, excluded_reasons: { no_text: 1, possibly_not_english: 1, duplicate_of_another_story: 1 } };
-    const text = await missingData({ ...fixtureMeta, counts });
-    expect(text).toMatch(/^Of the 12 sampled stories, 9 are used in the charts\. 3 were left out: 1 had no story text that could be collected, 1 did not look like English and 1 had the same text as another story\. /);
+    const { lead, reasons } = await missingData({ ...fixtureMeta, counts });
+    expect(lead).toBe("Of the 12 sampled stories, 9 are used in the charts. 3 were left out:");
+    expect(reasons).toEqual(["1 had no story text that could be collected", "1 did not look like English", "1 had the same text as another story"]);
+  });
+
+  it("says “was left out” for one story", async () => {
+    const counts = { sampled: 10, with_text: 9, included: 9, excluded_reasons: { no_text: 1 } };
+    const { lead, reasons } = await missingData({ ...fixtureMeta, counts });
+    expect(lead).toBe("Of the 10 sampled stories, 9 are used in the charts. 1 was left out:");
+    expect(reasons).toEqual(["1 had no story text that could be collected"]);
+  });
+
+  it("lists the reasons with the most stories first", async () => {
+    const counts = { sampled: 20, with_text: 18, included: 14, excluded_reasons: { text_too_short: 1, no_text: 2, possibly_not_english: 3 } };
+    const { lead, reasons } = await missingData({ ...fixtureMeta, counts });
+    expect(lead).toBe("Of the 20 sampled stories, 14 are used in the charts. 6 were left out:");
+    expect(reasons).toEqual(["3 did not look like English", "2 had no story text that could be collected", "1 had fewer than 100 words of text"]);
   });
 
   it.skipIf(!real)("has words for every reason in the real data", async () => {
-    const text = await missingData({ ...fixtureMeta, counts: real.counts });
-    expect(Object.keys(real.counts.excluded_reasons).length).toBeGreaterThan(0);
-    expect(text).not.toMatch(/left out \(/);
+    const { reasons } = await missingData({ ...fixtureMeta, counts: real.counts });
+    expect(reasons).toHaveLength(Object.keys(real.counts.excluded_reasons).length);
+    expect(reasons.length).toBeGreaterThan(0);
+    for (const r of reasons) expect(r).not.toMatch(/left out \(/);
   });
 });
 
@@ -89,10 +107,16 @@ describe("How it works says the sample's size from the data (D5)", () => {
     render(<App />);
     await screen.findByRole("heading", { level: 1, name: "How it works" });
     const article = document.querySelector("article.methodology");
-    const section = (id) => article.querySelector(`#${id}`).nextElementSibling.nextElementSibling?.textContent;
+    // a section's text: everything from its heading to the next one
+    const section = (id) => {
+      const parts = [];
+      for (let el = article.querySelector(`#${id}`).nextElementSibling; el && el.tagName !== "H2"; el = el.nextElementSibling) parts.push(el.textContent);
+      return parts.join(" ").replace(/\s+/g, " ");
+    };
     return {
       inShort: within(article.querySelector(".in-short")).getAllByRole("listitem")[0].textContent,
       sample: section("data"),
+      steps: [...article.querySelectorAll(".sample-steps .step-title")].map((t) => t.textContent),
       limits: article.querySelector("#limits").nextElementSibling.firstElementChild.textContent,
       text: article.textContent,
     };
@@ -100,21 +124,24 @@ describe("How it works says the sample's size from the data (D5)", () => {
 
   it("in the test data", async () => {
     const n = typicalSample(fixtureMeta);
-    const { inShort, sample, limits, text } = await page(fixtureMeta);
+    const { inShort, sample, steps, limits, text } = await page(fixtureMeta);
     expect(inShort).toMatch(new RegExp(`^A random sample: about ${n} stories in each of 3 genres, collected .+ to .+; [\\d,]+ are used in the charts\\.$`));
     expect(sample).toContain(
-      "which list every story whatever its popularity, put the stories found there in a random order, and collected them " +
-        `in that order: about ${n} stories per genre.`,
+      `About ${n} stories from each of 3 of Literotica’s genres (the site itself calls them categories): ` +
+        `${fixtureMeta.counts.with_text} stories in all.`,
     );
-    expect(sample).toContain("the next story in that category’s random order took its place. In all, ");
+    expect(sample).toContain("A genre’s listing by title names every story in it, popular or not.");
+    expect(sample).toContain("was replaced by the next.");
+    expect(steps).toEqual(["1Every story, A to Z", "2Pages at even steps", "3A random order", `4About ${n} per genre`]);
     expect(limits).toBe(`A sample. About ${n} random stories per genre, not every story on the site. Small groups are uncertain, which is why sample sizes are always shown.`);
     expect(text).not.toMatch(/\b300\b|full sample/);
   });
 
   it.skipIf(!real)("in the real data: about 420 stories in each of 30 genres", async () => {
-    const { inShort, sample, limits } = await page(real);
+    const { inShort, sample, steps, limits } = await page(real);
     expect(inShort).toMatch(/^A random sample: about 420 stories in each of 30 genres, collected .+; 12,568 are used in the charts\.$/);
-    expect(sample).toContain("in that order: about 420 stories per genre.");
+    expect(sample).toContain("About 420 stories from each of 30 of Literotica’s genres (the site itself calls them categories): 12,573 stories in all.");
+    expect(steps[3]).toBe("4About 420 per genre");
     expect(limits).toMatch(/^A sample\. About 420 random stories per genre/);
   });
 });

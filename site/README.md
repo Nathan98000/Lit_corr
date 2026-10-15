@@ -255,6 +255,43 @@ mixes one build's files with another's.
 
 **Anything else** (GitHub Pages, a plain web server): run `npm run build` and upload `site/dist/`.
 
+### The live site
+
+**https://literotica-data.vercel.app/** (live since October 2026). It is the Vercel project `literotica-data` on the
+owner's Hobby account, imported from the GitHub repository `Nathan98000/Lit_corr` (`STAGE2_DEPLOY_PROMPT.md`):
+
+* Root Directory `site`; framework Vite; the build command and output directory come from `site/vercel.json`
+  (`npm run build`, `dist`); Node.js 22.x, as in `site/.nvmrc`.
+* The production branch is `main`: **every push to `main` deploys the site again**, within a few minutes. A merged
+  data update goes live the same way.
+* Other branches pushed to GitHub get preview deployments at addresses of their own, which Vercel's Standard
+  Protection keeps behind a Vercel login. The production address is public.
+* `index.html` names the production address as its canonical link and `og:url`, so search engines and link previews
+  use it rather than a deployment's own address.
+
+**Checking a deployment** (as done on October 15, 2026, for the build of `main` 3391bcf):
+
+```bash
+SITE=https://literotica-data.vercel.app
+curl -sI $SITE/ | grep -i -E '^HTTP|x-robots-tag'          # 200, and no x-robots-tag
+curl -s $SITE/ | grep -o 'assets/index-[^"]*\.js'           # the live build: the same name as a local build's
+curl -s $SITE/aggregates/meta.json | python3 -c 'import json, sys; print(json.load(sys.stdin)["generated_at"])'
+curl -sI -H 'Accept-Encoding: br, gzip' $SITE/aggregates/meta.json | grep -i -E 'content-encoding|cache-control'
+for p in README.md src/main.jsx package.json vercel.json; do curl -s -o /dev/null -w "$p %{http_code}\n" $SITE/$p; done
+```
+
+`generated_at` must be the one in `public/aggregates/meta.json` on `main`; the aggregates come compressed with
+`Cache-Control: public, max-age=3600`; the four source files answer 404 (only `dist/` is served). The page, script,
+CSS and font carry Vercel's default `Cache-Control: public, max-age=0, must-revalidate`. On October 15 every page,
+at 375 and 1440 px in a fresh headless Chromium, loaded with no console errors and the heading font, and "Download
+image" saved the chart. Vercel sends browsers Brotli, made on the fly and a little larger than its gzip: the first load
+(the six requests of the budget above) was 155.8 KiB as Chromium received it, 153.0 KiB with gzip, against 150.9 KiB
+for the same files at `gzip -9`, which is how the budget is measured.
+
+**Rolling back:** in the Vercel dashboard, Deployments → an earlier production deployment → "…" → Promote to
+Production (or Instant Rollback). Pushing a commit that reverts the change to `main` also works, and keeps GitHub and
+the live site in step.
+
 ## Source layout
 
 ```

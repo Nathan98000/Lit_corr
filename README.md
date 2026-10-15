@@ -261,6 +261,7 @@ later by the same rule. `meta.json` gives the
 Trends page's periods, windows, rule, options and left-out characteristics as `trend`. The website,
 *Story Patterns* ("What do popular Literotica stories have in common?"), is a static React + Vite app: see [site/README.md](site/README.md) for development,
 tests and deployment to Vercel or Netlify.
+It is live at **https://literotica-data.vercel.app/**, deployed by Vercel from `main`: every push to `main` updates it.
 
 ---
 

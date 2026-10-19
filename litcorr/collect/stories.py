@@ -10,7 +10,10 @@ A story that fails is not retried again in the same session (it waits for a
 later session, up to ``max_attempts_per_url`` attempts), and a request the
 server refuses as invalid (4xx other than 404/410/429) is not retried at all.
 Stories that failed before are tried after all the others, so a few pages the
-site keeps failing on cannot stop every session at the front of the queue.
+site keeps failing on cannot stop every session at the front of the queue. A
+story whose page is refused (HTTP 403) still stops the session and starts the
+cooldown, but is recorded as failed first, so it is replaced instead of being
+the first request of every later session.
 When the queue runs out, stories that could not be collected in this session
 are replaced (see sample.py) and their replacements are collected straight away.
 
@@ -26,7 +29,7 @@ import time
 from typing import Any
 
 from ..log import get_logger
-from ..net.fetcher import StopCollection
+from ..net.fetcher import AccessRefused, StopCollection
 from ..site.parse_story import parse_story_page
 from ..site.urls import story_page_url, story_slug
 from ..state import DISALLOWED, DONE, FAILED, GONE, PARTIAL, QUEUED, UNAVAILABLE
@@ -53,7 +56,13 @@ def fetch_story(ctx: Ctx, row: dict[str, Any]) -> str:
     p, scope, state = ctx.settings.politeness, ctx.settings.scope, ctx.state
     slug = row["story_slug"]
     url1 = story_page_url(ctx.base_url, slug, 1)
-    res = ctx.fetcher.fetch(url1, "story")
+    try:
+        res = ctx.fetcher.fetch(url1, "story")
+    except AccessRefused as e:
+        status, attempts = _failed_status(row, p.max_attempts_per_url, 403)
+        state.update_story(slug, status=status, attempts=attempts, last_error="HTTP 403 (access refused)",
+                           last_fetched_at=time.time())
+        raise
     now = time.time()
     if res.outcome == "gone":
         state.update_story(slug, status=GONE, last_error=res.detail or f"HTTP {res.status}", last_fetched_at=now)
@@ -89,7 +98,13 @@ def fetch_story(ctx: Ctx, row: dict[str, Any]) -> str:
     fetched = 1
     status = DONE
     for n in range(2, expected + 1):
-        r = ctx.fetcher.fetch(story_page_url(ctx.base_url, canonical, n), "story")
+        try:
+            r = ctx.fetcher.fetch(story_page_url(ctx.base_url, canonical, n), "story")
+        except AccessRefused:
+            state.update_story(slug, status=FAILED, pages_fetched=fetched, pages_expected=expected,
+                               attempts=(row.get("attempts") or 0) + 1, last_error="HTTP 403 (access refused)",
+                               last_fetched_at=time.time())
+            raise
         if r.ok:
             fetched += 1
         elif r.outcome == "gone":

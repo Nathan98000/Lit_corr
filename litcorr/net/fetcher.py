@@ -84,6 +84,15 @@ class SiteBlocked(StopCollection):
     reason = "blocked"
 
 
+class AccessRefused(SiteBlocked):
+    """An HTTP 401/403/451 for one page. The session still stops and cools down; ``url`` lets the caller mark
+    that page's story as failed, so the next session does not start with the same refused page."""
+
+    def __init__(self, message: str, cooldown_hours: float = 0.0, url: str = ""):
+        super().__init__(message, cooldown_hours)
+        self.url = url
+
+
 class RateLimited(StopCollection):
     reason = "rate_limited"
 
@@ -518,9 +527,11 @@ class PoliteFetcher:
         self._note_gone(url, kind)
         return FetchResult(url, kind, "gone", status, final, detail=detail)
 
-    def _blocked(self, url: str, kind: str, status: int | None, message: str) -> None:
+    def _blocked(self, url: str, kind: str, status: int | None, message: str, refused: bool = False) -> None:
         self.state.upsert_page(url, kind, "blocked", http_status=status, last_error=message[:300])
         self.error_log.write(session=self.session_id, url=url, kind=kind, error=message)
+        if refused:
+            raise AccessRefused(message, self.p.cooldown_after_block_hours, url)
         raise SiteBlocked(message, self.p.cooldown_after_block_hours)
 
     def _fetch_network(self, url: str, kind: str, server_error_retries: int) -> FetchResult:
@@ -595,7 +606,8 @@ class PoliteFetcher:
                     self.count_403 += 1
                     if self.count_403 >= p.stop_after_403_count or status == 451:
                         self._blocked(url, kind, status, f"HTTP {status} (access refused) for {current}. Stopping and "
-                                                         "cooling down; access refusals are not retried or worked around.")
+                                                         "cooling down; access refusals are not retried or worked around.",
+                                      refused=True)
                     self.state.upsert_page(url, kind, "blocked", http_status=status, last_error=f"HTTP {status}")
                     self._sleep(p.pause_after_429_seconds, f"pause after HTTP {status}")
                     return FetchResult(url, kind, "failed", status, detail=f"HTTP {status}")

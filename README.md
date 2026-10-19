@@ -335,7 +335,9 @@ It also stops for repeated 429s. (Having no internet on your side is not
 treated as a block: it says so and stops without a cooldown.) **Do not work around this**: no browser
 User-Agent, VPN, proxy, cookies or browser automation. Wait for the cooldown
 and try `probe` once more; if it is still refused, ask Literotica for
-permission. Details in [docs/SITE_RULES.md](docs/SITE_RULES.md).
+permission. If a 403 was for a single story page, that story is marked as
+failed before the stop, so the next run starts elsewhere and the story is
+replaced by the next one in its category. Details in [docs/SITE_RULES.md](docs/SITE_RULES.md).
 
 ## After a parser fix
 

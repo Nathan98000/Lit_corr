@@ -91,7 +91,9 @@ enough.
   server that refuses or drops connections, or eight "missing" pages in a row
   (real deletions are not that clustered; this looks like a soft block, and
   those pages are retried later instead of being written off) end the session
-  immediately and block new sessions for 24 hours. The collector does not
+  immediately and block new sessions for 24 hours. A story whose page got
+  the 403 is marked as failed first and later replaced, so the next session
+  does not open with the same refused request. The collector does not
   solve CAPTCHAs, change identity, rotate IP addresses, use proxies or VPNs,
   load cookies from a browser, log in, or use browser automation. Failures on
   the collector's own side (no internet, a DNS lookup that fails, a Wi-Fi login

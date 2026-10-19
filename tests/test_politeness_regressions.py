@@ -318,3 +318,43 @@ def test_no_attempt_is_counted_when_nothing_was_sent(server, make_settings, fact
             ctx.fetcher.fetch(f"{base}/s/{b}", "story")
         assert ctx.state.get_page(url_b)["attempts"] == 2  # a third counted attempt would give up on the page
     assert f"/s/{b}" not in site.hits
+
+
+# 14. a story whose page is refused (403) still stops the session, but does not stop every later one too
+@pytest.mark.parametrize("page", [1, 2])
+def test_a_refused_story_is_failed_and_replaced_not_retried_first(server, make_settings, factory, page):
+    site, base = server
+    s = make_settings(base, cooldown_after_block_hours=24)
+    s.scope.max_stories_per_category = 2  # leaves spare stories to replace it with
+    with collector_session(s, "test", fetcher_factory=factory) as ctx:
+        collect_listings(ctx, discover_categories(ctx))
+        build_queue(ctx)
+        refused = next(r for r in ctx.state.next_open_stories(100)
+                       if len(next(x for x in site.stories if x.slug == r["story_slug"]).pages) >= page)
+        path = f"/s/{refused['story_slug']}" + (f"?page={page}" if page > 1 else "")
+        site.faults[path] = [403] * 50
+        session_id = ctx.session_id
+        collect_stories(ctx)
+    st = _state(s)
+    try:
+        assert next(r for r in st.runs() if r["session_id"] == session_id)["stop_reason"] == "blocked"
+        assert st.get_cooldown() is not None  # the stop and the cooldown are unchanged
+        story = st.get_story(refused["story_slug"])
+        assert story["status"] == FAILED and story["attempts"] == 1
+        st.conn.execute("DELETE FROM cooldown")  # the cooldown has run out
+        st.conn.commit()
+    finally:
+        st.close()
+    hits = site.hits.count(path)
+    with collector_session(s, "test", fetcher_factory=factory) as ctx:
+        queued = build_queue(ctx)
+        session_id = ctx.session_id
+        collect_stories(ctx)
+    assert queued[refused["category_slug"]]["newly_queued"] == 1  # the next story in its category takes its place
+    assert site.hits.count(path) == hits  # the refused page is not asked for again
+    st = _state(s)
+    try:
+        assert next(r for r in st.runs() if r["session_id"] == session_id)["stop_reason"] == "completed"
+        assert not st.stories([QUEUED, PARTIAL])
+    finally:
+        st.close()

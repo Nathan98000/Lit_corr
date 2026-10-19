@@ -50,8 +50,8 @@ export function ChartLink({ to, onNavigate, className, label, children, ...rest 
  * interquartile range", a dot inside a capsule; yes/no: "Share of stories", a dot on a short line (so the split chart's
  * two dots differ in the key as they do in the chart); mostly zero: both; named groups and bands: every group's swatch
  * (`groups`: [{ label, cls }], "Other (…)" among them), above the chart since a column is too narrow for names; when a
- * period has fewer than SMALL_N stories, "Fewer than 30 stories (*)", the table's asterisk, with the marks it draws
- * (a hollow dot, a hatched capsule or column); the brackets of the periods compared, "the oldest and the newest", and
+ * period has fewer than SMALL_N stories, "Fewer than 30 stories", with the marks it draws (a hollow dot, a hatched
+ * capsule or column); the brackets of the periods compared, "the oldest and the newest", and
  * for the forms that draw them gray, the periods between: "shown but not compared" (fresh eyes: gray reads "no clear
  * change" in "All changes", and why those periods don't count wasn't on the screen).
  */
@@ -85,7 +85,7 @@ export function TrendLegend({ kind, anySmall, minStories, groups = null }) {
       {anySmall && (
         <li>
           {(kind === "bin" || kind === "zero") && <span className="key key-small-dot" aria-hidden="true" />}
-          {kind !== "bin" && <span className="key key-small" aria-hidden="true" />} Fewer than {minStories} stories (*)
+          {kind !== "bin" && <span className="key key-small" aria-hidden="true" />} Fewer than {minStories} stories
         </li>
       )}
       <li className="legend-text">

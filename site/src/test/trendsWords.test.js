@@ -18,7 +18,6 @@ import {
   changesTakeaway,
   changesTooFewHeading,
   changesWords,
-  lengthLine,
   nothingToDraw,
   numbersLine,
   pathLine,
@@ -108,8 +107,6 @@ function* changesSentences(meta, file) {
   const p = trendProfile(meta, file);
   yield { at, text: changesHeading(p.flagged.length, p.compared, file), clearly: true };
   yield { at, text: changesSampleLine(file, genre, subset), clearly: false };
-  const length = lengthLine(p, file);
-  if (length) yield { at, text: length, clearly: false };
   for (const line of changesTakeaway(p)) yield { at, text: `${line.word}: ${line.items.join(", ")}.`, clearly: false };
   const w = changesWords(file);
   const titles = Object.values(w.lists).flatMap((t) => [t.full, `${t.mark} ${t.word}`]);

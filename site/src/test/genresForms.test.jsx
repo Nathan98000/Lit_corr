@@ -240,7 +240,9 @@ describe("mostly zero: one chart (D6, concept M1)", () => {
     expect(chart.querySelectorAll("svg[role=group]")).toHaveLength(1); // one chart, one tab stop
     expect(chart.querySelectorAll(".row[tabindex='0']")).toHaveLength(1);
     expect(document.querySelector(".any-head").textContent).toBe("Among stories with any (per 1,000 words)");
-    expect([...chart.querySelectorAll(".col-head, .stories-head")].map((t) => t.textContent)).toEqual(["Median", "With any", "Stories"]);
+    // no Stories column: a genre's stories are in its details (the owner, 2026-10-19)
+    expect([...chart.querySelectorAll(".col-head, .stories-head")].map((t) => t.textContent)).toEqual(["Median", "With any"]);
+    expect(chart.querySelectorAll(".gn")).toHaveLength(0);
     const rows = [...chart.querySelectorAll(".row")];
     expect(rows).toHaveLength(4);
     const romance = rows[2];

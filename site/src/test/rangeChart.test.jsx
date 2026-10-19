@@ -107,10 +107,11 @@ describe("the chart layout", () => {
     const months = rows([1, 2, 3]).map((x, i) => ({ ...x, label: ["Jan", "Feb", "Mar"][i] }));
     const inline = rangeLayout({ rows: months, overall: null, format: "rate", width: 343 });
     expect(inline).toMatchObject({ mode: "inline", rowH: 44 });
-    // the column holds each label and, under it, its stories in words (round 4's L1: "100 stories", not "n = 100")
-    expect(inline.rows.map((r) => r.nText)).toEqual(["100 stories", "100 stories", "100 stories"]);
-    expect(inline.labelW).toBe(Math.ceil(Math.max(64, textWidth("100 stories", 13))) + 4);
-    expect(inline.rows.every((r) => r.boxes.every((b) => b.kind !== "n" || b.x1 <= inline.labelW))).toBe(true);
+    // the column holds each label, level with its value; no row prints its stories (the owner, 2026-10-19)
+    expect(inline.rows.map((r) => r.nText)).toEqual([undefined, undefined, undefined]);
+    expect(inline.labelW).toBe(64 + 4);
+    expect(inline.rows.every((r) => r.boxes.every((b) => b.kind !== "label" || b.x1 <= inline.labelW))).toBe(true);
+    expect(inline.rows.every((r) => r.labelPos.y === r.cy + 5)).toBe(true);
     const long = rows([1, 2]).map((x, i) => ({ ...x, label: ["First part or stand-alone", "Later part"][i] }));
     expect(rangeLayout({ rows: long, overall: null, format: "rate", width: 343 })).toMatchObject({
       mode: "stacked",
@@ -218,7 +219,9 @@ describe("the chart", () => {
     const hatch = container.querySelector("pattern").id;
     expect(rowsEl[1].querySelector(".iqr").style.fill).toBe(`url("#${hatch}")`);
     expect(rowsEl[0].querySelector(".iqr").style.fill).toBe("");
-    expect(screen.getByText("20 stories*")).toBeTruthy(); // jsdom draws at 720 px: n under the label
+    // no row prints its stories: they are in its name and its details (the owner, 2026-10-19)
+    expect([...container.querySelectorAll("svg text")].filter((t) => /\d stories/.test(t.textContent))).toEqual([]);
+    expect(container.querySelector(".gn, .axis-caption")).toBeNull();
     expect(screen.getByText("Too few stories to show")).toBeTruthy();
     expect(screen.getByText(/Fewer than 30 stories/, { selector: "li" })).toBeTruthy();
     expect(container.querySelector(".mean")).toBeNull();

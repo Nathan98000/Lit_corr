@@ -11,9 +11,9 @@ import useWidth from "./useWidth.js";
  * a dot) and yes/no characteristics (bin: a bar from 0 to the share of stories that have it, with a dot at its end),
  * built on the explorer's row layout (rangeLayout). All genres comes first, on a shaded band, and its median (or
  * share) is the dashed line. ▲ or ▼ marks a genre that clearly differs in a column of its own after its name (F61a);
- * each value is printed in a column at the right; wider charts have a Stories column, phones the stories under a
- * genre's name when there are fewer than 250. Genres with
- * fewer than SMALL_N stories are hatched with a hollow dot and never marked; fewer than MIN_N: "Fewer than 10 stories".
+ * each value is printed in a column at the right; a genre's stories are in its details, not on the chart (the owner,
+ * 2026-10-19). Genres with fewer than SMALL_N stories are hatched with a hollow dot and never marked; fewer than MIN_N:
+ * "Fewer than 10 stories".
  *
  * One tab stop: ↑/↓, Home and End move between genres; the focused or hovered genre's details show as a card (wider
  * charts) or a line under the chart (phones), with the link to what stands out about the genre's stories.
@@ -33,12 +33,10 @@ export default function GenreChart({ meta, variable, entry, rows, sub, title, on
     format: "count",
     width,
     smallN,
-    minN,
     domain: chartDomain(crow, kind, entry.fmt),
     tickFormat: tickFormatFor(kind, entry.fmt),
     printed: printedFor(kind, numberFormat(variable, entry)),
     valueColumn: true,
-    storiesColumn: true,
     markColumn: true,
     valueHead: kind === "bin" ? "Share" : "Median",
     phoneLabelW: 116,
@@ -101,11 +99,6 @@ export default function GenreChart({ meta, variable, entry, rows, sub, title, on
                 {layout.valueHead.text}
               </text>
             )}
-            {layout.storiesHead && (
-              <text className="tick stories-head" x={layout.storiesHead.x} y={layout.storiesHead.y} textAnchor="end">
-                {layout.storiesHead.text}
-              </text>
-            )}
             {layout.ref && (
               <g className="ref">
                 <line x1={layout.ref.x} x2={layout.ref.x} y1={layout.top - 4} y2={layout.height - 22} />
@@ -148,7 +141,7 @@ export default function GenreChart({ meta, variable, entry, rows, sub, title, on
 }
 
 /**
- * What a row draws: its name and stories, its mark, its range (or share) and median, and its value. A genre with few
+ * What a row draws: its name, its mark, its range (or share) and median, and its value. A genre with few
  * stories has its bar hatched, as a style: the bar's class sets a fill that would win over the fill attribute.
  */
 function RowParts({ r, kind, x, width, hatchId }) {
@@ -161,11 +154,6 @@ function RowParts({ r, kind, x, width, hatchId }) {
           {l.text}
         </text>
       ))}
-      {r.nPos && (
-        <text className="gn" x={r.nPos.x} y={r.nPos.y} textAnchor="end">
-          {r.nText}
-        </text>
-      )}
       {r.markPos && (
         <text className="gmark" x={r.markPos.x} y={r.markPos.y} textAnchor="middle">
           {r.mark}

@@ -151,23 +151,10 @@
   stroke-dasharray: 3 2;
 }
 
-.genre-chart .gn {
-  font-size: var(--text-13);
-}
-
-.genre-chart.mode-side .row .gn {
-  font-size: var(--text-12);
-}
-
 /* the labels' halo is the row's own background on All genres' shaded row */
 .genre-chart .row.all .glabel,
-.genre-chart .row.all .gn,
 .genre-chart .row.all .gval {
   stroke: var(--band);
-}
-
-.genre-chart .stories-head {
-  font-size: var(--text-12);
 }
 
 /* the details card holds a link: once a tap keeps it, it takes the pointer. Compact (F70): its width follows its
@@ -244,7 +231,6 @@
   }
 
   .genre-chart .row.all .glabel,
-  .genre-chart .row.all .gn,
   .genre-chart .row.all .gval {
     stroke: Canvas;
   }
@@ -311,13 +297,6 @@
 .genre-mix .glabel {
   fill: var(--ink);
   font-size: var(--text-14);
-}
-
-.genre-mix .gn,
-.genre-mix .stories-head {
-  fill: var(--ink-3);
-  font-size: var(--text-12);
-  font-variant-numeric: tabular-nums;
 }
 
 .genre-mix .gnone {
@@ -444,10 +423,8 @@
   }
 
   .genre-mix .glabel,
-  .genre-mix .gn,
   .genre-mix .gmark,
   .genre-mix .gnone,
-  .genre-mix .stories-head,
   .genre-mix .group-name {
     fill: CanvasText;
   }

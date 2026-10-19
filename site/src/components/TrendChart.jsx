@@ -64,8 +64,8 @@ export function Ticks({ layout, ticks, y }) {
 
 /**
  * The table under the plot, aligned with the columns and hidden from screen readers (each period's name says its
- * numbers): the periods, the medians or shares (smaller when long values would crowd a phone: trendLayout), the stories,
- * the rows' heads, the brackets of the two windows compared with their numbers ("2000–2009 · median 2,810", on two
+ * numbers): the periods, the medians or shares (smaller when long values would crowd a phone: trendLayout), the rows'
+ * heads, the brackets of the two windows compared with their numbers ("2000–2009 · median 2,810", on two
  * lines where they don't fit), and "not compared" between them, under the periods outside both windows.
  */
 export function Table({ layout }) {
@@ -84,9 +84,6 @@ export function Table({ layout }) {
               {c.value.text}
             </text>
           )}
-          <text className="gn" x={c.stories.x} y={c.stories.y} textAnchor="middle">
-            {c.stories.text}
-          </text>
         </g>
       ))}
       {layout.heads.map((h) => (

@@ -11,6 +11,7 @@ import {
   chartQuestionText,
   genreProfile,
   axisTitle,
+  axisTitleParts,
   genreRows,
   mixLine,
   profileColumns,
@@ -59,8 +60,9 @@ function sentences(meta, file) {
     add(sampleLine(file.n[gi], genre, meta.subsets.find((s) => s.id === file.s)));
     for (const line of profileTakeaway(p)) add(`${line.mark} ${takeawayLine(line)}`);
     add(axisTitle(genre));
+    add(axisTitleParts(genre).join(""));
     for (const inTopic of [false, true]) add(mixLine(genre, { inTopic }));
-    for (const inTopic of [false, true]) for (const tap of [false, true]) add(profileNote(genre, { inTopic, tap }).join(""));
+    for (const tap of [false, true]) add(profileNote({ tap }));
     for (const t of p.topics) add(`${t.topic.label}, ${topicCount(t).text}`); // the topics' names
     for (const item of p.items) {
       // "One genre"'s rows: the unit line, the two columns and the name

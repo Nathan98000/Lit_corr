@@ -1,16 +1,15 @@
 // Layouts of the Genres page's other forms (pure functions, so the geometry can be tested without a browser): the
 // 100% bars of named groups and ordered bands, and the chart of mostly-zero characteristics (M1). They share the
-// range chart's rows: a label column (two-line names in a 116 px column on phones), the stories in a column on wider
-// screens or under the name on phones (below 250), rows 31 px tall on wider screens and at least 44 px on phones.
+// range chart's rows: a label column (two-line names in a 116 px column on phones), rows 31 px tall on wider screens
+// and at least 44 px on phones. A genre's stories are in its details, not on the chart (the owner, 2026-10-19).
 
-import { formatCount, stepDecimals, formatFixed } from "./format.js";
+import { stepDecimals, formatFixed } from "./format.js";
 import { MARK_GAP, MARK_W, PHONE, REF_SLACK, niceTicks, stepTicks, textWidth, wrapLabel } from "./rangeLayout.js";
 import { TEXT } from "./tokens.js";
 
 const ROW = 31;
 const PHONE_LABEL = 116;
 const LABEL_SIZE = TEXT.secondary;
-const COUNT_BELOW = 250;
 const TOP = 30; // the band above the rows for tick labels and column headings
 
 const box = (x, y, text, size, weight = 400, anchor = "start") => {
@@ -19,36 +18,24 @@ const box = (x, y, text, size, weight = 400, anchor = "start") => {
   return { x0, x1: x0 + w, y0: y - size * 0.8, y1: y + size * 0.25 };
 };
 
-/**
- * The rows' geometry: for each row (index, label, n or null), its top and bottom, center, label lines and stories.
- * `storiesW` is the width of the Stories column (0 on phones).
- */
+/** The rows' geometry: for each row (index, label), its top and bottom, center and label lines. */
 export function rowGrid({ rows, width, top = TOP }) {
   const phone = width < PHONE;
   const longest = Math.max(0, ...rows.map((r) => textWidth(r.label, LABEL_SIZE)));
   const labelW = phone ? PHONE_LABEL : Math.round(Math.min(220, Math.max(110, width * 0.25, longest + 4)));
-  const storiesW = phone
-    ? 0
-    : Math.ceil(Math.max(textWidth("Stories", TEXT.tick), ...rows.filter((r) => r.n != null).map((r) => textWidth(formatCount(r.n), TEXT.note))) + 18);
   let y = top;
   const laid = rows.map((r) => {
     const lines = phone ? wrapLabel(r.label, PHONE_LABEL - 2, LABEL_SIZE) : [r.label];
-    const below = phone && r.n != null && r.n < COUNT_BELOW;
-    const h = phone ? Math.max(44, 12 + 16 * lines.length + (below ? 13 : 0)) : ROW;
+    const h = phone ? Math.max(44, 12 + 16 * lines.length) : ROW;
     const y0 = y;
     y += h;
     const cy = y0 + h / 2 + 2;
-    const block = lines.length * 16 + (below ? 13 : 0);
-    const first = phone ? cy - block / 2 + 12 : cy + 5;
+    const first = phone ? cy - (lines.length * 16) / 2 + 12 : cy + 5;
     const labelLines = lines.map((text, k) => ({ text, x: labelW, y: first + 16 * k }));
-    let count = null;
-    if (r.n != null && !phone) count = { x: width, y: cy + 4.5, text: formatCount(r.n) };
-    else if (below) count = { x: labelW, y: first + 16 * (lines.length - 1) + 15, text: `${formatCount(r.n)} stories` };
     const boxes = labelLines.map((l) => ({ kind: "label", ...box(l.x, l.y, l.text, LABEL_SIZE, 400, "end") }));
-    if (count) boxes.push({ kind: "n", ...box(count.x, count.y, count.text, phone ? TEXT.tick : TEXT.note, 400, "end") });
-    return { index: r.index, label: r.label, y0, y1: y, cy, labelLines, count, boxes };
+    return { index: r.index, label: r.label, y0, y1: y, cy, labelLines, boxes };
   });
-  return { phone, labelW, storiesW, rows: laid, bottom: y, storiesHead: storiesW ? { x: width, y: top - 10, text: "Stories" } : null };
+  return { phone, labelW, rows: laid, bottom: y };
 }
 
 // The palettes of the 100% bars are custom properties in genres.css (F72): named groups --group-0 … --group-5, the
@@ -86,7 +73,7 @@ export function mixColors(kind, allShares) {
 }
 
 /**
- * The 100% bars: per genre (rows: { index, label, n, shares, mark }), one bar of the groups' shares in their order,
+ * The 100% bars: per genre (rows: { index, label, shares, mark }), one bar of the groups' shares in their order,
  * after a column for the mark (≠ for named groups, ▲ ▼ for bands). Shares are printed in segments at least 34 px wide
  * (where their ink reaches 4.5:1: mixColors). Over All genres' bar, each group's name sits over the middle of its
  * segment when the segment is at least the name's width and 8 px (`labels`; F72): position as well as color says which
@@ -96,7 +83,7 @@ export function mixLayout({ rows, width, labels = [] }) {
   const phone = width < PHONE;
   const probe = rowGrid({ rows, width, top: 24 });
   const x0 = probe.labelW + MARK_GAP + MARK_W + 6;
-  const x1 = width - (probe.storiesW ? probe.storiesW : 0);
+  const x1 = width;
   const barW = Math.max(40, x1 - x0);
   const allShares = rows[0]?.shares;
   const names = [];
@@ -109,7 +96,7 @@ export function mixLayout({ rows, width, labels = [] }) {
       x += w;
     });
   }
-  // room above the rows for the Stories heading (wider charts) and the groups' names
+  // room above the rows for the groups' names
   const top = phone && !names.length ? 8 : 24;
   const grid = top === 24 ? probe : rowGrid({ rows, width, top });
   const laid = grid.rows.map((g, i) => {
@@ -166,11 +153,11 @@ export function wrapText(text, maxW, size) {
 /**
  * The chart of a mostly-zero characteristic (concept M1, F65): one row per genre, its name, its mark (F61a), then a plot
  * of the interquartile range and median among its stories with any, on the plot's own scale with ticks; then the
- * values. Wider charts: a "Median" column (among the stories with any), a "With any" column (a 40 px bar and the share
- * of stories with any) and the Stories column. Phones: one cell with the median over the share, under the heading
+ * values. Wider charts: a "Median" column (among the stories with any) and a "With any" column (a 40 px bar and the
+ * share of stories with any). Phones: one cell with the median over the share, under the heading
  * "Median" over "with any". All genres (the first row) is the plot's dashed line, labeled under the plot.
  *
- * rows: { index, label, n, share (null: fewer than meta.min_n stories), above: { n, p25, median, p75 } | null (fewer
+ * rows: { index, label, share (null: fewer than meta.min_n stories), above: { n, p25, median, p75 } | null (fewer
  * than min_n stories with any), mark, noneText, fewAboveText }; `domain` is the plot's [lo, hi] (or [lo, hi, step]:
  * chartDomain); `printed(v)` writes a median, `shareText(v)` a share, `tickFormat(v, step)` a tick.
  */
@@ -192,7 +179,7 @@ export function anyLayout({ rows, width, domain, printed, shareText, tickFormat 
     x1 = width - valueW - 12;
     heads.push({ x: width, y: top - 24, text: "Median" }, { x: width, y: top - 10, text: "with any" });
   } else {
-    const right = width - grid.storiesW;
+    const right = width;
     const textW = Math.max(widest(shareTexts, TEXT.note, 600), widest(["100%"], TEXT.note, 600));
     const left = right - textW - 6 - SHARE_BAR;
     share = { barX: left, textX: right };
@@ -288,10 +275,6 @@ export function layoutProblems(layout, pad = 1) {
   if (layout.ref) boxes.push({ kind: "ref", row: -1, ...layout.ref.box });
   for (const h of layout.heads || []) boxes.push({ kind: "head", row: -3, ...h.box });
   for (const nm of layout.names || []) boxes.push({ kind: "name", row: -4, ...nm.box });
-  if (layout.storiesHead) {
-    const w = textWidth(layout.storiesHead.text, TEXT.tick);
-    boxes.push({ kind: "head", row: -3, x0: layout.storiesHead.x - w, x1: layout.storiesHead.x, y0: layout.storiesHead.y - 9.6, y1: layout.storiesHead.y + 3 });
-  }
   for (const t of layout.ticks || []) {
     const w = textWidth(t.text, TEXT.tick);
     boxes.push({ kind: "tick", row: -2, x0: t.x - w / 2, x1: t.x + w / 2, y0: layout.top - 20, y1: layout.top - 7 });

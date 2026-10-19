@@ -14,7 +14,8 @@ import useWidth from "./useWidth.js";
 // here; each page gives its words (the two sides' names and short heads, the list titles, the axis title, the zone's
 // words, the note, the topics' line) and its row (the columns' numbers, the row's name and where it leads). "What
 // changed" opts in to its own row and lists (`changes`: values first, a zoomed scale, marked titles, the bars in time's
-// order); without it, "One genre" draws as it always has. Both put the note above the first list (round 4's W1). The
+// order); without it, "One genre" draws as it always has. Both say what a dot is and where a row leads in the axis
+// title's lines right over the rows (the owner, 2026-10-19; a note above the first list before, round 4's W1). The
 // styles are in comparison.css, which genres.css and trends.css import (the opt-ins' in trends.css).
 
 const SHOWN = 7; // rows of a list before "Show all"
@@ -420,8 +421,8 @@ function ProfileBlock({ id, items, marks = false, headRow = false, mixLines = fa
 /**
  * "Lower in Romance than in all genres": the first seven, then "Show all 18" / "Show fewer" (`open`, `onOpen`: kept by
  * the page, F88). Wide, its title line ends with the count; stacked, with the two columns' heads, the count left to
- * screen readers ("Show all 18" keeps it). The first list carries the axis title over its rows (`caption`, F86; the
- * note is above it, round 4's W1); "A different mix" says which bar is which over its rows (`caption`). "Show fewer"
+ * screen readers ("Show all 18" keeps it). The first list carries the axis title, with the note, over its rows
+ * (`caption`, F86); "A different mix" says which bar is which over its rows (`caption`). "Show fewer"
  * is the one control on the page that moves it, on purpose: when the rows it hides take the button off the screen,
  * the list's heading is brought into view (smoothly, or at once under reduced motion), and focus stays on the button.
  */
@@ -507,32 +508,36 @@ const HeadLines = ({ head }) =>
       ))
     : head;
 
-/** The axis title over the first list's rows (F86, S1). */
-const AxisTitle = ({ words }) => <p className="profile-caption profile-axis-title">{words.axisTitle}</p>;
-
 /**
- * The note above the first list (F84, F86, F87; round 4's W1, on both pages): what a dot compares, with the link to how
- * a difference is decided ("One genre": a 44 px target, never broken inside its parentheses), and where a row leads
- * ("Tap" on a device that can't hover, else "Click"). In an open topic, when no list is shown, the same words
- * (`inTopic`). A page's note can be a string without a link ("What changed"'s).
+ * The axis title over the first list's rows (F86, S1): what a dot is, "50 is a tie" with it, then the note, where a row
+ * leads ("Tap" on a device that can't hover, else "Click"), on a line of its own in plain weight: right over the dots
+ * they explain (the owner, 2026-10-19: the note above the list was too far from them). A page may give the axis title
+ * in three parts, the middle one the link to how a difference is decided (`axisTitleParts`, "One genre"'s: a 44 px
+ * target, never broken inside its parentheses); the image takes the plain `axisTitle`.
  */
-function Note({ words, inTopic = false }) {
+function AxisTitle({ words }) {
   const tap = useMediaQuery("(hover: none)");
-  const note = words.note({ inTopic, tap });
-  if (typeof note === "string") return <p className="profile-note">{note}</p>;
-  const [before, link, after] = note;
+  const parts = words.axisTitleParts;
   return (
-    <p className="profile-note">
-      {before}
-      <a href={words.decided}>{link}</a>
-      {after}
+    <p className="profile-caption profile-axis-title">
+      {parts ? (
+        <>
+          {parts[0]}
+          <a href={words.decided}>{parts[1]}</a>
+          {parts[2]}
+        </>
+      ) : (
+        words.axisTitle
+      )}
+      {". "}
+      <span className="profile-hint">{words.note({ tap })}</span>
     </p>
   );
 }
 
 /**
- * An open topic's rows: the axis title over them and the note under them when no list carries them (`lead`, nothing
- * stands out) and the topic has dots; the mix line right over each compared named-group row (quick win 5).
+ * An open topic's rows: the axis title (with the note) over them when no list carries it (`lead`, nothing stands out)
+ * and the topic has dots; the mix line right over each compared named-group row (quick win 5).
  */
 function TopicRows({ items, lead, layout, rowProps }) {
   const dots = lead && items.some((x) => x.r != null && x.kind !== "grp");
@@ -540,7 +545,6 @@ function TopicRows({ items, lead, layout, rowProps }) {
     <>
       {dots && <AxisTitle words={rowProps.words} />}
       <ProfileBlock items={items} marks headRow mixLines layout={layout} rowProps={rowProps} />
-      {dots && <Note words={rowProps.words} inTopic />}
     </>
   );
 }
@@ -688,8 +692,8 @@ function useWayBack(ref, key) {
  * - `profile`: { lower, higher, mix, topics: [{ topic, items, count, compared }] }; items as genreProfile() gives them.
  * - `rule`: the rule's thresholds (its zone of no clear difference). `answerKey`: another answer is drawn anew (its open
  *   topics and lists in full are kept above), so its rows don't count as rows that moved.
- * - `words`: { heads(stacked, width), lists: { lower, higher, mix }, axisTitle, zone, note({ inTopic, tap }) (before,
- *   the link's words and after, or one sentence without a link), decided (the note's link), mixLine({ inTopic }),
+ * - `words`: { heads(stacked, width), lists: { lower, higher, mix }, axisTitle (and optionally axisTitleParts: before,
+ *   the link's words and after), zone, note({ tap }) (where a row leads), decided (the axis title's link), mixLine({ inTopic }),
  *   topicsLine, topicCount(t), countWord }, and optionally showAll(n, list) ("Show all 21 that rose"; "Show all 21"
  *   without it).
  * - `row`: { columns(item), name(item), link({ item, className, children }) (the row's link element), and with the
@@ -744,8 +748,8 @@ export default function ComparisonProfile({
 
   const p = profile;
   const zone = noDifferenceZone(rule);
-  // the note goes above the first list with dots (the higher list, then the lower: the owner, 2026-10-13), which carries
-  // the axis title; with none (nothing stands out), every open topic with dots carries them
+  // the axis title, with the note, goes over the first list with dots (the higher list, then the lower: the owner,
+  // 2026-10-13); with none (nothing stands out), every open topic with dots carries it
   const lead = p.higher.length ? "higher" : p.lower.length ? "lower" : null;
   // the values' column fits the widest value on the page, so every list and topic has the same grid
   const valuesW = valuesFirst ? valuesWidth(p.items.map((x) => row.values(x).text)) : null;
@@ -777,7 +781,6 @@ export default function ComparisonProfile({
       ) : (
         <Fragment key={answerKey}>
           {top}
-          {lead && <Note words={words} />}
           {p.higher.length > 0 && (
             <ProfileList
               title={words.lists.higher}

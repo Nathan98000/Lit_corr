@@ -64,9 +64,14 @@ describe("F40, F44: the takeaway", () => {
     await renderApp("#/explore?var=pov_class");
     expect(document.querySelector(".chart-title").textContent).toBe("Each group on its own");
     expect(takeaway()).toBeNull();
-    const howTo = screen.getByText("How to read this chart", { selector: "summary" }).parentElement;
-    expect(howTo.textContent).toMatch(/deserve less trust\.$/);
-    expect(howTo.textContent).not.toMatch(/without an order|summed up|one trend/); // the owner's follow-up
+    const howTo = () => screen.getByText("How to read this chart", { selector: "summary" }).parentElement;
+    expect(howTo().textContent).not.toMatch(/without an order|summed up|one trend/); // the owner's follow-up
+    // the hatched bars only when the chart has one (the owner, 2026-10-19)
+    expect(document.querySelectorAll(".range-chart .row.small")).toHaveLength(0);
+    expect(howTo().textContent).toMatch(/The dashed line is the median of all stories shown\.$/);
+    window.location.hash = "#/explore?genre=romance&var=dlg_word_share";
+    await waitFor(() => expect(document.querySelectorAll(".range-chart .row.small").length).toBeGreaterThan(0));
+    expect(howTo().textContent).toMatch(/Hatched bars with hollow dots hold fewer than 30 stories and deserve less trust\.$/);
   });
 
   it("defines weak, moderate and strong in How it works", async () => {

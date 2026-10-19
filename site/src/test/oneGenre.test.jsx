@@ -536,7 +536,11 @@ describe("the key, in the lists (F86)", () => {
     expect(document.querySelector(".profile-legend, .genre-profile .legend")).toBeNull();
     const titles = [...document.querySelectorAll(".profile-axis-title")];
     expect(titles).toHaveLength(1);
-    expect(titles[0].textContent).toBe("How often a story in Romance comes out higher than a story from all genres, out\u00a0of\u00a0100");
+    // what a dot is, "50 is a tie", the link and where a row leads, right over the rows (the owner, 2026-10-19)
+    expect(titles[0].textContent).toBe(
+      "Each dot shows how often a story in Romance comes out higher than a story from all genres, out\u00a0of\u00a0100 (50\u00a0is\u00a0a\u00a0tie; how\u00a0this\u00a0is\u00a0decided). " +
+        "Click a row for every genre’s numbers.",
+    );
     const first = document.querySelector(".profile-list");
     expect(first.contains(titles[0])).toBe(true);
     expect(titles[0].nextElementSibling.classList.contains("profile-block")).toBe(true);
@@ -566,28 +570,28 @@ describe("the key, in the lists (F86)", () => {
     expect(document.querySelector(".profile-row .p2-zone").getAttribute("x")).toBe("35%");
   });
 
-  it("puts the note above the first list, as the Trends page does, in its words, with its link (round 4's W1)", async () => {
+  it("says where a row leads under what a dot is, right over the first list's rows, as the Trends page does, with its link", async () => {
+    // a note above the first list before, too far from its dots (the owner, 2026-10-19)
     serveWith(...nineMore);
     await openGenre("#/genres?view=genre&genre=romance&include=all");
     const [list, lower] = document.querySelectorAll(".profile-list");
-    const note = list.previousElementSibling;
-    expect(note.className).toBe("profile-note");
+    expect(document.querySelector(".profile-note")).toBeNull();
+    expect(list.previousElementSibling.classList.contains("profile-takeaway")).toBe(true);
     expect(list.querySelector("h3").textContent).toBe("Higher in Romance than in all genres");
     expect(lower.lastElementChild.textContent).toBe("Show all 10"); // a list ends with its "Show all"
-    expect(note.textContent).toBe(
-      "Each dot compares a story in Romance with a story from all genres (50 is a tie; how\u00a0this\u00a0is\u00a0decided). " +
-        "Click a row for every genre’s numbers.",
-    );
-    expect(note.textContent).not.toMatch(/Gray dots/); // the topics' line says it, over the topics
-    expect(note.querySelector("a").getAttribute("href")).toBe("#/methodology/genres");
-    expect(document.querySelectorAll(".profile-note")).toHaveLength(1);
-    expect(css).toMatch(/\.profile-note a::after \{[^}]*height: max\(100%, var\(--target\)\);/);
+    const caption = list.querySelector(".profile-axis-title");
+    expect(caption.querySelector(".profile-hint").textContent).toBe("Click a row for every genre’s numbers.");
+    expect(caption.textContent).not.toMatch(/Gray dots/); // the topics' line says it, over the topics
+    expect(caption.querySelector("a").getAttribute("href")).toBe("#/methodology/genres");
+    expect(caption.querySelector("a").textContent).toBe("how\u00a0this\u00a0is\u00a0decided");
+    expect(css).toMatch(/\.profile-axis-title a::after \{[^}]*height: max\(100%, var\(--target\)\);/);
+    expect(css).toMatch(/\.profile-hint \{\s*display: block;\s*font-weight: 400;/);
   });
 
   it("says “Tap” on a device that can't hover", async () => {
     vi.stubGlobal("matchMedia", (q) => ({ matches: q === "(hover: none)", media: q, addEventListener() {}, removeEventListener() {} }));
     await openGenre("#/genres?view=genre&genre=romance&include=all");
-    expect(document.querySelector(".profile-note").textContent).toMatch(/ Tap a row for every genre’s numbers\.$/);
+    expect(document.querySelector(".profile-hint").textContent).toBe("Tap a row for every genre’s numbers.");
   });
 
   it("goes with every open topic that has dots when no list is shown, in the same words", async () => {
@@ -598,12 +602,10 @@ describe("the key, in the lists (F86)", () => {
     expect(topics.length).toBeGreaterThan(1);
     for (const t of topics) {
       expect(t.querySelector(".profile-axis-title").textContent).toBe(
-        "How often a story in Fetish comes out higher than a story from all genres, out\u00a0of\u00a0100",
-      );
-      expect(t.querySelector(".profile-note").textContent).toBe(
-        "Each dot compares a story in Fetish with a story from all genres (50 is a tie; how\u00a0this\u00a0is\u00a0decided). " +
+        "Each dot shows how often a story in Fetish comes out higher than a story from all genres, out\u00a0of\u00a0100 (50\u00a0is\u00a0a\u00a0tie; how\u00a0this\u00a0is\u00a0decided). " +
           "Click a row for every genre’s numbers.",
       );
+      expect(t.querySelector(".profile-note")).toBeNull();
     }
   });
 

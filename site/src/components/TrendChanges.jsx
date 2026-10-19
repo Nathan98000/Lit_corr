@@ -11,7 +11,6 @@ import {
   changesTooFewHeading,
   changesValues,
   changesWords,
-  lengthLine,
   overTimeCharacteristic,
   trendProfile,
   windowsCompared,
@@ -63,10 +62,12 @@ function PeriodStories({ file, minN }) {
 /**
  * What changed (View 2, §4.1), the page's default: "One genre" as approved, relabeled and drawn by ComparisonProfile.
  * The heading (how many of the characteristics compared clearly changed from 2000–2009 to 2020 or later) and the
- * sample line; the takeaway (word count's change, "▲ Rose", "▼ Fell", "≠ A different mix"); the note; the lists,
- * ordered by the size of the change, each row's values first ("51.6 → 38.8 (−25%)") and its dot on a scale zoomed to
- * the view (changesScale); "Download image" of the lists; every characteristic by topic. Each row compares a story from
- * 2020 or later with one from 2000–2009 (the dot, out of 100) and opens its chart over time. When a window has too few
+ * stories compared; the takeaway ("▲ Rose", "▼ Fell", "≠ A different mix"; no line of its own for word count, which
+ * read as the one change: the owner, 2026-10-19); the lists, ordered by the size of the change, each row's values
+ * first ("51.6 → 38.8 (−25%)") and its dot on a scale zoomed to the view (changesScale), what a dot is and where a row
+ * leads right over the first list's rows (the axis title); "Download image" of the lists; every characteristic by
+ * topic. Each row compares a story from 2020 or later with one from 2000–2009 (the dot, out of 100) and opens its
+ * chart over time. When a window has too few
  * stories to compare (Chain Stories, Transgender), the heading says so, then the stories per period, "Show all
  * stories" when an option is on, else "Show All genres", and "One characteristic over time →" (View 1 for the genre
  * and option: its periods still draw).
@@ -104,7 +105,6 @@ export default function TrendChanges({ meta, state, file, busy, onSwitch, onNavi
 
   const p = trendProfile(meta, file);
   const takeaway = changesTakeaway(p);
-  const length = lengthLine(p, file);
   const heading = changesHeading(p.flagged.length, p.compared, file);
   const sample = changesSampleLine(file, genre, subset);
   const header = (
@@ -115,9 +115,8 @@ export default function TrendChanges({ meta, state, file, busy, onSwitch, onNavi
       <p className="profile-sample">{sample}</p>
     </header>
   );
-  const top = (length || takeaway.length > 0) && (
+  const top = takeaway.length > 0 && (
     <div className="takeaway profile-takeaway">
-      {length && <p className="changes-length">{length}</p>}
       {takeaway.map((line) => (
         <p key={line.word}>
           <span aria-hidden="true">{line.mark} </span>

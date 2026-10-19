@@ -40,7 +40,7 @@ const sameTick = (a, b) => Math.abs(a.v - b.v) < 1e-9;
  * Popularity across the groups of one characteristic, in one genre (concept C2): one row per group, the
  * interquartile range as a capsule, the median as a dot with its value printed, and a dashed line for the median of
  * all stories shown, labeled under the plot ("Median of all stories: 4.42"; the key has no entry for it: the owner,
- * 2026-10-13).
+ * 2026-10-13). A group's stories are in its details and its name, not under its label (the owner, 2026-10-19).
  *
  * The chart is one tab stop (F54): the arrow keys, Home and End move between rows, and the focused row shows its
  * details; Escape hides them. Hover shows them too, and a tap or click keeps them until the next tap. On wider
@@ -225,9 +225,6 @@ export default function RangeChart({
                 <text className="glabel" x={r.labelPos.x} y={r.labelPos.y} textAnchor={r.labelPos.anchor}>
                   {r.label}
                 </text>
-                <text className="gn" x={r.nPos.x} y={r.nPos.y} textAnchor={r.nPos.anchor}>
-                  {r.nText}
-                </text>
                 {r.ok ? (
                   <>
                     <rect
@@ -291,7 +288,6 @@ export default function RangeChart({
           </div>
         )}
       </div>
-      {anySmall && <p className="axis-caption">* Fewer than {smallN} stories: worth less trust.</p>}
     </div>
   );
 }

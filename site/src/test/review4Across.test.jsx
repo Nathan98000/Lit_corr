@@ -47,8 +47,9 @@ const shown = (line) => links(line).map((a) => [a.textContent, a.getAttribute("a
 describe("I15: the same line under every one-characteristic chart", () => {
   it("on Explore: “By genre →” with its option, “Over time →” with its genre and option, right under the chart", async () => {
     const line = await open("#/explore?genre=romance&var=dlg_word_share&include=medium");
+    // the Genres page's one characteristic offers no Length option (the owner, 2026-10-19): All stories there
     expect(shown(line)).toEqual([
-      ["By genre →", "Dialogue share by genre", "#/genres?var=dlg_word_share&include=medium"],
+      ["By genre →", "Dialogue share by genre", "#/genres?var=dlg_word_share&include=all"],
       ["Over time →", "Dialogue share over time", "#/trends?var=dlg_word_share&genre=romance&include=medium"],
     ]);
     expect(line.previousElementSibling.classList.contains("range-chart")).toBe(true);
@@ -70,7 +71,7 @@ describe("I15: the same line under every one-characteristic chart", () => {
   it("on the Trends page: “By genre →” and “With popularity →” with its genre and option, under the chart in its cell", async () => {
     const line = await open("#/trends?var=dlg_word_share&genre=romance&include=medium");
     expect(shown(line)).toEqual([
-      ["By genre →", "Dialogue share by genre", "#/genres?var=dlg_word_share&include=medium"],
+      ["By genre →", "Dialogue share by genre", "#/genres?var=dlg_word_share&include=all"], // no Length option there
       ["With popularity →", "Dialogue share with popularity", "#/explore?genre=romance&var=dlg_word_share&include=medium"],
     ]);
     expect(line.parentElement.className).toBe("trend-chart-cell");
@@ -102,14 +103,16 @@ describe("I15: the same line under every one-characteristic chart", () => {
     const line = await open("#/explore?genre=fetish&var=dlg_word_share&include=short");
     const [byGenre, overTime] = links(line);
     fireEvent.pointerEnter(byGenre);
-    await waitFor(() => expect(asked.some((u) => u.endsWith("genres/short.json"))).toBe(true));
+    // the file the link opens: All stories', the Genres page's one characteristic offering no Length option
+    await waitFor(() => expect(asked.some((u) => u.endsWith("genres/all.json"))).toBe(true));
+    expect(asked.some((u) => u.endsWith("genres/short.json"))).toBe(false);
     fireEvent.focus(overTime);
     await waitFor(() => expect(asked.some((u) => u.endsWith("trends/short/fetish.json"))).toBe(true));
     cleanup();
-    const genres = await open("#/genres?var=dlg_word_share&include=medium");
+    const genres = await open("#/genres?var=dlg_word_share&include=y2020");
     const popularity = links(genres).find((a) => a.textContent.startsWith("With popularity"));
     fireEvent.focus(popularity);
-    await waitFor(() => expect(asked.some((u) => u.endsWith("v/dlg_word_share/medium.json"))).toBe(true));
+    await waitFor(() => expect(asked.some((u) => u.endsWith("v/dlg_word_share/y2020.json"))).toBe(true));
   });
 });
 

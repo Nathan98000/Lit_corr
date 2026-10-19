@@ -173,7 +173,9 @@ describe("the chart's geometry (trendLayout)", () => {
     const tiny = trendLayout({ width: 288, ...input(["0.78", "0.00060", "0.0032", "3.04", "0.00"]) });
     expect(tiny.stagger).toBe(true);
     expect(tiny.columns.map((c) => c.value.y - tiny.columns[0].value.y)).toEqual([0, 15, 0, 15, 0]);
-    expect(tiny.columns[0].stories.y - tiny.columns[0].value.y).toBe(33);
+    // no row of stories under the values (the owner, 2026-10-19): the brackets 15 px under the lower line
+    expect(tiny.columns.every((c) => c.stories === undefined)).toBe(true);
+    expect(tiny.brackets[0].y - tiny.columns[0].value.y).toBe(30);
     expect(trendOverlaps(tiny)).toEqual([]);
   });
 
@@ -341,7 +343,8 @@ describe("the chart's numbers (one format per chart)", () => {
       stories: "2,209 stories",
       blocks: [
         { caption: null, items: [["With any", "7.9%"]] },
-        { caption: ["Among stories with any", "(per 1,000 words)"], items: [["Median", "0.243"], ["Interquartile range", "0.147–0.428"]] },
+        // with how many stories with any the second half draws from, no longer under the chart (the owner, 2026-10-19)
+        { caption: ["Among the 175 stories with any", "(per 1,000 words)"], items: [["Median", "0.243"], ["Interquartile range", "0.147–0.428"]] },
       ],
     });
     // too few stories with any for a median: the chart's words
@@ -480,7 +483,9 @@ describe("View 1 on the page", () => {
     ]);
     expect(table.querySelector(".not-compared").textContent).toBe("not compared");
     expect([...document.querySelectorAll(".trend-chart g.col")].map((g) => g.classList.contains("middle"))).toEqual([false, false, true, true, false]);
-    expect([...table.querySelectorAll(".col-head")].map((t) => t.textContent)).toEqual(["Median", "Stories"]);
+    // a period's stories are in its name and its card, not in the table (the owner, 2026-10-19)
+    expect([...table.querySelectorAll(".col-head")].map((t) => t.textContent)).toEqual(["Median"]);
+    expect(table.querySelectorAll(".gn")).toHaveLength(0);
     expect(document.querySelectorAll(".trend-chart .iqr")).toHaveLength(5);
     expect(document.querySelector(".trend-chart .trend-line").getAttribute("d")).toMatch(/^M[\d.]+,[\d.]+( L[\d.]+,[\d.]+){4}$/);
   });
@@ -554,7 +559,10 @@ describe("View 1 on the page", () => {
     card = document.querySelector(".trend-tip");
     expect(card.querySelector(".tip-head span").textContent).toBe("87 stories");
     expect([...card.querySelectorAll("dt")].map((d) => d.textContent)).toEqual(["With any", "Median", "Interquartile range"]);
-    expect([...card.querySelectorAll(".tip-caption span")].map((x) => x.textContent)).toEqual(["Among stories with any", "(per 1,000 words)"]);
+    expect([...card.querySelectorAll(".tip-caption span")].map((x) => x.textContent)).toEqual([
+      expect.stringMatching(/^Among the \d+ stories with any$/),
+      "(per 1,000 words)",
+    ]);
     expect([...card.querySelectorAll("dd")].map((d) => d.textContent)).toEqual(["44%", "1.74", "1.37–2.48"]);
   });
 
@@ -586,8 +594,9 @@ describe("View 1 on the page", () => {
     await openTrends("#/trends?var=dlg_word_share&genre=romance");
     const small = document.querySelectorAll(".trend-chart g.col.small");
     expect(small.length).toBe(4); // Romance's periods: 23, 18, 18, 20 and 41 stories
-    expect([...document.querySelectorAll(".trend-table .gn")].map((t) => t.textContent)).toEqual(["23*", "18*", "18*", "20*", "41"]);
-    expect([...document.querySelectorAll(".trend-legend li")].map((li) => li.textContent)).toContain(" Fewer than 30 stories (*)");
+    const names = [...document.querySelectorAll(".trend-chart g.col")].map((g) => g.getAttribute("aria-label"));
+    expect(names.map((name) => name.match(/(\d+) stories$/)[1])).toEqual(["23", "18", "18", "20", "41"]);
+    expect([...document.querySelectorAll(".trend-legend li")].map((li) => li.textContent)).toContain(" Fewer than 30 stories");
     window.location.hash = "#/trends?var=dlg_word_share&genre=romance&include=medium";
     await waitFor(() => expect(document.querySelectorAll(".trend-chart .gnone").length).toBeGreaterThan(0));
     const none = [...document.querySelectorAll(".trend-chart g.col")].filter((g) => g.querySelector(".gnone"));
@@ -649,7 +658,8 @@ describe("View 1 on the page", () => {
     await openTrends("#/trends?var=pov_class&include=medium");
     const byGenre = screen.getByRole("link", { name: "Narrative perspective by genre" });
     expect(byGenre.textContent).toBe("By genre\u00a0→");
-    expect(byGenre.getAttribute("href")).toBe("#/genres?var=pov_class&include=medium");
+    // the Genres page's one characteristic offers no Length option (the owner, 2026-10-19): All stories
+    expect(byGenre.getAttribute("href")).toBe("#/genres?var=pov_class&include=all");
     expect(screen.queryByRole("link", { name: /^Compare genres/ })).toBeNull();
     expect(screen.getByRole("button", { name: "Download image of this chart" })).toBeTruthy();
   });
@@ -680,7 +690,7 @@ describe("named groups and bands: 100% columns", () => {
     expect(segs[1].y + segs[1].height).toBeCloseTo(segs[0].y);
     expect(segs[2].y).toBeCloseTo(layout.top);
     expect(segs.map((x) => x.label?.text ?? null)).toEqual(["60%", null, null]); // 5% is 12.5 px tall; the third has no ink
-    expect(layout.heads.map((h) => h.text)).toEqual(["Stories"]); // the shares are in the columns
+    expect(layout.heads).toEqual([]); // the shares are in the columns, the stories in the names and cards
   });
 
   it("draws one 100% column per period, the groups' key above it, and names each period with every group's share", async () => {
@@ -705,7 +715,7 @@ describe("named groups and bands: 100% columns", () => {
     const segments = [...cols[0].querySelectorAll(".segment")];
     expect(segments.map((r) => r.getAttribute("class"))).toEqual([`segment ${colors[0].cls}`, `segment ${colors[3].cls}`]); // empty groups draw nothing
     expect([...cols[0].querySelectorAll(".seglab")].map((t) => t.textContent)).toEqual(["69%", "31%"]);
-    expect([...document.querySelectorAll(".trend-table .col-head")].map((t) => t.textContent)).toEqual(["Stories"]);
+    expect(document.querySelectorAll(".trend-table .col-head, .trend-table .gn")).toHaveLength(0);
     expect(document.querySelector(".trend-table .gval")).toBeNull();
     expect(document.querySelectorAll(".trend-legend .key-swatch")).toHaveLength(3);
     expect(document.querySelector(".trend-legend .key-swatch.pal-other")).toBeTruthy();
@@ -747,7 +757,7 @@ describe("named groups and bands: 100% columns", () => {
   it("hatches a period under 30 stories", async () => {
     await openTrends("#/trends?var=pov_class&genre=romance");
     expect(document.querySelectorAll(".trend-mix .small-over")).toHaveLength(4); // 23, 18, 18 and 20 stories
-    expect([...document.querySelectorAll(".trend-legend li")].map((li) => li.textContent.trim())).toContain("Fewer than 30 stories (*)");
+    expect([...document.querySelectorAll(".trend-legend li")].map((li) => li.textContent.trim())).toContain("Fewer than 30 stories");
   });
 
   it("draws ordered bands from light to dark, the first at the bottom, with the ink each color takes", () => {
@@ -784,19 +794,19 @@ describe("mostly zero: the split chart", () => {
     const cols = [...chart.querySelectorAll("g.col[role='img']")];
     expect(cols).toHaveLength(5);
     expect(cols[0].getAttribute("aria-label")).toMatch(
-      /^2000–04: 47% with any, among those, median [\d.]+ per 1,000 words, interquartile range [\d.]+–[\d.]+, 42 stories$/,
+      /^2000–04: 47% with any, among those 22, median [\d.]+ per 1,000 words, interquartile range [\d.]+–[\d.]+, 42 stories$/,
     );
     const [any, among] = chart.querySelectorAll(".trend-table");
-    expect([...any.querySelectorAll(".col-head")].map((t) => t.textContent)).toEqual(["Share", "Stories"]);
-    expect([...among.querySelectorAll(".col-head")].map((t) => t.textContent)).toEqual(["Median", "Stories"]);
-    expect(any.querySelector(".gn").textContent).toBe("42");
-    expect(among.querySelector(".gn").textContent).toBe("22*"); // the stories with any, hatched under 30
+    // the stories, and the stories with any (hatched under 30), are in each period's name and card (the owner, 2026-10-19)
+    expect([...any.querySelectorAll(".col-head")].map((t) => t.textContent)).toEqual(["Share"]);
+    expect([...among.querySelectorAll(".col-head")].map((t) => t.textContent)).toEqual(["Median"]);
+    expect(chart.querySelectorAll(".gn")).toHaveLength(0);
     expect(cols[0].querySelectorAll(".half")[1].classList.contains("small")).toBe(true);
     // the split chart's two dots differ in the key: a dot on a line, a dot inside a capsule
     expect([...document.querySelectorAll(".trend-legend li")].map((li) => li.textContent.trim())).toEqual([
       "Share of stories",
       "Median and interquartile range",
-      "Fewer than 30 stories (*)",
+      "Fewer than 30 stories",
       "The periods compared, the oldest and the newest (how this is decided)",
       "The periods between them, shown but not compared",
     ]);

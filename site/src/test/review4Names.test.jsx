@@ -103,17 +103,19 @@ describe("L1: Explore's rating axis and its rows on phones", () => {
     }
   });
 
-  it("says each group's stories in words on phones, as wider screens do (“2,631 stories”, never “n = 2,631”)", () => {
+  it("prints no group's stories at any width, never “n = 2,631” either: they are in its name and its details", () => {
+    // round 4's L1 put them under each label in words; the owner (2026-10-19) left them to the details
     const stats = (n) => ({ n, median: 4.3, p25: 4.1, p75: 4.6, mean: 4.3 });
     const rows = [2631, 12, 40].map((n, index) => ({ index, label: `Group number ${index + 1}`, stats: stats(n) }));
     for (const width of [288, 343, 720]) {
       const layout = rangeLayout({ rows, overall: stats(2683), format: "rating", width, smallN: 30, minN: 10 });
-      expect(layout.rows.map((r) => r.nText)).toEqual(["2,631 stories", "12 stories*", "40 stories"]);
+      expect(layout.rows.every((r) => r.nText === undefined && r.boxes.every((b) => b.kind !== "n"))).toBe(true);
+      expect(layout.rows.map((r) => r.small)).toEqual([false, true, false]); // the small group is still hatched
     }
     const months = ["Jan", "Feb"].map((label, index) => ({ index, label, stats: index ? null : stats(2631) }));
     const inline = rangeLayout({ rows: months, overall: stats(2631), format: "rating", width: 288, smallN: 30, minN: 10 });
     expect(inline.mode).toBe("inline");
-    expect(inline.rows.map((r) => r.nText)).toEqual(["2,631 stories", "fewer than 10"]);
+    expect(inline.rows.map((r) => r.boxes.map((b) => b.kind))).toEqual([["label", "value"], ["label", "none"]]);
   });
 
   it.skipIf(!real)("never puts a printed value under the dashed line, and never overlaps, for every chart on phones", () => {

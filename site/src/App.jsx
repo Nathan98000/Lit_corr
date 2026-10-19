@@ -184,9 +184,9 @@ export default function App() {
   // an old link's setting that the page no longer has leaves the address, in place (no new history entry)
   useEffect(() => {
     const shown = route.page === "explore" ? state : route.page === "genres" ? genresState : null;
-    const settled = shown && settledHash(window.location.hash, route.page, shown);
+    const settled = shown && settledHash(window.location.hash, route.page, shown, meta);
     if (settled) replaceHash(settled);
-  }, [route.page, state, genresState]);
+  }, [route.page, state, genresState, meta]);
   // a control (characteristic, option, order) replaces the address; another view adds one, so Back returns
   const updateGenres = useCallback((next) => {
     replaceHash(toHash("genres", next));

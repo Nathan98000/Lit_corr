@@ -230,7 +230,7 @@ describe("what the image says", () => {
     expect(plan.credit).toBe(CREDIT);
   });
 
-  it("Explore, no clear pattern and small groups: the answer on its own line, the small-sample key and caption", async () => {
+  it("Explore, no clear pattern and small groups: the answer on its own line, the small-sample key, nothing under", async () => {
     const user = await open("#/explore?genre=romance&var=dlg_word_share");
     const plan = imagePlan(await press(user));
     // the pair screen readers hear
@@ -239,7 +239,7 @@ describe("what the image says", () => {
     expect(plan.subtitle[0]).toMatch(/^Romance · [\d,]+ stories$/);
     expect(plan.key.map((k) => k.text)).toContain("Fewer than 30 stories");
     expect(plan.key.find((k) => k.text === "Fewer than 30 stories").swatches).toEqual(["key-small"]);
-    expect(plan.below).toEqual(["* Fewer than 30 stories: worth less trust."]);
+    expect(plan.below).toEqual([]); // no row prints its stories, so no asterisk's caption (the owner, 2026-10-19)
   });
 
   it("Explore, yes/no and named groups", async () => {

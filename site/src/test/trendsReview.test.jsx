@@ -17,6 +17,7 @@ import TrendChart from "../components/TrendChart.jsx";
 import { TrendLegend } from "../components/TrendAnswer.jsx";
 import { plotHeight, trendLayout, trendOverlaps } from "../lib/trendLayout.js";
 import {
+  changesAnnouncement,
   changesHeading,
   changesQuestion,
   changesRowName,
@@ -24,7 +25,6 @@ import {
   changesScale,
   changesValues,
   changesWords,
-  lengthLine,
   overTimeCharacteristic,
   pathLine,
   pickerChanges,
@@ -171,10 +171,11 @@ describe("across all genres, in a genre (phase 2)", () => {
     expect(changesQuestion(ALL)).toBe("What has changed in stories across all genres?");
     expect(changesQuestion(ROMANCE)).toBe("What has changed in stories in Romance?");
     const file = { then: [2000, 2009], now: [2020, 2026], periods: [[2000, 2004], [2005, 2009], [2010, 2014], [2015, 2019], [2020, 2026]], n: [1, 2, 3, 4, 5] };
-    expect(changesSampleLine(file, ALL, { id: "all" })).toBe("3 stories from 2000–2009 and 5 from 2020 or later across all genres.");
-    expect(changesSampleLine(file, ROMANCE, { id: "all" })).toBe("3 stories from 2000–2009 and 5 from 2020 or later in Romance.");
+    // says that these are the stories compared (the owner, 2026-10-19)
+    expect(changesSampleLine(file, ALL, { id: "all" })).toBe("Comparing 3 stories from 2000–2009 with 5 from 2020 or later, across all genres.");
+    expect(changesSampleLine(file, ROMANCE, { id: "all" })).toBe("Comparing 3 stories from 2000–2009 with 5 from 2020 or later, in Romance.");
     expect(changesSampleLine(file, ROMANCE, { id: "short", label: "Under 2,000 words" })).toBe(
-      "3 stories from 2000–2009 and 5 from 2020 or later in Romance match “Under 2,000 words”.",
+      "Comparing 3 stories from 2000–2009 with 5 from 2020 or later, in Romance, all of them “Under 2,000 words”.",
     );
   });
 });
@@ -493,7 +494,7 @@ describe("View 1's chart tells the same story as its verdict (phase 4)", () => {
     expect(d).toMatch(/^M[\d.]+,[\d.]+ L[\d.]+,[\d.]+ L[\d.]+,[\d.]+$/); // 2000–04 to 2010–14; 2020–26 alone has no line
   });
 
-  it("keys a share as a dot on a short line, a median as a dot inside a capsule, and the asterisk", () => {
+  it("keys a share as a dot on a short line, a median as a dot inside a capsule, and the small periods without an asterisk", () => {
     const entries = (kind) => {
       const { unmount } = render(<TrendLegend kind={kind} anySmall minStories={30} />);
       const out = [...document.querySelectorAll(".trend-legend li")].map((li) => [li.textContent.trim(), [...li.querySelectorAll(".key")].map((k) => k.classList[1])]);
@@ -502,21 +503,21 @@ describe("View 1's chart tells the same story as its verdict (phase 4)", () => {
     };
     expect(entries("num")).toEqual([
       ["Median and interquartile range", ["key-range"]],
-      ["Fewer than 30 stories (*)", ["key-small"]],
+      ["Fewer than 30 stories", ["key-small"]], // no "(*)": the table has no stories (the owner, 2026-10-19)
       // which periods are compared, and gray as "not compared" (the fresh eyes read it as View 2's "no clear change")
       ["The periods compared, the oldest and the newest (how this is decided)", ["key-bracket"]],
       ["The periods between them, shown but not compared", ["key-mid"]],
     ]);
     expect(entries("bin").slice(0, 2)).toEqual([
       ["Share of stories", ["key-share"]],
-      ["Fewer than 30 stories (*)", ["key-small-dot"]],
+      ["Fewer than 30 stories", ["key-small-dot"]],
     ]);
     expect(entries("bin")[3][0]).toBe("The periods between them, shown but not compared");
     expect(document.querySelector(".key-mid")).toBeNull(); // unmounted
     expect(entries("zero").slice(0, 3)).toEqual([
       ["Share of stories", ["key-share"]],
       ["Median and interquartile range", ["key-range"]],
-      ["Fewer than 30 stories (*)", ["key-small-dot", "key-small"]],
+      ["Fewer than 30 stories", ["key-small-dot", "key-small"]],
     ]);
   });
 });
@@ -600,22 +601,14 @@ describe("View 2 (phase 6)", () => {
     });
   });
 
-  it.skipIf(!real)("says how long stories got first (All genres, All stories)", () => {
+  it.skipIf(!real)("gives word count no line of its own, which read as the one change (the owner, 2026-10-19)", () => {
+    // All genres, All stories: word count clearly rose, and is one of the risers in the takeaway and its list
     const file = realTrends("all", "all");
     const p = trendProfile(real, file);
-    expect(lengthLine(p, file)).toBe("Stories got longer: median 2,770 words in 2000–2009, 4,150 in 2020 or later.");
-    // the Length options leave word count out
-    expect(lengthLine(trendProfile(real, realTrends("medium", "all")), realTrends("medium", "all"))).toBeNull();
-  });
-
-  it("words the length line both ways and leaves it out without a clear change in word count", () => {
-    const file = { then: [2000, 2009], now: [2020, 2026] };
-    const nf = trendFormat({ unit: "words", bins: { type: "ranges" } }, { k: "num", fmt: "num", q: [[100, 1, 2810, 5000]], t: [100, 1, 4100, 5000] }, true, 30);
-    const p = (f) => ({ items: [{ id: "story_words", f, all: { median: 4100 }, stats: { median: 2810 }, nf }] });
-    expect(lengthLine(p(-1), file)).toBe("Stories got shorter: median 4,100 words in 2000–2009, 2,810 in 2020 or later.");
-    expect(lengthLine(p(1), file)).toMatch(/^Stories got longer: /);
-    expect(lengthLine(p(0), file)).toBeNull();
-    expect(lengthLine({ items: [] }, file)).toBeNull();
+    expect(p.higher.map((x) => x.id)).toContain("story_words");
+    const said = changesAnnouncement(real, file, { genre: "all", sub: "all" });
+    expect(said).toMatch(/^What has changed in stories across all genres\? 25 of 180 characteristics clearly changed from 2000–2009 to 2020 or later\. Rose: /);
+    expect(said).not.toMatch(/Stories got|longer|shorter/);
   });
 
   it("says no borderline and no band line, tags no row, and fetches no Length options' files for them (the owner, 2026-10-12)", async () => {
@@ -637,13 +630,19 @@ describe("View 2 (phase 6)", () => {
     expect(asked.filter((u) => /trends\/(short|medium|long)\//.test(u))).toEqual([]);
   });
 
-  it("puts the note above the first list, titles the lists “▼ Fell” and “▲ Rose”, and names them in full", async () => {
+  it("says what a dot is and where a row leads right over the first list's rows, titles the lists “▼ Fell” and “▲ Rose”, and names them in full", async () => {
     await open("#/trends", { ready: trends });
     const answer = document.querySelector(".trend-changes");
-    const note = answer.querySelector(".profile-note");
+    // no note above the list, far from its dots (the owner, 2026-10-19): the axis title's line over the rows says it
+    expect(answer.querySelector(".profile-note")).toBeNull();
     const first = answer.querySelector(".profile-list");
-    expect(note.compareDocumentPosition(first) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(answer.querySelector(".profile-takeaway").compareDocumentPosition(note) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    const caption = first.querySelector(".profile-axis-title");
+    expect(caption.textContent).toBe(
+      "Each dot shows how often a story from 2020 or later comes out higher than a story from 2000–2009, out\u00a0of\u00a0100 " +
+        "(50\u00a0is\u00a0a\u00a0tie). Click a row for its chart over time.",
+    );
+    expect(caption.nextElementSibling.classList.contains("profile-block")).toBe(true); // right over the rows
+    expect(caption.querySelector(".profile-hint").textContent).toBe("Click a row for its chart over time.");
     expect(screen.getByRole("heading", { level: 3, name: "Rose from 2000–2009 to 2020 or later" })).toBeTruthy();
     expect(first.querySelector("h3 [aria-hidden='true']").textContent).toBe("▲ Rose");
   });
@@ -732,10 +731,15 @@ describe("View 2 (phase 6)", () => {
     expect(plan.title).toEqual(["What has changed in stories across all genres?"]);
     expect(plan.subtitle).toEqual([
       "2 of 4 characteristics clearly changed from 2000–2009 to 2020 or later",
-      "86 stories from 2000–2009 and 87 from 2020 or later across all genres.",
+      "Comparing 86 stories from 2000–2009 with 87 from 2020 or later, across all genres.",
     ]);
+    // the axis title says what a dot is, "50 is a tie" with it; where a row leads is for the page only
     expect(plan.lists.map((l) => [l.title, l.count, l.caption])).toEqual([
-      ["▲ Rose", "2 characteristics", "How often a story from 2020 or later comes out higher than a story from 2000–2009, out\u00a0of\u00a0100"],
+      [
+        "▲ Rose",
+        "2 characteristics",
+        "Each dot shows how often a story from 2020 or later comes out higher than a story from 2000–2009, out\u00a0of\u00a0100 (50\u00a0is\u00a0a\u00a0tie)",
+      ],
     ]);
     expect(plan.lists[0].rows.map((r) => r.label)).toEqual(["Dialogue share", "Has dialogue"]);
     expect(plan.lists[0].rows[0].values[0]).toMatch(/^\d+% → \d+%$/);

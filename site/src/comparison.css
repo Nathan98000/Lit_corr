@@ -65,20 +65,19 @@
   padding-left: 0;
 }
 
-/* the note above the first list: its link's target is 44 px tall, invisibly (quick win 4) */
-.profile-note {
-  max-width: 70ch;
-  margin: var(--space-8) 0 0;
-  font-size: var(--text-13);
-  line-height: var(--leading-13);
-  color: var(--ink-2);
+/* under what a dot is, the note (where a row leads) on a line of its own, in plain weight, right over the rows (the
+   owner, 2026-10-19: it was above the first list); the axis title's link's target is 44 px tall, invisibly (quick win
+   4) */
+.profile-hint {
+  display: block;
+  font-weight: 400;
 }
 
-.profile-note a {
+.profile-axis-title a {
   position: relative;
 }
 
-.profile-note a::after {
+.profile-axis-title a::after {
   content: "";
   position: absolute;
   left: 0;

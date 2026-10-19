@@ -4,12 +4,11 @@ import { bandPalette, mixColors, mixLayout } from "../lib/genreLayout.js";
 import { GenreRowDetails, useGenreDetails } from "./GenreDetails.jsx";
 import useWidth from "./useWidth.js";
 
-/** Each group's share in a genre, for the 100% bars: per row { index, label, n, shares, mark, noneText }. */
+/** Each group's share in a genre, for the 100% bars: per row { index, label, shares, mark, noneText }. */
 export function mixRows(rows, variable, kind, minN) {
   return rows.map((row) => ({
     index: row.i,
     label: row.genre.name,
-    n: row.stats?.n ?? null,
     shares: row.stats?.shares ?? null,
     mark: comparison(row, variable, kind)?.mark || "",
     small: row.small,
@@ -78,11 +77,6 @@ export default function GenreMix({ meta, variable, entry, rows, sub, title, onNa
             {layout.rows.length > 1 && (
               <line className="all-rule" x1={0} x2={layout.width} y1={layout.rows[1].y0} y2={layout.rows[1].y0} />
             )}
-            {layout.storiesHead && (
-              <text className="tick stories-head" x={layout.storiesHead.x} y={layout.storiesHead.y} textAnchor="end">
-                {layout.storiesHead.text}
-              </text>
-            )}
             {layout.names.map((nm) => (
               <text key={nm.b} className="group-name" x={nm.x} y={nm.y} textAnchor="middle">
                 {nm.text}
@@ -120,7 +114,7 @@ export default function GenreMix({ meta, variable, entry, rows, sub, title, onNa
   );
 }
 
-/** One genre's row: name, stories, mark and its bar. */
+/** One genre's row: name, mark and its bar. */
 function MixRow({ r, row, layout, colors, hatchId }) {
   return (
     <>
@@ -130,11 +124,6 @@ function MixRow({ r, row, layout, colors, hatchId }) {
           {l.text}
         </text>
       ))}
-      {r.count && (
-        <text className="gn" x={r.count.x} y={r.count.y} textAnchor="end">
-          {r.count.text}
-        </text>
-      )}
       {r.mark && (
         <text className="gmark" x={r.mark.x} y={r.mark.y} textAnchor="middle">
           {r.mark.text}

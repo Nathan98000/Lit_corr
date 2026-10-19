@@ -74,10 +74,13 @@ describe("the windows and the words", () => {
     expect(changesHeading(26, 180, file)).toBe("26 of 180 characteristics clearly changed from 2000–2009 to 2020 or later");
     expect(changesHeading(1, 179, file)).toBe("1 of 179 characteristics clearly changed from 2000–2009 to 2020 or later");
     expect(changesHeading(0, 180, file)).toBe("None of the 180 characteristics clearly changed from 2000–2009 to 2020 or later");
-    expect(changesSampleLine(file, ALL, { id: "all", label: "All stories" })).toBe("86 stories from 2000–2009 and 87 from 2020 or later across all genres.");
+    // the stories compared, said as such (the owner, 2026-10-19)
+    expect(changesSampleLine(file, ALL, { id: "all", label: "All stories" })).toBe(
+      "Comparing 86 stories from 2000–2009 with 87 from 2020 or later, across all genres.",
+    );
     const medium = fixtureFile("trends/medium/all.json");
     expect(changesSampleLine(medium, ALL, { id: "medium", label: "2,000–5,000 words" })).toBe(
-      "43 stories from 2000–2009 and 52 from 2020 or later across all genres match “2,000–5,000 words”.",
+      "Comparing 43 stories from 2000–2009 with 52 from 2020 or later, across all genres, all of them “2,000–5,000 words”.",
     );
     const tiny = { id: "tiny", name: "Tiny" };
     expect(changesTooFewHeading(fixtureFile("trends/all/tiny.json"), tiny, { id: "all" })).toBe(
@@ -100,18 +103,15 @@ describe("the windows and the words", () => {
     });
     // the values' head says what the numbers are; the axis title in plain words (the trends review's fresh eyes)
     expect(w.valuesHead).toEqual(["Median story or share", "2000–09 → 2020+"]);
-    expect(w.axisTitle).toBe("How often a story from 2020 or later comes out higher than a story from 2000–2009, out of 100");
+    // what a dot is, with "50 is a tie", right over the rows (the owner, 2026-10-19: the note above the list was too far)
+    expect(w.axisTitle).toBe("Each dot shows how often a story from 2020 or later comes out higher than a story from 2000–2009, out of 100 (50 is a tie)");
     expect(w.showAll(21, "higher")).toBe("Show all 21 that rose");
     expect(w.showAll(5, "lower")).toBe("Show all 5 that fell");
     expect(w.zone).toBe("no clear change");
-    // the note in the owner's words (2026-10-12) and where a row leads (round 4's W1): no link, the same in a topic,
-    // "Tap" on a device that can't hover, as "One genre"'s
-    expect(w.note({ tap: false })).toBe(
-      "Each dot compares a story from 2020 or later with a story from 2000–2009 (50 is a tie). Click a row for its chart over time.",
-    );
-    expect(w.note({ tap: true })).toBe(
-      "Each dot compares a story from 2020 or later with a story from 2000–2009 (50 is a tie). Tap a row for its chart over time.",
-    );
+    // the note says where a row leads (round 4's W1), after the axis title: no link, the same in a topic, "Tap" on a
+    // device that can't hover, as "One genre"'s
+    expect(w.note({ tap: false })).toBe("Click a row for its chart over time.");
+    expect(w.note({ tap: true })).toBe("Tap a row for its chart over time.");
     expect(w.note({ inTopic: true, tap: true })).toBe(w.note({ tap: true }));
     expect(w.note({})).toBe(w.note({ tap: false }));
     // the bars in time's order (the trends review)
@@ -186,13 +186,15 @@ describe("View 2 on the page", () => {
     expect(document.querySelector(".trends-page .sentence").textContent.replace(/⁠/g, "")).toMatch(/^What has changed in stories across .*all genres.*\?$/);
     const answer = document.querySelector(".trend-changes");
     expect(within(answer).getByRole("heading", { level: 2 }).textContent).toBe("2 of 4 characteristics clearly changed from 2000–2009 to 2020 or later");
-    expect(answer.querySelector(".profile-sample").textContent).toBe("86 stories from 2000–2009 and 87 from 2020 or later across all genres.");
+    expect(answer.querySelector(".profile-sample").textContent).toBe(
+      "Comparing 86 stories from 2000–2009 with 87 from 2020 or later, across all genres.",
+    );
     expect(answer.querySelector(".profile-takeaway").textContent).toBe("▲ Rose: dialogue share, has dialogue.");
     const lists = [...answer.querySelectorAll(".profile-list h3")];
     expect(lists.map((h) => h.querySelector("[aria-hidden='true']").textContent)).toEqual(["▲ Rose"]);
     expect(lists.map((h) => h.querySelector(".visually-hidden").textContent)).toEqual(["Rose from 2000–2009 to 2020 or later"]);
     expect(answer.querySelector(".profile-axis-title").textContent).toBe(
-      "How often a story from 2020 or later comes out higher than a story from 2000–2009, out of 100",
+      "Each dot shows how often a story from 2020 or later comes out higher than a story from 2000–2009, out of 100 (50 is a tie). Click a row for its chart over time.",
     );
     expect(answer.querySelector(".zone-label").textContent).toBe("40–60: no clear change");
     expect([...answer.querySelectorAll(".profile-values-head")].map((h) => [...h.children].map((l) => l.textContent))).toEqual([
@@ -201,11 +203,9 @@ describe("View 2 on the page", () => {
     const row = answer.querySelector(".profile-list .profile-row .profile-link");
     expect(row.getAttribute("href")).toBe("#/trends?var=dlg_word_share&genre=all&include=all");
     expect(row.querySelector(".visually-hidden").textContent).toMatch(/^Dialogue share: \d+ in 100; 2000–2009 \d+%, 2020 or later \d+%; clearly rose\. Opens its chart over time\.$/);
-    const note = answer.querySelector(".profile-note");
-    expect(note.textContent).toBe(
-      "Each dot compares a story from 2020 or later with a story from 2000–2009 (50 is a tie). Click a row for its chart over time.",
-    );
-    expect(note.querySelector("a")).toBeNull();
+    // the note is in the axis title's line, without a link; none above the list (the owner, 2026-10-19)
+    expect(answer.querySelector(".profile-note")).toBeNull();
+    expect(answer.querySelector(".profile-axis-title a")).toBeNull();
     expect([...answer.querySelectorAll(".profile-topic-count")].map((c) => c.textContent)).toEqual(["0 of 1 changed", "2 of 2 changed", "0 of 1 changed"]);
     expect(answer.querySelector(".profile-topics-line").textContent).toBe(
       "How many characteristics in each topic changed. Open a topic to see them all: blue dots changed, gray dots show no clear change.",

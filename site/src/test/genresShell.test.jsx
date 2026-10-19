@@ -9,7 +9,15 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "../App.jsx";
 import { GenresPage } from "../components/pages.js";
 import { clearCache } from "../lib/data.js";
-import { GENRE_PAGE_EXCLUDED, defaultGenre, parseHash, sanitizeGenres, toHash } from "../lib/urlState.js";
+import {
+  GENRE_PAGE_EXCLUDED,
+  defaultGenre,
+  genreChartSub,
+  parseHash,
+  sanitizeGenres,
+  settledHash,
+  toHash,
+} from "../lib/urlState.js";
 import { fixtureFetch, fixtureMeta, realMeta } from "./fixtures.js";
 
 const real = realMeta();
@@ -83,7 +91,10 @@ describe("Genres addresses", () => {
     for (const id of GENRE_PAGE_EXCLUDED) expect(sanitizeGenres({ v: id }, real).v).toBe("story_words");
     expect(sanitizeGenres({ v: "story_words", sub: "short" }, real).sub).toBe("all");
     expect(sanitizeGenres({ v: "pub_year", sub: "y2000" }, real).sub).toBe("all");
-    expect(sanitizeGenres({ v: "pub_year", sub: "long" }, real).sub).toBe("long");
+    // one characteristic offers no Length option (the owner, 2026-10-19); the others stay
+    expect(sanitizeGenres({ v: "pub_year", sub: "long" }, real).sub).toBe("all");
+    expect(sanitizeGenres({ v: "dlg_word_share", sub: "medium" }, real).sub).toBe("all");
+    expect(sanitizeGenres({ v: "pub_year", sub: "views10k" }, real).sub).toBe("views10k");
     expect(sanitizeGenres({ v: "author_stories_count", sort: "az" }, real).sort).toBeUndefined(); // ordered bands: A–Z only
     expect(sanitizeGenres({ v: "rel_romance_per_1k", sort: "az" }, real).sort).toBe("az");
     expect(sanitizeGenres({ v: "rel_romance_per_1k", sort: "value" }, real).sort).toBeUndefined(); // by share with any
@@ -264,5 +275,44 @@ describe("the default genre of “One genre” (D8)", () => {
     await waitFor(() => expect(window.location.hash).toBe("#/genres?var=pov_class&include=all"));
     window.history.back();
     await waitFor(() => expect(window.location.hash).toBe("#/genres?view=genre&genre=tiny&include=all"));
+  });
+});
+
+describe("“Only include” on one characteristic: no Length options (the owner, 2026-10-19)", () => {
+  const groups = () => [...document.querySelectorAll(".include select optgroup")].map((g) => g.label);
+
+  it("offers every option but the Length ones; one genre keeps them all", async () => {
+    await openGenres("#/genres?var=dlg_word_share");
+    expect(groups()).toEqual(["Published", "Readership"]);
+    expect(screen.queryByRole("option", { name: /words/ })).toBeNull();
+    window.location.hash = "#/genres?view=genre&genre=romance&include=all";
+    await waitFor(() => expect(groups()).toEqual(["Published", "Length", "Readership"]));
+  });
+
+  it("opens one characteristic with All stories after a Length option, and keeps any other", async () => {
+    const user = await openGenres("#/genres?view=genre&genre=romance&include=medium");
+    await user.click(screen.getByRole("radio", { name: "One characteristic" }));
+    await waitFor(() => expect(window.location.hash).toBe("#/genres?var=dlg_word_share&include=all"));
+    window.location.hash = "#/genres?view=genre&genre=romance&include=y2020";
+    await waitFor(() => expect(screen.getByRole("radio", { name: "One genre" }).checked).toBe(true));
+    await user.click(screen.getByRole("radio", { name: "One characteristic" }));
+    await waitFor(() => expect(window.location.hash).toBe("#/genres?var=dlg_word_share&include=y2020"));
+  });
+
+  it("settles an old address with a Length option to All stories, in place; one genre's stays", async () => {
+    await openGenres("#/genres?var=dlg_word_share&include=long");
+    await waitFor(() => expect(window.location.hash).toBe("#/genres?var=dlg_word_share&include=all"));
+    expect(document.querySelector(".include select").value).toBe("all");
+    const one = { view: "genre", genre: "romance", sub: "long", v: "dlg_word_share" };
+    expect(settledHash("#/genres?view=genre&genre=romance&include=long", "genres", one, fixtureMeta)).toBeNull();
+    const chart = { v: "dlg_word_share", sub: "all" };
+    expect(settledHash("#/genres?var=dlg_word_share&include=nope", "genres", chart, fixtureMeta)).toBeNull(); // unknown: as before
+    expect(settledHash("#/genres?var=dlg_word_share&include=y2000", "genres", { ...chart, sub: "y2000" }, fixtureMeta)).toBeNull();
+  });
+
+  it("carries an option to one characteristic only where it offers it", () => {
+    expect(genreChartSub(fixtureMeta, "y2020")).toBe("y2020");
+    expect(genreChartSub(fixtureMeta, "short")).toBe("all");
+    expect(genreChartSub(fixtureMeta, "nope")).toBe("all");
   });
 });

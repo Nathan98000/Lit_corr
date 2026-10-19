@@ -1063,12 +1063,6 @@ h3 {
   font-size: var(--text-14);
 }
 
-.range-chart .gn {
-  fill: var(--ink-3);
-  font-size: var(--text-13);
-  font-variant-numeric: tabular-nums;
-}
-
 .range-chart .gval {
   fill: var(--ink);
   font-size: var(--text-13);
@@ -1084,7 +1078,6 @@ h3 {
 
 /* a halo in the background color, so grid and reference lines never cut through text */
 .range-chart .glabel,
-.range-chart .gn,
 .range-chart .gval,
 .range-chart .gnone,
 .range-chart .reflab,
@@ -2355,7 +2348,6 @@ summary.pattern-topic-head::after {
   }
 
   .range-chart .glabel,
-  .range-chart .gn,
   .range-chart .gval,
   .range-chart .gnone,
   .range-chart .reflab,

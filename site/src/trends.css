@@ -213,10 +213,6 @@
   fill: var(--ink-2);
 }
 
-.trend-chart .gn {
-  font-size: var(--text-12);
-}
-
 /* the two windows compared, bracketed under their periods, each with its window's number */
 .trend-chart .bracket path {
   fill: none;
@@ -613,7 +609,6 @@
   }
 
   .trend-mix .tick,
-  .trend-mix .gn,
   .trend-mix .gnone,
   .trend-mix .bracket text {
     fill: CanvasText;

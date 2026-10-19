@@ -16,6 +16,7 @@ import { clearCache } from "../lib/data.js";
 import {
   POSITION_WORDS,
   axisTitle,
+  axisTitleParts,
   genreProfile,
   pairText,
   positionWord,
@@ -98,46 +99,54 @@ const openAllTopics = async (user) => {
 const hoverNone = () =>
   vi.stubGlobal("matchMedia", (q) => ({ matches: q === "(hover: none)", media: q, addEventListener() {}, removeEventListener() {} }));
 
-describe("W1: “One genre”'s note, above the first list, in the Trends page's words", () => {
-  it("says what a dot compares, that 50 is a tie, and what a tap does; its link is one piece", () => {
-    expect(joined(profileNote(romance, { tap: true }))).toBe(
-      "Each dot compares a story in Romance with a story from all genres (50 is a tie; how this is decided). Tap a row " +
-        "for every genre’s numbers.",
-    );
-    expect(joined(profileNote(romance, { tap: false }))).toMatch(/\. Click a row for every genre’s numbers\.$/);
-    // the link's words never break inside, and the gray dots are the topics' line's to explain
-    expect(profileNote(romance)[1]).toBe("how this is decided");
-    expect(joined(profileNote(romance))).not.toMatch(/[Gg]ray dots|in the topics below/);
+describe("W1: “One genre”'s note, under what a dot is, right over the rows, as the Trends page's", () => {
+  // a note above the first list before, too far from its dots (the owner, 2026-10-19)
+  it("says what a tap does; what a dot compares and that 50 is a tie are the axis title's, with the link in one piece", () => {
+    expect(profileNote({ tap: true })).toBe("Tap a row for every genre’s numbers.");
+    expect(profileNote({ tap: false })).toBe("Click a row for every genre’s numbers.");
+    expect(axisTitleParts(romance)).toEqual([
+      "Each dot shows how often a story in Romance comes out higher than a story from all genres, out\u00a0of\u00a0100 (50\u00a0is\u00a0a\u00a0tie; ",
+      "how\u00a0this\u00a0is\u00a0decided", // never breaks inside
+      ")",
+    ]);
+    // the gray dots are the topics' line's to explain
+    expect(`${joined(axisTitleParts(romance))} ${profileNote()}`).not.toMatch(/[Gg]ray dots|in the topics below/);
   });
 
-  it("sits above the first list, after the takeaway, with its link, “Click” where the device can hover", async () => {
+  it("sits in the axis title's lines over the first list's rows, after the takeaway, with its link, “Click” where the device can hover", async () => {
     await open("#/genres?view=genre&genre=romance&include=all");
-    const notes = document.querySelectorAll(".profile-note");
-    expect(notes).toHaveLength(1);
-    const [note] = notes;
-    expect(note.closest(".profile-list")).toBeNull();
-    expect(note.nextElementSibling).toBe(document.querySelector(".profile-list"));
-    expect(note.previousElementSibling.classList.contains("profile-takeaway")).toBe(true);
-    expect(note.textContent).toBe(joined(profileNote(romance, { tap: false })));
-    expect(note.querySelector("a").getAttribute("href")).toBe("#/methodology/genres");
-    expect(note.querySelector("a").textContent).toBe("how this is decided");
+    expect(document.querySelector(".profile-note")).toBeNull();
+    const list = document.querySelector(".profile-list");
+    expect(list.previousElementSibling.classList.contains("profile-takeaway")).toBe(true);
+    const captions = document.querySelectorAll(".profile-axis-title");
+    expect(captions).toHaveLength(1);
+    const [caption] = captions;
+    expect(list.contains(caption)).toBe(true);
+    expect(caption.nextElementSibling.classList.contains("profile-block")).toBe(true);
+    expect(caption.textContent).toBe(`${joined(axisTitleParts(romance))}. ${profileNote({ tap: false })}`);
+    expect(caption.querySelector(".profile-hint").textContent).toBe(profileNote({ tap: false }));
+    expect(caption.querySelector("a").getAttribute("href")).toBe("#/methodology/genres");
+    expect(caption.querySelector("a").textContent).toBe("how\u00a0this\u00a0is\u00a0decided");
     // the link's target stays 44 px tall
-    expect(css).toMatch(/\.profile-note a::after \{[^}]*height: max\(100%, var\(--target\)\);/);
+    expect(css).toMatch(/\.profile-axis-title a::after \{[^}]*height: max\(100%, var\(--target\)\);/);
   });
 
   it("says “Tap” on a device that can't hover", async () => {
     hoverNone();
     await open("#/genres?view=genre&genre=romance&include=all");
-    expect(document.querySelector(".profile-note").textContent).toBe(joined(profileNote(romance, { tap: true })));
+    expect(document.querySelector(".profile-axis-title .profile-hint").textContent).toBe(profileNote({ tap: true }));
   });
 
   it("goes in the same words with every open topic that has dots when no list is shown", async () => {
     const user = await open("#/genres?view=genre&genre=fetish&include=all");
-    expect(document.querySelector(".profile-list, .profile-note")).toBeNull();
+    expect(document.querySelector(".profile-list, .profile-axis-title")).toBeNull();
     await openAllTopics(user);
     const topics = [...document.querySelectorAll(".profile-topic")].filter((t) => t.querySelector(".p2-dot"));
     expect(topics.length).toBeGreaterThan(1);
-    for (const t of topics) expect(t.querySelector(".profile-note").textContent).toBe(joined(profileNote(fetish, { tap: false })));
+    for (const t of topics) {
+      expect(t.querySelector(".profile-axis-title").textContent).toBe(`${joined(axisTitleParts(fetish))}. ${profileNote({ tap: false })}`);
+    }
+    expect(document.querySelector(".profile-note")).toBeNull();
   });
 });
 
@@ -146,18 +155,21 @@ describe("W1: “One genre”'s axis title, in the Trends page's words", () => {
     const trends = changesWords(fixtureFile("trends/all/all.json"));
     const shape = (s, a, b) => s.replace(a, "A").replace(b, "B");
     expect(shape(axisTitle(romance), "in Romance", "from all genres")).toBe(shape(trends.axisTitle, "from 2020 or later", "from 2000–2009"));
-    expect(axisTitle(romance)).toBe("How often a story in Romance comes out higher than a story from all genres, out of 100");
+    expect(axisTitle(romance)).toBe(
+      "Each dot shows how often a story in Romance comes out higher than a story from all genres, out\u00a0of\u00a0100 (50\u00a0is\u00a0a\u00a0tie)",
+    );
   });
 
-  it("is the same on the page and in the image", async () => {
+  it("is the page's without the link and the note in the image", async () => {
     downloadChartImage.mockClear();
     const user = await open("#/genres?view=genre&genre=romance&include=all");
     const title = document.querySelector(".profile-axis-title").textContent;
-    expect(title).toBe(axisTitle(romance));
+    expect(title).toBe(`${joined(axisTitleParts(romance))}. ${profileNote()}`);
+    expect(joined(axisTitleParts(romance)).replace("; how\u00a0this\u00a0is\u00a0decided", "")).toBe(axisTitle(romance));
     await user.click(screen.getByRole("button", { name: "Download image of what stands out" }));
     await waitFor(() => expect(downloadChartImage).toHaveBeenCalledTimes(1));
     const plan = listsImagePlan(downloadChartImage.mock.calls[0][0]);
-    expect(plan.lists[0].caption).toBe(title);
+    expect(plan.lists[0].caption).toBe(axisTitle(romance));
   });
 });
 
@@ -363,12 +375,14 @@ describe("W1: units on a line of their own", () => {
 describe("W1: the Trends page's note says where a row leads", () => {
   const trends = ".trends-page .chart-panel[aria-busy='false']";
 
-  it("reads “… (50 is a tie). Click a row for its chart over time.” above the first list", async () => {
+  it("reads “… (50 is a tie). Click a row for its chart over time.” right over the first list's rows", async () => {
     await open("#/trends", { ready: trends });
-    const note = document.querySelector(".profile-note");
-    expect(note.textContent).toBe(words().note({ tap: false }));
-    expect(note.textContent).toMatch(/ \(50 is a tie\)\. Click a row for its chart over time\.$/);
-    expect(note.nextElementSibling).toBe(document.querySelector(".profile-list"));
+    // no note above the list (the owner, 2026-10-19): it follows what a dot is, in the axis title's line over the rows
+    expect(document.querySelector(".profile-note")).toBeNull();
+    const caption = document.querySelector(".profile-list .profile-axis-title");
+    expect(caption.querySelector(".profile-hint").textContent).toBe(words().note({ tap: false }));
+    expect(caption.textContent).toMatch(/ \(50\u00a0is\u00a0a\u00a0tie\)\. Click a row for its chart over time\.$/);
+    expect(caption.nextElementSibling.classList.contains("profile-block")).toBe(true);
   });
 
   it("says “Tap” on a device that can't hover, and the same in an open topic when nothing changed", async () => {
@@ -383,10 +397,11 @@ describe("W1: the Trends page's note says where a row leads", () => {
     const user = await open("#/trends", { ready: trends });
     expect(document.querySelector(".profile-list, .profile-note")).toBeNull();
     await openAllTopics(user);
-    const notes = [...document.querySelectorAll(".profile-topic .profile-note")].map((n) => n.textContent);
+    expect(document.querySelector(".profile-topic .profile-note")).toBeNull();
+    const notes = [...document.querySelectorAll(".profile-topic .profile-axis-title .profile-hint")].map((n) => n.textContent);
     expect(notes.length).toBeGreaterThan(0);
     for (const n of notes) expect(n).toBe(words().note({ tap: true }));
-    expect(notes[0]).toMatch(/ Tap a row for its chart over time\.$/);
+    expect(notes[0]).toBe("Tap a row for its chart over time.");
   });
 });
 

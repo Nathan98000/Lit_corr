@@ -156,12 +156,14 @@ describe("the desktop card (F70)", () => {
   });
 });
 
-describe("a genre's name and its count on phones", () => {
-  it("are a pixel further apart than the name's line height", () => {
-    const grid = rowGrid({ rows: [{ index: 1, label: "Anal", n: 119 }], width: 343 });
+describe("a genre's row on phones", () => {
+  it("has its name and no count, its stories being in its details (the owner, 2026-10-19), and keeps its 44 px", () => {
+    const grid = rowGrid({ rows: [{ index: 1, label: "Anal" }], width: 343 });
     const [r] = grid.rows;
-    expect(r.count.y - r.labelLines[0].y).toBe(15);
+    expect(r.count).toBeUndefined();
+    expect(r.boxes.map((b) => b.kind)).toEqual(["label"]);
     expect(r.y1 - r.y0).toBe(44); // rows keep their 44 px
+    expect(r.labelLines[0].y).toBe(r.cy + 4); // one line, centered on the row
     const layout = rangeLayout({
       rows: [
         { index: 0, label: "All genres", stats: { n: 900, p25: 1, median: 2, p75: 3 } },
@@ -171,12 +173,13 @@ describe("a genre's name and its count on phones", () => {
       format: "count",
       width: 343,
       valueColumn: true,
-      storiesColumn: true,
       phoneLabelW: 116,
     });
     const anal = layout.rows[1];
-    expect(anal.nPos.y - anal.labelLines[0].y).toBe(15);
+    expect(anal.nPos).toBeUndefined();
+    expect(anal.boxes.map((b) => b.kind)).toEqual(["label", "value"]);
     expect(anal.y1 - anal.y0).toBe(44);
+    expect(layout.storiesHead).toBeUndefined();
   });
 });
 

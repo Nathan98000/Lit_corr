@@ -175,9 +175,14 @@ describe("chart titles", () => {
       "A pattern is judged only when the groups at both ends have at least 30 stories.",
     );
     // no note for groups without an order: the heading says it ("Each group on its own"); How to read is the same
-    // paragraph for every characteristic (the owner's follow-up: no sentence on not summing them up as one trend)
+    // paragraph for every characteristic (the owner's follow-up: no sentence on not summing them up as one trend), with
+    // the sentence on hatched bars only when the chart has one (the owner, 2026-10-19)
     expect(patternNote({ variable: v("pov_class"), direction: 0, effect: null })).toBeNull();
     expect(howToRead({ smallN: 30 })).toBe(
+      "Each row is a group of stories. The dot is the group’s median, printed beside it, and the bar is its " +
+        "interquartile range. The dashed line is the median of all stories shown.",
+    );
+    expect(howToRead({ smallN: 30, small: true })).toBe(
       "Each row is a group of stories. The dot is the group’s median, printed beside it, and the bar is its " +
         "interquartile range. The dashed line is the median of all stories shown. Hatched bars with hollow dots hold " +
         "fewer than 30 stories and deserve less trust.",

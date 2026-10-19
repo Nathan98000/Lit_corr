@@ -785,11 +785,19 @@ export const sampleLine = (n, genre, subset) =>
 export const breakable = (name) => name.replace(/\//g, "/\u200b");
 
 /**
- * The axis title over the first list's rows (F86): what a dot's number is, in the Trends page's words (round 4's W1),
- * with "out of 100" kept on one line.
+ * The axis title over the first list's rows (F86): what a dot is and its number, in the Trends page's words (round 4's
+ * W1), with "50 is a tie" (the note above the list said it, too far from the dots: the owner, 2026-10-19) and "out of
+ * 100" kept on one line. On the page, in three parts (`axisTitleParts`), the middle one the link to how a difference
+ * is decided, never broken inside: "Each dot shows how often a story in Romance comes out higher than a story from all
+ * genres, out of 100 (50 is a tie; " · "how this is decided" · ")". The image takes the plain words, without the link.
  */
+export const axisTitleParts = (genre) => [
+  `Each dot shows how often a story in ${genre.name} comes out higher than a story from all genres, out\u00a0of\u00a0100 (50\u00a0is\u00a0a\u00a0tie; `,
+  "how\u00a0this\u00a0is\u00a0decided",
+  ")",
+];
 export const axisTitle = (genre) =>
-  `How often a story in ${genre.name} comes out higher than a story from all genres, out\u00a0of\u00a0100`;
+  `Each dot shows how often a story in ${genre.name} comes out higher than a story from all genres, out\u00a0of\u00a0100 (50\u00a0is\u00a0a\u00a0tie)`;
 
 /**
  * Which of a named group's two bars is the genre's (quick win 5): "A different mix: Romance above, all genres below" over
@@ -800,20 +808,12 @@ export const mixLine = (genre, { inTopic = false } = {}) =>
   `${inTopic ? "" : "A different mix: "}${genre.name} above, all genres below`;
 
 /**
- * The note above the first list (round 4's W1, where the Trends page's note is, in its words), in three parts, the
- * middle one the link to how a difference is decided (never broken inside): "Each dot compares a story in Romance with
- * a story from all genres (50 is a tie; " · "how this is decided" · "). Tap a row for every genre’s numbers."
- * ("Click" on a device that can hover, `tap` false; the owner took out ", counting every story, not only the medians"
- * on 2026-10-13). The gray dots are the topics' line's to explain, over the topics. In an open topic, when no list is
- * shown, the same words (`inTopic`).
+ * The note, after the axis title over the rows (round 4's W1, as the Trends page's; above the first list before the
+ * owner's change of 2026-10-19, with what a dot compares, now the axis title's): where a row leads, "Tap a row for every
+ * genre’s numbers." ("Click" on a device that can hover, `tap` false). The gray dots are the topics' line's to explain,
+ * over the topics. The same words in an open topic, when no list is shown.
  */
-export function profileNote(genre, { tap = false } = {}) {
-  return [
-    `Each dot compares a story in ${genre.name} with a story from all genres (50 is a tie; `,
-    "how\u00a0this\u00a0is\u00a0decided",
-    `). ${tap ? "Tap" : "Click"} a row for every genre’s numbers.`,
-  ];
-}
+export const profileNote = ({ tap = false } = {}) => `${tap ? "Tap" : "Click"} a row for every genre’s numbers.`;
 
 /**
  * The heads of the two number columns: wide, the genre's name in up to two lines of `width` px (12 px, 600; a line may

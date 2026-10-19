@@ -6,7 +6,9 @@
 // lists. The markup is stored one tag per line, React's ids numbered in order of appearance; for the open topic, its
 // own markup (nothing else changes). Regenerated for the data update 20261013 (litcorr_stage2_handoff_20261013.zip),
 // with no code change: the numbers, the rows' order and the lists are the new data's. The owner's change 8 (2026-10-13)
-// took ", counting every story, not only the medians" out of the note: regenerated, only the note's line differs.
+// took ", counting every story, not only the medians" out of the note: regenerated, only the note's line differs. The
+// owner's change of 2026-10-19 moved the note into the axis title's lines over the first list's rows (it was above the
+// list, too far from its dots): regenerated, only the note's and the axis title's lines differ.
 import { cleanup, render, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { readFileSync } from "node:fs";

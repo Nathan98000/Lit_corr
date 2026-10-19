@@ -288,9 +288,9 @@ export function windowNumbers({ entry, file, fmt, kind = entry.k, smallN = 30 })
 
 /**
  * What View 1's chart draws from, before its width is known: the format, every period's cell, the axis, the table's
- * texts under the plot (the median or the share, and the stories with an asterisk under SMALL_N; named groups and
- * bands print only the stories, their shares being in the columns), the windows' words and "Fewer than 10" for a
- * column with nothing drawn. trendLayout() takes it with the width. Mostly-zero characteristics draw two of these
+ * texts under the plot (the median or the share; named groups and bands print none, their shares being in the columns;
+ * a period's stories are in its details: the owner, 2026-10-19), the windows' words and "Fewer than 10" for a column
+ * with nothing drawn. trendLayout() takes it with the width. Mostly-zero characteristics draw two of these
  * (trendSplitInputs).
  */
 export function trendChartInput(meta, variable, entry, file) {
@@ -305,17 +305,13 @@ export function trendChartInput(meta, variable, entry, file) {
     cells,
     axis: mix ? trendTicks("bin", [0, 1]) : trendTicks(kind, trendDomain(kind, cells, entry.fmt)),
     percent: mix || kind === "bin" || entry.fmt === "percent",
-    texts: cells.map((c) => ({
-      value: mix ? "" : c ? (kind === "bin" ? fmt.share(c.share) : fmt.value(c.median)) : "–",
-      stories: storiesText(c),
-    })),
+    texts: cells.map((c) => ({ value: mix ? "" : c ? (kind === "bin" ? fmt.share(c.share) : fmt.value(c.median)) : "–" })),
     valueHead: mix ? null : kind === "bin" ? "Share" : "Median",
     windowValues: windowNumbers({ entry, file, fmt, smallN: meta.small_n }),
     ...periodsInput(meta, file),
   };
 }
 
-const storiesText = (c) => (c ? `${formatCount(c.n)}${c.small ? "*" : ""}` : "–");
 const periodsInput = (meta, file) => ({
   windows: windowWords(file),
   periods: file.periods,
@@ -327,7 +323,7 @@ const periodsInput = (meta, file) => ({
 /**
  * The split chart's two halves (mostly-zero characteristics, §3.1): "Stories with any", the share of each period's
  * stories above 0 as share columns (as yes/no), and "Among stories with any", their quartiles as range columns (as
- * numbers) on their own axis, with the stories with any under each (hatched under SMALL_N; nothing drawn under MIN_N).
+ * numbers) on their own axis (hatched under SMALL_N stories with any; nothing drawn under MIN_N).
  * Each half: { title, axisTitle, input } for trendLayout().
  */
 export function trendSplitInputs(meta, variable, entry, file) {
@@ -349,7 +345,7 @@ export function trendSplitInputs(meta, variable, entry, file) {
         cells: shares,
         axis: trendTicks("bin", trendDomain("bin", shares)),
         percent: true,
-        texts: shares.map((c) => ({ value: c ? fmt.share(c.share) : "–", stories: storiesText(c) })),
+        texts: shares.map((c) => ({ value: c ? fmt.share(c.share) : "–" })),
         valueHead: "Share",
         windowValues: windowNumbers({ entry, file, fmt, kind: "any", smallN: meta.small_n }),
         ...periodsInput(meta, file),
@@ -364,7 +360,7 @@ export function trendSplitInputs(meta, variable, entry, file) {
         cells: among,
         axis: trendTicks("num", trendDomain("num", among, fmt.fmt)),
         percent: fmt.fmt === "percent",
-        texts: among.map((c) => ({ value: c ? fmt.value(c.median) : "–", stories: storiesText(c) })),
+        texts: among.map((c) => ({ value: c ? fmt.value(c.median) : "–" })),
         valueHead: "Median",
         windowValues: windowNumbers({ entry, file, fmt, kind: "among", smallN: meta.small_n }),
         ...periodsInput(meta, file),
@@ -415,7 +411,8 @@ export const groupShares = (groups, shares) => groups.map((g) => g.members.reduc
 /**
  * A period's numbers in words, for its line on phones and its name: "median 4,060 words · interquartile range
  * 2,340–7,200 · 1,564 stories"; yes/no "32% with an author’s note · 1,564 stories"; mostly zero, as the Genres page
- * says a genre's "11% with any · among those, median 0.229 per 1,000 words · interquartile range 0.144–0.388 · 2,561
+ * says a genre's, with the stories with any the second half draws from (no longer under the chart: the owner,
+ * 2026-10-19), "11% with any · among those 282, median 0.229 per 1,000 words · interquartile range 0.144–0.388 · 2,561
  * stories"; named groups and bands every group's share; fewer than MIN_N "fewer than 10 stories".
  */
 export function periodWords({ variable, entry, cell, fmt, minN }) {
@@ -425,7 +422,9 @@ export function periodWords({ variable, entry, cell, fmt, minN }) {
   if (entry.k === "num") return [`median ${fmt.withUnit(cell.median)}`, `interquartile range ${fmt.span(cell.p25, cell.p75)}`, stories];
   if (entry.k === "zero") {
     const among =
-      cell.median != null ? [`among those, median ${fmt.withUnit(cell.median)}`, `interquartile range ${fmt.span(cell.p25, cell.p75)}`] : [];
+      cell.median != null
+        ? [`among those ${formatCount(cell.any)}, median ${fmt.withUnit(cell.median)}`, `interquartile range ${fmt.span(cell.p25, cell.p75)}`]
+        : [];
     return [`${fmt.share(cell.share)} with any`, ...among, stories];
   }
   return [...variable.bins.labels.map((label, b) => `${label} ${formatPercent(cell.shares[b])}`), stories];
@@ -438,9 +437,10 @@ export const periodName = (label, words) => `${label}: ${words.join(", ")}`;
  * The same numbers for a period's card on wider charts, as the Genres page's card has them (rowDetails, TipBody):
  * `stories` ("1,564 stories", beside the period), `blocks` ({ caption, items }: [label, value] pairs, under a caption
  * in parts a line breaks only between) and `line` (a period with too few stories). The card says once what its
- * numbers are of: a mostly-zero characteristic's median and interquartile range are under "Among stories with any (per
- * 1,000 words)", as the chart's second half is titled, and a rate's unit is the caption over a median and interquartile
- * range ("Per 1,000 words") instead of following the median. A count's unit still follows it ("4,060 words").
+ * numbers are of: a mostly-zero characteristic's median and interquartile range are under "Among the 282 stories with
+ * any (per 1,000 words)", as the chart's second half is titled, with how many it draws from (its hatching's count), and
+ * a rate's unit is the caption over a median and interquartile range ("Per 1,000 words") instead of following the
+ * median. A count's unit still follows it ("4,060 words").
  */
 export function periodDetails({ variable, entry, cell, fmt, minN }) {
   if (!cell) return { stories: null, blocks: [], line: `fewer than ${minN} stories.` };
@@ -460,7 +460,9 @@ export function periodDetails({ variable, entry, cell, fmt, minN }) {
   });
   if (entry.k === "num") return card(spread(rate ? [upperFirst(fmt.unit)] : null));
   const any = { caption: null, items: [["With any", fmt.share(cell.share)]] };
-  return card(any, cell.median != null ? spread(anyHeadingParts(fmt)) : { caption: [`Fewer than ${minN} stories with any`], items: [] });
+  if (cell.median == null) return card(any, { caption: [`Fewer than ${minN} stories with any`], items: [] });
+  const [, ...unit] = anyHeadingParts(fmt);
+  return card(any, spread([`Among the ${formatCount(cell.any)} stories with any`, ...unit]));
 }
 
 // --------------------------------------------------------------------------------------------------------- the PNG
@@ -574,19 +576,6 @@ export function changesHeading(count, compared, file) {
   return `${what} clearly changed from ${w.then} to ${w.now}`;
 }
 
-/**
- * The length line, first in the takeaway when word count is in the file and clearly changed: "Stories got longer:
- * median 2,810 words in 2000–2009, 4,100 in 2020 or later." ("shorter" when it fell); null otherwise, and with the
- * Length options, which leave word count out. Its numbers as View 1's chart prints them.
- */
-export function lengthLine(p, file) {
-  const item = p.items.find((x) => x.id === "story_words");
-  if (!item?.f || item.all?.median == null || item.stats?.median == null) return null;
-  const w = windowWords(file);
-  const moved = item.f > 0 ? "longer" : "shorter";
-  return `Stories got ${moved}: median ${item.nf.withUnit(item.all.median)} in ${w.then}, ${item.nf.value(item.stats.median)} in ${w.now}.`;
-}
-
 /** The medians' relative change after the values: " (+82%)", " (−25%)", grouped as the site's counts ("+23,640%"); "" for none. */
 const percentWords = (change) => (change == null ? "" : ` (${change > 0 ? "+" : change < 0 ? "−" : ""}${formatCount(Math.abs(change))}%)`);
 
@@ -624,14 +613,15 @@ export function changesScale(p) {
 }
 
 /**
- * "2,561 stories from 2000–2009 and 3,346 from 2020 or later across all genres." ("… in Romance."; an option: "… match
- * “Under 2,000 words”.")
+ * The stories compared, under the heading (the owner, 2026-10-19: say that these are the stories compared): "Comparing
+ * 2,561 stories from 2000–2009 with 3,346 from 2020 or later, across all genres." ("…, in Romance."; an option: "…, in
+ * Romance, all of them “Under 2,000 words”.")
  */
 export function changesSampleLine(file, genre, subset) {
   const w = windowWords(file);
   const c = windowCounts(file);
-  const match = subset && subset.id !== "all" ? ` match “${subset.label}”` : "";
-  return `${formatCount(c.then)} stories from ${w.then} and ${formatCount(c.now)} from ${w.now} ${fromGenre(genre)}${match}.`;
+  const match = subset && subset.id !== "all" ? `, all of them “${subset.label}”` : "";
+  return `Comparing ${formatCount(c.then)} stories from ${w.then} with ${formatCount(c.now)} from ${w.now}, ${fromGenre(genre)}${match}.`;
 }
 
 /**
@@ -746,9 +736,9 @@ export function changesRowName(item, file, minN) {
 }
 
 /**
- * View 2's words for ComparisonProfile: the column heads ("2000–09", "2020+"), the lists' titles, the axis title, the
- * zone's words, the note (one sentence, without a link: the owner's words), the mix line, the topics' line and the
- * count's word, from the windows (`file`).
+ * View 2's words for ComparisonProfile: the column heads ("2000–09", "2020+"), the lists' titles, the axis title (what
+ * a dot is, with "50 is a tie"), the zone's words, the note (where a row leads, said after the axis title), the mix
+ * line, the topics' line and the count's word, from the windows (`file`).
  */
 export function changesWords(file) {
   const w = windowWords(file);
@@ -770,11 +760,13 @@ export function changesWords(file) {
       higher: title("▲", "Rose"),
       mix: title("≠", "A different mix"),
     },
-    // "comes out higher", not "scores higher", which on a site about ratings read as a rating (the fresh eyes' third round)
-    axisTitle: `How often a story from ${w.now} comes out higher than a story from ${w.then}, out\u00a0of\u00a0100`,
+    // what a dot is, right over the rows it explains (the owner, 2026-10-19: the note above the list was too far from
+    // its dots); "comes out higher", not "scores higher", which on a site about ratings read as a rating (the fresh
+    // eyes' third round)
+    axisTitle: `Each dot shows how often a story from ${w.now} comes out higher than a story from ${w.then}, out\u00a0of\u00a0100 (50\u00a0is\u00a0a\u00a0tie)`,
     zone: "no clear change",
-    // what a dot compares and what a row opens (round 4's W1: "Click" on a device that can hover), in open topics too
-    note: ({ tap = false } = {}) => `Each dot compares a story from ${w.now} with a story from ${w.then} (50 is a tie). ${tap ? "Tap" : "Click"} a row for its chart over time.`,
+    // what a row opens (round 4's W1: "Click" on a device that can hover), after the axis title, in open topics too
+    note: ({ tap = false } = {}) => `${tap ? "Tap" : "Click"} a row for its chart over time.`,
     // the bars in time's order, 2000–2009 above (item 4)
     mixLine: ({ inTopic = false } = {}) => `${inTopic ? "" : "A different mix: "}${w.then} above, ${w.now} below`,
     topicsLine: "How many characteristics in each topic changed. Open a topic to see them all: blue dots changed, gray dots show no clear change.",
@@ -797,5 +789,5 @@ export function changesAnnouncement(meta, file, state) {
   if (!windowsCompared(file)) return `${question} ${changesTooFewHeading(file, genre, subset)}.`;
   const p = trendProfile(meta, file);
   const lines = changesTakeaway(p).map((line) => `${line.word}: ${changesLineWords(line)}`);
-  return [question, `${changesHeading(p.flagged.length, p.compared, file)}.`, lengthLine(p, file), ...lines].filter(Boolean).join(" ");
+  return [question, `${changesHeading(p.flagged.length, p.compared, file)}.`, ...lines].join(" ");
 }

@@ -23,7 +23,6 @@ const PERIOD_SIZE = TEXT.note;
 // doesn't fit, every other value drops a line
 const VALUE_SIZES = [TEXT.note, TEXT.tick];
 const VALUE_GAP = 3; // between two values, as textWidth estimates them (about 4 px on screen)
-const STORIES_SIZE = TEXT.tick;
 const NONE_SIZE = TEXT.note;
 const SEGMENT_SIZE = TEXT.tick;
 const BRACKET_SIZE = TEXT.tick;
@@ -131,9 +130,9 @@ function noneLines(text, maxW) {
 /**
  * The chart's geometry. `cells`: per period { p25, median, p75 } (num), { share } (bin) or { shares } (grp and band:
  * 100% columns), with `n` (stories with the characteristic) and `small` (under SMALL_N), or null under MIN_N; `periods`
- * and the two windows (`then`, `now`) from the file; `texts`: per period { value, stories } as the table under the plot
- * prints them; `valueHead` "Median", "Share" or null (no row of values: 100% columns print their shares in the
- * columns); `windows`: { then, now } words ("2000–2009", "2020 or later"); `windowValues`: { then, now } numbers for
+ * and the two windows (`then`, `now`) from the file; `texts`: per period { value } as the table under the plot prints
+ * it (a period's stories are in its details, not in the table: the owner, 2026-10-19); `valueHead` "Median", "Share"
+ * or null (no row of values: 100% columns print their shares in the columns); `windows`: { then, now } words ("2000–2009", "2020 or later"); `windowValues`: { then, now } numbers for
  * the brackets' labels ("median 2,810"; trendChartInput), or null; `axis` from trendTicks; `percent` for the ticks;
  * `top`: where the plot starts (lower under the split chart's titles); `viewportH`: the window's height (plotHeight). Returns the plot's box, the y scale, the ticks, a
  * column per period (x, its marks' positions, the table's texts and positions, "Fewer than 10" where nothing is drawn,
@@ -161,7 +160,7 @@ export function trendLayout({
   const phone = W < PHONE;
   const mix = kind === "grp" || kind === "band";
   const tickTexts = axis.ticks.map((t) => tickText(t, axis.step, percent));
-  const heads = valueHead ? [valueHead, "Stories"] : ["Stories"];
+  const heads = valueHead ? [valueHead] : [];
   const gutter = Math.ceil(Math.max(...tickTexts.map((t) => textWidth(t, TICK_SIZE)), ...heads.map((h) => textWidth(h, HEAD_SIZE)))) + 12;
   const n = periods.length;
   const colW = (W - gutter) / n;
@@ -170,7 +169,8 @@ export function trendLayout({
   const bottom = top + plotH;
   const y = (v) => bottom - ((v - axis.lo) / (axis.hi - axis.lo || 1)) * plotH;
   const periodY = [bottom + 20, bottom + 35]; // two lines of 13 px ("2000" over "–04"), 15 px apart
-  const rowY = (two ? periodY[1] : periodY[0]) + 21;
+  const periodsY = two ? periodY[1] : periodY[0]; // the periods' last line
+  const rowY = periodsY + 21;
   // the values' size: the largest that leaves every two neighbors apart, in a wider font too (valueWidth); when even
   // the smallest doesn't (a rare pair like "0.00060" and "0.0032" at 320 px), every other value drops a line
   const fitsAt = (size) => {
@@ -180,8 +180,8 @@ export function trendLayout({
   const valueSize = valueHead ? (VALUE_SIZES.find(fitsAt) ?? VALUE_SIZES[VALUE_SIZES.length - 1]) : VALUE_SIZES[0];
   const stagger = Boolean(valueHead) && !fitsAt(valueSize);
   const valueY = valueHead ? rowY : null;
-  const storiesY = valueHead ? valueY + (stagger ? 33 : 18) : rowY;
-  const bracketY = storiesY + 15;
+  // the brackets 15 px under the table's last line: the values (the lower of two staggered lines), or the periods
+  const bracketY = (valueHead ? valueY + (stagger ? 15 : 0) : periodsY) + 15;
   const bracketLabelY = bracketY + 17;
   const inWindow = (p, [a, b]) => p[0] >= a && p[1] <= b;
   // a value is centered under its column, or set against the chart's edge where, in a wider font, it would reach it
@@ -207,7 +207,6 @@ export function trendLayout({
       period: periodLabel(p),
       lines: two ? periodLines(p).map((t, k) => ({ text: t, y: periodY[k] })) : [{ text: periodLabel(p), y: periodY[0] }],
       value: valueHead ? valueAt(texts[i].value, x, valueY + (stagger && i % 2 ? 15 : 0)) : null,
-      stories: { text: texts[i].stories, x, y: storiesY },
     };
     if (!c) {
       col.none = noneLines(noneText, colW - 8).map((t, k, all) => ({ text: t, x, y: bottom - 12 - (all.length - 1 - k) * 15 }));
@@ -276,7 +275,7 @@ export function trendLayout({
     valueSize,
     stagger,
     ticks: axis.ticks.map((t, k) => ({ v: t, y: y(t), text: tickTexts[k], x: gutter - 8 })),
-    heads: [...(valueHead ? [{ text: valueHead, x: 0, y: valueY }] : []), { text: "Stories", x: 0, y: storiesY }],
+    heads: valueHead ? [{ text: valueHead, x: 0, y: valueY }] : [],
     columns,
     brackets,
     twoLines,
@@ -352,9 +351,9 @@ export function splitOverlaps(split) {
 }
 
 /**
- * Text boxes that overlap in a layout (for the tests): the period labels, the table's values and counts, the row
- * heads, the tick labels, the brackets' labels (each line) and "not compared", each estimated with textWidth (the
- * values in a wider font, valueWidth), and the brackets' lines; and anything outside the chart.
+ * Text boxes that overlap in a layout (for the tests): the period labels, the table's values, the row heads, the tick
+ * labels, the brackets' labels (each line) and "not compared", each estimated with textWidth (the values in a wider
+ * font, valueWidth), and the brackets' lines; and anything outside the chart.
  */
 export function trendOverlaps(layout) {
   const boxes = [];
@@ -366,7 +365,6 @@ export function trendOverlaps(layout) {
   for (const c of layout.columns) {
     for (const l of c.lines) add("period", l.text, c.x, l.y, PERIOD_SIZE);
     if (c.value) add("value", c.value.text, c.value.x, c.value.y, layout.valueSize, c.value.anchor, 600);
-    add("stories", c.stories.text, c.stories.x, c.stories.y, STORIES_SIZE);
     for (const l of c.none || []) add("none", l.text, l.x, l.y, NONE_SIZE);
   }
   for (const h of layout.heads) add("head", h.text, h.x, h.y, HEAD_SIZE, "start");

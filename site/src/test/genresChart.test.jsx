@@ -8,6 +8,7 @@ import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "../App.jsx";
 import { CARD_MAX, gridOrder, numbersWidth } from "../components/GenreDetails.jsx";
+import GenreAnswer from "../components/GenreAnswer.jsx";
 import { ORDER_GLIDE_MS } from "../components/GenreGlide.jsx";
 import { clearCache } from "../lib/data.js";
 import {
@@ -305,7 +306,12 @@ describe("units and formats", () => {
 
 describe("the chart", () => {
   it("hatches the bar of a genre with fewer stories than the rule needs, as a style", async () => {
-    await openGenres("#/genres?var=dlg_word_share&include=long"); // Romance: 15 stories
+    // the test data's only genre under 30 stories is Romance with a Length option (15), which the page no longer offers
+    // here (the owner, 2026-10-19), so the answer is drawn from that file on its own
+    const file = fixtureFile("genres/long.json");
+    render(
+      <GenreAnswer meta={fixtureMeta} state={{ v: "dlg_word_share", sub: "long" }} file={file} busy={false} onChange={() => {}} onNavigate={() => {}} />,
+    );
     const hatch = document.querySelector(".genre-chart pattern").id;
     const romance = [...document.querySelectorAll(".genre-chart .row")].find((r) => r.getAttribute("aria-label").startsWith("Romance:"));
     expect(romance.classList.contains("small")).toBe(true);
@@ -402,12 +408,13 @@ describe("the chart", () => {
     expect(css).toMatch(/\.segmented\.compact label::after \{[^}]*inset: -4px 0;/); // a 44 px target
   });
 
-  it("heads the value column like the Stories column: Median, or Share (F74)", async () => {
+  it("heads the value column: Median, or Share (F74); no Stories column, a genre's stories being in its details", async () => {
     await openGenres("#/genres?var=dlg_word_share");
     const heads = () => [...document.querySelectorAll(".genre-chart .col-head, .genre-chart .stories-head")].map((t) => t.textContent);
-    expect(heads()).toEqual(["Median", "Stories"]);
+    expect(heads()).toEqual(["Median"]);
+    expect(document.querySelectorAll(".genre-chart .gn")).toHaveLength(0);
     window.location.hash = "#/genres?var=dlg_has_dialogue";
-    await waitFor(() => expect(heads()).toEqual(["Share", "Stories"]));
+    await waitFor(() => expect(heads()).toEqual(["Share"]));
   });
 
   it("glides the rows to their new places when the order changes, and only then (I10)", async () => {

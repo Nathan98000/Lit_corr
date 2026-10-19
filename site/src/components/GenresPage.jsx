@@ -1,7 +1,16 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { loadGenres } from "../lib/data.js";
 import { breakable, chartAnnouncement, chartQuestion, chartQuestionText, orderWords, standsOutQuestion } from "../lib/genres.js";
-import { GENRE_PAGE_EXCLUDED, defaultGenre, onGenresPage, sortable, subsetConflict, toHash } from "../lib/urlState.js";
+import {
+  GENRE_PAGE_EXCLUDED,
+  defaultGenre,
+  genreChartSub,
+  onGenreChart,
+  onGenresPage,
+  sortable,
+  subsetConflict,
+  toHash,
+} from "../lib/urlState.js";
 import { BodyPlaceholder, CharacteristicPicker, SlotButton } from "./Controls.jsx";
 import { ChartPlaceholder } from "./Explorer.jsx";
 import GenreAnswer from "./GenreAnswer.jsx";
@@ -130,14 +139,14 @@ export default function GenresPage({ meta, state, onChange, onNavigate, onHoldSc
   }, [question, file, busy, error]);
 
   // the view switch opens the genre last chosen in this visit, or the default (D8); back, the characteristic and order
-  // it came from
+  // it came from, with All stories after a Length option (one characteristic doesn't offer them)
   const switchView = (to) => {
     if (to === "genre") {
       onNavigate({ view: "genre", genre: defaultGenre(meta, chosenGenre?.current), sub: state.sub });
     } else {
       const back = lastChart?.current || {};
       const v = back.v && meta.variables.some((x) => x.id === back.v && onGenresPage(x)) ? back.v : state.v;
-      onNavigate({ v, sub: state.sub, sort: back.sort });
+      onNavigate({ v, sub: genreChartSub(meta, state.sub), sort: back.sort });
     }
   };
 
@@ -203,7 +212,7 @@ export default function GenresPage({ meta, state, onChange, onNavigate, onHoldSc
       <>
         {viewSwitch}
         <IncludeSelect
-          subsets={meta.subsets}
+          subsets={meta.subsets.filter(onGenreChart)}
           value={state.sub}
           variable={variable}
           onChange={(s) => keepPlace({ ...state, sub: s })}

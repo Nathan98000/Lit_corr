@@ -84,13 +84,13 @@ describe("above the first row", () => {
     { index: 1, label: "No dialogue", stats: stats(0.4) },
   ];
 
-  it("keeps hyphenated words whole, and leaves only the small-groups note under the chart", () => {
+  it("keeps hyphenated words whole, and leaves nothing under the chart: a small group is in the key", () => {
     const v = { ...variable, noun: "the present-tense share of the narration" };
     const { container } = draw({ rows: yesNo, variable: v });
     expect(container.querySelector(".axis-groups .nowrap").textContent).toBe("present-tense");
-    const caption = container.querySelector(".axis-caption");
-    expect(caption.textContent).toBe("* Fewer than 30 stories: worth less trust.");
-    expect(before(container.querySelector("svg"), caption)).toBe(true);
+    // no row prints its stories, so no asterisk and no caption for it (the owner, 2026-10-19)
+    expect(container.querySelector(".axis-caption")).toBeNull();
+    expect(container.querySelector(".legend").textContent).toMatch(/Fewer than 30 stories$/);
   });
 
   it("is left out for a yes/no characteristic, whose two rows name themselves", () => {

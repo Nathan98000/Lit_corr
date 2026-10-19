@@ -14,8 +14,8 @@ import useWidth from "./useWidth.js";
  * largest in 2000–2009 darkest, as on View 2; light to dark blues for bands; the palettes are in palettes.css); two or
  * more named groups under 3% in every period drawn make one "Other" segment on top, in a neutral color
  * (trendMixGroups). Shares are printed inside segments at least 16 px tall where their ink reaches 4.5:1; every
- * group's share is in the details and the period's name. Under the plot the periods and their stories, the brackets of
- * the two windows compared and "not compared" under the periods between them (whose columns keep their colors). A
+ * group's share is in the details and the period's name, as are its stories. Under the plot the periods, the brackets
+ * of the two windows compared and "not compared" under the periods between them (whose columns keep their colors). A
  * period under SMALL_N stories is hatched; under MIN_N nothing is drawn. One tab stop and details as TrendChart;
  * another genre or option glides the segments.
  */

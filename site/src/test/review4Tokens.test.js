@@ -43,7 +43,7 @@ describe("the type scale (X1)", () => {
     // every declaration is read, inside media queries too
     const written = Object.values(css).reduce((n, text) => n + (text.match(/font-size\s*:/g) || []).length, 0);
     expect(declarations("font-size").length).toBe(written);
-    expect(declarations("font-size").filter((d) => d.selector === ".range-chart .gn")).toHaveLength(1);
+    expect(declarations("font-size").filter((d) => d.selector === ".range-chart .gval")).toHaveLength(1);
     const off = [];
     for (const { file, selector, value } of declarations("font-size")) {
       const token = value.match(/^var\((--[\w-]+)\)( !important)?$/);

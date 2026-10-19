@@ -86,14 +86,17 @@ const RETIRED = ["check", "mode", "genre"];
 
 /**
  * The address to settle on when `hash` carries a setting its page no longer has (an old link's `check=age`, `mode=one`
- * or highlighted `genre`): the page's own address for `state`; null otherwise (any other address stays as it is, even
- * one the page sanitizes).
+ * or highlighted `genre`, or with `meta`, a Length option on the Genres page's one characteristic: onGenreChart): the
+ * page's own address for `state`; null otherwise (any other address stays as it is, even one the page sanitizes).
  */
-export function settledHash(hash, page, state) {
-  const keys = (h) => [...new URLSearchParams((h || "").split("?")[1] || "").keys()];
+export function settledHash(hash, page, state, meta = null) {
+  const params = new URLSearchParams((hash || "").split("?")[1] || "");
   const own = toHash(page, state);
-  const kept = new Set(keys(own));
-  return keys(hash).some((k) => RETIRED.includes(k) && !kept.has(k)) ? own : null;
+  const kept = new Set(new URLSearchParams(own.split("?")[1] || "").keys());
+  const include = params.get(GENRE_PARAMS.sub);
+  const lengthOnChart =
+    page === "genres" && state.view !== "genre" && Boolean(meta?.subsets.some((s) => s.id === include && !onGenreChart(s)));
+  return lengthOnChart || [...params.keys()].some((k) => RETIRED.includes(k) && !kept.has(k)) ? own : null;
 }
 
 /** What a characteristic is called inside a sentence: its noun ("story age", not "story age (years online)"). */
@@ -133,6 +136,15 @@ export function sanitize(state, meta) {
   return s;
 }
 
+/**
+ * "Only include" options the Genres page's one characteristic offers: all but the Length ones (the owner, 2026-10-19);
+ * one genre offers them all.
+ */
+export const onGenreChart = (subset) => Boolean(subset) && subset.group !== "Length";
+
+/** The option a link to the Genres page's one characteristic carries: `sub` where that view offers it, else All stories. */
+export const genreChartSub = (meta, sub) => (onGenreChart(meta.subsets.find((s) => s.id === sub)) ? sub : "all");
+
 /** Characteristics left out of the Genres page (GENRE_PAGE_EXCLUDED in litcorr/stage2/wording.py). */
 export const GENRE_PAGE_EXCLUDED = ["pub_month", "pub_weekday"];
 export const onGenresPage = (variable) => Boolean(variable) && !GENRE_PAGE_EXCLUDED.includes(variable.id);
@@ -153,7 +165,8 @@ export function defaultGenre(meta, remembered = null) {
 /**
  * The Genres page's settings: { v, sub, sort? } for one characteristic in every genre, { view: "genre", genre, sub, v }
  * for one genre (`v` is kept for the way back). An unknown characteristic, or one left out of the page, becomes story
- * length; an unknown or conflicting option, All stories; one characteristic drops any genre (the highlight is gone), and
+ * length; an unknown or conflicting option, All stories, and so does a Length option in one characteristic's view
+ * (onGenreChart); one characteristic drops any genre (the highlight is gone), and
  * one genre replaces an unknown one by the default (D8); `sort` stays only as "az" (A–Z) for characteristics that can
  * be put in order, whose genres are otherwise in order of their values (the owner, 2026-10-13; an old "value" settles
  * to the plain address).
@@ -164,7 +177,7 @@ export function sanitizeGenres(state, meta, remembered = null) {
   const real = (id) => id !== "all" && has(meta.genres, id);
   const profile = state.view === "genre";
   let sub = has(meta.subsets, state.sub) ? state.sub : "all";
-  if (!profile && subsetConflict(meta.subsets.find((x) => x.id === sub), variable)) sub = "all";
+  if (!profile && (genreChartSub(meta, sub) !== sub || subsetConflict(meta.subsets.find((x) => x.id === sub), variable))) sub = "all";
   if (profile) return { view: "genre", genre: real(state.genre) ? state.genre : defaultGenre(meta, remembered), sub, v: variable.id };
   const s = { v: variable.id, sub };
   if (state.sort === "az" && sortable(variable)) s.sort = "az";

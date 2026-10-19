@@ -110,13 +110,15 @@ export function groupedBy(variable) {
   return `Stories grouped by ${variable.noun}${unitNote(variable)}`;
 }
 
-/** One short paragraph on how to read the one-genre chart, the same for every characteristic. */
-export function howToRead({ smallN }) {
-  return (
+/**
+ * One short paragraph on how to read the one-genre chart, the same for every characteristic; the sentence on hatched
+ * bars only when the chart has one (`small`: a group shown has fewer than `smallN` stories; the owner, 2026-10-19).
+ */
+export function howToRead({ smallN, small = false }) {
+  const base =
     "Each row is a group of stories. The dot is the group’s median, printed beside it, and the bar is its " +
-    "interquartile range. The dashed line is the median of all stories shown. Hatched bars with hollow dots hold " +
-    `fewer than ${smallN} stories and deserve less trust.`
-  );
+    "interquartile range. The dashed line is the median of all stories shown.";
+  return small ? `${base} Hatched bars with hollow dots hold fewer than ${smallN} stories and deserve less trust.` : base;
 }
 
 /**

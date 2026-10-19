@@ -4,9 +4,10 @@ import InlineSelect from "./InlineSelect.jsx";
 
 /**
  * "Only include", always a menu, with the options that cannot go with the characteristic turned off inside it (as on
- * the explorer: "Under 2,000 words (not with word count)"): the Genres page offers every option (meta.subsets), the
- * Trends page All stories and the Length options (meta.trend.subsets; with word count, "All stories ▾" and its Length
- * options turned off, round 4's U1, where it was plain words and a note).
+ * the explorer: "Under 2,000 words (not with word count)"): the Genres page's one genre offers every option
+ * (meta.subsets), its one characteristic all but the Length ones (onGenreChart: the owner, 2026-10-19), the Trends
+ * page All stories and the Length options (meta.trend.subsets; with word count, "All stories ▾" and its Length options
+ * turned off, round 4's U1, where it was plain words and a note).
  */
 export default function IncludeSelect({ subsets, value, variable, onChange }) {
   const ids = useId();

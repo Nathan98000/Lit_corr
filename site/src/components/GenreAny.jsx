@@ -13,7 +13,6 @@ export function anyRows(rows, variable, minN) {
     return {
       index: row.i,
       label: row.genre.name,
-      n: s?.n ?? null,
       share: s ? s.share : null,
       above: s && s.median != null ? { n: s.above, p25: s.p25, median: s.median, p75: s.p75 } : null,
       mark: comparison(row, variable, "zero")?.mark || "",
@@ -27,8 +26,8 @@ export function anyRows(rows, variable, minN) {
 /**
  * A mostly-zero characteristic in every genre (D6, concept M1): where most stories score 0, a plain median would read
  * 0 in most genres, so each genre's row shows the interquartile range and median among its stories with any, on the
- * plot's own scale, then that median and how many of its stories have any (on wider charts a small bar and the share,
- * then the stories; on phones the median over the share). ▲ ▼ marks a genre that clearly differs, beside its name: the
+ * plot's own scale, then that median and how many of its stories have any (on wider charts a small bar and the share;
+ * on phones the median over the share; its stories are in its details). ▲ ▼ marks a genre that clearly differs, beside its name: the
  * comparison takes every story, the zeros included. All genres comes first and its median among the stories with any
  * is the dashed line. One tab stop; the details as on the other forms.
  */
@@ -98,11 +97,6 @@ export default function GenreAny({ meta, variable, entry, rows, sub, title, onNa
                 {h.text}
               </text>
             ))}
-            {layout.storiesHead && (
-              <text className="tick stories-head" x={layout.storiesHead.x} y={layout.storiesHead.y} textAnchor="end">
-                {layout.storiesHead.text}
-              </text>
-            )}
             {layout.ref && (
               <g className="ref">
                 <line x1={layout.ref.x} x2={layout.ref.x} y1={layout.top - 4} y2={layout.height - 22} />
@@ -145,7 +139,7 @@ export default function GenreAny({ meta, variable, entry, rows, sub, title, onNa
 }
 
 /**
- * One genre's row: its name and stories, its mark, the range among its stories with any, the median and the share.
+ * One genre's row: its name, its mark, the range among its stories with any, the median and the share.
  * `hatch` hatches the bars of a genre with few stories, as a style (the bars' classes set a fill that would win over the
  * fill attribute).
  */
@@ -158,11 +152,6 @@ function AnyRow({ r, layout, hatch }) {
           {l.text}
         </text>
       ))}
-      {r.count && (
-        <text className="gn" x={r.count.x} y={r.count.y} textAnchor="end">
-          {r.count.text}
-        </text>
-      )}
       {r.mark && (
         <text className="gmark" x={r.mark.x} y={r.mark.y} textAnchor="middle">
           {r.mark.text}

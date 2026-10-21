@@ -260,7 +260,7 @@ least 0.2, or for named groups a total variation distance of at least 0.2, clear
 quartiles or shares for every characteristic on that page, and whether it clearly changed from 2000–2009 to 2020 or
 later by the same rule. `meta.json` gives the
 Trends page's periods, windows, rule, options and left-out characteristics as `trend`. The website,
-*Story Patterns* ("What do popular Literotica stories have in common?"), is a static React + Vite app: see [site/README.md](site/README.md) for development,
+*Literotica Data Explorer* ("What do popular Literotica stories have in common?"), is a static React + Vite app: see [site/README.md](site/README.md) for development,
 tests and deployment to Vercel or Netlify.
 It is live at **https://literotica-data.vercel.app/**, deployed by Vercel from `main`: every push to `main` updates it.
 

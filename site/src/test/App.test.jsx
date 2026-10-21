@@ -47,7 +47,7 @@ describe("the explorer", () => {
     expect(screen.getByRole("heading", { level: 1 }).textContent).toBe(
       "What do popular Literotica stories have in common? · 3 stories · 3 genres".replace("3 stories", `${fixtureMeta.counts.included} stories`),
     );
-    expect(screen.getByRole("link", { name: "Story Patterns" })).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Literotica Data Explorer" })).toBeTruthy(); // "Story Patterns" until 2026-10-21
     expect(screen.getByRole("group", { name: "Choose what to compare" })).toBeTruthy();
     expect(chartTitle().textContent).toBe("Stories with more dialogue tend to get more favorites per 1,000 views");
     expect(screen.getByText(/not affiliated with or endorsed by Literotica/)).toBeTruthy();

@@ -134,7 +134,7 @@ describe("the masthead (D4, D9; with the Trends page, D7)", () => {
     expect(document.getElementById(menu.getAttribute("aria-controls"))).toBe(links[0].closest("ul"));
   });
 
-  it("puts the pages in a menu below 548 px, where they don't fit in a row beside the name (measured)", () => {
+  it("puts the pages in a menu below 641 px, where they don't fit in a row beside the name (measured)", () => {
     const css = readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "styles.css"), "utf8");
     // every block of a media query, joined
     const block = (q) =>
@@ -143,7 +143,7 @@ describe("the masthead (D4, D9; with the Trends page, D7)", () => {
         .slice(1)
         .map((b) => b.split(/\n}\n/)[0])
         .join("\n");
-    const phone = block("max-width: 547px");
+    const phone = block("max-width: 640px"); // 547px beside "Story Patterns", the name until 2026-10-21
     expect(phone).toMatch(/\.menu-button \{\s*display: inline-flex;/);
     expect(phone).toMatch(/\.nav-links \{\s*display: none;/);
     expect(phone).toMatch(/\.site-nav\.open \.nav-links \{\s*position: absolute;/);
@@ -151,7 +151,7 @@ describe("the masthead (D4, D9; with the Trends page, D7)", () => {
     expect(css).toMatch(/\.menu-button \{\s*display: none;\s*\}/); // a row of links above it
     // the earlier rule (links leaving the phone's masthead one by one) is gone
     expect(css).not.toMatch(/drop-(602|414|352)/);
-    for (const old of ["601px", "483px", "413px", "351px"]) expect(block(`max-width: ${old}`)).not.toMatch(/\.masthead|\.brand|\.nav-links/);
+    for (const old of ["601px", "547px", "483px", "413px", "351px"]) expect(block(`max-width: ${old}`)).not.toMatch(/\.masthead|\.brand|\.nav-links/);
   });
 
   it("links Genres to the last Genres address of the visit and fetches the page's code and file ahead", async () => {

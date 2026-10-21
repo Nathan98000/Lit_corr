@@ -15,7 +15,7 @@ const PAGE_PLACEHOLDER = <div className="page-placeholder" aria-busy="true" />;
 export const TITLE = "What do popular Literotica stories have in common?";
 export const GENRES_TITLE = "How do the genres’ stories differ?";
 export const TRENDS_TITLE = "How have the stories changed?";
-export const SITE_NAME = "Story Patterns"; // the masthead name: change it here
+export const SITE_NAME = "Literotica Data Explorer"; // the masthead name: change it here (and the phone menu's breakpoint, styles.css)
 const PAGE_TITLES = {
   methodology: `How it works · ${TITLE}`,
   patterns: `Patterns · ${TITLE}`,

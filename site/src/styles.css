@@ -1,4 +1,4 @@
-/* Story Patterns: an editorial, data-journalism look. Literotica's own accent blue (#4a89f3, the theme color of
+/* Literotica Data Explorer: an editorial, data-journalism look. Literotica's own accent blue (#4a89f3, the theme color of
    its pages) carries the data; one warm color marks "lower" and story-age warnings; everything else stays quiet.
    All colors are variables so that a dark theme can be added later. */
 
@@ -1935,12 +1935,23 @@ html[data-page="explore"] body {
   }
 }
 
-/* Phones (the owner's follow-up to round 4): below 548 px the pages don't fit in a row beside the site's name, so one
+/* Phones (the owner's follow-up to round 4): below 641 px the pages don't fit in a row beside the site's name, so one
    button names the page being read beside a menu icon, and opens every page in a panel under the masthead, over the
-   page (SiteNav.jsx); each a 48 px row, the page being read marked by a bar at its start. 548 px is the narrowest
-   width at which the row keeps 8 px to spare on every page in Verdana (502 in the site's font), measured on this Mac
-   (navfit.mjs); the button fits beside the name from 300 px. */
-@media (max-width: 547px) {
+   page (SiteNav.jsx); each a 48 px row, the page being read marked by a bar at its start. 641 px is the narrowest
+   width at which the row keeps 8 px to spare on every page in Verdana beside "Literotica Data Explorer" (585 in the
+   site's font; 548 and 502 beside "Story Patterns", the name until 2026-10-21), measured on this Mac. */
+@media (max-width: 640px) {
+  /* the page's name keeps its room in the button: the site's name wraps instead, to two lines where the two don't fit
+     on one ("Literotica Data / Explorer" on a 320 px phone; one line from 375 px in the site's font) */
+  .brand {
+    min-width: 0;
+    white-space: normal; /* two lines of 18 px (25 px each) fit the 52 px masthead */
+  }
+
+  .site-nav {
+    flex: none;
+  }
+
   .menu-button {
     display: inline-flex;
     align-items: center;

@@ -1,6 +1,6 @@
 # What do popular Literotica stories have in common? (Stage 2 website)
 
-**Story Patterns**: a static website for exploring how the popularity of Literotica stories varies with their
+**Literotica Data Explorer** (the masthead's name; "Story Patterns" until 2026-10-21): a static website for exploring how the popularity of Literotica stories varies with their
 characteristics, overall and within each of Literotica's genres. The controls are the question itself: "In [all
 genres], how does the [average rating] vary with [word count]?" (the default view; the average rating is the default
 measure and leads the measure menu; "all genres" is lowercase inside every sentence, and the lists keep "All genres").
@@ -24,10 +24,11 @@ pattern with the average rating across all genres →"), and on it the masthead 
 "← Back to Popularity" leads to the Popularity view last shown, as the masthead's link does (Popularity's first view on
 a visit that starts on Patterns).
 
-**The masthead** lists Popularity, Genres, Trends and How it works, in a row from 548 px, the page being read
-underlined. On a phone (below 548 px, where the four don't fit beside the site's name in Verdana; 502 px in the site's
-font) one button names the page being read beside a menu icon (☰), named "Genres, menu", and opens every page in a
-panel under the masthead, over the page: 48 px rows, the page being read marked by a bar at its start. The panel closes
+**The masthead** lists Popularity, Genres, Trends and How it works, in a row from 641 px, the page being read
+underlined. On a phone (below 641 px, where the four don't fit beside "Literotica Data Explorer" in Verdana; 585 px in
+the site's font) one button names the page being read beside a menu icon (☰), named "Genres, menu", and opens every
+page in a panel under the masthead, over the page; the button keeps its words whole, and the name wraps to two lines
+where the two don't fit on one (320 px; one line from 375 px in the site's font): 48 px rows, the page being read marked by a bar at its start. The panel closes
 on a link, Escape (focus back on the button), a tap or click outside it, or focus leaving it. The footer is one
 sentence: "An independent project, not affiliated with or endorsed by Literotica."
 

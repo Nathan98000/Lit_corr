@@ -252,10 +252,11 @@ cd site && npm install && npm run dev
 
 `site-data` reads only the newest handoff zip and writes the small summaries the website needs (no story-level
 data), including `patterns.json`, the existing pattern verdicts collected for the site's Patterns page;
-`genres/<included>.json`, one file per "Only include" option for the Genres page: each genre's quartiles or shares
+`genres/<included>.json`, one file per "Only include" option of the Genres page (All stories and the three Published
+ones): each genre's quartiles or shares
 for every characteristic, and whether the genre clearly differs from all genres (a rank-biserial correlation of at
 least 0.2, or for named groups a total variation distance of at least 0.2, clear at the 99.9% level); and
-`trends/<included>/<genre>.json`, one file per genre and Length option for the Trends page: each five-year period's
+`trends/all/<genre>.json`, one file per genre for the Trends page (which compares all stories): each five-year period's
 quartiles or shares for every characteristic on that page, and whether it clearly changed from 2000–2009 to 2020 or
 later by the same rule. `meta.json` gives the
 Trends page's periods, windows, rule, options and left-out characteristics as `trend`. The website,

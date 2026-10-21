@@ -11,11 +11,10 @@ import {
   trendQuestion,
   trendQuestionText,
 } from "../lib/trends.js";
-import { TREND_PAGE_EXCLUDED, onTrendsPage, subsetConflict } from "../lib/urlState.js";
+import { TREND_PAGE_EXCLUDED, onTrendsPage } from "../lib/urlState.js";
 import { BodyPlaceholder, CharacteristicPicker, SlotButton } from "./Controls.jsx";
 import { ChartPlaceholder } from "./Explorer.jsx";
 import Segmented from "./GenreSwitch.jsx";
-import IncludeSelect from "./IncludeSelect.jsx";
 import InlineSelect, { SlotWords } from "./InlineSelect.jsx";
 import { PartBoundary } from "./lazyPart.jsx";
 import LoadError from "./LoadError.jsx";
@@ -29,28 +28,27 @@ import "../trends.css";
 const KEEP_BLURBS = ["length"];
 
 /**
- * Keeps the file on screen until the next one has loaded (another genre or "Only include" option), as the Genres page
- * does: while it loads, the answer stays, dimmed and marked busy, so nothing is worded from data that is not there yet.
+ * Keeps the file on screen until the next one has loaded (another genre's), as the Genres page does: while it loads,
+ * the answer stays, dimmed and marked busy, so nothing is worded from data that is not there yet.
  */
-function useShownTrends(sub, genre) {
-  const [shown, setShown] = useState(null); // { key, file }
+function useShownTrends(genre) {
+  const [shown, setShown] = useState(null); // { genre, file }
   const [error, setError] = useState(null);
   const [attempt, setAttempt] = useState(0);
-  const key = `${sub}/${genre}`;
   useEffect(() => {
     let live = true;
     setError(null);
-    loadTrends(sub, genre).then(
-      (file) => live && setShown({ key, file }),
+    loadTrends(genre).then(
+      (file) => live && setShown({ genre, file }),
       (e) => live && setError(e.message),
     );
     return () => {
       live = false;
     };
-  }, [sub, genre, attempt]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [genre, attempt]);
   return {
     file: shown?.file ?? null,
-    busy: !error && (!shown || shown.key !== key),
+    busy: !error && (!shown || shown.genre !== genre),
     error,
     retry: () => setAttempt((a) => a + 1),
   };
@@ -81,14 +79,13 @@ function useAnnouncement(text, key) {
  * The Trends page (R1): how one characteristic changed over time (View 1), or what changed in a genre's stories (View
  * 2), stories from 2020 or later compared with stories from 2000-2009 by the rule in meta.trend (D2). Controls change
  * the address in place; the view switch and the links between the views add a history entry, so Back returns. The page
- * opens on All genres (D9).
+ * opens on All genres (D9) and always shows all stories: it has no "Only include" (the owner, 2026-10-20).
  */
 export default function TrendsPage({ meta, state, onChange, onNavigate, onHoldScroll, lastChart, lastExplore }) {
-  const { file, busy, error, retry } = useShownTrends(state.sub, state.genre);
+  const { file, busy, error, retry } = useShownTrends(state.genre);
   const changes = state.view === "changes";
   const variable = meta.variables.find((v) => v.id === state.v);
   const genre = meta.genres.find((g) => g.id === state.genre);
-  const subsets = meta.subsets.filter((s) => meta.trend.subsets.includes(s.id));
   const [menu, setMenu] = useState(false);
   const varBtn = useRef(null);
   const pickerFocus = useRef(null);
@@ -98,7 +95,7 @@ export default function TrendsPage({ meta, state, onChange, onNavigate, onHoldSc
     onHoldScroll?.();
     onChange(next);
   };
-  // a button inside the answer that changes it ("Show all stories") goes away with the change, so focus moves to the
+  // a button inside the answer that changes it ("Show All genres") goes away with the change, so focus moves to the
   // answer's heading, without scrolling, and again once the new file is drawn; "Try again" too
   const heading = useRef(null);
   const focusHeading = useRef(false);
@@ -113,17 +110,11 @@ export default function TrendsPage({ meta, state, onChange, onNavigate, onHoldSc
     focusHeading.current = false;
     toHeading();
   }, [file, busy]);
-  // while another genre's or option's file loads, the answer on screen keeps describing its own file: its genre, its
-  // option, and an answer it can draw. A characteristic the file lacks (word count, after a Length option) keeps the
-  // answer last drawn from it, a characteristic or "What changed" (the page opens on it, with no characteristic).
-  const fits = Boolean(file) && (changes || Boolean(file.c[state.v]));
-  const drawn = useRef({ changes, v: state.v });
-  if (fits) drawn.current = { changes, v: state.v };
-  const answer = !file || fits ? { changes, v: state.v } : drawn.current;
-  const view = file ? { ...state, genre: file.g, sub: file.s, v: answer.v } : state;
+  // while another genre's file loads, the answer on screen keeps describing its own file (its genre)
+  const view = file ? { ...state, genre: file.g } : state;
   const announcement = useAnnouncement(
-    !file || busy || error ? "" : answer.changes ? changesAnnouncement(meta, file, view) : trendAnnouncement(meta, file, view),
-    `${state.view || "chart"}|${state.v}|${state.genre}|${state.sub}`,
+    !file || busy || error ? "" : changes ? changesAnnouncement(meta, file) : trendAnnouncement(meta, file, view),
+    `${state.view || "chart"}|${state.v}|${state.genre}`,
   );
 
   // the tab's title is the question on screen, once its file is (as on the Genres page)
@@ -132,22 +123,20 @@ export default function TrendsPage({ meta, state, onChange, onNavigate, onHoldSc
     if (file && !busy && !error) document.title = question;
   }, [question, file, busy, error]);
 
-  // the view switch keeps the genre and the option; back, the characteristic it came from
+  // the view switch keeps the genre; back, the characteristic it came from
   const switchView = (to) => {
     if (to === "changes") {
-      onNavigate({ view: "changes", genre: state.genre, sub: state.sub });
+      onNavigate({ view: "changes", genre: state.genre });
     } else {
       const back = lastChart?.current?.v;
       const v = back && meta.variables.some((x) => x.id === back && onTrendsPage(x)) ? back : state.v;
-      const next = { v, genre: state.genre, sub: state.sub };
-      if (subsetConflict(meta.subsets.find((s) => s.id === next.sub), meta.variables.find((x) => x.id === v))) next.sub = "all";
-      onNavigate(next);
+      onNavigate({ v, genre: state.genre });
     }
   };
 
-  // a genre whose two windows can't be compared with this option says so in the list (it stays selectable: its chart
-  // over time still draws its periods)
-  const tooFew = new Set(meta.trend.too_few?.[state.sub] ?? []);
+  // a genre whose two windows can't be compared says so in the list (it stays selectable: its chart over time still
+  // draws its periods)
+  const tooFew = new Set(meta.trend.too_few?.all ?? []);
   const genreSlot = (
     <InlineSelect
       id={`${ids}-genre`}
@@ -217,12 +206,6 @@ export default function TrendsPage({ meta, state, onChange, onNavigate, onHoldSc
             value={changes ? "changes" : "chart"}
             onChange={switchView}
           />
-          <IncludeSelect
-            subsets={subsets}
-            value={state.sub}
-            variable={changes ? undefined : variable}
-            onChange={(s) => keepPlace({ ...state, sub: s })}
-          />
         </div>
       </div>
       {!changes && (
@@ -250,10 +233,7 @@ export default function TrendsPage({ meta, state, onChange, onNavigate, onHoldSc
               onClose={() => setMenu(false)}
               onPick={(id) => {
                 setMenu(false);
-                const next = { ...state, v: id };
-                const nextVar = meta.variables.find((v) => v.id === id);
-                if (subsetConflict(meta.subsets.find((s) => s.id === state.sub), nextVar)) next.sub = "all";
-                keepPlace(next);
+                keepPlace({ ...state, v: id });
               }}
             />
           </PartBoundary>
@@ -274,7 +254,7 @@ export default function TrendsPage({ meta, state, onChange, onNavigate, onHoldSc
         </article>
       ) : !file ? (
         <ChartPlaceholder />
-      ) : answer.changes ? (
+      ) : changes ? (
         <TrendChanges meta={meta} state={view} file={file} busy={busy} onSwitch={switchFromAnswer} onNavigate={onNavigate} headingRef={heading} />
       ) : (
         <TrendAnswer

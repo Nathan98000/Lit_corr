@@ -365,7 +365,7 @@ describe("no highlighted genre, in any form (decision 8)", () => {
 describe("the forms on the real data", () => {
   it.skipIf(!real)("never overlap or leave the chart, for every named-group, band and mostly-zero characteristic", () => {
     const problems = [];
-    for (const sub of ["all", "y2020", "short"]) {
+    for (const sub of ["all", "y2000", "y2020"]) {
       const file = realFile(sub);
       for (const [id, entry] of Object.entries(file.c)) {
         if (!["grp", "band", "zero"].includes(entry.k)) continue;

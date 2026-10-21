@@ -40,15 +40,18 @@ async function openTrends(hash = "#/trends") {
 const masthead = () => screen.getByRole("navigation", { name: "Pages" });
 
 describe("Trends addresses", () => {
-  it("round-trip both views, in the documented order", () => {
-    const chart = { v: "dlg_word_share", genre: "adult-romance", sub: "medium" };
-    expect(toHash("trends", chart)).toBe("#/trends?var=dlg_word_share&genre=adult-romance&include=medium");
+  it("round-trip both views, in the documented order, with no option (the owner, 2026-10-20)", () => {
+    const chart = { v: "dlg_word_share", genre: "adult-romance" };
+    expect(toHash("trends", chart)).toBe("#/trends?var=dlg_word_share&genre=adult-romance");
     expect(parseHash(toHash("trends", chart))).toEqual({ page: "trends", state: chart });
-    const changes = { view: "changes", genre: "all", sub: "all" };
+    // an old address's option is not read, and never written
+    expect(parseHash("#/trends?var=dlg_word_share&genre=adult-romance&include=medium")).toEqual({ page: "trends", state: chart });
+    expect(toHash("trends", { ...chart, sub: "medium" })).toBe("#/trends?var=dlg_word_share&genre=adult-romance");
+    const changes = { view: "changes", genre: "all" };
     // what changed, the page's default (O4), is written without `view`, and without the characteristic it keeps for
     // the way back; the trends page build's addresses with view=changes still read as what changed
-    expect(toHash("trends", { ...changes, v: "story_words" })).toBe("#/trends?genre=all&include=all");
-    expect(parseHash(toHash("trends", { ...changes, genre: "adult-romance" }))).toEqual({ page: "trends", state: { genre: "adult-romance", sub: "all" } });
+    expect(toHash("trends", { ...changes, v: "story_words" })).toBe("#/trends?genre=all");
+    expect(parseHash(toHash("trends", { ...changes, genre: "adult-romance" }))).toEqual({ page: "trends", state: { genre: "adult-romance" } });
     expect(parseHash("#/trends?view=changes&genre=all&include=all")).toEqual({ page: "trends", state: changes });
     expect(parseHash("#/trends")).toEqual({ page: "trends", state: {} });
     expect(toHash("trends", {})).toBe("#/trends");
@@ -58,39 +61,42 @@ describe("Trends addresses", () => {
     expect(parseHash("#/methodology/trends")).toMatchObject({ page: "methodology", section: "trends" });
   });
 
-  it("sanitizes: characteristic, genre, option and view", () => {
+  it("sanitizes: characteristic, genre and view; there is no option", () => {
     const meta = fixtureMeta;
     // the test data has no story length: the page's first characteristic stands in. Without a characteristic the page
-    // opens on what changed (O4), with All genres and All stories; with one, on its chart over time
-    expect(sanitizeTrends({}, meta)).toEqual({ view: "changes", genre: "all", sub: "all", v: "dlg_word_share" });
-    expect(sanitizeTrends({ genre: "romance", sub: "medium" }, meta)).toEqual({ view: "changes", genre: "romance", sub: "medium", v: "dlg_word_share" });
-    expect(sanitizeTrends({ v: "pov_class" }, meta)).toEqual({ v: "pov_class", genre: "all", sub: "all" });
+    // opens on what changed (O4), with All genres; with one, on its chart over time
+    expect(sanitizeTrends({}, meta)).toEqual({ view: "changes", genre: "all", v: "dlg_word_share" });
+    expect(sanitizeTrends({ genre: "romance", sub: "medium" }, meta)).toEqual({ view: "changes", genre: "romance", v: "dlg_word_share" });
+    expect(sanitizeTrends({ v: "pov_class" }, meta)).toEqual({ v: "pov_class", genre: "all" });
     expect(sanitizeTrends({ v: "nope", genre: "nope", sub: "nope", view: "nope" }, meta)).toEqual({
       v: "dlg_word_share",
       genre: "all",
-      sub: "all",
     });
-    // an option the page doesn't offer (a Published one, from an Explore link) becomes All stories
-    expect(sanitizeTrends({ v: "pov_class", genre: "romance", sub: "y2020" }, meta)).toEqual({ v: "pov_class", genre: "romance", sub: "all" });
-    expect(sanitizeTrends({ v: "pov_class", sub: "long" }, meta).sub).toBe("long");
+    // any option, from an old link, is dropped
+    expect(sanitizeTrends({ v: "pov_class", genre: "romance", sub: "y2020" }, meta)).toEqual({ v: "pov_class", genre: "romance" });
+    expect(sanitizeTrends({ v: "pov_class", sub: "long" }, meta)).toEqual({ v: "pov_class", genre: "all" });
     // what changed keeps its characteristic for the way back
     expect(sanitizeTrends({ view: "changes", genre: "fetish", sub: "medium", v: "emo_anger_per_1k" }, meta)).toEqual({
       view: "changes",
       genre: "fetish",
-      sub: "medium",
       v: "emo_anger_per_1k",
     });
     expect(TREND_PAGE_EXCLUDED).toEqual(meta.trend.excluded);
+    expect(meta.trend.subsets).toEqual(["all"]);
   });
 
-  it.skipIf(!real)("leaves out the excluded characteristics and story length with a Length option (the real data)", () => {
+  it.skipIf(!real)("leaves out the excluded characteristics, and keeps story length whatever an old link says (the real data)", () => {
     for (const id of real.trend.excluded) expect(sanitizeTrends({ v: id }, real).v).toBe("story_words");
-    expect(sanitizeTrends({ v: "story_words", sub: "short" }, real).sub).toBe("all");
-    // what changed keeps a Length option even when the characteristic it remembers is story length
-    expect(sanitizeTrends({ view: "changes", v: "story_words", sub: "short" }, real)).toEqual({ view: "changes", genre: "all", sub: "short", v: "story_words" });
-    expect(sanitizeTrends({ sub: "long" }, real)).toEqual({ view: "changes", genre: "all", sub: "long", v: "story_words" });
-    expect(sanitizeTrends({ v: "dlg_word_share", sub: "short" }, real).sub).toBe("short");
-    expect(real.trend.subsets).toEqual(["all", "short", "medium", "long"]);
+    expect(sanitizeTrends({ v: "story_words", sub: "short" }, real)).toEqual({ v: "story_words", genre: "all" });
+    expect(sanitizeTrends({ sub: "long" }, real)).toEqual({ view: "changes", genre: "all", v: "story_words" });
+    expect(real.trend.subsets).toEqual(["all"]);
+  });
+
+  it("settles an old address with an option to the address without it, in place", async () => {
+    await openTrends("#/trends?var=pov_class&genre=fetish&include=medium");
+    expect(window.location.hash).toBe("#/trends?var=pov_class&genre=fetish");
+    expect(screen.queryByLabelText("Only include")).toBeNull();
+    expect(fetchMock.calls.some((u) => /trends\/(short|medium|long)\//.test(u))).toBe(false);
   });
 });
 
@@ -120,20 +126,20 @@ describe("the masthead and the footer (D7, D8)", () => {
     await user.click(trends);
     await waitFor(() => expect(document.querySelector(".trends-page .chart-panel[aria-busy='false']")).toBeTruthy());
     expect(screen.getByLabelText("Genre").value).toBe("all");
-    window.location.hash = "#/trends?var=pov_class&genre=fetish&include=medium";
-    await waitFor(() => expect(screen.getByLabelText("Only include").value).toBe("medium"));
+    window.location.hash = "#/trends?var=pov_class&genre=fetish";
+    await waitFor(() => expect(screen.getByLabelText("Genre").value).toBe("fetish"));
     window.location.hash = "#/patterns";
     await screen.findByRole("heading", { level: 1, name: /^Clear patterns in / }); // the question, its h1 (round 4's X2)
     const back = within(masthead()).getByRole("link", { name: "Trends" });
-    expect(back.getAttribute("href")).toBe("#/trends?var=pov_class&genre=fetish&include=medium");
+    expect(back.getAttribute("href")).toBe("#/trends?var=pov_class&genre=fetish");
     await user.hover(back);
-    await waitFor(() => expect(fetchMock.calls.some((u) => u.endsWith("trends/medium/fetish.json"))).toBe(true));
+    await waitFor(() => expect(fetchMock.calls.some((u) => u.endsWith("trends/all/fetish.json"))).toBe(true));
   });
 
   it("counts a genre chosen on this page as chosen for the Genres page (D8)", async () => {
     const user = await openTrends("#/trends?var=pov_class");
     await user.selectOptions(screen.getByLabelText("Genre"), "fetish");
-    await waitFor(() => expect(window.location.hash).toBe("#/trends?var=pov_class&genre=fetish&include=all"));
+    await waitFor(() => expect(window.location.hash).toBe("#/trends?var=pov_class&genre=fetish"));
     window.location.hash = "#/genres?view=genre";
     await waitFor(() => expect(screen.getByLabelText("Genre").value).toBe("fetish"));
   });
@@ -166,24 +172,28 @@ describe("the page shell", () => {
     expect(question()).toBe("In Romance, how has the share of stories with dialogue changed over time?");
     const length = window.history.length;
     await user.click(screen.getByRole("radio", { name: "All changes" }));
-    await waitFor(() => expect(window.location.hash).toBe("#/trends?genre=romance&include=all"));
+    await waitFor(() => expect(window.location.hash).toBe("#/trends?genre=romance"));
     expect(window.history.length).toBe(length + 1);
     expect(question()).toBe("What has changed in stories in Romance?");
     await waitFor(() => expect(document.title).toBe("What has changed in stories in Romance?"));
     await user.click(screen.getByRole("radio", { name: "One characteristic" }));
-    await waitFor(() => expect(window.location.hash).toBe("#/trends?var=dlg_has_dialogue&genre=romance&include=all"));
+    await waitFor(() => expect(window.location.hash).toBe("#/trends?var=dlg_has_dialogue&genre=romance"));
     // a control replaces the address: no new entry
     const now = window.history.length;
-    await user.selectOptions(screen.getByLabelText("Only include"), "medium");
-    await waitFor(() => expect(window.location.hash).toBe("#/trends?var=dlg_has_dialogue&genre=romance&include=medium"));
+    await user.selectOptions(screen.getByLabelText("Genre"), "fetish");
+    await waitFor(() => expect(window.location.hash).toBe("#/trends?var=dlg_has_dialogue&genre=fetish"));
     expect(window.history.length).toBe(now);
   });
 
-  it("offers All stories and the Length options only", async () => {
-    await openTrends();
-    const select = screen.getByLabelText("Only include");
-    expect([...select.options].map((o) => o.value)).toEqual(["all", "short", "medium", "long"]);
-    expect(select.querySelector("optgroup").label).toBe("Length");
+  it("has no “Only include” in either view: the overall view only (the owner, 2026-10-20)", async () => {
+    const user = await openTrends();
+    expect(screen.queryByLabelText("Only include")).toBeNull();
+    expect(screen.queryByText("Only include:")).toBeNull();
+    await user.click(screen.getByRole("radio", { name: "One characteristic" }));
+    await waitFor(() => expect(document.querySelector(".trends-page .trend-answer[aria-busy='false']")).toBeTruthy());
+    expect(screen.queryByLabelText("Only include")).toBeNull();
+    // the controls under the question hold the view switch alone
+    expect(document.querySelector(".trends-controls").children).toHaveLength(1);
   });
 
   it("loads the page's code on demand, holding its place meanwhile", async () => {
@@ -198,11 +208,12 @@ describe("the page shell", () => {
   });
 
   it("fetches the page's file at once when the visit starts on it, before meta.json", async () => {
-    await openTrends("#/trends?genre=romance&include=medium");
-    const first = fetchMock.calls.findIndex((u) => u.endsWith("trends/medium/romance.json"));
+    await openTrends("#/trends?genre=romance&include=medium"); // an old link's option fetches nothing of its own
+    const first = fetchMock.calls.findIndex((u) => u.endsWith("trends/all/romance.json"));
     expect(first).toBeGreaterThanOrEqual(0);
     expect(first).toBeLessThan(fetchMock.calls.findIndex((u) => u.endsWith("meta.json")));
-    expect(fetchMock.calls.filter((u) => u.endsWith("trends/medium/romance.json"))).toHaveLength(1); // the same request
+    expect(fetchMock.calls.filter((u) => u.endsWith("trends/all/romance.json"))).toHaveLength(1); // the same request
+    expect(fetchMock.calls.some((u) => u.includes("trends/medium/"))).toBe(false);
   });
 
   it("shows a friendly error when the file cannot be loaded, and loads it again on Try again", async () => {

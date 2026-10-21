@@ -20,7 +20,8 @@ import {
   profileTakeaway,
   takeawayLine,
 } from "../lib/genres.js";
-import { fixtureFetch, fixtureMeta, realMeta } from "./fixtures.js";
+import { onGenresPageSubset } from "../lib/urlState.js";
+import { fewStoriesFetch, fixtureFetch, fixtureMeta, realMeta } from "./fixtures.js";
 import { rowName, rowNames } from "./rows.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -220,10 +221,10 @@ describe("edge states", () => {
   });
 
   it("offers all stories when an option leaves a genre with 10 to 29 stories (F60)", async () => {
-    // the test data's "5,000 words or more", as built: Romance has 15 stories, so no r and no flag
-    vi.stubGlobal("fetch", fixtureFetch());
-    const user = await openGenre("#/genres?view=genre&genre=romance&include=long");
-    expect(heading()).toBe("Fewer than 30 stories in Romance match “5,000 words or more”: too few to compare.");
+    // Romance with 15 stories published 2000–2009, so no r and no flag
+    vi.stubGlobal("fetch", fewStoriesFetch("y2000", "romance", 15));
+    const user = await openGenre("#/genres?view=genre&genre=romance&include=y2000");
+    expect(heading()).toBe("Fewer than 30 stories in Romance match “Published 2000–2009”: too few to compare.");
     expect(document.querySelector(".profile-takeaway")).toBeNull();
     expect(document.querySelectorAll(".profile-topic").length).toBeGreaterThan(0);
     expect(document.querySelector(".profile-topic-count").textContent).toMatch(/^\d+ characteristics?$/);
@@ -237,11 +238,12 @@ describe("edge states", () => {
       expect(document.querySelector(".genres-page").textContent).not.toMatch(/Story age|median ages?/);
       expect(screen.queryByRole("button", { name: /^Compare stories/ })).toBeNull();
     };
+    vi.stubGlobal("fetch", fewStoriesFetch("y2000", "romance", 15, profileFetch()));
     await openGenre("#/genres?view=genre&genre=romance&include=all");
     expect(heading()).toMatch(/clearly set Romance apart/);
     noNote();
-    window.location.hash = "#/genres?view=genre&genre=romance&include=long"; // Romance: 15 stories
-    await waitFor(() => expect(heading()).toBe("Fewer than 30 stories in Romance match “5,000 words or more”: too few to compare."));
+    window.location.hash = "#/genres?view=genre&genre=romance&include=y2000"; // Romance: 15 stories
+    await waitFor(() => expect(heading()).toBe("Fewer than 30 stories in Romance match “Published 2000–2009”: too few to compare."));
     noNote();
     expect(screen.getByRole("button", { name: "Show all stories" })).toBeTruthy();
   });
@@ -270,7 +272,7 @@ describe("one scale for every row (concepts P2 and R3)", () => {
 
   it.skipIf(!real)("prints no clear difference as 40 or 60, in any genre or option of the real data", () => {
     let edges = 0;
-    for (const s of real.subsets) {
+    for (const s of real.subsets.filter(onGenresPageSubset)) {
       const file = realFile(s.id);
       for (let gi = 1; gi < file.genres.length; gi += 1) {
         if (file.n[gi] < real.min_n) continue;
@@ -284,7 +286,7 @@ describe("one scale for every row (concepts P2 and R3)", () => {
         }
       }
     }
-    expect(edges).toBe(288); // r of ±0.20, two decimals on this page
+    expect(edges).toBe(136); // r of ±0.20, two decimals on this page (All stories and the Published options)
   });
 
   it("draws the zone of no clear difference with its edges, and the stem and dot, on each row; named groups keep two bars", async () => {
@@ -429,7 +431,7 @@ describe("one genre on the real data", () => {
     // goes"). Here: in every genre and option, no line names story age when publication year is shown, and none is empty
     const age = real.variables.find((x) => x.id === "age_years").label.toLowerCase();
     let shown = 0;
-    for (const s of real.subsets) {
+    for (const s of real.subsets.filter(onGenresPageSubset)) {
       const f = realFile(s.id);
       for (let gi = 1; gi < f.genres.length; gi += 1) {
         if (f.n[gi] < real.min_n) continue;

@@ -44,14 +44,12 @@ async function open(hash) {
 const byId = (id) => fixtureMeta.variables.find((v) => v.id === id);
 
 describe("Explore's “Over time →” (round 4's I15)", () => {
-  it("opens View 1 with Explore's genre and, when the Trends page offers it, Explore's option, else all stories", () => {
-    const over = (sub, genre = "all") => toHash("trends", overTimeState(fixtureMeta, byId("dlg_word_share"), genre, sub));
-    expect(over("medium", "romance")).toBe("#/trends?var=dlg_word_share&genre=romance&include=medium");
-    expect(over("y2020")).toBe("#/trends?var=dlg_word_share&genre=all&include=all"); // not one of the page's options
-    expect(overTimeState(fixtureMeta, byId("dlg_word_share"), "all", "views10k").sub).toBe("all");
-    // word count with a Length option: the option would leave one group, so all stories
+  it("opens View 1 with Explore's genre, of all stories (the page has no “Only include”: the owner, 2026-10-20)", () => {
+    const over = (genre = "all") => toHash("trends", overTimeState(fixtureMeta, byId("dlg_word_share"), genre));
+    expect(over("romance")).toBe("#/trends?var=dlg_word_share&genre=romance");
+    expect(over()).toBe("#/trends?var=dlg_word_share&genre=all");
     const words = { id: "story_words", label: "Word count", noun: "word count" };
-    expect(overTimeState(fixtureMeta, words, "all", "short").sub).toBe("all");
+    expect(overTimeState(fixtureMeta, words, "all")).toEqual({ v: "story_words", genre: "all" });
     // a characteristic the page leaves out, or no Trends page: no link
     expect(overTimeState(fixtureMeta, { id: "pub_year", label: "Publication year", noun: "publication year" })).toBeNull();
     expect(overTimeState({ ...fixtureMeta, trend: undefined }, byId("dlg_word_share"))).toBeNull();
@@ -68,9 +66,10 @@ describe("Explore's “Over time →” (round 4's I15)", () => {
     expect(links.map((a) => a.textContent)).toEqual(["By genre\u00a0→", "Over time\u00a0→"]);
     const over = links[1];
     expect(over.getAttribute("aria-label")).toBe("Has dialogue over time");
-    expect(over.getAttribute("href")).toBe("#/trends?var=dlg_has_dialogue&genre=fetish&include=short");
+    // Explore's option stays on Explore
+    expect(over.getAttribute("href")).toBe("#/trends?var=dlg_has_dialogue&genre=fetish");
     fireEvent.pointerEnter(over);
-    await waitFor(() => expect(asked.some((u) => u.endsWith("trends/short/fetish.json"))).toBe(true));
+    await waitFor(() => expect(asked.some((u) => u.endsWith("trends/all/fetish.json"))).toBe(true));
   });
 });
 

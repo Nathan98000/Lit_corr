@@ -859,8 +859,9 @@ export function chartRows(rows, variable, kind) {
 }
 
 /**
- * The value axis of values that don't vary (every quartile the same: every genre's pages on site with "Under 2,000
- * words", 1 page; How To's in every period on the Trends page), which have no spread to zoom on. It shows the value
+ * The value axis of values that don't vary (every quartile the same: How To's pages in every period on the Trends page,
+ * 1 page; on the Genres page, every genre's pages with "Under 2,000 words" until it dropped its Length options), which
+ * have no spread to zoom on. It shows the value
  * against 0: from 0 to twice the value, with three ticks, 0, the value and twice the value, so that the line sits
  * halfway up on a labeled value and no axis reads "0.96" to "1.04" pages; 0 to 2 for a value of 0 (on the baseline),
  * mirrored for a value under 0. Percentages keep a share's axis, from 0 to the smallest of 25%, 50%, 75% and 100% that

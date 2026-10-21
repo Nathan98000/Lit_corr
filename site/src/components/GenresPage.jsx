@@ -4,9 +4,8 @@ import { breakable, chartAnnouncement, chartQuestion, chartQuestionText, orderWo
 import {
   GENRE_PAGE_EXCLUDED,
   defaultGenre,
-  genreChartSub,
-  onGenreChart,
   onGenresPage,
+  onGenresPageSubset,
   sortable,
   subsetConflict,
   toHash,
@@ -89,6 +88,7 @@ export default function GenresPage({ meta, state, onChange, onNavigate, onHoldSc
   const variable = meta.variables.find((v) => v.id === state.v);
   const genre = profile ? meta.genres.find((g) => g.id === state.genre) : null;
   const genres = meta.genres.filter((g) => g.id !== "all");
+  const offered = meta.subsets.filter(onGenresPageSubset); // "Only include": All stories and the year published
   const [menu, setMenu] = useState(false);
   const varBtn = useRef(null);
   const pickerFocus = useRef(null);
@@ -139,14 +139,14 @@ export default function GenresPage({ meta, state, onChange, onNavigate, onHoldSc
   }, [question, file, busy, error]);
 
   // the view switch opens the genre last chosen in this visit, or the default (D8); back, the characteristic and order
-  // it came from, with All stories after a Length option (one characteristic doesn't offer them)
+  // it came from; both keep the option (the views offer the same ones: All stories and the year published)
   const switchView = (to) => {
     if (to === "genre") {
       onNavigate({ view: "genre", genre: defaultGenre(meta, chosenGenre?.current), sub: state.sub });
     } else {
       const back = lastChart?.current || {};
       const v = back.v && meta.variables.some((x) => x.id === back.v && onGenresPage(x)) ? back.v : state.v;
-      onNavigate({ v, sub: genreChartSub(meta, state.sub), sort: back.sort });
+      onNavigate({ v, sub: state.sub, sort: back.sort });
     }
   };
 
@@ -192,7 +192,7 @@ export default function GenresPage({ meta, state, onChange, onNavigate, onHoldSc
     controls = (
       <>
         {viewSwitch}
-        <IncludeSelect subsets={meta.subsets} value={state.sub} onChange={(s) => keepPlace({ ...state, sub: s })} />
+        <IncludeSelect subsets={offered} value={state.sub} onChange={(s) => keepPlace({ ...state, sub: s })} />
       </>
     );
   } else {
@@ -212,7 +212,7 @@ export default function GenresPage({ meta, state, onChange, onNavigate, onHoldSc
       <>
         {viewSwitch}
         <IncludeSelect
-          subsets={meta.subsets.filter(onGenreChart)}
+          subsets={offered}
           value={state.sub}
           variable={variable}
           onChange={(s) => keepPlace({ ...state, sub: s })}

@@ -14,6 +14,7 @@ import { chartDomain, chartRows, flatDomain, formatPercent, genreRows, numberFor
 import { rangeLayout } from "../lib/rangeLayout.js";
 import { trendDomain, trendLayout, trendOverlaps, trendTicks } from "../lib/trendLayout.js";
 import { trendChartInput, trendSplitInputs } from "../lib/trends.js";
+import { onGenresPageSubset } from "../lib/urlState.js";
 import { fixtureMeta, realMeta } from "./fixtures.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -161,7 +162,7 @@ describe("on the real data", () => {
       }
     }
     let genres = 0;
-    for (const s of real.subsets) {
+    for (const s of real.subsets.filter(onGenresPageSubset)) {
       const file = realJson(`genres/${s.id}.json`);
       for (const [id, entry] of Object.entries(file.c)) {
         if (entry.k !== "num" || entry.fmt !== "num") continue;
@@ -173,20 +174,24 @@ describe("on the real data", () => {
         expect([lo, hi, step], `${s.id} ${id}`).toEqual([0, 2 * vals[0] || 2, vals[0] || 1]);
       }
     }
-    // the 20261013 data: 41 on the Trends page (pages on site, sex scenes in Non-Erotic …) and 1 on the Genres page
+    // the 20261013 data: 41 on the Trends page (pages on site, sex scenes in Non-Erotic …); none on the Genres page since
+    // its options are the year published alone (the owner, 2026-10-20: its one was pages on site with Under 2,000
+    // words), so the next test draws one from a made-up file
     expect(trends).toBeGreaterThan(0);
-    expect(genres).toBeGreaterThan(0);
+    expect(genres).toBe(0);
   });
 
-  it.skipIf(!real)("shows How To's 1 page in every period on 0, 1 and 2 pages, and every genre's with Under 2,000 words", () => {
+  it.skipIf(!real)("shows How To's 1 page in every period on 0, 1 and 2 pages, and every genre's when all have 1 page", () => {
     const pages = real.variables.find((v) => v.id === "story_pages");
     const file = realJson("trends/all/adult-how-to.json");
     const layout = trendLayout({ width: 343, ...trendChartInput(real, pages, file.c.story_pages, file) });
     expect(layout.ticks.map((t) => t.text)).toEqual(["0", "1", "2"]);
     for (const c of layout.columns) expect(c.dotY).toBeCloseTo((layout.top + layout.bottom) / 2, 6);
-    const short = realJson("genres/short.json");
-    const entry = short.c.story_pages;
-    const crow = chartRows(genreRows(real, short, "story_pages"), pages, "num");
+    // every genre's stories on 1 page, as with Under 2,000 words before the owner's 2026-10-20
+    const flat = realJson("genres/all.json");
+    flat.c.story_pages.q = flat.c.story_pages.q.map((c, i) => c && (i === 0 ? [c[0], 1, 1, 1, 1, 1] : [c[0], 1, 1, 1]));
+    const entry = flat.c.story_pages;
+    const crow = chartRows(genreRows(real, flat, "story_pages"), pages, "num");
     for (const width of [343, 1032]) {
       const g = rangeLayout({
         rows: crow,

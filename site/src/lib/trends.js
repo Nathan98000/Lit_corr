@@ -171,17 +171,15 @@ function changeWords(kind, f) {
 
 /**
  * The too-few sentence: "Fewer than 30 stories in Transgender were published 2000–2009: too few to compare", for the
- * window with too few stories ("then" first); with a Length option, "… in Romance match “Under 2,000 words” and were
- * published …".
+ * window with too few stories ("then" first).
  */
-export function tooFewHeading({ entry, genre, subset, file }) {
+export function tooFewHeading({ entry, genre, file }) {
   const thenN = entry ? entry.t?.[0] ?? 0 : 0;
-  return tooFewSentence(genre, subset, file, !entry || thenN < file.rule.min_n ? "then" : "now");
+  return tooFewSentence(genre, file, !entry || thenN < file.rule.min_n ? "then" : "now");
 }
 
-function tooFewSentence(genre, subset, file, which) {
-  const match = subset && subset.id !== "all" ? ` match “${subset.label}” and` : "";
-  return `Fewer than ${file.rule.min_n} stories in ${genre.name}${match} were published ${windowWords(file)[which]}: too few to compare`;
+function tooFewSentence(genre, file, which) {
+  return `Fewer than ${file.rule.min_n} stories in ${genre.name} were published ${windowWords(file)[which]}: too few to compare`;
 }
 
 /**
@@ -190,8 +188,8 @@ function tooFewSentence(genre, subset, file, which) {
  * changed …", "No clear change in … from 2000–2009 to 2020 or later", or the too-few sentence when a window has fewer
  * than the rule's stories (r is null). The site's rule alone decides (the file's `f`).
  */
-export function trendHeading({ variable, entry, genre, subset, file }) {
-  if (entry.r == null) return tooFewHeading({ entry, genre, subset, file });
+export function trendHeading({ variable, entry, genre, file }) {
+  if (entry.r == null) return tooFewHeading({ entry, genre, file });
   const w = windowWords(file);
   const noun = trendNoun(variable);
   if (!entry.f) return `No clear change in ${noun} from ${w.then} to ${w.now}`;
@@ -466,28 +464,27 @@ export function periodDetails({ variable, entry, cell, fmt, minN }) {
 }
 
 // --------------------------------------------------------------------------------------------------------- the PNG
-/** "Download image"'s file name: the characteristic's, the genre's and the option's ids, in lower case. */
-export const trendsFileName = (state) => `trends-${state.v}-${state.genre}-${state.sub}.png`.toLowerCase();
+/** "Download image"'s file name: the characteristic's and the genre's ids, in lower case. */
+export const trendsFileName = (state) => `trends-${state.v}-${state.genre}.png`.toLowerCase();
 
-/** View 2's "Download image" (its lists): "trends-changes-all-all.png", the genre's and the option's ids (the file's). */
-export const changesFileName = (file) => `trends-changes-${file.g}-${file.s}.png`.toLowerCase();
+/** View 2's "Download image" (its lists): "trends-changes-all.png", the genre's id (the file's). */
+export const changesFileName = (file) => `trends-changes-${file.g}.png`.toLowerCase();
 
-/** What the polite live region says when View 1's characteristic, genre or option changes: the question (which names
- * the genre, as the takeaway no longer does), the heading, then the takeaway's lines. */
+/** What the polite live region says when View 1's characteristic or genre changes: the question (which names the
+ * genre, as the takeaway no longer does), the heading, then the takeaway's lines. */
 export function trendAnnouncement(meta, file, state) {
   const variable = meta.variables.find((v) => v.id === state.v);
   const entry = file.c[state.v];
   const genre = meta.genres.find((g) => g.id === file.g);
-  const subset = meta.subsets.find((s) => s.id === file.s);
   if (!entry || !variable || !genre) return "";
   const question = trendQuestionText(variable, genre);
-  if (nothingToDraw(entry)) return `${question} ${tooFewHeading({ entry, genre, subset, file })}.`;
+  if (nothingToDraw(entry)) return `${question} ${tooFewHeading({ entry, genre, file })}.`;
   const fmt = trendFormat(variable, entry, file.g === "all", meta.small_n);
   const numbers = numbersLine({ variable, entry, file, fmt, smallN: meta.small_n });
   const path = pathLine({ entry, file, fmt, smallN: meta.small_n });
   return [
     question,
-    `${trendHeading({ variable, entry, genre, subset, file })}.`,
+    `${trendHeading({ variable, entry, genre, file })}.`,
     numbers ? numbers.map((seg) => (typeof seg === "string" ? seg : seg.strong)).join("") : "",
     path || "",
   ]
@@ -513,8 +510,8 @@ export function windowsCompared(file) {
 }
 
 /** View 2's too-few heading, for the window with too few stories: "Fewer than 30 stories in Transgender were published 2000–2009: …". */
-export const changesTooFewHeading = (file, genre, subset) =>
-  tooFewSentence(genre, subset, file, windowCounts(file).then < file.rule.min_n ? "then" : "now");
+export const changesTooFewHeading = (file, genre) =>
+  tooFewSentence(genre, file, windowCounts(file).then < file.rule.min_n ? "then" : "now");
 
 /**
  * What changed (View 2): "One genre" relabeled (§4.1), every characteristic of the file in the topics' order with its
@@ -614,30 +611,26 @@ export function changesScale(p) {
 
 /**
  * The stories compared, under the heading (the owner, 2026-10-19: say that these are the stories compared): "Comparing
- * 2,561 stories from 2000–2009 with 3,346 from 2020 or later, across all genres." ("…, in Romance."; an option: "…, in
- * Romance, all of them “Under 2,000 words”.")
+ * 2,561 stories from 2000–2009 with 3,346 from 2020 or later, across all genres." ("…, in Romance.")
  */
-export function changesSampleLine(file, genre, subset) {
+export function changesSampleLine(file, genre) {
   const w = windowWords(file);
   const c = windowCounts(file);
-  const match = subset && subset.id !== "all" ? `, all of them “${subset.label}”` : "";
-  return `Comparing ${formatCount(c.then)} stories from ${w.then} with ${formatCount(c.now)} from ${w.now}, ${fromGenre(genre)}${match}.`;
+  return `Comparing ${formatCount(c.then)} stories from ${w.then} with ${formatCount(c.now)} from ${w.now}, ${fromGenre(genre)}.`;
 }
 
 /**
  * The picker's group of the clear changes (View 1, phase 7): { title, items: [{ id, mark, word }] }, largest first as
  * View 2 orders them, each with its mark and its word ("fell", "rose", "changed"): "Clearly changed in all genres",
- * "Clearly changed in Romance · 2,000–5,000 words"; null when nothing changed or nothing was compared.
+ * "Clearly changed in Romance"; null when nothing changed or nothing was compared.
  */
 export function pickerChanges(meta, file) {
   if (!windowsCompared(file)) return null;
   const p = trendProfile(meta, file);
   if (!p.flagged.length) return null;
   const genre = meta.genres.find((g) => g.id === file.g);
-  const subset = meta.subsets.find((s) => s.id === file.s);
-  const option = subset && subset.id !== "all" ? ` · ${subset.label}` : "";
   return {
-    title: `Clearly changed ${genre.id === "all" ? "in all genres" : `in ${genre.name}`}${option}`,
+    title: `Clearly changed ${genre.id === "all" ? "in all genres" : `in ${genre.name}`}`,
     items: p.flagged.map((x) => ({
       id: x.id,
       mark: x.kind === "grp" ? "≠" : x.f > 0 ? "▲" : "▼",
@@ -648,14 +641,9 @@ export function pickerChanges(meta, file) {
 
 /**
  * The characteristic "One characteristic over time →" opens from a genre too few to compare (View 2's too-few state):
- * the one remembered, or word count, but paragraph count when the option rules word count out.
+ * the one remembered, or word count.
  */
-export function overTimeCharacteristic(meta, state) {
-  const subset = meta.subsets.find((s) => s.id === state.sub);
-  const v = state.v || "story_words";
-  const ruledOut = subset?.group === "Length" && v === "story_words";
-  return ruledOut ? "story_paragraphs" : v;
-}
+export const overTimeCharacteristic = (state) => state.v || "story_words";
 
 /**
  * The takeaway (S1): "▲ Rose: …", "▼ Fell: …", "≠ A different mix: …", each up to three labels, as the lists word them,
@@ -781,12 +769,11 @@ export function changesWords(file) {
 
 /** What the polite live region says for View 2: the question, the heading, then the takeaway's lines; or the question
  * and the too-few sentence. */
-export function changesAnnouncement(meta, file, state) {
+export function changesAnnouncement(meta, file) {
   const genre = meta.genres.find((g) => g.id === file.g);
-  const subset = meta.subsets.find((s) => s.id === file.s);
   if (!genre) return "";
   const question = changesQuestion(genre);
-  if (!windowsCompared(file)) return `${question} ${changesTooFewHeading(file, genre, subset)}.`;
+  if (!windowsCompared(file)) return `${question} ${changesTooFewHeading(file, genre)}.`;
   const p = trendProfile(meta, file);
   const lines = changesTakeaway(p).map((line) => `${line.word}: ${changesLineWords(line)}`);
   return [question, `${changesHeading(p.flagged.length, p.compared, file)}.`, ...lines].join(" ");

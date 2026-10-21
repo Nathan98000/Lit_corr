@@ -369,7 +369,9 @@ def _genres(out, subset="all"):
 
 def test_one_genres_file_per_option_and_no_other_files(built, built_genres):
     for _, meta, out, *_ in (built, built_genres):
-        assert {p.stem for p in (out / "genres").iterdir()} == {s["id"] for s in meta["subsets"]} == SUBSET_IDS
+        # the Genres page offers the year published alone (the owner, 2026-10-20); Explore keeps every option
+        assert {s["id"] for s in meta["subsets"]} == SUBSET_IDS
+        assert {p.stem for p in (out / "genres").iterdir()} == set(W.GENRE_SUBSETS) == {"all", "y2000", "y2010", "y2020"}
         assert {p.name for p in out.iterdir()} == {"meta.json", "patterns.json", "v", "genres", "trends"}
         assert all(p.suffix == ".json" for p in (out / "genres").iterdir())
         assert all(p.is_dir() and all(f.suffix == ".json" for f in p.iterdir()) for p in (out / "v").iterdir())
@@ -390,7 +392,7 @@ def test_genres_meta_has_the_rule_and_the_direction_words(built_genres):
 def test_genres_arrays_cells_and_shares(built_genres):
     _, meta, out, _ = built_genres
     genre_ids = [g["id"] for g in meta["genres"]]
-    for sid in SUBSET_IDS:
+    for sid in W.GENRE_SUBSETS:
         data = _genres(out, sid)
         assert data["s"] == sid and data["genres"] == genre_ids
         assert data["rule"] == {"min_r": 0.2, "z": 3.29, "min_tvd": 0.2, "min_n": 30}
@@ -516,13 +518,13 @@ def test_excluded_characteristics_and_conflicting_options_are_absent(built_genre
     _, meta, out, _ = built_genres
     ids = [v["id"] for v in meta["variables"]]
     assert "pub_month" in ids  # still on Explore
-    for sid in SUBSET_IDS:
+    for sid in W.GENRE_SUBSETS:
         c = _genres(out, sid)["c"]
         group = next(s[2] for s in W.SUBSETS if s[0] == sid)
         assert not set(c) & W.GENRE_PAGE_EXCLUDED
         assert list(c) == [i for i in ids if i not in W.GENRE_PAGE_EXCLUDED and not sd.subset_conflict(group, i)]
-    assert "story_words" not in _genres(out, "short")["c"] and "story_words" in _genres(out, "y2000")["c"]
-    assert not {"pub_year", "age_years"} & set(_genres(out, "y2020")["c"]) and "pub_year" in _genres(out, "long")["c"]
+    assert "story_words" in _genres(out, "y2000")["c"]
+    assert not {"pub_year", "age_years"} & set(_genres(out, "y2020")["c"]) and "pub_year" in _genres(out)["c"]
     kinds = {i: e["k"] for i, e in _genres(out)["c"].items()}
     assert kinds == {"dlg_word_share": "num", "dlg_has_dialogue": "bin", "pov_class": "grp", "emo_anger_per_1k": "zero",
                      "pub_year": "num", "story_words": "num", "age_years": "num", "author_stories_count": "band",
@@ -589,7 +591,7 @@ def test_trend_meta_periods_and_windows(built_genres):
     assert t["periods"] == [[2000, 2004], [2005, 2009], [2010, 2014], [2015, 2019], [2020, newest]]
     assert t["then"] == [2000, 2009] and t["now"] == [2020, newest] == t["periods"][-1]  # "now" is the last period
     assert t["rule"] == {"min_r": 0.2, "level": 0.999, "min_tvd": 0.2, "min_n": 30}
-    assert t["subsets"] == ["all", "short", "medium", "long"] and t["excluded"] == list(W.TREND_PAGE_EXCLUDED)
+    assert t["subsets"] == ["all"] and t["excluded"] == list(W.TREND_PAGE_EXCLUDED)  # no options (the owner, 2026-10-20)
     for sid in W.TREND_SUBSETS:
         for gid in [g["id"] for g in meta["genres"]]:
             d = _trend(out, sid, gid)
@@ -706,7 +708,7 @@ def test_trend_flags_match_a_direct_recomputation(built_genres):
                     assert e["r"] == pytest.approx(round(r, 3), abs=1e-9), (sid, gid, name)
                     assert e["f"] == (int(np.sign(r)) if abs(r) >= 0.2 and abs(r) / se >= 3.29 else 0)
                 flagged += e["f"] != 0
-    assert flagged >= 4  # dialogue rises with the publication year on purpose (synthetic.py)
+    assert flagged >= 3  # dialogue rises with the publication year on purpose (synthetic.py); all stories only
 
 
 def test_trend_left_out_characteristics_and_conflicting_options_are_absent(built_genres):
@@ -716,9 +718,8 @@ def test_trend_left_out_characteristics_and_conflicting_options_are_absent(built
         for gid in [g["id"] for g in meta["genres"]]:
             c = _trend(out, sid, gid)["c"]
             assert not set(c) & set(W.TREND_PAGE_EXCLUDED)
-            assert list(c) == [i for i in ids if i not in W.TREND_PAGE_EXCLUDED and not sd.subset_conflict(
-                "Length" if sid != "all" else "", i)]
-    assert "story_words" in _trend(out, "all", "romance")["c"] and "story_words" not in _trend(out, "medium", "all")["c"]
+            assert list(c) == [i for i in ids if i not in W.TREND_PAGE_EXCLUDED]  # All stories only: no conflicts
+    assert "story_words" in _trend(out, "all", "romance")["c"]
     kinds = {i: e["k"] for i, e in _trend(out, "all", "all")["c"].items()}
     assert kinds == {"dlg_word_share": "num", "dlg_has_dialogue": "bin", "pov_class": "grp", "emo_anger_per_1k": "zero",
                      "story_words": "num", "sex_terms_per_1k": "num", "narr_tense_class": "grp", "pov_is_first_person": "bin",
@@ -749,7 +750,7 @@ def test_real_trends_files_are_small_and_whole():
     import gzip
     meta = json.loads(REAL_META.read_text())
     files = sorted((REAL_META.parent / "trends").rglob("*.json"))
-    assert len(files) == len(meta["trend"]["subsets"]) * len(meta["genres"]) == 4 * 31
+    assert len(files) == len(meta["trend"]["subsets"]) * len(meta["genres"]) == 31  # all stories only (2026-10-20)
     for f in files:
         assert len(gzip.compress(f.read_bytes(), 9)) <= 16_000, f.name
         d = json.loads(f.read_bytes())
@@ -834,7 +835,7 @@ def test_real_too_few_genres():
         pytest.skip("site aggregates not generated")
     too_few = json.loads(REAL_META.read_text())["trend"]["too_few"]
     assert too_few["all"] == ["chain-stories"]  # and transgender until the data update 20261013
-    assert {sid: len(ids) for sid, ids in too_few.items()} == {"all": 1, "short": 16, "medium": 9, "long": 25}
+    assert {sid: len(ids) for sid, ids in too_few.items()} == {"all": 1}
 
 
 def _rezip(src, dst, stories):

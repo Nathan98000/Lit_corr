@@ -9,10 +9,8 @@
 }
 
 /* the browser never anchors the scroll position on the question's words: another genre or characteristic re-wraps
-   them (a slot moving up a line), and following them would move the answer on the screen. Nor inside "Only include",
-   whose words change with the option: the row itself, which stays, is the anchor there */
-.trends-page .question,
-.trends-page .trends-controls .include-row > * {
+   them (a slot moving up a line), and following them would move the answer on the screen */
+.trends-page .question {
   overflow-anchor: none;
 }
 

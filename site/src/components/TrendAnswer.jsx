@@ -107,13 +107,13 @@ export function TrendLegend({ kind, anySmall, minStories, groups = null }) {
 }
 
 /**
- * What "Download image" draws (section 6): the question as the title; the heading, then the genre and the option, as the
- * subtitle; the key (without "how this is decided"); the chart with its table and brackets.
+ * What "Download image" draws (section 6): the question as the title; the heading, then the genre, as the subtitle;
+ * the key (without "how this is decided"); the chart with its table and brackets.
  */
-export function trendsImage({ variable, genre, heading, subset, state }, panel) {
+export function trendsImage({ variable, genre, heading, state }, panel) {
   return {
     title: [trendQuestionText(variable, genre)],
-    subtitle: [heading, `${genre.name} · ${subset.label}`],
+    subtitle: [heading, genre.name],
     chart: panel?.querySelector(".trend-chart"),
     legend: panel?.querySelector(".trend-legend"),
     fileName: trendsFileName(state),
@@ -125,29 +125,26 @@ export function trendsImage({ variable, genre, heading, subset, state }, panel) 
  * description), the takeaway (the windows' numbers; what happened in between, when a period outside the windows lies
  * beyond both), the key, the chart, the way across to the other pages (round 4's I15: "By genre →", "With popularity
  * →" with this genre and the measure last used on Explore, `lastExplore`) and the actions: "See all changes →" (what
- * changed in the same genre and option, a new history entry) and "Download image".
- * A genre with fewer than MIN_N stories in every period gets the too-few sentence and a way out: all stories when an
- * option is on, else All genres.
+ * changed in the same genre, a new history entry) and "Download image".
+ * A genre with fewer than MIN_N stories in every period gets the too-few sentence and a way out: All genres.
  */
 export default function TrendAnswer({ meta, state, file, busy, onSwitch, onNavigate, lastExplore, headingRef }) {
   const variable = meta.variables.find((v) => v.id === state.v);
   const entry = file.c[state.v];
   const genre = meta.genres.find((g) => g.id === file.g);
-  const subset = meta.subsets.find((s) => s.id === file.s);
   const smallN = meta.small_n;
 
   if (nothingToDraw(entry)) {
-    const all = state.sub === "all";
     return (
       <article className={`chart-panel trend-answer${busy ? " is-busy" : ""}`} aria-busy={busy}>
         <header className="chart-head">
           <h2 className="chart-title" ref={headingRef} tabIndex={-1}>
-            {tooFewHeading({ entry, genre, subset, file })}
+            {tooFewHeading({ entry, genre, file })}
           </h2>
         </header>
         <p className="trend-too-few">
-          <button type="button" className="btn" onClick={() => onSwitch(all ? { ...state, genre: "all" } : { ...state, sub: "all" })}>
-            {all ? "Show All genres" : "Show all stories"}
+          <button type="button" className="btn" onClick={() => onSwitch({ ...state, genre: "all" })}>
+            Show All genres
           </button>
         </p>
       </article>
@@ -155,7 +152,7 @@ export default function TrendAnswer({ meta, state, file, busy, onSwitch, onNavig
   }
 
   const fmt = trendFormat(variable, entry, file.g === "all", smallN);
-  const heading = trendHeading({ variable, entry, genre, subset, file });
+  const heading = trendHeading({ variable, entry, genre, file });
   const numbers = numbersLine({ variable, entry, file, fmt, smallN });
   const path = pathLine({ entry, file, fmt, smallN });
   const kind = entry.k;
@@ -165,7 +162,7 @@ export default function TrendAnswer({ meta, state, file, busy, onSwitch, onNavig
   const mixed = kind === "grp" || kind === "band";
   const groups = mixed ? trendMixGroups(kind, cells, variable.bins.labels, entry.t && entry.t.slice(1)) : null;
   const Chart = kind === "zero" ? TrendSplit : mixed ? TrendMix : TrendChart;
-  const image = (panel) => trendsImage({ variable, genre, heading, subset, state }, panel);
+  const image = (panel) => trendsImage({ variable, genre, heading, state }, panel);
   const question = trendQuestionText(variable, genre);
 
   return (
@@ -191,13 +188,13 @@ export default function TrendAnswer({ meta, state, file, busy, onSwitch, onNavig
       {/* the chart and the way across under it, in the chart's cell beside the rail on wide screens */}
       <div className="trend-chart-cell">
         <Chart key={variable.id} meta={meta} variable={variable} entry={entry} file={file} title={`${question} ${heading}`} />
-        <WayAcross meta={meta} page="trends" variable={variable} genre={file.g} sub={file.s} metric={lastExplore?.metric} />
+        <WayAcross meta={meta} page="trends" variable={variable} genre={file.g} metric={lastExplore?.metric} />
       </div>
       <div className="chart-actions">
         {/* the name starts with the visible words (label in name), then the genre */}
         <ChartLink
           className="btn primary"
-          to={{ view: "changes", genre: file.g, sub: file.s }}
+          to={{ view: "changes", genre: file.g }}
           onNavigate={onNavigate}
           label={`See all changes in ${genreWords(genre)}`}
         >

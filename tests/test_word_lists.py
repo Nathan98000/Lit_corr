@@ -84,3 +84,30 @@ def test_a_new_list_shows_up_before_it_is_mapped(tmp_path):
     data = page_data(tmp_path, tmp_path / "word_lists.html")
     assert [(x["name"], x["family"], x["measures"], x["also"]) for x in data["lists"]] == [("sample", OTHER, [], [])]
     assert [f["name"] for f in data["families"]] == [OTHER]
+
+
+def test_example_words_in_the_sites_definitions_are_counted_by_their_lists():
+    """Each word in a word-list definition's parentheses on the site ("Sexual terms (cock, orgasm, naked) per 1,000
+    words.", the owner's examples of 2026-10-20, and the sensory lists' older ones) is matched by a list that feeds the
+    characteristic, so an edit to a list can't leave the site showing an example it no longer counts."""
+    from litcorr.stage2.wording import SITE_DESCRIPTION
+
+    lists = {p.stem: load_lexicon(p) for p in LEXICON_DIR.glob("*.txt")}
+
+    def counted(lex, example):
+        parts = norm_token(example).split()
+        if len(parts) > 1:
+            return tuple(parts) in lex.phrases.get(parts[0], [])
+        return lex.word_matches(parts[0])
+
+    checked = 0
+    for column, text in SITE_DESCRIPTION.items():
+        feeding = [lists[name] for name, (own, also) in MEASURES.items() if column in own or column in also]
+        found = re.findall(r"\(([^()]*)\)", text)
+        if not feeding or not found:
+            continue
+        examples = [w.strip() for w in found[-1].split(",")]
+        for w in examples:
+            assert any(counted(lex, w) for lex in feeding), (column, w)
+        checked += 1
+    assert checked >= 34  # 28 definitions given examples on 2026-10-20 (8 of them pacing), 6 sensory ones before

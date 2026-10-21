@@ -3,11 +3,10 @@ import { conflictNote, subsetConflict } from "../lib/urlState.js";
 import InlineSelect from "./InlineSelect.jsx";
 
 /**
- * "Only include", always a menu, with the options that cannot go with the characteristic turned off inside it (as on
- * the explorer: "Under 2,000 words (not with word count)"): the Genres page's one genre offers every option
- * (meta.subsets), its one characteristic all but the Length ones (onGenreChart: the owner, 2026-10-19), the Trends
- * page All stories and the Length options (meta.trend.subsets; with word count, "All stories ▾" and its Length options
- * turned off, round 4's U1, where it was plain words and a note).
+ * The Genres page's "Only include", always a menu, with the options that cannot go with the characteristic turned off
+ * inside it (as on the explorer: "Published 2020 or later (not with publication year)"). Both views offer All stories
+ * and the year published (onGenresPageSubset: the owner, 2026-10-20, no Length or Readership); the Trends page has no
+ * "Only include" at all.
  */
 export default function IncludeSelect({ subsets, value, variable, onChange }) {
   const ids = useId();

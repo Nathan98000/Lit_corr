@@ -9,11 +9,10 @@ import {
   patternNote,
   standsOutQuestion,
   subtitle,
-  subtitleParts,
   takeawaySegments,
   theMeasure,
 } from "../lib/wording.js";
-import { sanitize, toHash } from "../lib/urlState.js";
+import { genresSub, sanitize, toHash } from "../lib/urlState.js";
 import ChartNotes from "./ChartNotes.jsx";
 import Controls, { preloadMenus } from "./Controls.jsx";
 import DownloadPng from "./DownloadPng.jsx";
@@ -68,7 +67,7 @@ export function describeView(meta, view, data) {
   const overall = cellStats(gd?.o, k);
   const [direction, effect] = pattern(gd, k);
   const title = chartTitle({ variable, metric, genre, direction });
-  const sub = subtitleParts({ genre, subset, n: gd?.n });
+  const sub = subtitle({ genre, subset, n: gd?.n });
   const readable = variable.bins.ordered || Boolean(variable.yes_subject);
   const shownRows = rows.filter((r) => r.stats && !r.stats.suppressed);
   const shownCount = shownRows.length;
@@ -111,7 +110,7 @@ export function exploreImage(d, view, panel) {
   const chart = panel?.querySelector(".range-chart");
   return {
     title: [d.title, d.answer !== d.title && d.answer],
-    subtitle: [subtitle({ genre: d.genre, subset: d.subset, n: d.gd?.n })],
+    subtitle: [d.sub],
     chart,
     legend: chart?.querySelector(".legend"),
     fileName: exploreFileName(view),
@@ -173,13 +172,13 @@ export function keepExploring(meta, view) {
 
 /**
  * The Genres page's question for this view when a genre is chosen: what stands out about its stories ("One genre",
- * with this option). { text, hash }, or null with All genres: the characteristic itself is one link away under the
+ * with this option where the page offers it, else all stories). { text, hash }, or null with All genres: the characteristic itself is one link away under the
  * chart ("By genre →", round 4's I15).
  */
 export function genresQuestion(meta, view, d) {
   const { genre } = d;
   if (genre.id === "all") return null;
-  return { text: standsOutQuestion(genre), hash: toHash("genres", { view: "genre", genre: genre.id, sub: view.sub }) };
+  return { text: standsOutQuestion(genre), hash: toHash("genres", { view: "genre", genre: genre.id, sub: genresSub(view.sub) }) };
 }
 
 /**
@@ -288,15 +287,7 @@ export default function Explorer({ meta, state, onChange, onAsk, onHoldScroll })
         <article className={`chart-panel${busy ? " is-busy" : ""}`} aria-busy={busy}>
           <header className="chart-head">
             <h2 className="chart-title">{d.answer}</h2>
-            <p className="chart-sub">
-              {d.sub.lead}
-              {d.sub.count && (
-                <>
-                  {" · "}
-                  <a href={toHash("methodology", { section: "missing-data" })}>{d.sub.count}</a>
-                </>
-              )}
-            </p>
+            <p className="chart-sub">{d.sub}</p>
           </header>
           <div className={`answer-grid${wide ? " wide" : ""}`}>
             <div className="answer-main">

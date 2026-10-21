@@ -59,7 +59,6 @@ describe("the windows and the words", () => {
     expect(windowCounts(file)).toEqual({ then: 86, now: 87 });
     expect(windowsCompared(file)).toBe(true);
     expect(windowsCompared(fixtureFile("trends/all/tiny.json"))).toBe(false);
-    expect(windowsCompared(fixtureFile("trends/short/all.json"))).toBe(false); // 28 stories from 2000–2009
   });
 
   it.skipIf(!real)("counts 3,571 and 4,647 stories for All genres, and leaves Chain Stories uncompared", () => {
@@ -75,19 +74,10 @@ describe("the windows and the words", () => {
     expect(changesHeading(1, 179, file)).toBe("1 of 179 characteristics clearly changed from 2000–2009 to 2020 or later");
     expect(changesHeading(0, 180, file)).toBe("None of the 180 characteristics clearly changed from 2000–2009 to 2020 or later");
     // the stories compared, said as such (the owner, 2026-10-19)
-    expect(changesSampleLine(file, ALL, { id: "all", label: "All stories" })).toBe(
-      "Comparing 86 stories from 2000–2009 with 87 from 2020 or later, across all genres.",
-    );
-    const medium = fixtureFile("trends/medium/all.json");
-    expect(changesSampleLine(medium, ALL, { id: "medium", label: "2,000–5,000 words" })).toBe(
-      "Comparing 43 stories from 2000–2009 with 52 from 2020 or later, across all genres, all of them “2,000–5,000 words”.",
-    );
+    expect(changesSampleLine(file, ALL)).toBe("Comparing 86 stories from 2000–2009 with 87 from 2020 or later, across all genres.");
     const tiny = { id: "tiny", name: "Tiny" };
-    expect(changesTooFewHeading(fixtureFile("trends/all/tiny.json"), tiny, { id: "all" })).toBe(
+    expect(changesTooFewHeading(fixtureFile("trends/all/tiny.json"), tiny)).toBe(
       "Fewer than 30 stories in Tiny were published 2000–2009: too few to compare",
-    );
-    expect(changesTooFewHeading(fixtureFile("trends/short/all.json"), ALL, { id: "short", label: "Under 2,000 words" })).toBe(
-      "Fewer than 30 stories in All genres match “Under 2,000 words” and were published 2000–2009: too few to compare",
     );
   });
 
@@ -201,7 +191,7 @@ describe("View 2 on the page", () => {
       ["Median story or share", "2000–09 → 2020+"],
     ]);
     const row = answer.querySelector(".profile-list .profile-row .profile-link");
-    expect(row.getAttribute("href")).toBe("#/trends?var=dlg_word_share&genre=all&include=all");
+    expect(row.getAttribute("href")).toBe("#/trends?var=dlg_word_share&genre=all");
     expect(row.querySelector(".visually-hidden").textContent).toMatch(/^Dialogue share: \d+ in 100; 2000–2009 \d+%, 2020 or later \d+%; clearly rose\. Opens its chart over time\.$/);
     // the note is in the axis title's line, without a link; none above the list (the owner, 2026-10-19)
     expect(answer.querySelector(".profile-note")).toBeNull();
@@ -235,9 +225,9 @@ describe("View 2 on the page", () => {
     // over the compared named group, which bar is which
     expect(narration.closest("details").querySelector(".profile-mix-line").textContent).toBe("2000–2009 above, 2020 or later below");
     const row = narration.closest("details").querySelector(".profile-row .profile-link");
-    expect(row.getAttribute("href")).toBe("#/trends?var=pov_class&genre=all&include=all");
+    expect(row.getAttribute("href")).toBe("#/trends?var=pov_class&genre=all");
     await user.click(row);
-    await waitFor(() => expect(window.location.hash).toBe("#/trends?var=pov_class&genre=all&include=all"));
+    await waitFor(() => expect(window.location.hash).toBe("#/trends?var=pov_class&genre=all"));
     await waitFor(() => expect(document.querySelector(".trend-mix")).toBeTruthy());
     act(() => window.history.back());
     await waitFor(() => expect(window.location.hash).toBe("#/trends?view=changes"));
@@ -253,19 +243,13 @@ describe("View 2 on the page", () => {
     expect([...answer.querySelectorAll(".profile-heads .head-line")].map((s) => s.textContent)).toEqual(["Median story or share", "2000–09 → 2020+"]);
   });
 
-  it("says when a window has too few stories, with no lists or topics, and offers all stories, else All genres", async () => {
-    const user = await openChanges("#/trends?view=changes&include=short");
-    expect(screen.getByRole("heading", { level: 2 }).textContent).toBe(
-      "Fewer than 30 stories in All genres match “Under 2,000 words” and were published 2000–2009: too few to compare",
-    );
-    expect(document.querySelector(".profile-list, .profile-topics")).toBeNull();
-    await user.click(screen.getByRole("button", { name: "Show all stories" }));
-    await waitFor(() => expect(window.location.hash).toBe("#/trends?genre=all&include=all"));
-    await waitFor(() => expect(screen.getByRole("heading", { level: 2 }).textContent).toMatch(/clearly changed/));
-    window.location.hash = "#/trends?view=changes&genre=tiny";
-    const button = await screen.findByRole("button", { name: "Show All genres" });
+  it("says when a window has too few stories, with no lists or topics, and offers All genres", async () => {
+    const user = await openChanges("#/trends?view=changes&genre=tiny");
     expect(screen.getByRole("heading", { level: 2 }).textContent).toBe("Fewer than 30 stories in Tiny Genre were published 2000–2009: too few to compare");
-    await user.click(button);
-    await waitFor(() => expect(window.location.hash).toBe("#/trends?genre=all&include=all"));
+    expect(document.querySelector(".profile-list, .profile-topics")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Show all stories" })).toBeNull();
+    await user.click(screen.getByRole("button", { name: "Show All genres" }));
+    await waitFor(() => expect(window.location.hash).toBe("#/trends?genre=all"));
+    await waitFor(() => expect(screen.getByRole("heading", { level: 2 }).textContent).toMatch(/clearly changed/));
   });
 });

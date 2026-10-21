@@ -15,7 +15,6 @@ import {
   takeawayLine,
   topicCount,
 } from "../lib/genres.js";
-import { genreChartSub } from "../lib/urlState.js";
 import ComparisonProfile from "./ComparisonProfile.jsx";
 import { HOW_DECIDED, oneGenreFileName } from "./GenreAnswer.jsx";
 import { ViewLink } from "./GenreDetails.jsx";
@@ -117,8 +116,8 @@ export default function GenreProfile({ meta, state, file, busy, onSwitch, onNavi
     columns: profileColumns,
     name: (item) => profileRowName(item, genre, minN),
     link: ({ item, className, children, ...rest }) => (
-      // every genre's numbers, with this option where one characteristic offers it (not a Length one)
-      <ViewLink className={className} to={{ v: item.id, sub: genreChartSub(meta, state.sub) }} onNavigate={onNavigate} {...rest}>
+      // every genre's numbers, with this option (both views offer the same ones)
+      <ViewLink className={className} to={{ v: item.id, sub: state.sub }} onNavigate={onNavigate} {...rest}>
         {children}
       </ViewLink>
     ),

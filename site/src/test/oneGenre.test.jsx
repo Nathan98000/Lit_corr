@@ -27,7 +27,7 @@ import {
   topicCount,
   trimZeros,
 } from "../lib/genres.js";
-import { fixtureFetch, fixtureFile, fixtureMeta, realMeta } from "./fixtures.js";
+import { fewStoriesFetch, fixtureFetch, fixtureFile, fixtureMeta, realMeta } from "./fixtures.js";
 import { rowName } from "./rows.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -57,8 +57,10 @@ function standOuts(body) {
   return body;
 }
 
+// Romance with 15 stories published 2000–2009 (the small-sample state, F60), as it had 15 of 5,000 words or more
+// before the Genres page dropped its Length options (the owner, 2026-10-20)
 function profileFetch() {
-  const serve = fixtureFetch();
+  const serve = fewStoriesFetch("y2000", "romance", 15);
   return async (url) => {
     const res = await serve(url);
     if (!String(url).includes("genres/")) return res;
@@ -473,9 +475,9 @@ describe("the sample line (F93)", () => {
   });
 
   it("is under the small-sample heading too, and left out under 10 stories", async () => {
-    await openGenre("#/genres?view=genre&genre=romance&include=long"); // 15 stories
-    expect(document.querySelector(".chart-title").textContent).toBe("Fewer than 30 stories in Romance match “5,000 words or more”: too few to compare.");
-    expect(sample()).toBe("15 stories in Romance match “5,000 words or more”.");
+    await openGenre("#/genres?view=genre&genre=romance&include=y2000"); // 15 stories
+    expect(document.querySelector(".chart-title").textContent).toBe("Fewer than 30 stories in Romance match “Published 2000–2009”: too few to compare.");
+    expect(sample()).toBe("15 stories in Romance match “Published 2000–2009”.");
     cleanup();
     await openGenre("#/genres?view=genre&genre=tiny&include=all"); // 8 stories
     expect(sample()).toBeNull();
@@ -610,7 +612,7 @@ describe("the key, in the lists (F86)", () => {
   });
 
   it("is left out in the small-sample state: no axis title, note or bracket", async () => {
-    const user = await openGenre("#/genres?view=genre&genre=romance&include=long");
+    const user = await openGenre("#/genres?view=genre&genre=romance&include=y2000");
     await openAllTopics(user);
     expect(document.querySelector(".profile-axis-title, .profile-note, .profile-mix-line, .zone-label, .profile-bracket, .profile-ticks")).toBeNull();
     expect(document.querySelectorAll(".profile-topic .profile-row").length).toBeGreaterThan(0);
@@ -754,7 +756,7 @@ describe("the topics (T1, F84, F89, F92)", () => {
     expect(css).toMatch(/\.profile-topic-count \{[^}]*white-space: nowrap;/);
     expect(css).toMatch(/\.profile-topic-count b \{\s*font-weight: 650;/);
     cleanup();
-    await openGenre("#/genres?view=genre&genre=romance&include=long"); // nothing compared
+    await openGenre("#/genres?view=genre&genre=romance&include=y2000"); // nothing compared
     expect(counts()).toEqual(["1 characteristic", "2 characteristics", "1 characteristic"]);
   });
 
@@ -777,7 +779,7 @@ describe("the topics (T1, F84, F89, F92)", () => {
       "How many characteristics in each topic stand out. Open a topic to see them all: blue dots stand out, gray dots show no clear difference.",
     );
     cleanup();
-    await openGenre("#/genres?view=genre&genre=romance&include=long");
+    await openGenre("#/genres?view=genre&genre=romance&include=y2000");
     expect(document.querySelector(".profile-topics-line")).toBeNull();
     expect(document.querySelectorAll(".profile-topic").length).toBeGreaterThan(0);
   });

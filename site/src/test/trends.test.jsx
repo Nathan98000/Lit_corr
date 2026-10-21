@@ -94,7 +94,6 @@ const WORDS = { id: "story_words", label: "Word count", noun: "word count", unit
 const NOTE = { id: "story_has_author_note", label: "Has an author’s note", noun: "has an author’s note", unit: "yes/no", bins: { type: "levels" }, yes_subject: "Stories with an author’s note" };
 const ALL = { id: "all", name: "All genres" };
 const ROMANCE = { id: "adult-romance", name: "Romance" };
-const OPTION = { id: "short", label: "Under 2,000 words" };
 const num = (q, t, r, f, more = {}) => ({ k: "num", fmt: "num", q, t, r, f, ...more });
 
 describe("the chart's geometry (trendLayout)", () => {
@@ -202,11 +201,11 @@ describe("the chart's geometry (trendLayout)", () => {
     }
   });
 
-  it.skipIf(!real)("never overlaps a label or leaves the chart (every characteristic, four options, six groups, four widths)", { timeout: 60000 }, () => {
+  it.skipIf(!real)("never overlaps a label or leaves the chart (every characteristic and genre, four widths)", { timeout: 60000 }, () => {
     const byId = new Map(real.variables.map((v) => [v.id, v]));
     const charts = { num: 0, bin: 0, grp: 0, band: 0, zero: 0 };
     for (const sub of real.trend.subsets) {
-      for (const g of ["all", "adult-romance", "adult-how-to", "chain-stories", "transgender", "celebrity-stories"]) {
+      for (const g of real.genres.map((x) => x.id)) {
         const file = realTrends(sub, g);
         for (const [id, entry] of Object.entries(file.c)) {
           const at = `${sub}/${g} ${id}`;
@@ -368,7 +367,7 @@ describe("the chart's numbers (one format per chart)", () => {
 });
 
 describe("the heading and the numbers line", () => {
-  const heading = (variable, entry, genre = ALL, subset = null) => trendHeading({ variable, entry, genre, subset, file: { ...FILE, g: genre.id } });
+  const heading = (variable, entry, genre = ALL) => trendHeading({ variable, entry, genre, file: { ...FILE, g: genre.id } });
 
   it("says rose, fell, moved later or earlier, changed, or no clear change, from the windows of the file", () => {
     expect(heading(WORDS, num([], [2558], 0.25, 1))).toBe("Word count clearly rose from 2000–2009 to 2020 or later");
@@ -392,7 +391,7 @@ describe("the heading and the numbers line", () => {
     );
   });
 
-  it("says when a window has too few stories to compare, which window, and the option", () => {
+  it("says when a window has too few stories to compare, and which window", () => {
     const transgender = { id: "transgender", name: "Transgender" };
     expect(heading(WORDS, num([], [19, 1, 2, 3], null, 0), transgender)).toBe(
       "Fewer than 30 stories in Transgender were published 2000–2009: too few to compare",
@@ -400,9 +399,6 @@ describe("the heading and the numbers line", () => {
     expect(heading(WORDS, num([], null, null, 0), transgender)).toBe("Fewer than 30 stories in Transgender were published 2000–2009: too few to compare");
     expect(heading(WORDS, num([[12, 1, 2, 3]], [226, 1, 2, 3], null, 0), { id: "chain-stories", name: "Chain Stories" })).toBe(
       "Fewer than 30 stories in Chain Stories were published 2020 or later: too few to compare",
-    );
-    expect(heading(WORDS, num([], [12, 1, 2, 3], null, 0), ROMANCE, OPTION)).toBe(
-      "Fewer than 30 stories in Romance match “Under 2,000 words” and were published 2000–2009: too few to compare",
     );
   });
 
@@ -432,7 +428,7 @@ describe("the heading and the numbers line", () => {
   it("says what the site's rule decides, never “borderline” (the owner, 2026-10-12)", () => {
     const touch = { k: "num", r: -0.213, f: -1 };
     const touchWords = { id: "sense_touch_per_1k", label: "Touch words", noun: "touch words", plural: true, unit: "per 1,000 words", bins: { type: "ranges" } };
-    const heading = (variable, entry, genre = ALL) => trendHeading({ variable, entry, genre, subset: { id: "all" }, file: { ...FILE, g: genre.id } });
+    const heading = (variable, entry, genre = ALL) => trendHeading({ variable, entry, genre, file: { ...FILE, g: genre.id } });
     expect(heading(touchWords, touch)).toBe("Touch words clearly fell from 2000–2009 to 2020 or later");
     expect(heading(NOTE, { k: "bin", r: 0.19, f: 0 })).toBe(
       "No clear change in the share of stories with an author’s note from 2000–2009 to 2020 or later",
@@ -597,7 +593,21 @@ describe("View 1 on the page", () => {
     const names = [...document.querySelectorAll(".trend-chart g.col")].map((g) => g.getAttribute("aria-label"));
     expect(names.map((name) => name.match(/(\d+) stories$/)[1])).toEqual(["23", "18", "18", "20", "41"]);
     expect([...document.querySelectorAll(".trend-legend li")].map((li) => li.textContent)).toContain(" Fewer than 30 stories");
-    window.location.hash = "#/trends?var=dlg_word_share&genre=romance&include=medium";
+    expect(document.querySelectorAll(".trend-chart .gnone")).toHaveLength(0);
+  });
+
+  it("draws nothing in a period under 10 stories, and says so in its name", async () => {
+    // Romance with two periods under 10 stories (the test data's Length options had such periods until 2026-10-20)
+    await openTrends("#/trends?var=dlg_word_share&genre=romance", {
+      change: (body, url) => {
+        if (!url.endsWith("trends/all/romance.json")) return body;
+        body.n[1] = 8;
+        body.n[2] = 9;
+        body.c.dlg_word_share.q[1] = null;
+        body.c.dlg_word_share.q[2] = null;
+        return body;
+      },
+    });
     await waitFor(() => expect(document.querySelectorAll(".trend-chart .gnone").length).toBeGreaterThan(0));
     const none = [...document.querySelectorAll(".trend-chart g.col")].filter((g) => g.querySelector(".gnone"));
     expect(none.map((g) => g.getAttribute("aria-label"))).toEqual(["2005–09: fewer than 10 stories", "2010–14: fewer than 10 stories"]);
@@ -631,34 +641,37 @@ describe("View 1 on the page", () => {
   });
 
   it("says when a window has too few stories, and still draws the chart", async () => {
-    await openTrends("#/trends?var=dlg_word_share&include=short");
+    // Romance with 25 stories from 2000–2009: the file leaves r null and says nothing changed
+    await openTrends("#/trends?var=dlg_word_share&genre=romance", {
+      change: (body, url) => {
+        if (!url.endsWith("trends/all/romance.json")) return body;
+        Object.assign(body.c.dlg_word_share, { r: null, f: 0, t: [25, ...body.c.dlg_word_share.t.slice(1)] });
+        return body;
+      },
+    });
     expect(screen.getByRole("heading", { level: 2 }).textContent).toBe(
-      "Fewer than 30 stories in All genres match “Under 2,000 words” and were published 2000–2009: too few to compare",
+      "Fewer than 30 stories in Romance were published 2000–2009: too few to compare",
     );
     expect(document.querySelector(".trend-takeaway")).toBeNull();
     expect(document.querySelectorAll(".trend-chart g.col")).toHaveLength(5);
   });
 
-  it("offers all stories, else All genres, when nothing can be drawn, and moves focus to the new heading", async () => {
-    const user = await openTrends("#/trends?var=dlg_word_share&genre=romance&include=long");
+  it("offers All genres when nothing can be drawn, and moves focus to the new heading", async () => {
+    const user = await openTrends("#/trends?var=dlg_word_share&genre=tiny");
     expect(screen.getByRole("heading", { level: 2 }).textContent).toBe(
-      "Fewer than 30 stories in Romance match “5,000 words or more” and were published 2000–2009: too few to compare",
+      "Fewer than 30 stories in Tiny Genre were published 2000–2009: too few to compare",
     );
     expect(document.querySelector(".trend-chart")).toBeNull();
-    await user.click(screen.getByRole("button", { name: "Show all stories" }));
-    await waitFor(() => expect(window.location.hash).toBe("#/trends?var=dlg_word_share&genre=romance&include=all"));
+    expect(screen.queryByRole("button", { name: "Show all stories" })).toBeNull();
+    await user.click(screen.getByRole("button", { name: "Show All genres" }));
+    await waitFor(() => expect(window.location.hash).toBe("#/trends?var=dlg_word_share&genre=all"));
     await waitFor(() => expect(document.activeElement).toBe(screen.getByRole("heading", { level: 2 })));
-    window.location.hash = "#/trends?var=dlg_word_share&genre=tiny";
-    const button = await screen.findByRole("button", { name: "Show All genres" });
-    await user.click(button);
-    await waitFor(() => expect(window.location.hash).toBe("#/trends?var=dlg_word_share&genre=all&include=all"));
   });
 
-  it("ends with Download image, after “By genre →”, which opens the Genres page for the characteristic and option (round 4's I15)", async () => {
-    await openTrends("#/trends?var=pov_class&include=medium");
+  it("ends with Download image, after “By genre →”, which opens the Genres page for the characteristic (round 4's I15)", async () => {
+    await openTrends("#/trends?var=pov_class");
     const byGenre = screen.getByRole("link", { name: "Narrative perspective by genre" });
     expect(byGenre.textContent).toBe("By genre\u00a0→");
-    // the Genres page's one characteristic offers no Length option (the owner, 2026-10-19): All stories
     expect(byGenre.getAttribute("href")).toBe("#/genres?var=pov_class&include=all");
     expect(screen.queryByRole("link", { name: /^Compare genres/ })).toBeNull();
     expect(screen.getByRole("button", { name: "Download image of this chart" })).toBeTruthy();
@@ -853,8 +866,7 @@ describe("mostly zero: the split chart", () => {
         variable: fixtureMeta.variables.find((v) => v.id === "emo_anger_per_1k"),
         genre: fixtureMeta.genres.find((g) => g.id === "all"),
         heading: "Heading",
-        subset: fixtureMeta.subsets.find((x) => x.id === "all"),
-        state: { v: "emo_anger_per_1k", genre: "all", sub: "all" },
+        state: { v: "emo_anger_per_1k", genre: "all" },
       },
       document.querySelector(".trend-answer"),
     );
@@ -865,8 +877,8 @@ describe("mostly zero: the split chart", () => {
 });
 
 describe("the PNG", () => {
-  it("has the question as its title, the heading and the genre and option as its subtitle, and the key without its link", async () => {
-    await openTrends("#/trends?var=dlg_word_share&genre=fetish&include=medium");
+  it("has the question as its title, the heading and the genre as its subtitle, and the key without its link", async () => {
+    await openTrends("#/trends?var=dlg_word_share&genre=fetish");
     const panel = document.querySelector(".trend-answer");
     const meta = fixtureMeta;
     const spec = trendsImage(
@@ -874,17 +886,16 @@ describe("the PNG", () => {
         variable: meta.variables.find((v) => v.id === "dlg_word_share"),
         genre: meta.genres.find((g) => g.id === "fetish"),
         heading: "Heading",
-        subset: meta.subsets.find((s) => s.id === "medium"),
-        state: { v: "dlg_word_share", genre: "fetish", sub: "medium" },
+        state: { v: "dlg_word_share", genre: "fetish" },
       },
       panel,
     );
     expect(spec.title).toEqual(["In Fetish, how has dialogue share changed over time?"]);
-    expect(spec.subtitle).toEqual(["Heading", "Fetish · 2,000–5,000 words"]);
-    expect(spec.fileName).toBe("trends-dlg_word_share-fetish-medium.png");
+    expect(spec.subtitle).toEqual(["Heading", "Fetish"]);
+    expect(spec.fileName).toBe("trends-dlg_word_share-fetish.png");
     expect(spec.chart.classList.contains("trend-chart")).toBe(true);
     expect(keyItems(spec.legend).map((k) => k.text)).toContain("The periods compared, the oldest and the newest");
-    expect(trendsFileName({ v: "Story_Words", genre: "All", sub: "All" })).toBe("trends-story_words-all-all.png");
+    expect(trendsFileName({ v: "Story_Words", genre: "All" })).toBe("trends-story_words-all.png");
   });
 
   it("titles the axis as the page does: a rate's unit once when the label names it (a made-up characteristic)", async () => {
@@ -904,8 +915,7 @@ describe("the PNG", () => {
         variable: fixtureMeta.variables.find((v) => v.id === "dlg_word_share"),
         genre: fixtureMeta.genres.find((g) => g.id === "all"),
         heading: "Heading",
-        subset: fixtureMeta.subsets.find((s) => s.id === "all"),
-        state: { v: "dlg_word_share", genre: "all", sub: "all" },
+        state: { v: "dlg_word_share", genre: "all" },
       },
       document.querySelector(".trend-answer"),
     );
@@ -922,8 +932,9 @@ describe("the PNG", () => {
     expect(css).toMatch(/\.trend-chart \.trend-table \{\s*pointer-events: none;/);
   });
 
-  it("never anchors the scroll position on the question's words, which another genre or characteristic re-wraps, nor inside “Only include”, which changes form with word count", () => {
-    expect(css).toMatch(/\.trends-page \.question,\s*\.trends-page \.trends-controls \.include-row > \* \{\s*overflow-anchor: none;/);
+  it("never anchors the scroll position on the question's words, which another genre or characteristic re-wraps", () => {
+    expect(css).toMatch(/\.trends-page \.question \{\s*overflow-anchor: none;/);
+    expect(css).not.toMatch(/include/); // the page has no "Only include" (the owner, 2026-10-20)
   });
 
   it("draws the key in forced colors as the explorer's is drawn", () => {

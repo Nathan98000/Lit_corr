@@ -148,7 +148,7 @@ describe("the periods' cards on the real data", () => {
   // value, a part of a caption or the first line too wide for it would wrap. The narrowest room is on the narrowest
   // chart that draws cards (PHONE), where the split chart's halves are stacked. The tightest there, a balance's
   // "Interquartile range  −0.333 to −0.032" beside 2010–14, covers 8 px more of its own column.
-  it.skipIf(!real)("are never too narrow for their numbers, captions or first lines, nor leave the chart, in any characteristic, genre or option", { timeout: 60000 }, () => {
+  it.skipIf(!real)("are never too narrow for their numbers, captions or first lines, nor leave the chart, in any characteristic or genre", { timeout: 60000 }, () => {
     const byId = new Map(real.variables.map((v) => [v.id, v]));
     const problems = [];
     let cards = 0;
@@ -191,7 +191,7 @@ describe("the periods' cards on the real data", () => {
       }
     }
     expect(problems).toEqual([]);
-    expect(cards).toBeGreaterThan(100000);
+    expect(cards).toBeGreaterThan(30000); // all stories only since the owner's 2026-10-20 (four options before)
   });
 });
 
@@ -234,7 +234,7 @@ describe("the Trends page's axis titles on the real data", () => {
     // the scan meets labels that end with their unit ("Sex scenes per 10,000 words" …)
     const named = titles.filter((t) => t.rate && /^per /.test(t.variable.unit ?? "") && t.variable.label.endsWith(t.variable.unit));
     expect(named.length).toBeGreaterThan(0);
-    expect(titles.length).toBeGreaterThan(10000);
+    expect(titles.length).toBeGreaterThan(6000); // all stories only since the owner's 2026-10-20 (four options before)
   });
 });
 

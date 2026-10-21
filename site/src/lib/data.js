@@ -45,7 +45,8 @@ export const clearCache = () => cache.clear();
 export const loadPatterns = () => getJson("patterns.json");
 
 /**
- * genres/<included>.json, the Genres page's file for one "Only include" option: `genres` (meta.genres' order), each
+ * genres/<included>.json, the Genres page's file for one "Only include" option (All stories or a Published one,
+ * GENRE_PAGE_SUBSETS): `genres` (meta.genres' order), each
  * genre's stories `n`, and per characteristic `c[id]`: its form `k` (num, zero, bin, grp, band),
  * `fmt` for numbers (num, percent, year), per genre `q` (num: [n, p25, median, p75], all genres [n, p10, p25, median,
  * p75, p90]; bin: [n, share]; grp and band: [n, share per group]; zero: [n]), for zero `z` (stories above 0, then for
@@ -106,8 +107,8 @@ export function pattern(genreData, k) {
 }
 
 /**
- * trends/<included>/<genre>.json, the Trends page's file for one "Only include" option (meta.trend.subsets) and genre:
- * `periods` (five-year periods of publication year, the last one from 2020 to the newest story), the windows compared
+ * trends/all/<genre>.json, the Trends page's file for a genre, of all stories (the page has no "Only include", so
+ * meta.trend.subsets is ["all"]): `periods` (five-year periods of publication year, the last one from 2020 to the newest story), the windows compared
  * (`then`, `now`: the last period), `rule`, the stories per period `n`, and per characteristic `c[id]`: its form `k`
  * (num, zero, bin, grp, band), `fmt` for numbers, per period `q` and for the "then" window `t` (num: [n, p25, median,
  * p75]; bin: [n, share]; zero: [n, stories above 0, (all genres only: their share), p25, median, p75 among them]; grp
@@ -115,7 +116,7 @@ export function pattern(genreData, k) {
  * total variation distance; null when a window has fewer than the rule's stories) and `f` (+1 clearly rose, -1 clearly
  * fell, 1 a different mix, 0 neither).
  */
-export const loadTrends = (subset, genre) => getJson(`trends/${subset}/${genre}.json`);
-export function prefetchTrends(subset = "all", genre = "all") {
-  loadTrends(subset, genre).catch(() => {});
+export const loadTrends = (genre) => getJson(`trends/all/${genre}.json`);
+export function prefetchTrends(genre = "all") {
+  loadTrends(genre).catch(() => {});
 }

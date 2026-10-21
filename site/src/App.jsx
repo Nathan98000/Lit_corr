@@ -7,7 +7,7 @@ import SiteNav from "./components/SiteNav.jsx";
 import useScrollFloor from "./components/useScrollFloor.js";
 import { clearCache, loadMeta, prefetchGenres, prefetchTrends } from "./lib/data.js";
 import { scrollBehavior } from "./lib/motion.js";
-import { parseHash, sanitize, sanitizeGenres, sanitizeTrends, settledHash, toHash, trendsChanges } from "./lib/urlState.js";
+import { genresSub, parseHash, sanitize, sanitizeGenres, sanitizeTrends, settledHash, toHash, trendsChanges } from "./lib/urlState.js";
 import { aboutCount } from "./lib/wording.js";
 
 const PAGE_PLACEHOLDER = <div className="page-placeholder" aria-busy="true" />;
@@ -98,14 +98,14 @@ export default function App() {
   const [route, setRoute] = useState(() => {
     const first = parseHash(window.location.hash);
     // a visit that starts on the Genres page fetches the page's code and its file at once, not after meta.json (F68),
-    // and one that starts on the Trends page its code and the file of its option and genre
+    // and one that starts on the Trends page its code and the file of its genre
     if (first.page === "genres") {
       GenresPage.preload();
-      prefetchGenres(first.state.sub || "all");
+      prefetchGenres(genresSub(first.state.sub));
     }
     if (first.page === "trends") {
       TrendsPage.preload();
-      prefetchTrends(first.state.sub || "all", first.state.genre || "all");
+      prefetchTrends(first.state.genre || "all");
     }
     return first;
   });
@@ -183,10 +183,10 @@ export default function App() {
 
   // an old link's setting that the page no longer has leaves the address, in place (no new history entry)
   useEffect(() => {
-    const shown = route.page === "explore" ? state : route.page === "genres" ? genresState : null;
+    const shown = { explore: state, genres: genresState, trends: trendsState }[route.page];
     const settled = shown && settledHash(window.location.hash, route.page, shown, meta);
     if (settled) replaceHash(settled);
-  }, [route.page, state, genresState, meta]);
+  }, [route.page, state, genresState, trendsState, meta]);
   // a control (characteristic, option, order) replaces the address; another view adds one, so Back returns
   const updateGenres = useCallback((next) => {
     replaceHash(toHash("genres", next));
@@ -227,7 +227,7 @@ export default function App() {
   const trendsLink = shownTrends ? toHash("trends", shownTrends) : "#/trends";
   const preloadTrends = () => {
     TrendsPage.preload();
-    prefetchTrends(lastTrends.current?.sub || "all", lastTrends.current?.genre || "all");
+    prefetchTrends(lastTrends.current?.genre || "all");
   };
 
   const updatePatterns = useCallback((next) => {

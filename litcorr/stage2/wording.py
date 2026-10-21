@@ -370,14 +370,17 @@ for _part, (_noun, _plural) in _PACE_NOUNS.items():
 # The Genres page compares each genre's stories with all genres. Publication month and weekday are left out: their
 # twelve and seven groups can't be compared genre by genre in one chart.
 GENRE_PAGE_EXCLUDED = {"pub_month", "pub_weekday"}
+# Its "Only include" options (GENRE_PAGE_SUBSETS on the site): All stories and the Published ones, the year published
+# only (the owner, 2026-10-20: no Length or Readership options), so genres/<option>.json exists for these alone.
+GENRE_SUBSETS = ["all", "y2000", "y2010", "y2020"]
 # The Trends page compares stories over time. Left out: publication year and years online (the time axis itself), the
 # rest of "When published" (the site's calendar, not the writing), the number of tags (the site's tagging changed in
 # 2005) and the author's number of stories (counted when collected, not when published). In meta.json's order.
 TREND_PAGE_EXCLUDED = ("pub_year", "age_years", "pub_month", "pub_weekday", "pub_is_weekend", "meta_tag_count",
                        "author_stories_count")
-# Its "Only include" options: All stories and the Length options. The Published options would cut the time axis, and
-# the Readership ones select old and new stories differently (old stories have had longer to gather views).
-TREND_SUBSETS = ["all", "short", "medium", "long"]
+# It has no "Only include" (the owner, 2026-10-20: the overall view is enough), so its files are for All stories only
+# (trends/all/<genre>.json).
+TREND_SUBSETS = ["all"]
 # Words for a genre that clearly differs, higher then lower ("▲ Longer: …", "▼ Shorter: …"; "clearly shorter than all
 # genres"). Characteristics not listed say Higher / Lower (yes/no ones: More common / Less common). The five "where …
 # peaks" positions say Later / Earlier, as where the first sex scene starts does.
@@ -524,6 +527,11 @@ _SITE_TEXT = [
     (r"there is no description", "there is no blurb"),
     (r"two descriptions in three", "two blurbs in three"),
 ]
+# Example words for the word lists that more than one definition names (SITE_DESCRIPTION): the sexual lists together,
+# the emotion lists together, the sensory lists together, and the pacing's action verbs and descriptive and sensory
+# language (the descriptive words with the sensory lists), each from the lists' most frequent entries.
+_EXAMPLES = {"sex": "cock, orgasm, naked", "emotion": "love, smiled, afraid", "senses": "eyes, soft, whispered",
+             "action": "pulled, turned, grabbed", "descriptive": "big, soft, eyes"}
 SITE_DESCRIPTION = {  # plain-language versions where the dictionary text uses data codes or formulas
     "age_years": "How long the story had been online when its numbers were recorded, in years.",
     "pov_is_first_person": "Compares stories narrated in the first person (I, or we) with stories narrated in the "
@@ -573,10 +581,43 @@ SITE_DESCRIPTION = {  # plain-language versions where the dictionary text uses d
     "punct_semicolon_per_1k": "Semicolons (‘;’) in the story’s text, per 1,000 words.",
     "punct_colon_per_1k": "Colons (‘:’) in the story’s text, per 1,000 words, leaving out the colon of a web address.",
     "punct_comma_per_1k": "Commas (‘,’) in the story’s text, per 1,000 words.",
+    # counts of words from a word list whose dictionary text names the list without an example: one to three of the
+    # list's most frequent entries in the stories (data/dev/audit/lexicon_top.tsv), so a reader sees what is counted
+    # (the owner, 2026-10-20). A combined count takes its examples from the lists it joins.
+    "sex_terms_per_1k": f"Sexual terms ({_EXAMPLES['sex']}) per 1,000 words.",
+    "sex_anatomy_per_1k": "Explicit or clinical words for sexual body parts (cock, breasts, penis) per 1,000 words.",
+    "sex_action_per_1k": "Words and phrases for sexual acts (fuck, cum, thrust) per 1,000 words.",
+    "sex_distinct_terms": f"Number of different sexual-language words used ({_EXAMPLES['sex']}).",
+    "style_profanity_per_1k": "Swear words (fuck, shit, damn) per 1,000 words.",
+    "emo_overall_per_1k": f"Words from any emotion list ({_EXAMPLES['emotion']}) per 1,000 words.",
+    "emo_positive_per_1k": "Positive-emotion and affection words (smiled, happy, love) per 1,000 words.",
+    "emo_negative_per_1k": "Negative-emotion, anxiety, anger, sadness, shame and jealousy words (hurt, afraid, tears) "
+                           "per 1,000 words.",
+    "emo_affection_per_1k": "Words of love and fondness (love, darling, tender) per 1,000 words.",
+    "emo_anxiety_per_1k": "Words of fear, worry and nervousness (afraid, nervous, scared) per 1,000 words.",
+    "emo_anger_per_1k": "Words of anger and irritation (angry, frustrated, glared) per 1,000 words.",
+    "emo_sadness_per_1k": "Words of sadness, crying and loneliness (tears, sad, lonely) per 1,000 words.",
+    "emo_arousal_per_1k": "Words of excitement, desire and arousal (moaned, excited, horny) per 1,000 words.",
+    "emo_shame_per_1k": "Words of shame, embarrassment, guilt and shyness (embarrassed, blushed, ashamed) per 1,000 "
+                        "words.",
+    "emo_jealousy_per_1k": "Words of jealousy and envy (jealous, rival, possessive) per 1,000 words.",
+    "sense_total_per_1k": f"Words from any sensory list ({_EXAMPLES['senses']}) per 1,000 words.",
+    "agency_volition_per_1k": "Words for deciding, choosing, planning and trying (tried, decided, managed to) per 1,000 "
+                              "words.",
+    "agency_control_per_1k": "Words about control, restraint, permission and force (forced, tied, allowed to) per "
+                             "1,000 words.",
+    "agency_dominance_per_1k": "Words associated with commanding and domination (master, mistress, good girl) per "
+                               "1,000 words.",
+    "agency_submission_per_1k": "Words associated with obeying, kneeling and begging (slave, submissive, yes sir) per "
+                                "1,000 words.",
 }
 for _part, (_noun, _) in _PACE_NOUNS.items():
     SITE_DESCRIPTION[f"pace_{_part}_peak_position"] = (
         f"Which fifth of the story has the most {_noun}, with the story cut into five equal parts by word count.")
+    if _part in _EXAMPLES:  # the word lists' densities in the first and last fifth, with the lists' examples
+        for _end, _fifth in (("early", "first"), ("late", "last")):
+            SITE_DESCRIPTION[f"pace_{_part}_{_end}"] = (
+                f"Density of {_noun} ({_EXAMPLES[_part]}) in the {_fifth} fifth of the story.")
 
 
 def site_text(text: str, labels: dict[str, str]) -> str:

@@ -111,11 +111,11 @@ describe("F41: the notes beside the chart on wide screens (concept N1)", () => {
 });
 
 describe("F55: story counts", () => {
-  it("links the chart's story count to Missing data", async () => {
+  it("says the chart's story count as plain words, with no link to Missing data (the owner, 2026-10-20)", async () => {
     await renderApp("#/explore?var=dlg_word_share");
     const sub = document.querySelector(".chart-sub");
     expect(sub.textContent).toBe("All genres · 278 stories");
-    expect(within(sub).getByRole("link", { name: "278 stories" }).getAttribute("href")).toBe("#/methodology/missing-data");
+    expect(within(sub).queryByRole("link")).toBeNull();
   });
 
   it("says “about 13,000 stories” in the kicker before and after the data arrives", async () => {

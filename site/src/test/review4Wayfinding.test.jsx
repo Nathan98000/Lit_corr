@@ -139,25 +139,27 @@ describe("U1: the kickers name the page and the source; the question is the h1",
   });
 });
 
-describe("U1: Trends' word count keeps “Only include” a menu", () => {
-  it("draws “All stories ▾” with its Length options turned off inside it, and no note that they don't apply", async () => {
+describe("U1: publication year keeps the Genres page's “Only include” a menu (the Trends page has none since 2026-10-20)", () => {
+  it("draws “All stories ▾” with its Published options turned off inside it, and no note that they don't apply", async () => {
     const realish = {
       ...fixtureMeta,
-      variables: [...fixtureMeta.variables, { ...fixtureMeta.variables[0], id: "story_words", label: "Word count", noun: "word count" }],
+      variables: [...fixtureMeta.variables, { ...fixtureMeta.variables[0], id: "pub_year", label: "Publication year", noun: "publication year" }],
     };
     const serve = fixtureFetch();
     vi.stubGlobal("fetch", async (url) => {
       if (String(url).endsWith("meta.json")) return { ok: true, status: 200, json: async () => realish };
       const res = await serve(url);
-      if (!String(url).includes("trends/")) return res;
+      if (!String(url).includes("genres/")) return res;
       const body = await res.json();
-      body.c.story_words = body.c.dlg_word_share;
+      body.c.pub_year = body.c.dlg_word_share;
       return { ok: true, status: 200, json: async () => body };
     });
-    await open("#/trends?var=story_words");
+    await open("#/genres?var=pub_year");
     const select = screen.getByRole("combobox", { name: "Only include" });
+    // the year published alone (the owner, 2026-10-20): no Length or Readership options
+    expect([...select.options].map((o) => o.value)).toEqual(["all", "y2000", "y2010", "y2020"]);
     const off = [...select.options].filter((o) => o.disabled).map((o) => o.textContent);
-    expect(off).toEqual(fixtureMeta.subsets.filter((s) => s.group === "Length").map((s) => `${s.label} (not with word count)`));
+    expect(off).toEqual(fixtureMeta.subsets.filter((s) => s.group === "Published").map((s) => `${s.label} (not with publication year)`));
     expect(select.closest(".include").querySelector(".slot-text").textContent).toBe("All stories");
     expect(document.body.textContent).not.toMatch(/options don’t apply/);
   });

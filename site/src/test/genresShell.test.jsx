@@ -11,8 +11,10 @@ import { GenresPage } from "../components/pages.js";
 import { clearCache } from "../lib/data.js";
 import {
   GENRE_PAGE_EXCLUDED,
+  GENRE_PAGE_SUBSETS,
   defaultGenre,
-  genreChartSub,
+  genresSub,
+  onGenresPageSubset,
   parseHash,
   sanitizeGenres,
   settledHash,
@@ -91,15 +93,20 @@ describe("Genres addresses", () => {
     for (const id of GENRE_PAGE_EXCLUDED) expect(sanitizeGenres({ v: id }, real).v).toBe("story_words");
     expect(sanitizeGenres({ v: "story_words", sub: "short" }, real).sub).toBe("all");
     expect(sanitizeGenres({ v: "pub_year", sub: "y2000" }, real).sub).toBe("all");
-    // one characteristic offers no Length option (the owner, 2026-10-19); the others stay
+    // the page offers the year published alone (the owner, 2026-10-20): no Length or Readership option
     expect(sanitizeGenres({ v: "pub_year", sub: "long" }, real).sub).toBe("all");
     expect(sanitizeGenres({ v: "dlg_word_share", sub: "medium" }, real).sub).toBe("all");
-    expect(sanitizeGenres({ v: "pub_year", sub: "views10k" }, real).sub).toBe("views10k");
+    expect(sanitizeGenres({ v: "pub_year", sub: "views10k" }, real).sub).toBe("all");
+    expect(sanitizeGenres({ v: "dlg_word_share", sub: "ratings25" }, real).sub).toBe("all");
+    expect(sanitizeGenres({ v: "dlg_word_share", sub: "y2010" }, real).sub).toBe("y2010");
     expect(sanitizeGenres({ v: "author_stories_count", sort: "az" }, real).sort).toBeUndefined(); // ordered bands: A–Z only
     expect(sanitizeGenres({ v: "rel_romance_per_1k", sort: "az" }, real).sort).toBe("az");
     expect(sanitizeGenres({ v: "rel_romance_per_1k", sort: "value" }, real).sort).toBeUndefined(); // by share with any
-    // one genre has no characteristic, so no option conflicts with it
-    expect(sanitizeGenres({ view: "genre", v: "story_words", sub: "short" }, real).sub).toBe("short");
+    // one genre has no characteristic, so no option conflicts with it; it offers the same options
+    expect(sanitizeGenres({ view: "genre", v: "story_words", sub: "y2000" }, real).sub).toBe("y2000");
+    expect(sanitizeGenres({ view: "genre", v: "story_words", sub: "short" }, real).sub).toBe("all");
+    expect(sanitizeGenres({ view: "genre", v: "story_words", sub: "views10k" }, real).sub).toBe("all");
+    expect(GENRE_PAGE_SUBSETS.every((id) => real.subsets.some((x) => x.id === id))).toBe(true);
   });
 
   it("defaults “One genre” to the largest genre, never by name (D8)", () => {
@@ -278,41 +285,49 @@ describe("the default genre of “One genre” (D8)", () => {
   });
 });
 
-describe("“Only include” on one characteristic: no Length options (the owner, 2026-10-19)", () => {
+describe("“Only include”: the year published alone, in both views (the owner, 2026-10-20)", () => {
+  const values = () => [...document.querySelectorAll(".include select option")].map((o) => o.value);
   const groups = () => [...document.querySelectorAll(".include select optgroup")].map((g) => g.label);
 
-  it("offers every option but the Length ones; one genre keeps them all", async () => {
+  it("offers All stories and the Published options only, on one characteristic and on one genre", async () => {
     await openGenres("#/genres?var=dlg_word_share");
-    expect(groups()).toEqual(["Published", "Readership"]);
-    expect(screen.queryByRole("option", { name: /words/ })).toBeNull();
+    expect(values()).toEqual(["all", "y2000", "y2010", "y2020"]);
+    expect(groups()).toEqual(["Published"]);
+    expect(screen.queryByRole("option", { name: /words|views|ratings/ })).toBeNull();
     window.location.hash = "#/genres?view=genre&genre=romance&include=all";
-    await waitFor(() => expect(groups()).toEqual(["Published", "Length", "Readership"]));
+    await waitFor(() => expect(screen.getByRole("radio", { name: "One genre" }).checked).toBe(true));
+    expect(values()).toEqual(["all", "y2000", "y2010", "y2020"]);
+    expect(groups()).toEqual(["Published"]);
   });
 
-  it("opens one characteristic with All stories after a Length option, and keeps any other", async () => {
-    const user = await openGenres("#/genres?view=genre&genre=romance&include=medium");
-    await user.click(screen.getByRole("radio", { name: "One characteristic" }));
-    await waitFor(() => expect(window.location.hash).toBe("#/genres?var=dlg_word_share&include=all"));
-    window.location.hash = "#/genres?view=genre&genre=romance&include=y2020";
-    await waitFor(() => expect(screen.getByRole("radio", { name: "One genre" }).checked).toBe(true));
+  it("keeps a Published option across the view switch, both ways", async () => {
+    const user = await openGenres("#/genres?view=genre&genre=romance&include=y2020");
     await user.click(screen.getByRole("radio", { name: "One characteristic" }));
     await waitFor(() => expect(window.location.hash).toBe("#/genres?var=dlg_word_share&include=y2020"));
+    await user.click(screen.getByRole("radio", { name: "One genre" }));
+    await waitFor(() => expect(window.location.hash).toBe("#/genres?view=genre&genre=romance&include=y2020"));
   });
 
-  it("settles an old address with a Length option to All stories, in place; one genre's stays", async () => {
+  it("settles an old address with a Length or Readership option to All stories, in place, in either view", async () => {
     await openGenres("#/genres?var=dlg_word_share&include=long");
     await waitFor(() => expect(window.location.hash).toBe("#/genres?var=dlg_word_share&include=all"));
     expect(document.querySelector(".include select").value).toBe("all");
-    const one = { view: "genre", genre: "romance", sub: "long", v: "dlg_word_share" };
-    expect(settledHash("#/genres?view=genre&genre=romance&include=long", "genres", one, fixtureMeta)).toBeNull();
+    expect(fetchMock.calls.some((u) => u.endsWith("genres/long.json"))).toBe(false);
+    window.location.hash = "#/genres?view=genre&genre=romance&include=views10k";
+    await waitFor(() => expect(window.location.hash).toBe("#/genres?view=genre&genre=romance&include=all"));
+    expect(document.querySelector(".include select").value).toBe("all");
+    const one = { view: "genre", genre: "romance", sub: "all", v: "dlg_word_share" };
+    expect(settledHash("#/genres?view=genre&genre=romance&include=long", "genres", one, fixtureMeta)).toBe("#/genres?view=genre&genre=romance&include=all");
     const chart = { v: "dlg_word_share", sub: "all" };
     expect(settledHash("#/genres?var=dlg_word_share&include=nope", "genres", chart, fixtureMeta)).toBeNull(); // unknown: as before
     expect(settledHash("#/genres?var=dlg_word_share&include=y2000", "genres", { ...chart, sub: "y2000" }, fixtureMeta)).toBeNull();
   });
 
-  it("carries an option to one characteristic only where it offers it", () => {
-    expect(genreChartSub(fixtureMeta, "y2020")).toBe("y2020");
-    expect(genreChartSub(fixtureMeta, "short")).toBe("all");
-    expect(genreChartSub(fixtureMeta, "nope")).toBe("all");
+  it("carries an option to the page only where it offers it", () => {
+    expect(genresSub("y2020")).toBe("y2020");
+    expect(genresSub("short")).toBe("all");
+    expect(genresSub("views10k")).toBe("all");
+    expect(genresSub("nope")).toBe("all");
+    expect(fixtureMeta.subsets.filter(onGenresPageSubset).map((x) => x.id)).toEqual(GENRE_PAGE_SUBSETS);
   });
 });

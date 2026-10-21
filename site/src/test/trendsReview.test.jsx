@@ -37,7 +37,7 @@ import {
   windowNumbers,
 } from "../lib/trends.js";
 import { searchCharacteristics } from "../lib/search.js";
-import { onTrendsPage } from "../lib/urlState.js";
+import { onGenresPageSubset, onTrendsPage } from "../lib/urlState.js";
 import { fixtureFetch, fixtureFile, fixtureMeta, realMeta } from "./fixtures.js";
 import { rowName, rowNames } from "./rows.js";
 
@@ -139,7 +139,7 @@ describe("has or have (phase 2)", () => {
   it("asks the Trends page's question with “have” for a plural noun, reached from Explore's “Over time →”", async () => {
     await open("#/explore?var=dlg_word_share", { meta: pluralMeta });
     const over = await screen.findByRole("link", { name: "Dialogue share over time" });
-    expect(over.getAttribute("href")).toBe("#/trends?var=dlg_word_share&genre=all&include=all");
+    expect(over.getAttribute("href")).toBe("#/trends?var=dlg_word_share&genre=all");
     window.location.hash = over.getAttribute("href");
     await waitFor(() => expect(question()).toBe("Across all genres, how have dialogue lines changed over time?"));
   });
@@ -172,11 +172,8 @@ describe("across all genres, in a genre (phase 2)", () => {
     expect(changesQuestion(ROMANCE)).toBe("What has changed in stories in Romance?");
     const file = { then: [2000, 2009], now: [2020, 2026], periods: [[2000, 2004], [2005, 2009], [2010, 2014], [2015, 2019], [2020, 2026]], n: [1, 2, 3, 4, 5] };
     // says that these are the stories compared (the owner, 2026-10-19)
-    expect(changesSampleLine(file, ALL, { id: "all" })).toBe("Comparing 3 stories from 2000–2009 with 5 from 2020 or later, across all genres.");
-    expect(changesSampleLine(file, ROMANCE, { id: "all" })).toBe("Comparing 3 stories from 2000–2009 with 5 from 2020 or later, in Romance.");
-    expect(changesSampleLine(file, ROMANCE, { id: "short", label: "Under 2,000 words" })).toBe(
-      "Comparing 3 stories from 2000–2009 with 5 from 2020 or later, in Romance, all of them “Under 2,000 words”.",
-    );
+    expect(changesSampleLine(file, ALL)).toBe("Comparing 3 stories from 2000–2009 with 5 from 2020 or later, across all genres.");
+    expect(changesSampleLine(file, ROMANCE)).toBe("Comparing 3 stories from 2000–2009 with 5 from 2020 or later, in Romance.");
   });
 });
 
@@ -216,14 +213,12 @@ describe("the default view, the switch and the actions (phase 3)", () => {
     expect(document.querySelector(".trend-changes")).toBeTruthy();
     expect(screen.getByRole("radio", { name: "All changes" }).checked).toBe(true);
     expect(screen.getByLabelText("Genre").value).toBe("all");
-    expect(screen.getByLabelText("Only include").value).toBe("all");
     expect(window.location.hash).toBe("#/trends"); // left as it is
-    window.location.hash = "#/trends?genre=romance&include=medium";
+    window.location.hash = "#/trends?genre=romance";
     await waitFor(() => expect(screen.getByLabelText("Genre").value).toBe("romance"));
     expect(document.querySelector(".trend-changes, .trends-page .chart-panel")).toBeTruthy();
     expect(screen.getByRole("radio", { name: "All changes" }).checked).toBe(true);
-    expect(screen.getByLabelText("Only include").value).toBe("medium");
-    window.location.hash = "#/trends?var=pov_class&genre=romance&include=all";
+    window.location.hash = "#/trends?var=pov_class&genre=romance";
     await waitFor(() => expect(screen.getByRole("radio", { name: "One characteristic" }).checked).toBe(true));
     window.location.hash = "#/trends?view=changes&genre=fetish&include=all"; // as the trends page build wrote it
     await waitFor(() => expect(screen.getByRole("radio", { name: "All changes" }).checked).toBe(true));
@@ -236,33 +231,33 @@ describe("the default view, the switch and the actions (phase 3)", () => {
     expect(screen.getByRole("radiogroup", { name: "Show" })).toBeTruthy();
     await user.click(screen.getByRole("radio", { name: "One characteristic" }));
     // story length on the real data; the test data's first characteristic stands in for it
-    await waitFor(() => expect(window.location.hash).toBe("#/trends?var=dlg_word_share&genre=romance&include=all"));
+    await waitFor(() => expect(window.location.hash).toBe("#/trends?var=dlg_word_share&genre=romance"));
   });
 
   it("writes what changed without `view`, and returns the masthead's link to the last Trends address", async () => {
     const user = await open("#/trends?var=pov_class", { ready: trends });
     await user.click(screen.getByRole("radio", { name: "All changes" }));
-    await waitFor(() => expect(window.location.hash).toBe("#/trends?genre=all&include=all"));
+    await waitFor(() => expect(window.location.hash).toBe("#/trends?genre=all"));
     await user.selectOptions(screen.getByLabelText("Genre"), "fetish");
-    await waitFor(() => expect(window.location.hash).toBe("#/trends?genre=fetish&include=all"));
+    await waitFor(() => expect(window.location.hash).toBe("#/trends?genre=fetish"));
     const masthead = within(screen.getByRole("navigation", { name: "Pages" })).getByRole("link", { name: "Trends" });
-    expect(masthead.getAttribute("href")).toBe("#/trends?genre=fetish&include=all");
+    expect(masthead.getAttribute("href")).toBe("#/trends?genre=fetish");
     // back to one characteristic: the one it came from
     await user.click(screen.getByRole("radio", { name: "One characteristic" }));
-    await waitFor(() => expect(window.location.hash).toBe("#/trends?var=pov_class&genre=fetish&include=all"));
+    await waitFor(() => expect(window.location.hash).toBe("#/trends?var=pov_class&genre=fetish"));
   });
 
-  it("makes “See all changes →” View 1's primary action, a new history entry to what changed in the same genre and option", async () => {
-    const user = await open("#/trends?var=pov_class&genre=romance&include=medium", { ready: trends });
+  it("makes “See all changes →” View 1's primary action, a new history entry to what changed in the same genre", async () => {
+    const user = await open("#/trends?var=pov_class&genre=romance", { ready: trends });
     const actions = document.querySelector(".trend-answer .chart-actions");
     // "Compare genres →" is the line's "By genre →" under the chart (round 4's I15)
     expect([...actions.querySelectorAll("a, button")].map((el) => el.textContent)).toEqual(["See all changes →", "Download image"]);
     const see = screen.getByRole("link", { name: "See all changes in Romance" });
     expect(see.className).toBe("btn primary");
-    expect(see.getAttribute("href")).toBe("#/trends?genre=romance&include=medium");
+    expect(see.getAttribute("href")).toBe("#/trends?genre=romance");
     const length = window.history.length;
     await user.click(see);
-    await waitFor(() => expect(window.location.hash).toBe("#/trends?genre=romance&include=medium"));
+    await waitFor(() => expect(window.location.hash).toBe("#/trends?genre=romance"));
     expect(window.history.length).toBe(length + 1);
     await waitFor(() => expect(document.querySelector(".trend-changes")).toBeTruthy());
     await waitFor(() => expect(document.activeElement.id).toBe("question"));
@@ -355,28 +350,23 @@ describe("what the stand-ins tripped on (the follow-up to the fresh eyes)", () =
 });
 
 describe("what the measuring found (phase 8)", () => {
-  it("keeps View 2 on screen, busy, while View 1's file loads for a characteristic the option's file lacks", async () => {
-    // the page opens on View 2 with no characteristic; with a Length option, then straight to word count with all
-    // stories (one address), View 1 had nothing to draw from the option's file and threw ("reading 'q'")
+  it("draws View 1 from the file on screen, busy, while another genre's file loads, and never throws", async () => {
+    // from View 2 of all genres straight to one characteristic in Romance (one address): every file has every
+    // characteristic (the page has no "Only include" since 2026-10-20), so the answer is drawn, dimmed, from its own file
     let release;
     const gate = new Promise((r) => {
       release = r;
     });
     const serve = fixtureFetch();
     vi.stubGlobal("fetch", async (url) => {
-      const u = String(url);
-      if (u.includes("trends/all/all.json")) await gate;
-      const res = await serve(url);
-      if (!u.includes("trends/long/all.json")) return res;
-      const body = await res.json();
-      delete body.c.dlg_word_share; // as the Length options' files leave word count out
-      return { ok: true, status: 200, json: async () => body };
+      if (String(url).includes("trends/all/romance.json")) await gate;
+      return serve(url);
     });
     const errors = vi.spyOn(console, "error").mockImplementation(() => {});
-    await open("#/trends?genre=all&include=long", { ready: ".trend-changes[aria-busy='false']" });
-    window.location.hash = "#/trends?var=dlg_word_share&genre=all&include=all";
-    await waitFor(() => expect(document.querySelector(".trend-changes").getAttribute("aria-busy")).toBe("true"));
-    expect(document.querySelector(".trend-answer")).toBeNull();
+    await open("#/trends?genre=all", { ready: ".trend-changes[aria-busy='false']" });
+    window.location.hash = "#/trends?var=dlg_word_share&genre=romance";
+    await waitFor(() => expect(document.querySelector(".trend-answer").getAttribute("aria-busy")).toBe("true"));
+    expect(document.querySelector(".trend-answer .trend-chart")).toBeTruthy();
     expect(screen.queryByText(/We couldn’t load the data/)).toBeNull();
     release();
     await waitFor(() => expect(document.querySelector(".trend-answer[aria-busy='false'] .trend-chart")).toBeTruthy());
@@ -585,20 +575,10 @@ describe("View 2 (phase 6)", () => {
     return open(hash, { ready: trends.replace(".trends-page", String(hash).includes("genres") ? ".genres-page" : ".trends-page") });
   }
 
-  it.skipIf(!real)("counts the characteristics compared: 25 of 180 for All genres, 8, 13 and 15 of 179 with the Length options", () => {
-    const counts = Object.fromEntries(
-      real.trend.subsets.map((sub) => {
-        const file = realTrends(sub, "all");
-        const p = trendProfile(real, file);
-        return [sub, changesHeading(p.flagged.length, p.compared, file)];
-      }),
-    );
-    expect(counts).toEqual({
-      all: "25 of 180 characteristics clearly changed from 2000–2009 to 2020 or later",
-      short: "8 of 179 characteristics clearly changed from 2000–2009 to 2020 or later",
-      medium: "13 of 179 characteristics clearly changed from 2000–2009 to 2020 or later",
-      long: "15 of 179 characteristics clearly changed from 2000–2009 to 2020 or later",
-    });
+  it.skipIf(!real)("counts the characteristics compared: 25 of 180 for All genres", () => {
+    const file = realTrends("all", "all");
+    const p = trendProfile(real, file);
+    expect(changesHeading(p.flagged.length, p.compared, file)).toBe("25 of 180 characteristics clearly changed from 2000–2009 to 2020 or later");
   });
 
   it.skipIf(!real)("gives word count no line of its own, which read as the one change (the owner, 2026-10-19)", () => {
@@ -725,7 +705,7 @@ describe("View 2 (phase 6)", () => {
     await user.click(button);
     await waitFor(() => expect(downloadChartImage).toHaveBeenCalledTimes(1));
     const spec = downloadChartImage.mock.calls[0][0];
-    expect(spec.fileName).toBe("trends-changes-all-all.png");
+    expect(spec.fileName).toBe("trends-changes-all.png");
     expect(spec.panel.classList.contains("trend-changes")).toBe(true);
     const plan = listsImagePlan(spec);
     expect(plan.title).toEqual(["What has changed in stories across all genres?"]);
@@ -833,8 +813,6 @@ describe("finding what changed, and no dead ends (phase 7)", () => {
       { id: "story_mean_paragraph_words", mark: "▼", word: "fell" },
       { id: "story_sentences", mark: "▲", word: "rose" },
     ]);
-    expect(pickerChanges(real, realTrends("medium", "all")).title).toBe("Clearly changed in all genres · 2,000–5,000 words");
-    expect(pickerChanges(real, realTrends("medium", "all")).items).toHaveLength(13);
     expect(pickerChanges(real, realTrends("all", "adult-romance")).title).toBe("Clearly changed in Romance");
     expect(pickerChanges(real, realTrends("all", "chain-stories"))).toBeNull(); // too few to compare
   });
@@ -877,13 +855,11 @@ describe("finding what changed, and no dead ends (phase 7)", () => {
     expect([...group.querySelectorAll("[role='option']")].map((o) => o.textContent)).toEqual(["▲Dialogue share, rose", "▲Has dialogue, rose"]);
   });
 
-  it("says “(too few to compare)” after each genre whose windows can't be compared with the option, which stays selectable", async () => {
+  it("says “(too few to compare)” after each genre whose windows can't be compared, which stays selectable", async () => {
     await open("#/trends", { ready: trends });
     const names = () => [...screen.getByLabelText("Genre").options].map((o) => o.textContent);
     expect(names()).toEqual(["All genres", "Fetish", "Romance", "Tiny Genre (too few to compare)"]);
-    expect(fixtureMeta.trend.too_few.short).toEqual(["all", "fetish", "romance", "tiny"]);
-    window.location.hash = "#/trends?include=short";
-    await waitFor(() => expect(names()).toEqual(["All genres (too few to compare)", "Fetish (too few to compare)", "Romance (too few to compare)", "Tiny Genre (too few to compare)"]));
+    expect(fixtureMeta.trend.too_few).toEqual({ all: ["tiny"] });
     expect([...screen.getByLabelText("Genre").options].every((o) => !o.disabled)).toBe(true);
   });
 
@@ -898,30 +874,27 @@ describe("finding what changed, and no dead ends (phase 7)", () => {
     const over = screen.getByRole("link", { name: "One characteristic over time →" });
     expect(over.className).toBe("btn");
     // the remembered characteristic, else the first (story length on the real data)
-    expect(over.getAttribute("href")).toBe("#/trends?var=dlg_word_share&genre=tiny&include=all");
+    expect(over.getAttribute("href")).toBe("#/trends?var=dlg_word_share&genre=tiny");
   });
 
-  it("opens paragraph count over time when the option rules word count out", () => {
-    const meta = { subsets: fixtureMeta.subsets };
-    expect(overTimeCharacteristic(meta, { v: "story_words", sub: "all" })).toBe("story_words");
-    expect(overTimeCharacteristic(meta, { v: "story_words", sub: "short" })).toBe("story_paragraphs");
-    expect(overTimeCharacteristic(meta, { v: "pov_class", sub: "short" })).toBe("pov_class");
-    expect(overTimeCharacteristic(meta, { sub: "medium" })).toBe("story_paragraphs");
+  it("opens the remembered characteristic over time, else word count", () => {
+    expect(overTimeCharacteristic({ v: "pov_class" })).toBe("pov_class");
+    expect(overTimeCharacteristic({})).toBe("story_words");
   });
 
-  it("is always a menu: with word count, “All stories ▾” and its Length options turned off inside it (round 4's U1)", () => {
-    const subsets = fixtureMeta.subsets.filter((x) => fixtureMeta.trend.subsets.includes(x.id));
-    const words = { id: "story_words", label: "Word count", noun: "word count", bins: { type: "ranges" } };
-    const { unmount } = render(<IncludeSelect subsets={subsets} value="all" variable={words} onChange={() => {}} />);
+  it("is always a menu: with publication year, “All stories ▾” and its Published options turned off inside it (round 4's U1, now the Genres page's)", () => {
+    const subsets = fixtureMeta.subsets.filter(onGenresPageSubset);
+    const year = { id: "pub_year", label: "Publication year", noun: "publication year", bins: { type: "ranges" } };
+    const { unmount } = render(<IncludeSelect subsets={subsets} value="all" variable={year} onChange={() => {}} />);
     expect(document.querySelector(".include-fixed")).toBeNull();
     expect(document.body.textContent).not.toMatch(/options don’t apply/);
     const off = [...document.querySelector("select").options].filter((o) => o.disabled).map((o) => o.textContent);
-    expect(off).toEqual(subsets.filter((x) => x.group === "Length").map((x) => `${x.label} (not with word count)`));
+    expect(off).toEqual(subsets.filter((x) => x.group === "Published").map((x) => `${x.label} (not with publication year)`));
     expect(document.querySelector(".slot-text").textContent).toBe("All stories");
     // the turned-off options are explained to screen readers, as on Explore
     const select = document.querySelector("select");
     expect(document.getElementById(select.getAttribute("aria-describedby")).textContent).toBe(
-      "Options that would leave only one group of word count are turned off.",
+      "Options that would leave only one group of publication year are turned off.",
     );
     unmount();
     const dialogue = fixtureMeta.variables.find((v) => v.id === "dlg_word_share");

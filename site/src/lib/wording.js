@@ -122,18 +122,14 @@ export function howToRead({ smallN, small = false }) {
 }
 
 /**
- * The line under the title: genre, which stories, and how many, as { lead, count } (the page links the count to
- * "Missing data and excluded stories", F55). `subtitle` gives the whole line as text.
+ * The line under the title: genre, which stories, and how many ("Romance · Under 2,000 words · 1,234 stories"), as
+ * plain text (the count no longer links to "Missing data and excluded stories": the owner, 2026-10-20).
  */
-export function subtitleParts({ genre, subset, n }) {
+export function subtitle({ genre, subset, n }) {
   const parts = [genre.name];
   if (subset && subset.id !== "all") parts.push(subset.label);
-  return { lead: parts.join(" · "), count: n != null ? `${n.toLocaleString("en-US")} stories` : null };
-}
-
-export function subtitle(args) {
-  const { lead, count } = subtitleParts(args);
-  return count ? `${lead} · ${count}` : lead;
+  if (n != null) parts.push(`${n.toLocaleString("en-US")} stories`);
+  return parts.join(" · ");
 }
 
 /** The story count in the kicker: "about 9,000" (to the nearest thousand), so it never reads as exact (F55). */

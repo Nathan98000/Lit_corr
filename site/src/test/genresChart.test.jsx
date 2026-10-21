@@ -30,6 +30,7 @@ import {
 } from "../lib/genres.js";
 import { textWidth } from "../lib/rangeLayout.js";
 import { TEXT } from "../lib/tokens.js";
+import { onGenresPageSubset } from "../lib/urlState.js";
 import { fixtureFetch, fixtureFile, fixtureMeta, realMeta } from "./fixtures.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -167,19 +168,18 @@ describe("genres with too few stories to compare (F63)", () => {
       "10 of 29 genres clearly differ from all genres",
       "Too few stories to compare: Chain Stories (19).",
     ]);
-    expect(say("long", "sex_terms_per_1k")).toEqual([
-      "13 of 28 genres clearly differ from all genres",
-      "Too few stories to compare: How To (22), Reviews & Essays (22).",
+    expect(say("y2000", "sex_first_scene_position")).toEqual([
+      "8 of 28 genres clearly differ from all genres",
+      "Too few stories to compare: Non-Erotic (13), Sci-Fi & Fantasy (27).",
     ]);
-    // no genre differs, and two are too few to compare (data update 20261013: All stories' adverbs in speech tags,
-    // which said so, now has one genre that differs)
-    expect(say("long", "story_pages")).toEqual([
+    // no genre differs, and three are too few to compare (the Length options' examples until the owner's 2026-10-20)
+    expect(say("y2010", "dlg_adverb_tag_share")).toEqual([
       "No genre clearly differs from all genres",
-      "Too few stories to compare: How To (22), Reviews & Essays (22).",
+      "Too few stories to compare: How To (16), Letters & Transcripts (24), Reviews & Essays (10).",
     ]);
     // a genre with fewer than 10 stories with the characteristic: the file has no count for it
-    expect(say("long", "dlg_adverb_tag_share")[1]).toBe(
-      "Too few stories to compare: How To (fewer than 10), Letters & Transcripts (22), Reviews & Essays (fewer than 10).",
+    expect(say("y2020", "dlg_adverb_tag_share")[1]).toBe(
+      "Too few stories to compare: Chain Stories (16), How To (18), Letters & Transcripts (16), Reviews & Essays (fewer than 10).",
     );
   });
 
@@ -306,11 +306,15 @@ describe("units and formats", () => {
 
 describe("the chart", () => {
   it("hatches the bar of a genre with fewer stories than the rule needs, as a style", async () => {
-    // the test data's only genre under 30 stories is Romance with a Length option (15), which the page no longer offers
-    // here (the owner, 2026-10-19), so the answer is drawn from that file on its own
-    const file = fixtureFile("genres/long.json");
+    // the test data has no genre with 10 to 29 stories in an option the page offers: Romance's 41 stories published
+    // 2000–2009 become 15, compared with nothing, as the pipeline writes such a genre
+    const file = fixtureFile("genres/y2000.json");
+    const gi = file.genres.indexOf("romance");
+    Object.assign(file.c.dlg_word_share, { r: file.c.dlg_word_share.r.with(gi, null), f: file.c.dlg_word_share.f.with(gi, 0) });
+    file.c.dlg_word_share.q[gi][0] = 15;
+    file.n[gi] = 15;
     render(
-      <GenreAnswer meta={fixtureMeta} state={{ v: "dlg_word_share", sub: "long" }} file={file} busy={false} onChange={() => {}} onNavigate={() => {}} />,
+      <GenreAnswer meta={fixtureMeta} state={{ v: "dlg_word_share", sub: "y2000" }} file={file} busy={false} onChange={() => {}} onNavigate={() => {}} />,
     );
     const hatch = document.querySelector(".genre-chart pattern").id;
     const romance = [...document.querySelectorAll(".genre-chart .row")].find((r) => r.getAttribute("aria-label").startsWith("Romance:"));
@@ -515,7 +519,7 @@ describe("the chart", () => {
 
   it.skipIf(!real)("orders every real mostly-zero characteristic by its share with any, in every option", () => {
     let charts = 0;
-    for (const s of real.subsets) {
+    for (const s of real.subsets.filter(onGenresPageSubset)) {
       const file = realFile(s.id);
       for (const [id, entry] of Object.entries(file.c)) {
         if (entry.k !== "zero") continue;
@@ -691,7 +695,7 @@ describe("details wording", () => {
   it.skipIf(!real)("never has numbers, a caption or a first line too wide for the card, in any characteristic, genre or option", { timeout: 30000 }, () => {
     const room = CARD_MAX - 26; // inside its padding and border
     const tooWide = [];
-    for (const s of real.subsets) {
+    for (const s of real.subsets.filter(onGenresPageSubset)) {
       const file = realFile(s.id);
       for (const [id, entry] of Object.entries(file.c)) {
         const variable = v(real, id);

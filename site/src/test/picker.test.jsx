@@ -158,18 +158,28 @@ describe("the measure menu", () => {
 });
 
 describe("only include", () => {
+  it("offers All stories and the year published only, and settles an old Length or Readership option to All stories (the owner, 2026-10-21)", async () => {
+    await renderApp("#/explore?var=dlg_word_share&include=views10k");
+    await waitFor(() => expect(window.location.hash).toMatch(/^#\/explore\?genre=all&metric=[a-z_0-9]+&var=dlg_word_share&include=all$/));
+    const select = screen.getByLabelText("Only include");
+    expect([...select.options].map((o) => o.value)).toEqual(["all", "y2000", "y2010", "y2020"]);
+    expect([...select.querySelectorAll("optgroup")].map((g) => g.label)).toEqual(["Published"]);
+    expect(select.value).toBe("all");
+    expect(fixtureMeta.subsets.map((s) => s.id)).toEqual(["all", "y2000", "y2010", "y2020"]);
+  });
+
   it("turns off options that conflict with the characteristic, and says why", () => {
-    const length = { id: "short", group: "Length" };
     const published = { id: "y2000", group: "Published" };
-    expect(subsetConflict(length, { id: "story_words", label: "Word count" })).toBe("not with word count");
     expect(subsetConflict(published, { id: "pub_year", label: "Publication year" })).toBe("not with publication year");
     // the noun, so "Story age (years online)" never puts parentheses inside parentheses (round 4's O9)
     expect(subsetConflict(published, { id: "age_years", label: "Story age (years online)", noun: "story age" })).toBe("not with story age");
     expect(subsetConflict(published, { id: "story_words", label: "Word count" })).toBeNull();
   });
 
-  it.skipIf(!real)("never keeps a conflicting option in the address", () => {
-    expect(sanitize({ v: "story_words", sub: "short" }, real).sub).toBe("all");
+  it.skipIf(!real)("never keeps a conflicting or retired option in the address", () => {
+    expect(real.subsets.map((s) => s.id)).toEqual(["all", "y2000", "y2010", "y2020"]);
+    expect(sanitize({ v: "pub_year", sub: "y2000" }, real).sub).toBe("all");
     expect(sanitize({ v: "story_words", sub: "y2000" }, real).sub).toBe("y2000");
+    expect(sanitize({ v: "story_words", sub: "short" }, real).sub).toBe("all"); // a Length option, gone
   });
 });

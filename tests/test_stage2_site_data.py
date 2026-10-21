@@ -109,7 +109,8 @@ def test_meta_lists_genres_measures_and_characteristics(built):
     assert "pop_fav_per_1k_views" in ids and "pop_views" in ids and "pop_rating" not in ids  # 50% coverage
     assert [v["id"] for v in meta["variables"]] == ["dlg_word_share", "dlg_has_dialogue", "pov_class",
                                                    "emo_anger_per_1k"]
-    assert {s["id"] for s in meta["subsets"]} >= {"all", "y2020", "long"}
+    # the year published only (the owner: Length and Readership gone from Popularity on 2026-10-21)
+    assert [s["id"] for s in meta["subsets"]] == ["all", "y2000", "y2010", "y2020"]
     assert meta["source"]["collected_from"] == "2026-10-01" and summary["variables"] == 4
 
 
@@ -154,7 +155,8 @@ def test_filters_cover_the_right_stories(built):
     _, meta, out, df = built
     recent = _file(out, "pov_class", "y2020")["g"]["all"]
     assert recent["n"] == int(((df["pub_year"] >= 2020) & df["pov_class"].isin(["first", "third"])).sum())
-    assert next(s for s in meta["subsets"] if s["id"] == "long")["n"] == int((df["story_words"] >= 5000).sum())
+    assert next(s for s in meta["subsets"] if s["id"] == "y2000")["n"] == int((df["pub_year"] < 2010).sum())
+    assert sorted(p.stem for p in (out / "v" / "pov_class").iterdir()) == sorted(SUBSET_IDS)
 
 
 def test_patterns_are_reported_only_when_clear(built):
@@ -369,9 +371,9 @@ def _genres(out, subset="all"):
 
 def test_one_genres_file_per_option_and_no_other_files(built, built_genres):
     for _, meta, out, *_ in (built, built_genres):
-        # the Genres page offers the year published alone (the owner, 2026-10-20); Explore keeps every option
-        assert {s["id"] for s in meta["subsets"]} == SUBSET_IDS
-        assert {p.stem for p in (out / "genres").iterdir()} == set(W.GENRE_SUBSETS) == {"all", "y2000", "y2010", "y2020"}
+        # every option is the year published or All stories, on Popularity and the Genres page alike
+        assert {s["id"] for s in meta["subsets"]} == SUBSET_IDS == {"all", "y2000", "y2010", "y2020"}
+        assert {p.stem for p in (out / "genres").iterdir()} == SUBSET_IDS
         assert {p.name for p in out.iterdir()} == {"meta.json", "patterns.json", "v", "genres", "trends"}
         assert all(p.suffix == ".json" for p in (out / "genres").iterdir())
         assert all(p.is_dir() and all(f.suffix == ".json" for f in p.iterdir()) for p in (out / "v").iterdir())
@@ -392,7 +394,7 @@ def test_genres_meta_has_the_rule_and_the_direction_words(built_genres):
 def test_genres_arrays_cells_and_shares(built_genres):
     _, meta, out, _ = built_genres
     genre_ids = [g["id"] for g in meta["genres"]]
-    for sid in W.GENRE_SUBSETS:
+    for sid in SUBSET_IDS:
         data = _genres(out, sid)
         assert data["s"] == sid and data["genres"] == genre_ids
         assert data["rule"] == {"min_r": 0.2, "z": 3.29, "min_tvd": 0.2, "min_n": 30}
@@ -518,7 +520,7 @@ def test_excluded_characteristics_and_conflicting_options_are_absent(built_genre
     _, meta, out, _ = built_genres
     ids = [v["id"] for v in meta["variables"]]
     assert "pub_month" in ids  # still on Explore
-    for sid in W.GENRE_SUBSETS:
+    for sid in SUBSET_IDS:
         c = _genres(out, sid)["c"]
         group = next(s[2] for s in W.SUBSETS if s[0] == sid)
         assert not set(c) & W.GENRE_PAGE_EXCLUDED

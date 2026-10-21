@@ -30,7 +30,6 @@ import {
 } from "../lib/genres.js";
 import { textWidth } from "../lib/rangeLayout.js";
 import { TEXT } from "../lib/tokens.js";
-import { onGenresPageSubset } from "../lib/urlState.js";
 import { fixtureFetch, fixtureFile, fixtureMeta, realMeta } from "./fixtures.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -530,7 +529,7 @@ describe("the chart", () => {
 
   it.skipIf(!real)("orders every real mostly-zero characteristic by its share with any, in every option", () => {
     let charts = 0;
-    for (const s of real.subsets.filter(onGenresPageSubset)) {
+    for (const s of real.subsets) {
       const file = realFile(s.id);
       for (const [id, entry] of Object.entries(file.c)) {
         if (entry.k !== "zero") continue;
@@ -706,7 +705,7 @@ describe("details wording", () => {
   it.skipIf(!real)("never has numbers, a caption or a first line too wide for the card, in any characteristic, genre or option", { timeout: 30000 }, () => {
     const room = CARD_MAX - 26; // inside its padding and border
     const tooWide = [];
-    for (const s of real.subsets.filter(onGenresPageSubset)) {
+    for (const s of real.subsets) {
       const file = realFile(s.id);
       for (const [id, entry] of Object.entries(file.c)) {
         const variable = v(real, id);

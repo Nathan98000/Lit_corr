@@ -4,7 +4,9 @@
 characteristics, overall and within each of Literotica's genres. The controls are the question itself: "In [all
 genres], how does the [average rating] vary with [word count]?" (the default view; the average rating is the default
 measure and leads the measure menu; "all genres" is lowercase inside every sentence, and the lists keep "All genres").
-For each group of stories the chart shows the median (with its value printed, starting clear of the dashed line of all
+Under it, "Only include" narrows the chart to stories published in 2000–2009, 2010–2019 or 2020 or later (the owner,
+2026-10-21: no Length or Readership options, as on the Genres page; an old address with one settles to All stories, in
+place). For each group of stories the chart shows the median (with its value printed, starting clear of the dashed line of all
 stories) and the interquartile range; the number of stories behind every figure and the mean are in each group's
 details (no chart prints its groups' stories: the owner, 2026-10-19). The dashed line is labeled under the plot ("Median of all stories:
 4.42"); the key lists the median and the interquartile range (and hatched groups when there are any). Above the chart a
@@ -37,7 +39,7 @@ the page and the source ("Genres · about 18,000 Literotica stories · 30 genres
 
 **The way across** (round 4's I15): under each one-characteristic chart (Popularity's, the Genres page's and the Trends
 page's) the same line of links, named the same way and in the same order: "By genre →" (the Genres page, with this
-"Only include" option where it offers it, else All stories), "Over time →" (the Trends page, with this genre; it has no
+"Only include" option), "Over time →" (the Trends page, with this genre; it has no
 "Only include") and "With popularity →" (Popularity, with this genre and option and the measure last used there). A link shows only where its page
 has the characteristic, the page being read drops out, and each is named for the characteristic ("Word count by
 genre"); it describes that one characteristic and never suggests another.
@@ -54,8 +56,8 @@ mostly-zero ones; the owner, 2026-10-13), or "Genres in alphabetical order", wit
 the address; named groups and bands are always A–Z); under the chart, the way across ("Over time →", "With popularity →") and "Download
 image". Under its heading the page says what the characteristic measures, from `meta.json`'s description, as the
 Trends page does. Its "Only include" offers All stories and the year published (2000–2009, 2010–2019, 2020 or later),
-the same in both views (the owner, 2026-10-20: no Length or Readership options); an old address with one of those
-settles to All stories, in place. "What stands out about stories in [Romance]?" gives the genre's number of stories and a line for each
+the same in both views and the same as Popularity's (no Length or Readership options: the owner, 2026-10-20 here,
+2026-10-21 on Popularity); an old address with one of those settles to All stories, in place. "What stands out about stories in [Romance]?" gives the genre's number of stories and a line for each
 direction, the increases first (▲ Higher, then ▼ Lower, then ≠ A different mix; a position is listed under its own word,
 after its direction: "▲ Later: where the first sex scene starts", "▼ Earlier", "▼ Sooner"), then a note above the first
 list, in the Trends page's words: "Each dot compares a
@@ -162,8 +164,8 @@ builds without Python and without the private data.
 every genre and measure, one character per characteristic giving the direction and the strength band (weak,
 moderate, strong) of the existing effect. No medians, no counts; about 12 KB gzipped.
 
-`genres/<included>.json` (one per "Only include" option the page offers, All stories and the three Published ones:
-`GENRE_SUBSETS` in `wording.py`, `GENRE_PAGE_SUBSETS` in `urlState.js`; 54–56 KB gzipped) holds, for every characteristic but
+`genres/<included>.json` (one per "Only include" option, All stories and the three Published ones: `SUBSETS` in
+`wording.py`; 54–56 KB gzipped) holds, for every characteristic but
 publication month and weekday, and for every genre (All genres first): the number of stories with it, their quartiles
 (All genres also the 10th and 90th percentiles) or their shares, and the comparison with all genres (the rank-biserial
 correlation, or for named groups the total variation distance) with whether the genre clearly differs. For mostly-zero
@@ -183,7 +185,7 @@ two windows, the rule, `subsets` (`["all"]`: the page has no "Only include" sinc
 windows can't be compared); a characteristic whose noun is plural has `"plural": true`. `loadTrends(genre)` and `prefetchTrends` in `src/lib/data.js` read
 them.
 
-The aggregates are about 72 MB uncompressed (1,720 small files, 27.7 MB gzipped; git and web hosts compress them to
+The aggregates are about 33 MB uncompressed (785 small files, 12.7 MB gzipped; git and web hosts compress them to
 roughly a third). A chart loads one file of about 15–20 KB; the Genres page one file of about 55 KB gzipped per
 option; the Trends page one of at most 12.4 KB.
 

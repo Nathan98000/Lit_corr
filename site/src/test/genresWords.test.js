@@ -23,7 +23,6 @@ import {
   takeawayLine,
   topicCount,
 } from "../lib/genres.js";
-import { onGenresPageSubset } from "../lib/urlState.js";
 import { CAUSAL, UK_SPELLINGS } from "./scans.js";
 import { realMeta } from "./fixtures.js";
 
@@ -81,7 +80,7 @@ describe("the Genres page's sentences on the real data", () => {
   // 13.7 s on a 2-core machine: longer than Vitest's 5 s default
   it.skipIf(!real)("are never causal, always US English, and have no gaps, in every option", { timeout: 30000 }, () => {
     let count = 0;
-    for (const s of real.subsets.filter(onGenresPageSubset)) {
+    for (const s of real.subsets) {
       const file = JSON.parse(readFileSync(path.join(here, "..", "..", "public", "aggregates", "genres", `${s.id}.json`), "utf8"));
       for (const text of sentences(real, file)) {
         count += 1;

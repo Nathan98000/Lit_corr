@@ -20,7 +20,6 @@ import {
   profileTakeaway,
   takeawayLine,
 } from "../lib/genres.js";
-import { onGenresPageSubset } from "../lib/urlState.js";
 import { fewStoriesFetch, fixtureFetch, fixtureMeta, realMeta } from "./fixtures.js";
 import { rowName, rowNames } from "./rows.js";
 
@@ -272,7 +271,7 @@ describe("one scale for every row (concepts P2 and R3)", () => {
 
   it.skipIf(!real)("prints no clear difference as 40 or 60, in any genre or option of the real data", () => {
     let edges = 0;
-    for (const s of real.subsets.filter(onGenresPageSubset)) {
+    for (const s of real.subsets) {
       const file = realFile(s.id);
       for (let gi = 1; gi < file.genres.length; gi += 1) {
         if (file.n[gi] < real.min_n) continue;
@@ -410,7 +409,7 @@ describe("one genre on the real data", () => {
     const file = realFile("y2020");
     const gi = file.genres.indexOf("chain-stories");
     expect(file.n[gi]).toBe(30);
-    expect(Math.min(...real.subsets.filter(onGenresPageSubset).flatMap((s) => realFile(s.id).n))).toBe(30);
+    expect(Math.min(...real.subsets.flatMap((s) => realFile(s.id).n))).toBe(30);
     expect(profileAnnouncement(real, file, { genre: "chain-stories", sub: "y2020" })).toBe(
       "7 characteristics clearly set Chain Stories apart from all genres. Higher: public settings. Lower: profanity, " +
         "sex scenes per 10,000 words, first-person share of pronouns.",
@@ -438,7 +437,7 @@ describe("one genre on the real data", () => {
     // goes"). Here: in every genre and option, no line names story age when publication year is shown, and none is empty
     const age = real.variables.find((x) => x.id === "age_years").label.toLowerCase();
     let shown = 0;
-    for (const s of real.subsets.filter(onGenresPageSubset)) {
+    for (const s of real.subsets) {
       const f = realFile(s.id);
       for (let gi = 1; gi < f.genres.length; gi += 1) {
         if (f.n[gi] < real.min_n) continue;

@@ -4,9 +4,9 @@ import InlineSelect from "./InlineSelect.jsx";
 
 /**
  * The Genres page's "Only include", always a menu, with the options that cannot go with the characteristic turned off
- * inside it (as on the explorer: "Published 2020 or later (not with publication year)"). Both views offer All stories
- * and the year published (onGenresPageSubset: the owner, 2026-10-20, no Length or Readership); the Trends page has no
- * "Only include" at all.
+ * inside it (as on the explorer: "Published 2020 or later (not with publication year)"). Both views offer every option,
+ * All stories and the year published (meta.subsets: no Length or Readership since the owner's 2026-10-20); the Trends
+ * page has no "Only include" at all.
  */
 export default function IncludeSelect({ subsets, value, variable, onChange }) {
   const ids = useId();

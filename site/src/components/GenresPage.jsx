@@ -5,7 +5,6 @@ import {
   GENRE_PAGE_EXCLUDED,
   defaultGenre,
   onGenresPage,
-  onGenresPageSubset,
   sortable,
   subsetConflict,
   toHash,
@@ -88,7 +87,6 @@ export default function GenresPage({ meta, state, onChange, onNavigate, onHoldSc
   const variable = meta.variables.find((v) => v.id === state.v);
   const genre = profile ? meta.genres.find((g) => g.id === state.genre) : null;
   const genres = meta.genres.filter((g) => g.id !== "all");
-  const offered = meta.subsets.filter(onGenresPageSubset); // "Only include": All stories and the year published
   const [menu, setMenu] = useState(false);
   const varBtn = useRef(null);
   const pickerFocus = useRef(null);
@@ -192,7 +190,7 @@ export default function GenresPage({ meta, state, onChange, onNavigate, onHoldSc
     controls = (
       <>
         {viewSwitch}
-        <IncludeSelect subsets={offered} value={state.sub} onChange={(s) => keepPlace({ ...state, sub: s })} />
+        <IncludeSelect subsets={meta.subsets} value={state.sub} onChange={(s) => keepPlace({ ...state, sub: s })} />
       </>
     );
   } else {
@@ -212,7 +210,7 @@ export default function GenresPage({ meta, state, onChange, onNavigate, onHoldSc
       <>
         {viewSwitch}
         <IncludeSelect
-          subsets={offered}
+          subsets={meta.subsets}
           value={state.sub}
           variable={variable}
           onChange={(s) => keepPlace({ ...state, sub: s })}

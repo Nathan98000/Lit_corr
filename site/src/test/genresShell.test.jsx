@@ -11,10 +11,8 @@ import { GenresPage } from "../components/pages.js";
 import { clearCache } from "../lib/data.js";
 import {
   GENRE_PAGE_EXCLUDED,
-  GENRE_PAGE_SUBSETS,
   defaultGenre,
-  genresSub,
-  onGenresPageSubset,
+  liveSub,
   parseHash,
   sanitizeGenres,
   settledHash,
@@ -106,7 +104,7 @@ describe("Genres addresses", () => {
     expect(sanitizeGenres({ view: "genre", v: "story_words", sub: "y2000" }, real).sub).toBe("y2000");
     expect(sanitizeGenres({ view: "genre", v: "story_words", sub: "short" }, real).sub).toBe("all");
     expect(sanitizeGenres({ view: "genre", v: "story_words", sub: "views10k" }, real).sub).toBe("all");
-    expect(GENRE_PAGE_SUBSETS.every((id) => real.subsets.some((x) => x.id === id))).toBe(true);
+    expect(real.subsets.map((x) => x.id)).toEqual(["all", "y2000", "y2010", "y2020"]); // Popularity's too, since 2026-10-21
   });
 
   it("defaults “One genre” to the largest genre, never by name (D8)", () => {
@@ -317,17 +315,18 @@ describe("“Only include”: the year published alone, in both views (the owner
     await waitFor(() => expect(window.location.hash).toBe("#/genres?view=genre&genre=romance&include=all"));
     expect(document.querySelector(".include select").value).toBe("all");
     const one = { view: "genre", genre: "romance", sub: "all", v: "dlg_word_share" };
-    expect(settledHash("#/genres?view=genre&genre=romance&include=long", "genres", one, fixtureMeta)).toBe("#/genres?view=genre&genre=romance&include=all");
+    expect(settledHash("#/genres?view=genre&genre=romance&include=long", "genres", one)).toBe("#/genres?view=genre&genre=romance&include=all");
     const chart = { v: "dlg_word_share", sub: "all" };
-    expect(settledHash("#/genres?var=dlg_word_share&include=nope", "genres", chart, fixtureMeta)).toBeNull(); // unknown: as before
-    expect(settledHash("#/genres?var=dlg_word_share&include=y2000", "genres", { ...chart, sub: "y2000" }, fixtureMeta)).toBeNull();
+    expect(settledHash("#/genres?var=dlg_word_share&include=nope", "genres", chart)).toBeNull(); // unknown: as before
+    expect(settledHash("#/genres?var=dlg_word_share&include=y2000", "genres", { ...chart, sub: "y2000" })).toBeNull();
   });
 
-  it("carries an option to the page only where it offers it", () => {
-    expect(genresSub("y2020")).toBe("y2020");
-    expect(genresSub("short")).toBe("all");
-    expect(genresSub("views10k")).toBe("all");
-    expect(genresSub("nope")).toBe("all");
-    expect(fixtureMeta.subsets.filter(onGenresPageSubset).map((x) => x.id)).toEqual(GENRE_PAGE_SUBSETS);
+  it("fetches All stories' file, before meta.json, for an old address with a retired option", () => {
+    // liveSub: the option an address names, before meta.json can check it
+    expect(liveSub("y2020")).toBe("y2020");
+    expect(liveSub("short")).toBe("all");
+    expect(liveSub("views10k")).toBe("all");
+    expect(liveSub(undefined)).toBe("all");
+    expect(liveSub("nope")).toBe("nope"); // unknown: left to the page's sanitizing, as before
   });
 });

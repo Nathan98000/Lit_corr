@@ -252,7 +252,7 @@ cd site && npm install && npm run dev
 
 `site-data` reads only the newest handoff zip and writes the small summaries the website needs (no story-level
 data), including `patterns.json`, the existing pattern verdicts collected for the site's Patterns page;
-`genres/<included>.json`, one file per "Only include" option of the Genres page (All stories and the three Published
+`genres/<included>.json`, one file per "Only include" option (All stories and the three Published
 ones): each genre's quartiles or shares
 for every characteristic, and whether the genre clearly differs from all genres (a rank-biserial correlation of at
 least 0.2, or for named groups a total variation distance of at least 0.2, clear at the 99.9% level); and

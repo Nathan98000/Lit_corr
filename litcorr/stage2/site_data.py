@@ -17,7 +17,7 @@ Output (default site/public/aggregates/):
                              correlation (or, for named groups, the total variation distance) against all genres and
                              whether the genre clearly differs (GENRE_*); plus each genre's number of stories
   trends/<included>/<genre>.json
-                             the Trends page (trends.py), for All stories and the Length options: for every
+                             the Trends page (trends.py), for All stories only (TREND_SUBSETS): for every
                              characteristic but the left-out ones, per five-year period of publication year the number
                              of stories and their quartiles or shares, and the stories from 2020 or later compared with
                              those from 2000-2009 (TREND_*)
@@ -420,7 +420,7 @@ def genre_kind(bins: Bins) -> str:
 
 def subset_conflict(group: str, name: str) -> bool:
     """Does an "Only include" option of this group leave the characteristic one group? (subsetConflict on the site)"""
-    return (group == "Length" and name == "story_words") or (group == "Published" and name in ("pub_year", "age_years"))
+    return group == "Published" and name in ("pub_year", "age_years")
 
 
 def _genre_quantiles(x: np.ndarray, w: np.ndarray, qs: list[float], year: bool) -> list[Any]:
@@ -515,8 +515,7 @@ def _genre_entry(kind: str, fmt: str, x: np.ndarray, codes: np.ndarray, nbins: i
 
 def _genre_task(name: str, kind: str, fmt: str, x: np.ndarray, codes: np.ndarray, nbins: int,
                 skip: set[str]) -> dict[str, dict[str, Any]]:
-    """One characteristic for the Genres page, in every "Only include" option it offers (GENRE_SUBSETS) that goes with
-    it: {subset id: entry}."""
+    """One characteristic for the Genres page, in every "Only include" option it goes with: {subset id: entry}."""
     return {sid: _genre_entry(kind, fmt, x, codes, nbins, smask) for sid, smask in _S["subsets"].items() if sid not in skip}
 
 
@@ -648,7 +647,7 @@ def build_site_data(handoff: Path | None = None, out_dir: Path | None = None, wo
         variables.append(entry)
         tasks.append((name, codes, x, kind, len(bins.labels)))
         if name not in W.GENRE_PAGE_EXCLUDED:
-            skip = {sid for sid, _, grp, *_ in subset_defs if subset_conflict(grp, name) or sid not in W.GENRE_SUBSETS}
+            skip = {sid for sid, _, grp, *_ in subset_defs if subset_conflict(grp, name)}
             genre_tasks.append((name, genre_kind(bins), value_style(name, v["kind"], v.get("unit", "")), x, codes,
                                 len(bins.labels), skip))
         if name not in W.TREND_PAGE_EXCLUDED:
@@ -718,9 +717,9 @@ def build_site_data(handoff: Path | None = None, out_dir: Path | None = None, wo
     patterns = build_patterns(out_dir, [v["id"] for v in variables], genre_ids, len(metrics))
     (out_dir / "patterns.json").write_text(json.dumps(patterns, separators=(",", ":")), encoding="utf-8")
     (out_dir / "genres").mkdir()
-    for sid in (sid for sid in W.GENRE_SUBSETS if sid in subsets):
+    for sid, smask in subsets.items():
         entries = {name: per[sid] for name, per in genre_entries.items() if sid in per}
-        payload = genre_file(sid, subsets[sid], g, genre_ids, entries)
+        payload = genre_file(sid, smask, g, genre_ids, entries)
         (out_dir / "genres" / f"{sid}.json").write_text(json.dumps(payload, separators=(",", ":"), allow_nan=False),
                                                        encoding="utf-8")
     for sid in trend_subsets:

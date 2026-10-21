@@ -60,7 +60,7 @@ describe("the chart layout", () => {
       ["pub_month", "all"],
       ["author_stories_count", "all"],
       ["series_is_later_part", "all"],
-      ["title_has_chapter_marker", "long"],
+      ["title_has_chapter_marker", "y2020"], // "long" until Popularity dropped its Length options (2026-10-21)
     ]) {
       const data = readReal(v, sub);
       for (const { g, metric, width, layout } of layoutsFor(

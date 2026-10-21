@@ -574,9 +574,8 @@ export default function Methodology({ meta, section }) {
         </p>
         <GenreSizes meta={meta} />
         <p>
-          On Popularity, “Only include” narrows a chart to stories published in a period, of a given length, or above
-          a minimum number of views or ratings; on the Genres page, to stories published in a period. The Trends page
-          always compares all stories.
+          On Popularity and the Genres page, “Only include” narrows a chart to stories published in a period. The
+          Trends page always compares all stories.
         </p>
 
         <h2 id="tend-to" tabIndex={-1}>

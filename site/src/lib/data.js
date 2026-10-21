@@ -46,7 +46,7 @@ export const loadPatterns = () => getJson("patterns.json");
 
 /**
  * genres/<included>.json, the Genres page's file for one "Only include" option (All stories or a Published one,
- * GENRE_PAGE_SUBSETS): `genres` (meta.genres' order), each
+ * meta.subsets): `genres` (meta.genres' order), each
  * genre's stories `n`, and per characteristic `c[id]`: its form `k` (num, zero, bin, grp, band),
  * `fmt` for numbers (num, percent, year), per genre `q` (num: [n, p25, median, p75], all genres [n, p10, p25, median,
  * p75, p90]; bin: [n, share]; grp and band: [n, share per group]; zero: [n]), for zero `z` (stories above 0, then for

@@ -12,7 +12,7 @@ import {
   takeawaySegments,
   theMeasure,
 } from "../lib/wording.js";
-import { genresSub, sanitize, toHash } from "../lib/urlState.js";
+import { sanitize, toHash } from "../lib/urlState.js";
 import ChartNotes from "./ChartNotes.jsx";
 import Controls, { preloadMenus } from "./Controls.jsx";
 import DownloadPng from "./DownloadPng.jsx";
@@ -172,13 +172,13 @@ export function keepExploring(meta, view) {
 
 /**
  * The Genres page's question for this view when a genre is chosen: what stands out about its stories ("One genre",
- * with this option where the page offers it, else all stories). { text, hash }, or null with All genres: the characteristic itself is one link away under the
+ * with this option). { text, hash }, or null with All genres: the characteristic itself is one link away under the
  * chart ("By genre →", round 4's I15).
  */
 export function genresQuestion(meta, view, d) {
   const { genre } = d;
   if (genre.id === "all") return null;
-  return { text: standsOutQuestion(genre), hash: toHash("genres", { view: "genre", genre: genre.id, sub: genresSub(view.sub) }) };
+  return { text: standsOutQuestion(genre), hash: toHash("genres", { view: "genre", genre: genre.id, sub: view.sub }) };
 }
 
 /**

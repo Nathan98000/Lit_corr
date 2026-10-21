@@ -37,7 +37,7 @@ import {
   windowNumbers,
 } from "../lib/trends.js";
 import { searchCharacteristics } from "../lib/search.js";
-import { onGenresPageSubset, onTrendsPage } from "../lib/urlState.js";
+import { onTrendsPage } from "../lib/urlState.js";
 import { fixtureFetch, fixtureFile, fixtureMeta, realMeta } from "./fixtures.js";
 import { rowName, rowNames } from "./rows.js";
 
@@ -887,7 +887,7 @@ describe("finding what changed, and no dead ends (phase 7)", () => {
   });
 
   it("is always a menu: with publication year, “All stories ▾” and its Published options turned off inside it (round 4's U1, now the Genres page's)", () => {
-    const subsets = fixtureMeta.subsets.filter(onGenresPageSubset);
+    const subsets = fixtureMeta.subsets;
     const year = { id: "pub_year", label: "Publication year", noun: "publication year", bins: { type: "ranges" } };
     const { unmount } = render(<IncludeSelect subsets={subsets} value="all" variable={year} onChange={() => {}} />);
     expect(document.querySelector(".include-fixed")).toBeNull();

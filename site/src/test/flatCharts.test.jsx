@@ -14,7 +14,6 @@ import { chartDomain, chartRows, flatDomain, formatPercent, genreRows, numberFor
 import { rangeLayout } from "../lib/rangeLayout.js";
 import { trendDomain, trendLayout, trendOverlaps, trendTicks } from "../lib/trendLayout.js";
 import { trendChartInput, trendSplitInputs } from "../lib/trends.js";
-import { onGenresPageSubset } from "../lib/urlState.js";
 import { fixtureMeta, realMeta } from "./fixtures.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -162,7 +161,7 @@ describe("on the real data", () => {
       }
     }
     let genres = 0;
-    for (const s of real.subsets.filter(onGenresPageSubset)) {
+    for (const s of real.subsets) {
       const file = realJson(`genres/${s.id}.json`);
       for (const [id, entry] of Object.entries(file.c)) {
         if (entry.k !== "num" || entry.fmt !== "num") continue;

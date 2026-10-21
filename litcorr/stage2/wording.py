@@ -61,17 +61,13 @@ MIN_METRIC_COVERAGE = 0.9  # a measure is offered only if at least this share of
 
 # ------------------------------------------------------------------------------------------ stories included
 # One lightweight filter: which stories the charts describe. (id, label, group, column, low, high); low is
-# inclusive, high exclusive; None means open-ended.
+# inclusive, high exclusive; None means open-ended. The year published only: the Length and Readership options left
+# the Genres page on 2026-10-20 and Popularity on 2026-10-21 (the owner); the Trends page has none (TREND_SUBSETS).
 SUBSETS = [
     ("all", "All stories", "", None, None, None),
     ("y2000", "Published 2000–2009", "Published", "pub_year", None, 2010),
     ("y2010", "Published 2010–2019", "Published", "pub_year", 2010, 2020),
     ("y2020", "Published 2020 or later", "Published", "pub_year", 2020, None),
-    ("short", "Under 2,000 words", "Length", "story_words", None, 2000),
-    ("medium", "2,000–5,000 words", "Length", "story_words", 2000, 5000),
-    ("long", "5,000 words or more", "Length", "story_words", 5000, None),
-    ("views10k", "At least 10,000 views", "Readership", "pop_views", 10000, None),
-    ("ratings25", "At least 25 ratings", "Readership", "pop_rating_count", 25, None),
 ]
 
 # ------------------------------------------------------------------------------------- characteristic topics
@@ -370,9 +366,6 @@ for _part, (_noun, _plural) in _PACE_NOUNS.items():
 # The Genres page compares each genre's stories with all genres. Publication month and weekday are left out: their
 # twelve and seven groups can't be compared genre by genre in one chart.
 GENRE_PAGE_EXCLUDED = {"pub_month", "pub_weekday"}
-# Its "Only include" options (GENRE_PAGE_SUBSETS on the site): All stories and the Published ones, the year published
-# only (the owner, 2026-10-20: no Length or Readership options), so genres/<option>.json exists for these alone.
-GENRE_SUBSETS = ["all", "y2000", "y2010", "y2020"]
 # The Trends page compares stories over time. Left out: publication year and years online (the time axis itself), the
 # rest of "When published" (the site's calendar, not the writing), the number of tags (the site's tagging changed in
 # 2005) and the author's number of stories (counted when collected, not when published). In meta.json's order.

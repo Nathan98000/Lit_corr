@@ -630,12 +630,13 @@ describe("View 2 (phase 6)", () => {
   it.skipIf(!real)("prints the values first, with the medians' relative change only for numbers with a plain unit", () => {
     const p = trendProfile(real, realTrends("all", "all"));
     const values = (id) => changesValues(p.items.find((x) => x.id === id)).text;
-    expect(values("story_mean_paragraph_words")).toBe("51.6 → 39.1 (−24%)");
+    // (the 20261021 handoff's numbers)
+    expect(values("story_mean_paragraph_words")).toBe("51.2 → 39.3 (−23%)");
     expect(values("story_paragraphs")).toBe("56 → 104 (+86%)");
-    expect(values("story_words")).toBe("2,770 → 4,150 (+50%)");
+    expect(values("story_words")).toBe("2,750 → 4,180 (+52%)");
     // shares, the shares with any, scales, bands and named groups: no percent
-    expect(values("story_long_paragraph_share")).toBe("58% → 41%"); // mostly zero: the shares with any
-    expect(values("story_has_author_note")).toBe("19% → 33%");
+    expect(values("story_long_paragraph_share")).toBe("58% → 42%"); // mostly zero: the shares with any
+    expect(values("story_has_author_note")).toBe("20% → 33%");
     expect(values("dlg_word_share")).toMatch(/^\d+% → \d+%$/); // a share, written as a percent
     expect(values("lex_mean_word_zipf")).toMatch(/^[\d.]+ → [\d.]+$/); // "Zipf scale (higher = more common)"
     expect(values("read_grade_composite")).toMatch(/^[\d.]+ → [\d.]+$/); // "US school grade"
@@ -814,7 +815,10 @@ describe("finding what changed, and no dead ends (phase 7)", () => {
       { id: "story_sentences", mark: "▲", word: "rose" },
     ]);
     expect(pickerChanges(real, realTrends("all", "adult-romance")).title).toBe("Clearly changed in Romance");
-    expect(pickerChanges(real, realTrends("all", "chain-stories"))).toBeNull(); // too few to compare
+    // Chain Stories, too few to compare until the 20261021 handoff, now has two clear changes; the test data's Tiny
+    // Genre keeps the case with nothing compared
+    expect(pickerChanges(real, realTrends("all", "chain-stories")).items.map((x) => x.id)).toEqual(["setting_public_per_1k", "qe_question_sentence_share"]);
+    expect(pickerChanges(fixtureMeta, fixtureFile("trends/all/tiny.json"))).toBeNull(); // too few to compare
   });
 
   it("shows the group above Popular, the first ten and “Show all {k}”, the marks hidden and the names saying the change", async () => {

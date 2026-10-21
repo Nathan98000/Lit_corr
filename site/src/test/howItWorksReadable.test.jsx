@@ -203,7 +203,7 @@ describe("the pictures' numbers come from the data", () => {
     expect([...article.querySelectorAll(".sizes-figure .sizes-label, .sizes-figure .sizes-note")].map(words)).toEqual([
       "On Literotica, in these 30 genres: 763,174 stories",
       "Erotic Couplings, the largest genre: 12%",
-      "In the sample: 12,568 stories",
+      "In the sample: 17,964 stories", // 12,568 with the 20261013 handoff
       "Erotic Couplings: 3%, about the same as every genre",
     ]);
   });

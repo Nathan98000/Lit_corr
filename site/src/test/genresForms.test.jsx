@@ -396,7 +396,7 @@ describe("the forms on the real data", () => {
     const peak = real.variables.find((x) => x.id === "pace_sex_peak_position");
     const rows = genreRows(real, file, "pace_sex_peak_position");
     expect(takeawayLists(rows, peak, "band").map((l) => `${l.mark} ${l.word}: ${l.names.join(", ")}.`)).toEqual([
-      "▼ Earlier: Non-Erotic, Reviews & Essays.",
+      "▼ Earlier: Reviews & Essays, Non-Erotic.", // the 20261021 handoff (Non-Erotic first with the 20261013 one)
     ]);
     const nonErotic = rows.find((r) => r.genre.id === "non-erotic-stories"); // How To until the data update 20261013
     expect(rowDetails(nonErotic, peak, file.c.pace_sex_peak_position, 10).name).toMatch(/, clearly earlier than all genres$/);
@@ -421,8 +421,8 @@ describe("the forms on the real data", () => {
       const howTo = layout.rows[rows.findIndex((r) => r.genre.id === "adult-how-to")];
       expect(howTo.mark.text).toBe("▲");
       expect(howTo.mark.x).toBeLessThan(layout.x0); // the mark column, before the plot
-      expect(howTo.share.text).toBe("80%"); // the share alone
-      expect(howTo.median.text).toBe("2.530"); // all genres' quartiles among those with any (0.652, 1.18, 2.15) give three decimals
+      expect(howTo.share.text).toBe("78%"); // the share alone (the 20261021 handoff: 466 of 596; 80% before)
+      expect(howTo.median.text).toBe("2.450"); // all genres' quartiles among those with any (0.655, 1.18, 2.14) give three decimals
     }
     expect(anyHeading(nf)).toBe("Among stories with any (per 1,000 words)");
   });
@@ -443,14 +443,15 @@ describe("the forms on the real data", () => {
     const rows = genreRows(real, file, "pov_class");
     expect(text(allGenresLine(rows, real.variables.find((x) => x.id === "pov_class"), file.c.pov_class))).toBe(
       // shares under 1% take a decimal (F66): "Mixed 0.8%", where the first copy said 1%
-      "All genres: First person (I) 55%, First person plural (we) 0.1%, Second person (you) 2%, Third person 42%, Mixed 0.8%.",
+      // (the 20261021 handoff; 55%, 0.1%, 2%, 42%, 0.8% with the 20261013 one)
+      "All genres: First person (I) 56%, First person plural (we) 0.2%, Second person (you) 2%, Third person 41%, Mixed 0.8%.",
     );
     const romance = genreRows(real, file, "rel_romance_per_1k");
     expect(text(allGenresLine(romance, real.variables.find((x) => x.id === "rel_romance_per_1k"), file.c.rel_romance_per_1k))).toBe(
-      "All genres: 44% of stories have any; among those, median 0.418 per 1,000 words, interquartile range 0.228–0.787.",
+      "All genres: 43% of stories have any; among those, median 0.417 per 1,000 words, interquartile range 0.228–0.797.",
     );
     const d = rowDetails(romance.find((r) => r.genre.id === "adult-romance"), real.variables.find((x) => x.id === "rel_romance_per_1k"), file.c.rel_romance_per_1k, 10);
-    expect(d.name).toMatch(/^Romance: 72% with any, among those, median 0\.743 per 1,000 words, interquartile range .*, clearly more than all genres$/);
-    expect(d.line).toMatch(/^72% with any · among those, median 0\.743 per 1,000 words · interquartile range /);
+    expect(d.name).toMatch(/^Romance: 70% with any, among those, median 0\.703 per 1,000 words, interquartile range .*, clearly more than all genres$/);
+    expect(d.line).toMatch(/^70% with any · among those, median 0\.703 per 1,000 words · interquartile range /);
   });
 });

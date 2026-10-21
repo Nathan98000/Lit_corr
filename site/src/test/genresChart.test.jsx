@@ -114,27 +114,30 @@ describe("headings and lists", () => {
   it.skipIf(!real)("match the acceptance numbers for story length on the real data", () => {
     const file = realFile();
     const rows = genreRows(real, file, "story_words");
-    expect(chartHeading(rows.filter((r) => r.f).length, 30)).toBe("6 of 30 genres clearly differ from all genres");
+    // the 20261021 handoff (6 of 30, with no Longer list, with the 20261013 one)
+    expect(chartHeading(rows.filter((r) => r.f).length, 30)).toBe("7 of 30 genres clearly differ from all genres");
     const lists = takeawayLists(rows, v(real, "story_words"), "num");
     expect(lists.map((l) => [l.mark, l.word, l.names])).toEqual([
       // ordered by the size of the difference
+      ["▲", "Longer", ["Novels and Novellas"]],
       ["▼", "Shorter", ["Reviews & Essays", "How To", "Letters & Transcripts", "Toys & Masturbation", "Humor & Satire", "Anal"]],
     ]);
-    // a tie goes A–Z: Anal and Humor & Satire have fewer sentences at r = −0.22 (data update 20261013: word count's
-    // tie, Anal and Crossdressing at −0.21, is gone)
-    const sentences = genreRows(real, file, "story_sentences");
-    expect(takeawayLists(sentences, v(real, "story_sentences"), "num").map((l) => [l.mark, l.word, l.names])).toEqual([
+    // a tie goes A–Z: How To and Letters & Transcripts have fewer unique words at r = −0.56 (the 20261021 handoff;
+    // Anal and Humor & Satire's fewer sentences at −0.22 with the 20261013 one, Anal and Crossdressing's word count at
+    // −0.21 with the 20261008 one)
+    const unique = genreRows(real, file, "lex_unique_words");
+    expect(takeawayLists(unique, v(real, "lex_unique_words"), "num").map((l) => [l.mark, l.word, l.names])).toEqual([
       ["▲", "Higher", ["Novels and Novellas", "Sci-Fi & Fantasy"]],
-      ["▼", "Lower", ["Reviews & Essays", "How To", "Letters & Transcripts", "Toys & Masturbation", "Anal", "Humor & Satire"]],
+      ["▼", "Lower", ["Reviews & Essays", "How To", "Letters & Transcripts", "Toys & Masturbation", "Anal"]],
     ]);
     expect(text(allGenresLine(rows, v(real, "story_words"), file.c.story_words))).toBe(
-      "All genres: median 3,630 words, interquartile range 2,030–6,420. Genre medians run from 1,270 to 4,930.",
+      "All genres: median 3,620 words, interquartile range 2,030–6,400. Genre medians run from 1,260 to 5,080.",
     );
     const first = genreRows(real, file, "pov_is_first_person");
     expect(text(allGenresLine(first, v(real, "pov_is_first_person"), file.c.pov_is_first_person))).toBe(
-      "All genres: first-person stories make up 57% of stories. Genres run from 25% to 98%.",
+      "All genres: first-person stories make up 58% of stories. Genres run from 23% to 98%.",
     );
-    expect(first.filter((r) => r.f).length).toBe(9);
+    expect(first.filter((r) => r.f).length).toBe(8);
     expect(genreRows(real, file, "rel_romance_per_1k").filter((r) => r.f).map((r) => r.genre.name)).toEqual(["Romance"]);
   });
 
@@ -164,35 +167,42 @@ describe("genres with too few stories to compare (F63)", () => {
       const rows = genreRows(real, realFile(sub), id);
       return [rowsHeading(rows), tooFewLine(rows, real.min_n)];
     };
-    expect(say("y2020", "story_words")).toEqual([
-      "10 of 29 genres clearly differ from all genres",
-      "Too few stories to compare: Chain Stories (19).",
+    // the 20261021 handoff (Chain Stories' 19 stories of 2020 or later are 30 now, and compared)
+    expect(say("y2000", "series_part_number")).toEqual([
+      "3 of 29 genres clearly differ from all genres",
+      "Too few stories to compare: Transgender (12).",
     ]);
-    expect(say("y2000", "sex_first_scene_position")).toEqual([
-      "8 of 28 genres clearly differ from all genres",
-      "Too few stories to compare: Non-Erotic (13), Sci-Fi & Fantasy (27).",
+    expect(say("y2020", "sex_first_scene_position")).toEqual([
+      "3 of 28 genres clearly differ from all genres",
+      "Too few stories to compare: Chain Stories (22), Non-Erotic (13).",
     ]);
-    // no genre differs, and three are too few to compare (the Length options' examples until the owner's 2026-10-20)
+    // no genre differs, and two are too few to compare
     expect(say("y2010", "dlg_adverb_tag_share")).toEqual([
       "No genre clearly differs from all genres",
-      "Too few stories to compare: How To (16), Letters & Transcripts (24), Reviews & Essays (10).",
+      "Too few stories to compare: How To (16), Reviews & Essays (15).",
     ]);
-    // a genre with fewer than 10 stories with the characteristic: the file has no count for it
-    expect(say("y2020", "dlg_adverb_tag_share")[1]).toBe(
-      "Too few stories to compare: Chain Stories (16), How To (18), Letters & Transcripts (16), Reviews & Essays (fewer than 10).",
-    );
+    // one genre differs, and four are too few
+    expect(say("y2020", "dlg_adverb_tag_share")).toEqual([
+      "1 of 26 genres clearly differs from all genres",
+      "Too few stories to compare: Chain Stories (27), How To (25), Letters & Transcripts (24), Reviews & Essays (11).",
+    ]);
+    // a genre with fewer than 10 stories with the characteristic, whose file has no count ("fewer than 10"), is no longer
+    // in the real data (it was Reviews & Essays' adverbs in speech tags of 2020 or later): the test data's Tiny Genre
+    // keeps it, in "render the heading, the lists with their marks and the All genres line"
   });
 
-  it.skipIf(!real)("change nothing with All stories, except where missing values leave a genre under 30 stories", () => {
+  it.skipIf(!real)("change nothing with All stories, where every genre has 30 stories with every characteristic", () => {
+    // the 20261021 handoff: adverbs in speech tags, whose missing values left Reviews & Essays with 29 stories in the
+    // 20261013 one, has at least 41 in every genre now
     const file = realFile();
     const changed = Object.keys(file.c).filter((id) => tooFewLine(genreRows(real, file, id), real.min_n));
-    expect(changed).toEqual(["dlg_adverb_tag_share"]);
+    expect(changed).toEqual([]);
     const adverbs = genreRows(real, file, "dlg_adverb_tag_share");
-    expect(adverbs.filter((r) => !r.all && r.stats && !r.small)).toHaveLength(29); // 29 genres compared, one marked
-    expect(rowsHeading(adverbs)).toBe("1 of 29 genres clearly differs from all genres");
-    expect(tooFewLine(adverbs, real.min_n)).toBe("Too few stories to compare: Reviews & Essays (29).");
-    expect(rowsHeading(genreRows(real, file, "sex_first_scene_position"))).toBe("6 of 30 genres clearly differ from all genres");
-    expect(rowsHeading(genreRows(real, file, "story_words"))).toBe("6 of 30 genres clearly differ from all genres");
+    expect(adverbs.filter((r) => !r.all && r.stats && !r.small)).toHaveLength(30); // every genre compared, two marked
+    expect(rowsHeading(adverbs)).toBe("2 of 30 genres clearly differ from all genres");
+    expect(tooFewLine(adverbs, real.min_n)).toBeNull();
+    expect(rowsHeading(genreRows(real, file, "sex_first_scene_position"))).toBe("7 of 30 genres clearly differ from all genres");
+    expect(rowsHeading(genreRows(real, file, "story_words"))).toBe("7 of 30 genres clearly differ from all genres");
   });
 
   it("say the same in the chart's name and the live region", async () => {
@@ -277,18 +287,19 @@ describe("units and formats", () => {
       return rowDetails(row, v(real, id), file.c[id], real.min_n);
     };
     // rare words: How To no longer prints all genres' "2%"
-    expect(say("lex_rare_word_share")).toBe("All genres: median 2.5%, interquartile range 1.7%–3.4%. Genre medians run from 1.6% to 3.7%.");
+    // (the 20261021 handoff's numbers throughout)
+    expect(say("lex_rare_word_share")).toBe("All genres: median 2.5%, interquartile range 1.8%–3.4%. Genre medians run from 1.7% to 3.6%.");
     // a median of exactly 1 takes the singular, as the rows' names do
     expect(say("story_pages")).toBe("All genres: median 1 page, interquartile range 1–2. Genre medians run from 1 to 2.");
     expect(details("lex_rare_word_share", "adult-how-to").blocks[0].items[0]).toEqual(["Median", "1.8%"]);
     // paragraph length: one number of decimals
     expect(say("story_mean_paragraph_words")).toBe(
-      "All genres: median 43.1 words, interquartile range 31.7–62.2. Genre medians run from 36.4 to 65.3.",
+      "All genres: median 43.1 words, interquartile range 31.8–62.0. Genre medians run from 36.2 to 66.2.",
     );
     // the build-up of dialogue: minus signs and "to"
-    expect(say("pace_dialogue_shift")).toBe("All genres: median 0.9%, interquartile range −6.6% to 11.2%. Genre medians run from −2.8% to 5.9%.");
+    expect(say("pace_dialogue_shift")).toBe("All genres: median 0.9%, interquartile range −6.9% to 11.2%. Genre medians run from −2.0% to 4.0%.");
     // story length: unchanged
-    expect(say("story_words")).toBe("All genres: median 3,630 words, interquartile range 2,030–6,420. Genre medians run from 1,270 to 4,930.");
+    expect(say("story_words")).toBe("All genres: median 3,620 words, interquartile range 2,030–6,400. Genre medians run from 1,260 to 5,080.");
     // unrecognized words: never "0%" for stories with any, in any genre
     const unrecognized = genreRows(real, file, "lex_unrecognized_word_share");
     const words = [say("lex_unrecognized_word_share"), ...unrecognized.map((r) => rowDetails(r, v(real, "lex_unrecognized_word_share"), file.c.lex_unrecognized_word_share, 10).line)];

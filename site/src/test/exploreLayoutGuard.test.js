@@ -70,6 +70,8 @@ describe("Explore's chart layout is unchanged by the Genres page's options", () 
     // prints its stories; every label beside its plot sits level with its value (44,040 rows: 5 px under the row's
     // center, 1 px over it before), and the short labels' column on phones is as wide as its labels (1,760 layouts:
     // their plot wider, and its ticks, dashed line, bars, dots and values with it); stacked rows are as they were
-    expect(out).toEqual({ digest: "03357ab4c6dda450", count: 14960 });
+    // (03357ab4c6dda450). The data update 20261021 (litcorr_stage2_handoff_20261021.zip, the finished collection, no code
+    // change) moved the medians and some groups' edges: 03357ab4c6dda450 on the 20261013 handoff
+    expect(out).toEqual({ digest: "cad91fdb07078923", count: 14960 });
   });
 });

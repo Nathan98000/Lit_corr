@@ -286,7 +286,7 @@ describe("one scale for every row (concepts P2 and R3)", () => {
         }
       }
     }
-    expect(edges).toBe(136); // r of ±0.20, two decimals on this page (All stories and the Published options)
+    expect(edges).toBe(139); // r of ±0.20, two decimals on this page (All stories and the Published options; 20261021 handoff)
   });
 
   it("draws the zone of no clear difference with its edges, and the stem and dot, on each row; named groups keep two bars", async () => {
@@ -371,48 +371,55 @@ describe("one genre on the real data", () => {
     const file = realFile();
     const at = (id) => file.genres.indexOf(id);
     const romance = genreProfile(real, file, at("adult-romance"));
-    expect([romance.flagged.length, romance.lower.length, romance.higher.length, romance.mix.length]).toEqual([28, 18, 10, 0]);
+    // the 20261021 handoff ([28, 18, 10, 0], and How To 112, Reviews & Essays 113, Erotic Couplings 8 with the 20261013 one)
+    expect([romance.flagged.length, romance.lower.length, romance.higher.length, romance.mix.length]).toEqual([24, 16, 8, 0]);
     expect(romance.flagged.slice(0, 3).map((x) => x.id)).toEqual(["sex_terms_per_1k", "sex_sentence_share", "sex_anatomy_per_1k"]);
-    expect(romance.flagged.slice(0, 4).map((x) => x.r)).toEqual([-0.46, -0.43, -0.42, -0.41]);
-    // a tie keeps the topic's order: Romance's intimacy and everyday vocabulary at r = 0.27, and Erotic Horror's
-    // three at −0.35 (data update 20261013: Romance's sexual-action and anatomical terms no longer tie)
-    expect(romance.higher.filter((x) => Math.abs(x.r) === 0.27).map((x) => x.id)).toEqual(["rel_intimacy_per_1k", "lex_mean_word_zipf"]);
+    expect(romance.flagged.slice(0, 4).map((x) => x.r)).toEqual([-0.45, -0.43, -0.42, -0.42]);
+    // a tie keeps the topic's order: Romance's anatomical and sexual-action terms at r = −0.42, its affection & love and
+    // everyday vocabulary at 0.25, and Erotic Horror's four at 0.34 (its intimacy and everyday vocabulary at 0.27, and
+    // Erotic Horror's three at −0.35, with the 20261013 handoff)
+    expect(romance.flagged.slice(2, 4).map((x) => x.id)).toEqual(["sex_anatomy_per_1k", "sex_action_per_1k"]);
+    expect(romance.higher.filter((x) => Math.abs(x.r) === 0.25).map((x) => x.id)).toEqual(["emo_affection_per_1k", "lex_mean_word_zipf"]);
     const horror = genreProfile(real, file, at("erotic-horror"));
-    expect(horror.flagged.slice(0, 3).map((x) => [x.id, x.r])).toEqual([
-      ["sex_terms_per_1k", -0.35],
-      ["sex_sentence_share", -0.35],
-      ["emo_balance", -0.35],
+    expect(horror.flagged.slice(0, 6).map((x) => [x.id, x.r])).toEqual([
+      ["emo_balance", -0.36],
+      ["read_mean_word_chars", 0.35],
+      ["sex_terms_per_1k", -0.34],
+      ["sex_sentence_share", -0.34],
+      ["emo_anxiety_per_1k", 0.34],
+      ["sense_sound_per_1k", 0.34],
     ]);
     expect(genreProfile(real, file, at("fetish-stories")).flagged).toHaveLength(0);
-    expect(genreProfile(real, file, at("adult-how-to")).flagged).toHaveLength(112);
-    expect(genreProfile(real, file, at("reviews-and-essays")).flagged).toHaveLength(113);
-    expect(genreProfile(real, file, at("erotic-couplings")).flagged).toHaveLength(8);
+    expect(genreProfile(real, file, at("adult-how-to")).flagged).toHaveLength(111);
+    expect(genreProfile(real, file, at("reviews-and-essays")).flagged).toHaveLength(117);
+    expect(genreProfile(real, file, at("erotic-couplings")).flagged).toHaveLength(5);
     expect(genreProfile(real, file, at("anal-sex-stories")).flagged).toHaveLength(25);
     // where a thing starts is "Later", not "Higher" (round 4's W1): its own line, after Higher's; higher first (the
     // owner, 2026-10-13)
     expect(profileAnnouncement(real, file, { genre: "adult-romance", sub: "all" })).toBe(
-      "28 characteristics clearly set Romance apart from all genres. Higher: romance language, affection & love, " +
-        "intimacy. Later: where the first sex scene starts, words before first explicit term. Lower: sexual " +
+      "24 characteristics clearly set Romance apart from all genres. Higher: romance language, intimacy, " +
+        "affection & love. Later: where the first sex scene starts, words before first explicit term. Lower: sexual " +
         "language, sentences with sexual language, anatomical terms.",
     );
   });
 
-  it.skipIf(!real)("says Chain Stories' 19 stories of 2020 or later are too few to compare (F60)", () => {
+  it.skipIf(!real)("compares Chain Stories' 30 stories of 2020 or later, the rule's minimum (F60's real case until the 20261021 handoff)", () => {
+    // with the 20261013 handoff Chain Stories had 19 such stories, too few to compare; no genre has fewer than 30 in any
+    // option the page offers now, so the small-sample state is kept with made-up counts ("edge states" above, and
+    // oneGenre.test.jsx)
     const file = realFile("y2020");
     const gi = file.genres.indexOf("chain-stories");
-    expect(file.n[gi]).toBe(19);
+    expect(file.n[gi]).toBe(30);
+    expect(Math.min(...real.subsets.filter(onGenresPageSubset).flatMap((s) => realFile(s.id).n))).toBe(30);
     expect(profileAnnouncement(real, file, { genre: "chain-stories", sub: "y2020" })).toBe(
-      "Fewer than 30 stories in Chain Stories match “Published 2020 or later”: too few to compare.",
+      "7 characteristics clearly set Chain Stories apart from all genres. Higher: public settings. Lower: profanity, " +
+        "sex scenes per 10,000 words, first-person share of pronouns.",
     );
     const p = genreProfile(real, file, gi);
-    expect([p.flagged.length, p.compared]).toEqual([0, 0]);
     expect(p.items.length).toBe(183); // every characteristic's numbers are there, by topic
-    // a genre with enough stories: the topics count only the characteristics compared
-    const all = realFile();
-    // the adverbs in speech tags: Reviews & Essays has 29 stories with them (How To's 28 until the data update 20261013)
-    const reviews = genreProfile(real, all, all.genres.indexOf("reviews-and-essays"));
-    expect(reviews.compared).toBeLessThan(reviews.items.length);
-    expect(reviews.topics.reduce((sum, t) => sum + t.compared, 0)).toBe(reviews.compared);
+    // the topics count only the characteristics compared: 16 have fewer than 30 of its stories with them
+    expect([p.flagged.length, p.compared]).toEqual([7, 167]);
+    expect(p.topics.reduce((sum, t) => sum + t.compared, 0)).toBe(p.compared);
   });
 
   it.skipIf(!real)("skips story age in the takeaway when publication year is shown (F78)", () => {
@@ -421,10 +428,10 @@ describe("one genre on the real data", () => {
     expect(chain.lower[0].id).toBe("pub_year");
     expect(chain.higher[0].id).toBe("age_years");
     expect(profileTakeaway(chain).map(takeawayLine)).toEqual([
-      "Higher: italics, vocabulary variety (moving average), author’s story count.", // the next one is taken
+      "Higher: italics, vocabulary variety (moving average), average word length.", // the next one is taken
       "Later: where the first sex scene starts, words before first explicit term.",
       "Lower: publication year, sexual language, sexual language in the last fifth.",
-      "A different mix: narrative perspective.",
+      "A different mix: narrative perspective, pronoun composition.", // the 20261021 handoff
     ]);
     // a line whose only item is story age goes: "5,000 words or more"'s Fetish until the data update 20261013; no genre
     // or option has one now, so the case is kept with made-up rows in oneGenre.test.jsx ("a line left with nothing
@@ -452,10 +459,11 @@ describe("one genre on the real data", () => {
     const p = genreProfile(real, file, file.genres.indexOf("adult-romance"));
     const item = (id) => p.items.find((x) => x.id === id);
     // the medians, each trimmed of trailing zeros on its own; the unit once, under the label
-    expect(profileColumns(item("sex_terms_per_1k"))).toEqual({ genre: ["8.0"], all: ["19.2"], unit: "per 1,000 words" });
-    expect(profileColumns(item("emo_affection_per_1k"))).toEqual({ genre: ["1.72"], all: ["1.04"], unit: "per 1,000 words" });
+    // (the 20261021 handoff's numbers throughout)
+    expect(profileColumns(item("sex_terms_per_1k"))).toEqual({ genre: ["8.1"], all: ["19.2"], unit: "per 1,000 words" });
+    expect(profileColumns(item("emo_affection_per_1k"))).toEqual({ genre: ["1.66"], all: ["1.04"], unit: "per 1,000 words" });
     // mostly zero: the shares with any
-    expect(profileColumns(item("rel_romance_per_1k"))).toEqual({ genre: ["72%"], all: ["44%"], unit: "stories with any" });
+    expect(profileColumns(item("rel_romance_per_1k"))).toEqual({ genre: ["70%"], all: ["43%"], unit: "stories with any" });
     expect(profileColumns(item("sex_sentence_share"))).toEqual({ genre: ["9%"], all: ["20%"], unit: "" });
     const howTo = genreProfile(real, file, file.genres.indexOf("adult-how-to"));
     const howToItem = (id) => howTo.items.find((x) => x.id === id);
@@ -463,19 +471,19 @@ describe("one genre on the real data", () => {
     // How To's repeated five-word phrases: lower in its share with any, higher among those with any, marked higher
     expect(howToItem("rep_repeated_5gram_per_1k").f).toBe(1);
     expect(profileColumns(howToItem("rep_repeated_5gram_per_1k"))).toEqual({
-      genre: ["80%", "2.53"],
+      genre: ["78%", "2.45"],
       all: ["83%", "1.18"],
       unit: "with any\u00a0·\u00a0median among those, per 1,000 words",
     });
     expect(profileColumns(howToItem("author_stories_count"))).toMatchObject({ unit: "median" });
     expect(profileRowName(item("sex_terms_per_1k"), romance, 10)).toBe(
-      "Sexual language: 27 in 100; Romance 8.0, all genres 19.2 per 1,000 words; clearly less. Opens every genre’s numbers.",
+      "Sexual language: 27 in 100; Romance 8.1, all genres 19.2 per 1,000 words; clearly less. Opens every genre’s numbers.",
     );
     expect(profileRowName(item("rel_romance_per_1k"), romance, 10)).toBe(
-      "Romance language: 69 in 100; Romance 72% with any, all genres 44%; clearly more. Opens every genre’s numbers.",
+      "Romance language: 68 in 100; Romance 70% with any, all genres 43%; clearly more. Opens every genre’s numbers.",
     );
     expect(profileRowName(howToItem("rep_repeated_5gram_per_1k"), { name: "How To" }, 10)).toBe(
-      "Repeated five-word phrases: 63 in 100; How To 80% with any, all genres 83%; among those, median 2.53 and 1.18 per " +
+      "Repeated five-word phrases: 62 in 100; How To 78% with any, all genres 83%; among those, median 2.45 and 1.18 per " +
         "1,000 words; clearly higher. Opens every genre’s numbers.",
     );
   });

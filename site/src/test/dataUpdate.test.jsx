@@ -75,7 +75,7 @@ describe("Missing data and excluded stories", () => {
 
 describe("the story count before meta.json arrives (D5)", () => {
   it.skipIf(!real)("is the data's own, in the kicker and in index.html's descriptions", async () => {
-    const about = aboutCount(real.counts.included); // "about 13,000" for the 20261013 handoff
+    const about = aboutCount(real.counts.included); // "about 18,000" for the 20261021 handoff (13,000 for the 20261013 one)
     const html = readFileSync(path.join(here, "..", "..", "index.html"), "utf8").replace(/\s+/g, " ");
     for (const name of ['name="description"', 'property="og:description"']) {
       expect(html.match(new RegExp(`${name} content="[^"]*"`))?.[0]).toContain(` ${about} stories `);
@@ -137,12 +137,13 @@ describe("How it works says the sample's size from the data (D5)", () => {
     expect(text).not.toMatch(/\b300\b|full sample/);
   });
 
-  it.skipIf(!real)("in the real data: about 420 stories in each of 30 genres", async () => {
+  it.skipIf(!real)("in the real data: about 600 stories in each of 30 genres", async () => {
+    // the 20261021 handoff (the collection complete: 572–600 stories per genre); about 420 and 12,568 with the 20261013 one
     const { inShort, sample, steps, limits } = await page(real);
-    expect(inShort).toMatch(/^A random sample: about 420 stories in each of 30 genres, collected .+; 12,568 are used in the charts\.$/);
-    expect(sample).toContain("About 420 stories from each of 30 of Literotica’s genres (the site itself calls them categories): 12,573 stories in all.");
-    expect(steps[3]).toBe("4About 420 per genre");
-    expect(limits).toMatch(/^A sample\. About 420 random stories per genre/);
+    expect(inShort).toMatch(/^A random sample: about 600 stories in each of 30 genres, collected .+; 17,964 are used in the charts\.$/);
+    expect(sample).toContain("About 600 stories from each of 30 of Literotica’s genres (the site itself calls them categories): 17,973 stories in all.");
+    expect(steps[3]).toBe("4About 600 per genre");
+    expect(limits).toMatch(/^A sample\. About 600 random stories per genre/);
   });
 });
 

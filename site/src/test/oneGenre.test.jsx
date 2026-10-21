@@ -680,8 +680,10 @@ describe("the key, in the lists (F86)", () => {
   });
 
   it.skipIf(!real)("leaves the swatch and the mix line out where a named group has no bars: too few stories to compare", { timeout: 15000 }, async () => {
-    vi.stubGlobal("fetch", realFetch);
-    const user = await openGenre("#/genres?view=genre&genre=chain-stories&include=y2020"); // 12 stories: nothing compared
+    // Chain Stories' stories of 2020 or later made 12 (19 with the 20261013 handoff, 30 with the 20261021 one, which no
+    // longer has a genre too few to compare in any option the page offers): nothing compared
+    vi.stubGlobal("fetch", fewStoriesFetch("y2020", "chain-stories", 12, realFetch));
+    const user = await openGenre("#/genres?view=genre&genre=chain-stories&include=y2020");
     await openAllTopics(user);
     const named = ["Person of the blurb", "Narrative perspective", "Narration tense", "Pronoun composition"];
     const rows = [...document.querySelectorAll(".profile-row")].filter((r) => named.includes(rowName(r)));

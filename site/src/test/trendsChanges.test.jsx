@@ -61,10 +61,13 @@ describe("the windows and the words", () => {
     expect(windowsCompared(fixtureFile("trends/all/tiny.json"))).toBe(false);
   });
 
-  it.skipIf(!real)("counts 3,571 and 4,647 stories for All genres, and leaves Chain Stories uncompared", () => {
-    expect(windowCounts(realTrends("all", "all"))).toEqual({ then: 3571, now: 4647 });
+  it.skipIf(!real)("counts 5,109 and 6,700 stories for All genres, and compares every genre", () => {
+    // the 20261021 handoff (3,571 and 4,647 with the 20261013 one, which left Chain Stories uncompared, and Transgender
+    // before it): a genre too few to compare stays in the test data's Tiny Genre, above
+    expect(windowCounts(realTrends("all", "all"))).toEqual({ then: 5109, now: 6700 });
     const uncompared = real.genres.filter((g) => !windowsCompared(realTrends("all", g.id))).map((g) => g.name);
-    expect(uncompared).toEqual(["Chain Stories"]); // and Transgender until the data update 20261013
+    expect(uncompared).toEqual([]);
+    expect(windowCounts(realTrends("all", "chain-stories"))).toEqual({ then: 420, now: 30 }); // the rule's minimum
   });
 
   it("words the heading, the sample line and the too-few heading from the file", () => {
@@ -139,16 +142,16 @@ describe("the rows", () => {
     const name = (id) => changesRowName(p.items.find((x) => x.id === id), file, real.min_n);
     // the values' relative change, as the row prints it (the trends review)
     expect(name("story_paragraphs")).toBe("Paragraph count: 68 in 100; 2000–2009 56, 2020 or later 104 paragraphs (+86%); clearly rose. Opens its chart over time.");
-    expect(name("story_has_author_note")).toBe("Has an author’s note: 57 in 100; 2000–2009 19%, 2020 or later 33%; no clear change. Opens its chart over time.");
+    expect(name("story_has_author_note")).toBe("Has an author’s note: 56 in 100; 2000–2009 20%, 2020 or later 33%; no clear change. Opens its chart over time.");
     expect(name("rel_consent_per_1k")).toMatch(
       /^Consent and check-in language: \d+ in 100; 2000–2009 11% with any, 2020 or later 21%; no clear change\. Opens its chart over time\.$/,
     );
     expect(name("desc_pov")).toMatch(/^Person of the blurb, % of stories: 2000–2009 First person [\d.]+%, .*; 2020 or later .*; no clear change\. /);
     expect(name("pace_sex_peak_position")).toMatch(/^Where sexual language peaks: \d+ in 100; 2000–2009 median [^,]+, 2020 or later median .+; no clear change\./);
-    // a clear change never prints the zone's edge (section 4.2): physical action verbs, r −0.2 (the build-up of sexual
-    // language, r −0.206, until the data update 20261013)
+    // a clear change never prints the zone's edge (section 4.2): physical action verbs, r −0.201 (−0.2 with the 20261013
+    // handoff; the build-up of sexual language, r −0.206, before it)
     const verbs = p.items.find((x) => x.id === "style_action_verbs_per_1k");
-    expect(verbs.r).toBe(-0.2);
+    expect(verbs.r).toBe(-0.201);
     expect(comparisonBar(verbs.r).times).toBe(40);
     expect(name("style_action_verbs_per_1k")).toMatch(/^Physical action verbs: 39 in 100; /);
     const few = trendProfile(real, realTrends("all", "adult-how-to")).items.find((x) => x.r == null);

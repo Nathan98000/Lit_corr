@@ -59,7 +59,7 @@ describe("O8: every measure's “more” and “less” read after “tend to”
         expect(title).toMatch(/tend to get added to (more|fewer) reading lists per 1,000 views/);
       });
     }
-    expect(titles).toBe(1418); // the titles that read "tend to are added to" in the review (F97): 1,146 then, 1,418 since the data update 20261013
+    expect(titles).toBe(1804); // the titles that read "tend to are added to" in the review (F97): 1,146 then, 1,418 with the 20261013 handoff, 1,804 with the 20261021 one
   });
 });
 
